@@ -1,0 +1,211 @@
+[
+ {
+  "name": "51st Annual Burns Supper",
+  "date": "2027-01-22",
+  "city": "Calgary",
+  "province": "AB",
+  "host": "Burns Club of Calgary",
+  "status": "confirmed (host site)",
+  "ticket_info_url": "https://www.calgaryburnsclub.com/upcoming-events.html",
+  "source_url": "https://www.calgaryburnsclub.com/upcoming-events.html",
+  "notes": "Hotel Arts. Club also holds St Andrew's Night Nov 28 2026 (Aloft Hotel). Meets monthly at Kensington Legion."
+ },
+ {
+  "name": "Robbie Burns' Night",
+  "date": "TBA (usually last Sat of Jan; 2026 was Jan 31)",
+  "city": "Calgary",
+  "province": "AB",
+  "host": "St. Andrew-Caledonian Society of Calgary",
+  "status": "date TBA",
+  "ticket_info_url": "https://standrewcaledonian.ca/upcoming-events-2/",
+  "source_url": "https://epicureancalgary.com/annual-robbie-burns-night.html",
+  "notes": "2026: Polish Canadian Cultural Centre, 3015 15 St NE, $65 members/$80 non-members. Announces on its Events page and The Scottish Banner calendar. Held Calgary's first Burns dinner in 1886."
+ },
+ {
+  "name": "Burns Night at Cornerstone Music Cafe",
+  "date": "2027-01-23",
+  "city": "Calgary",
+  "province": "AB",
+  "host": "Cornerstone Music Cafe",
+  "status": "confirmed (organizer Eventbrite)",
+  "ticket_info_url": "https://www.eventbrite.ca/e/burns-night-tickets-1981961289570",
+  "source_url": "https://www.eventbrite.ca/e/burns-night-tickets-1981961289570",
+  "notes": "Small venue, 7-9pm."
+ },
+ {
+  "name": "Robbie Burns Dinner & Dance",
+  "date": "2027-01-30",
+  "city": "Killam",
+  "province": "AB",
+  "host": "Flagstaff Scottish Club",
+  "status": "listed (regional tourism site)",
+  "ticket_info_url": "https://www.flagstaffscottishclub.com/",
+  "source_url": "https://goeastofedmonton.com/events/killam-flagstaff-scottish-club-robbie-burns-dinner-dance/",
+  "notes": "Killam Community Hall. Confirm on the club's site before publishing."
+ },
+ {
+  "name": "Robbie Burns celebrations - Alberta Fire Pipe Band",
+  "date": "TBA (January 2027)",
+  "city": "Strathmore",
+  "province": "AB",
+  "host": "Alberta Fire Scottish Pipes & Drums / Strathmore Legion #10",
+  "status": "date TBA",
+  "ticket_info_url": "https://www.strathmorelegion.ca/alberta-fire-pipe-band",
+  "source_url": "https://www.strathmorelegion.ca/alberta-fire-pipe-band",
+  "notes": "Band page says 'January 2027 - Stay tuned for Robbie Burns Celebrations!'"
+ },
+ {
+  "name": "Burns Supper",
+  "date": "TBA (usually late January)",
+  "city": "Medicine Hat",
+  "province": "AB",
+  "host": "Medicine Hat Burns Club",
+  "status": "date TBA",
+  "ticket_info_url": "https://www.mhburnsclub.ca/",
+  "source_url": "https://www.scotscanada.ca/en/medicinehat",
+  "notes": "Check the club site in November/December."
+ },
+ {
+  "name": "Burns Supper",
+  "date": "TBA (usually late January)",
+  "city": "Edmonton",
+  "province": "AB",
+  "host": "Edmonton Scottish Society",
+  "status": "date TBA",
+  "ticket_info_url": "https://www.edmontonscottishsociety.org/",
+  "source_url": "https://www.edmontonscottishsociety.org/",
+  "notes": "No 2027 listing found yet; check ESS site and Scottish Banner calendar."
+ },
+ {
+  "name": "A Celebration of Robbie Burns with Blackthorn",
+  "date": "2027-01-16",
+  "city": "Coquitlam",
+  "province": "BC",
+  "host": "Place des Arts",
+  "status": "confirmed (organizer Eventbrite)",
+  "ticket_info_url": "https://www.eventbrite.ca/e/a-celebration-of-robbie-burns-with-blackthorn-tickets-1984414108016",
+  "source_url": "https://www.eventbrite.ca/e/a-celebration-of-robbie-burns-with-blackthorn-tickets-1984414108016",
+  "notes": "Concert with haggis at intermission."
+ },
+ {
+  "name": "Vancouver Burns Supper",
+  "date": "2027-01-23",
+  "city": "Vancouver",
+  "province": "BC",
+  "host": "Scottish Cultural Centre (Vancouver Scottish societies)",
+  "status": "listed (Scottish Banner calendar)",
+  "ticket_info_url": "https://scottishculturalcentre.com/",
+  "source_url": "https://www.scottishbanner.com/event/vancouver-burns-supper/",
+  "notes": "8886 Hudson St. Confirm host/tickets on Scottish Cultural Centre site."
+ },
+ {
+  "name": "Robbie Burns event, Nutana Legion",
+  "date": "2027-01-24",
+  "city": "Saskatoon",
+  "province": "SK",
+  "host": "Royal Canadian Legion Nutana Branch",
+  "status": "listed (performer's gig page)",
+  "ticket_info_url": "https://www.backofthebus.ca/shows/",
+  "source_url": "https://www.backofthebus.ca/shows/",
+  "notes": "Listed by the band Back of the Bus; contact Legion for tickets. Confirm before publishing."
+ },
+ {
+  "name": "Robbie Burns Night, Battleford Highland Dancing Association",
+  "date": "2027-01-23",
+  "city": "Battleford",
+  "province": "SK",
+  "host": "Battleford Highland Dancing Association",
+  "status": "listed (performer's gig page)",
+  "ticket_info_url": "https://www.backofthebus.ca/shows/",
+  "source_url": "https://www.backofthebus.ca/shows/",
+  "notes": "A dance-school fundraiser; confirm with host."
+ },
+ {
+  "name": "St. Andrew's Society of Toronto Burns Dinner",
+  "date": "2027-01-22",
+  "city": "Toronto",
+  "province": "ON",
+  "host": "St. Andrew's Society of Toronto",
+  "status": "confirmed (host site)",
+  "ticket_info_url": "https://standrewstoronto.ca/sast_event/rabbie-burns-dinner/",
+  "source_url": "https://standrewstoronto.ca/sast_event/rabbie-burns-dinner/",
+  "notes": "University Club of Toronto; tickets on sale Nov 2026; 2026 prices $155/$165; ~115 seats, sold out in 2026."
+ },
+ {
+  "name": "Burns Statue Celebration",
+  "date": "2027-01-25",
+  "city": "Toronto",
+  "province": "ON",
+  "host": "Community gathering (Allan Gardens)",
+  "status": "listed (Scottish Banner calendar)",
+  "ticket_info_url": "https://www.scottishbanner.com/calendar/category/canada/",
+  "source_url": "https://www.scottishbanner.com/calendar/category/canada/",
+  "notes": "Free outdoor piping and haggis at the Robert Burns statue."
+ },
+ {
+  "name": "Robert Burns Dinner, Barrie Legion",
+  "date": "2027-01-23",
+  "city": "Barrie",
+  "province": "ON",
+  "host": "Royal Canadian Legion (410 St. Vincent St, Barrie) / Barrie Pipes & Drums",
+  "status": "confirmed (performing band's site)",
+  "ticket_info_url": "https://www.barriepipesanddrums.com/new-events/2027/1/23/robert-burns-dinner",
+  "source_url": "https://www.barriepipesanddrums.com/new-events/2027/1/23/robert-burns-dinner",
+  "notes": "6-10pm. Band calls it the Barrie Legion, 410 St. Vincent St."
+ },
+ {
+  "name": "Burns Supper at Tea On West",
+  "date": "2027-01-24",
+  "city": "Hamilton",
+  "province": "ON",
+  "host": "Tea On West (restaurant)",
+  "status": "confirmed (venue booking page)",
+  "ticket_info_url": "https://tableagent.com/hamilton-ontario/tea-on-3/event/289214/burns-supper/",
+  "source_url": "https://tableagent.com/hamilton-ontario/tea-on-3/event/289214/burns-supper/",
+  "notes": "Commercial restaurant event."
+ },
+ {
+  "name": "Robbie Burns Dinner, Cobourg Legion",
+  "date": "TBA (annual, late January)",
+  "city": "Cobourg",
+  "province": "ON",
+  "host": "Royal Canadian Legion Branch 133 / Cobourg Legion Pipes and Drums",
+  "status": "date TBA",
+  "ticket_info_url": "https://www.brightontoday.ca/2026/01/06/whats-good-in-northumberland-robbie-burns-dinner-returns-to-cobourg-with-music-tradition-community-spirit/",
+  "source_url": "https://www.brightontoday.ca/2026/01/06/whats-good-in-northumberland-robbie-burns-dinner-returns-to-cobourg-with-music-tradition-community-spirit/",
+  "notes": "Annual Legion fundraiser with silent auction; tickets in person at the branch."
+ },
+ {
+  "name": "Robbie Burns event, Lockerby Legion",
+  "date": "TBA (2026 was Sat Jan 24)",
+  "city": "Sudbury",
+  "province": "ON",
+  "host": "Royal Canadian Legion Branch 564 / Lockerby Highlanders Pipe Band",
+  "status": "date TBA",
+  "ticket_info_url": "https://www.sudbury.com/local-news/lockerby-legion-hosting-robbie-burns-event-jan-24-11728985",
+  "source_url": "https://www.sudbury.com/local-news/lockerby-legion-hosting-robbie-burns-event-jan-24-11728985",
+  "notes": "2026 tickets $40 at the Legion bar."
+ },
+ {
+  "name": "Burns Supper",
+  "date": "TBA",
+  "city": "Winnipeg",
+  "province": "MB",
+  "host": "St. Andrew's Society of Winnipeg",
+  "status": "date TBA",
+  "ticket_info_url": "https://www.standrewssocietywinnipeg.com/home",
+  "source_url": "https://www.standrewssocietywinnipeg.com/home",
+  "notes": "Society's posted event is St Andrew's Day Nov 21 2026; check site in December."
+ },
+ {
+  "name": "Burns events",
+  "date": "TBA",
+  "city": "Montreal",
+  "province": "QC",
+  "host": "St. Andrew's Society of Montreal",
+  "status": "date TBA",
+  "ticket_info_url": "https://www.standrews.qc.ca/",
+  "source_url": "https://www.standrews.qc.ca/",
+  "notes": "St Andrew's Ball Nov 27 2026; Burns listings usually posted in December."
+ }
+]

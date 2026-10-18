@@ -1,0 +1,912 @@
+[
+ {
+  "name": "Calgary Burns Club",
+  "type": "burns club",
+  "city": "Calgary",
+  "province": "AB",
+  "website": "https://www.calgaryburnsclub.com/",
+  "source_url": "https://www.calgaryburnsclub.com/upcoming-events.html",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Calgary Highland Dancing Association",
+  "type": "highland dance association",
+  "city": "Calgary",
+  "province": "AB",
+  "website": "https://www.chda.ab.ca/",
+  "source_url": "https://www.chda.ab.ca/links",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Calgary School of Highland Dance",
+  "type": "highland dance school",
+  "city": "Calgary",
+  "province": "AB",
+  "website": "https://www.highlanddance.ca/",
+  "source_url": "https://www.chda.ab.ca/links",
+  "offers_lessons": "y",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Irish Cultural Society of Calgary",
+  "type": "irish club",
+  "city": "Calgary",
+  "province": "AB",
+  "website": "https://www.calgaryics.org/",
+  "source_url": "https://www.calgaryics.org/events/cursa-gaeilge-the-irish-language-course/2026-10-13/",
+  "offers_lessons": "y",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Calgary Police Service Pipe Band",
+  "type": "pipe band",
+  "city": "Calgary",
+  "province": "AB",
+  "website": "https://www.cpspipeband.ca/",
+  "source_url": "https://albertapipebands.ca/pipe-bands",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Rocky Mountain Pipe Band",
+  "type": "pipe band",
+  "city": "Calgary",
+  "province": "AB",
+  "website": "https://rmpb.ca/",
+  "source_url": "https://albertapipebands.ca/pipe-bands",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Foothills Caledonia Youth Pipe Band",
+  "type": "pipe band (youth)",
+  "city": "Calgary",
+  "province": "AB",
+  "website": "https://www.fcypb.org/",
+  "source_url": "https://www.aspd.ca/ogden-indoor-highland-games-may-2-2026",
+  "offers_lessons": "y",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "78th Fraser Highlanders Fort Calgary Garrison Youth Squad",
+  "type": "pipe band (youth) / re-enactment",
+  "city": "Calgary",
+  "province": "AB",
+  "website": "https://78fraserscalgary.ca/youth-squad",
+  "source_url": "https://78fraserscalgary.ca/youth-squad",
+  "offers_lessons": "y",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "78th Fraser Highlanders - Fort Calgary Garrison",
+  "type": "re-enactment / pipe band",
+  "city": "Calgary",
+  "province": "AB",
+  "website": "https://78fraserscalgary.ca/",
+  "source_url": "https://78thfrasers.org/garrisons/garrison-locations",
+  "offers_lessons": "y",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "RSCDS Calgary Branch",
+  "type": "scottish country dance",
+  "city": "Calgary",
+  "province": "AB",
+  "website": "https://rscdscalgary.org/calgarybranch/",
+  "source_url": "https://rscdscalgary.org/calgarybranch/",
+  "offers_lessons": "y",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "St. Andrew-Caledonian Society of Calgary",
+  "type": "st andrew's / caledonian society",
+  "city": "Calgary",
+  "province": "AB",
+  "website": "https://standrewcaledonian.ca/",
+  "source_url": "https://standrewcaledonian.ca/classes/",
+  "offers_lessons": "y",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Calgary Welsh Society",
+  "type": "welsh club",
+  "city": "Calgary",
+  "province": "AB",
+  "website": "https://calgarywelshsociety.ca/",
+  "source_url": "https://calgarywelshsociety.ca/",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Medicine Hat Burns Club",
+  "type": "burns club",
+  "city": "Medicine Hat",
+  "province": "AB",
+  "website": "https://www.mhburnsclub.ca/",
+  "source_url": "https://www.scotscanada.ca/en/medicinehat",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Alberta Highland Dancing Association",
+  "type": "highland dance association",
+  "city": "",
+  "province": "AB",
+  "website": "https://ahda.ca/",
+  "source_url": "https://scotdance.ca/sdc-affiliates/",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Edmonton Highland Dancing Association",
+  "type": "highland dance association",
+  "city": "Edmonton",
+  "province": "AB",
+  "website": "https://ehda.ca/",
+  "source_url": "https://ahda.ca/?page_id=43",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Edmonton Irish Sports and Social Society",
+  "type": "irish club",
+  "city": "Edmonton",
+  "province": "AB",
+  "website": "https://edmontonirishclub.ca/",
+  "source_url": "https://edmontonirishclub.ca/irish-language-classes",
+  "offers_lessons": "y",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Airdrie Scots Pipes and Drums",
+  "type": "pipe band",
+  "city": "Airdrie",
+  "province": "AB",
+  "website": "https://airdriescots.ca/",
+  "source_url": "https://albertapipebands.ca/pipe-bands",
+  "offers_lessons": "y",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Edmonton Police Service Pipes & Drums",
+  "type": "pipe band",
+  "city": "Edmonton",
+  "province": "AB",
+  "website": "https://www.epspipeband.ca/",
+  "source_url": "https://albertapipebands.ca/pipe-bands",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "North Stratton Pipe Band",
+  "type": "pipe band",
+  "city": "Edmonton",
+  "province": "AB",
+  "website": "https://www.northstratton.com/",
+  "source_url": "https://www.aspd.ca/aggregate-and-past-results",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Red Deer & District Pipe Band",
+  "type": "pipe band",
+  "city": "Red Deer",
+  "province": "AB",
+  "website": "https://www.reddeerdistrictpipeband.com/",
+  "source_url": "https://albertapipebands.ca/pipe-bands",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Edmonton Youth Pipe Band",
+  "type": "pipe band (youth)",
+  "city": "Edmonton",
+  "province": "AB",
+  "website": "https://www.eypb.ca/",
+  "source_url": "https://www.canadianbagpiper.com/associations/aspd/",
+  "offers_lessons": "y",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Alberta Society of Pipers & Drummers (ASPD)",
+  "type": "pipe band association",
+  "city": "",
+  "province": "AB",
+  "website": "https://www.aspd.ca/",
+  "source_url": "https://www.aspd.ca/",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "RSCDS Edmonton (Edmonton Caledonian Branch)",
+  "type": "scottish country dance",
+  "city": "Edmonton",
+  "province": "AB",
+  "website": "https://danceeccds.ca/",
+  "source_url": "https://rscds.org/branches-and-groups/rscds-edmonton-caledonian-branch",
+  "offers_lessons": "y",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Edmonton Scottish Society",
+  "type": "scottish society",
+  "city": "Edmonton",
+  "province": "AB",
+  "website": "https://www.edmontonscottishsociety.org/",
+  "source_url": "https://www.edmontonscottishsociety.org/",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Flagstaff Scottish Club",
+  "type": "scottish society",
+  "city": "",
+  "province": "AB",
+  "website": "https://www.flagstaffscottishclub.com/",
+  "source_url": "https://www.scotscanada.ca/en/flagstaff",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Gaelic language program - Vancouver Scottish Cultural Societies",
+  "type": "gaelic class",
+  "city": "Vancouver",
+  "province": "BC",
+  "website": "https://vancouverscottish.ca/learn-participate/gaelic-language/",
+  "source_url": "https://vancouverscottish.ca/learn-participate/gaelic-language/",
+  "offers_lessons": "y",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "ScotDance British Columbia",
+  "type": "highland dance association",
+  "city": "",
+  "province": "BC",
+  "website": "https://www.scotdancebc.com/",
+  "source_url": "https://scotdance.ca/sdc-affiliates/",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Simon Fraser University Pipe Band",
+  "type": "pipe band",
+  "city": "Burnaby",
+  "province": "BC",
+  "website": "https://www.sfupipeband.com/",
+  "source_url": "https://bcpipers.org/results/grand-aggregate-winners/",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "BC Pipers' Association",
+  "type": "pipe band association",
+  "city": "",
+  "province": "BC",
+  "website": "https://bcpipers.org/",
+  "source_url": "https://bcpipers.org/results/grand-aggregate-winners/",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "RSCDS Vancouver Branch",
+  "type": "scottish country dance",
+  "city": "Vancouver",
+  "province": "BC",
+  "website": "https://rscdsvancouver.org/",
+  "source_url": "https://my.strathspey.org/groups/country/CA/",
+  "offers_lessons": "y",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Vancouver Scottish Cultural Centre / Vancouver Scottish Cultural Societies",
+  "type": "scottish society",
+  "city": "Vancouver",
+  "province": "BC",
+  "website": "https://scottishculturalcentre.com/",
+  "source_url": "https://vancouverscottish.ca/learn-participate/gaelic-language/",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "St. Andrew's and Caledonian Society of the City of Vancouver",
+  "type": "st andrew's / caledonian society",
+  "city": "Vancouver",
+  "province": "BC",
+  "website": "https://www.standrewsvancouver.ca/",
+  "source_url": "https://www.scotscanada.ca/en/vancouver",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "ScotDance Saskatchewan",
+  "type": "highland dance association",
+  "city": "",
+  "province": "SK",
+  "website": "https://scotdancesaskatchewan.com/",
+  "source_url": "https://scotdance.ca/sdc-affiliates/",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Saskatchewan Pipe Band Association",
+  "type": "pipe band association",
+  "city": "",
+  "province": "SK",
+  "website": "https://www.saskpipebands.org/",
+  "source_url": "https://www.saskpipebands.org/",
+  "offers_lessons": "y",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Prairie Pipe Band Association of Manitoba",
+  "type": "pipe band association",
+  "city": "Winnipeg",
+  "province": "MB",
+  "website": "https://www.ppbam.org/",
+  "source_url": "https://www.ppbam.org/",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "RSCDS Winnipeg Branch",
+  "type": "scottish country dance",
+  "city": "Winnipeg",
+  "province": "MB",
+  "website": "http://www.rscdswinnipeg.ca/",
+  "source_url": "https://my.strathspey.org/groups/country/CA/",
+  "offers_lessons": "y",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "St. Andrew's Society of Winnipeg",
+  "type": "st andrew's / caledonian society",
+  "city": "Winnipeg",
+  "province": "MB",
+  "website": "https://www.standrewssocietywinnipeg.com/home",
+  "source_url": "https://www.standrewssocietywinnipeg.com/home",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Comann Luchd-ionnsachaidh Thoronto (Toronto Gaelic Learners Association)",
+  "type": "gaelic class",
+  "city": "Toronto",
+  "province": "ON",
+  "website": "https://torontogaelic.ca/",
+  "source_url": "https://torontogaelic.ca/",
+  "offers_lessons": "y",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Comunn Gàidhlig Thoronto (Gaelic Society of Toronto)",
+  "type": "gaelic society",
+  "city": "Toronto",
+  "province": "ON",
+  "website": "https://www.gaelicsocietytoronto.com/",
+  "source_url": "https://www.scotscanada.ca/en/torontogaelic",
+  "offers_lessons": "y",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "ScotDance Ontario",
+  "type": "highland dance association",
+  "city": "",
+  "province": "ON",
+  "website": "https://www.scotdanceontario.ca/",
+  "source_url": "https://scotdance.ca/sdc-affiliates/",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Glengarry Pipe Band",
+  "type": "pipe band",
+  "city": "Maxville",
+  "province": "ON",
+  "website": "https://www.glengarrypipeband.com/",
+  "source_url": "http://ppbso.org/games/band-champion-supreme-points-for-2026/",
+  "offers_lessons": "y",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Guelph Pipe Band",
+  "type": "pipe band",
+  "city": "Guelph",
+  "province": "ON",
+  "website": "https://guelphpipeband.com/",
+  "source_url": "https://www.pipebandsontario.org/post/2026-ppbso-champion-supreme-winners",
+  "offers_lessons": "y",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Pipers' and Pipe Band Society of Ontario (PPBSO)",
+  "type": "pipe band association",
+  "city": "",
+  "province": "ON",
+  "website": "https://www.pipebandsontario.org/",
+  "source_url": "https://www.pipebandsontario.org/",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "York Garrison, 78th Fraser Highlanders",
+  "type": "re-enactment",
+  "city": "Toronto",
+  "province": "ON",
+  "website": "https://yorkgarrison.com/about-york-garrison/",
+  "source_url": "https://78thfrasers.org/garrisons/garrison-locations",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "RSCDS Ottawa",
+  "type": "scottish country dance",
+  "city": "Ottawa",
+  "province": "ON",
+  "website": "https://www.rscdsottawa.ca/",
+  "source_url": "https://my.strathspey.org/groups/country/CA/",
+  "offers_lessons": "y",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "RSCDS Toronto",
+  "type": "scottish country dance",
+  "city": "Toronto",
+  "province": "ON",
+  "website": "https://dancescottish.ca/",
+  "source_url": "https://my.strathspey.org/groups/country/CA/",
+  "offers_lessons": "y",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Scottish Studies Foundation",
+  "type": "scottish society",
+  "city": "Toronto",
+  "province": "ON",
+  "website": "https://www.scottishstudies.com/",
+  "source_url": "https://www.scotscanada.ca/en/scottishstudies",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "The Scottish Society of Ottawa",
+  "type": "scottish society",
+  "city": "Ottawa",
+  "province": "ON",
+  "website": "https://ottscot.ca",
+  "source_url": "https://www.scotscanada.ca/en/ottscot",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "St. Andrew's Society of Toronto",
+  "type": "st andrew's / caledonian society",
+  "city": "Toronto",
+  "province": "ON",
+  "website": "https://standrewstoronto.ca/",
+  "source_url": "https://www.scotscanada.ca/en/standrews",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "The 78th Fraser Highlanders (Regimental HQ)",
+  "type": "re-enactment",
+  "city": "Montreal",
+  "province": "QC",
+  "website": "https://78thfrasers.org/",
+  "source_url": "https://78thfrasers.org/garrisons/garrison-locations",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "78th Fraser Highlanders, Garnison St-Andrews de Québec",
+  "type": "re-enactment / pipe band",
+  "city": "Quebec City",
+  "province": "QC",
+  "website": "https://www.78thfraser.ca/",
+  "source_url": "https://78thfrasers.org/garrisons/garrison-locations",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "RSCDS Montréal",
+  "type": "scottish country dance",
+  "city": "Montreal",
+  "province": "QC",
+  "website": "https://www.rscdsmontreal.org/",
+  "source_url": "https://my.strathspey.org/groups/country/CA/",
+  "offers_lessons": "y",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "St. Andrew's Society of Montreal",
+  "type": "st andrew's / caledonian society",
+  "city": "Montreal",
+  "province": "QC",
+  "website": "https://www.standrews.qc.ca/",
+  "source_url": "https://www.scotscanada.ca/en/standmont",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "ScotDance New Brunswick",
+  "type": "highland dance association",
+  "city": "",
+  "province": "NB",
+  "website": "https://www.scotdancenb.com/",
+  "source_url": "https://scotdance.ca/sdc-affiliates/",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Greater Moncton Scottish Association",
+  "type": "scottish society",
+  "city": "Moncton",
+  "province": "NB",
+  "website": "https://greatermonctonscots.org/",
+  "source_url": "https://www.scotscanada.ca/en/moncton",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "New Brunswick Scottish Cultural Association",
+  "type": "scottish society",
+  "city": "",
+  "province": "NB",
+  "website": "https://www.nbscots.com",
+  "source_url": "https://www.scotscanada.ca/en/nbsca",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Gaelic Language Society of Halifax",
+  "type": "gaelic class",
+  "city": "Halifax",
+  "province": "NS",
+  "website": "https://halifaxgaelic.ca/",
+  "source_url": "https://halifaxgaelic.ca/classes",
+  "offers_lessons": "y",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Colaisde na Gàidhlig / The Gaelic College",
+  "type": "gaelic class / piping & dance school",
+  "city": "St. Ann's",
+  "province": "NS",
+  "website": "https://gaeliccollege.edu/",
+  "source_url": "https://gaeliccollege.edu/",
+  "offers_lessons": "y",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Baile nan Gàidheal / Highland Village Museum",
+  "type": "gaelic culture centre",
+  "city": "Iona",
+  "province": "NS",
+  "website": "https://highlandvillage.novascotia.ca/",
+  "source_url": "https://highlandvillage.novascotia.ca/",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Comhairle na Gàidhlig (NS Gaelic Council)",
+  "type": "gaelic society",
+  "city": "",
+  "province": "NS",
+  "website": "https://www.gaelic.ca/",
+  "source_url": "https://www.gaelic.ca/",
+  "offers_lessons": "y",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "ScotDance Nova Scotia",
+  "type": "highland dance association",
+  "city": "",
+  "province": "NS",
+  "website": "https://www.scotdancenovascotia.ca/",
+  "source_url": "https://scotdance.ca/sdc-affiliates/",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Atlantic Canada Pipe Band Association",
+  "type": "pipe band association",
+  "city": "",
+  "province": "NS",
+  "website": "https://acpba.org/",
+  "source_url": "http://acpba.org/keydates-2",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Halifax Citadel Society (78th Highlanders living history)",
+  "type": "re-enactment",
+  "city": "Halifax",
+  "province": "NS",
+  "website": "https://www.halifaxcitadel.ca/",
+  "source_url": "https://www.halifaxcitadel.ca/",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "RSCDS Nova Scotia Branch",
+  "type": "scottish country dance",
+  "city": "Halifax",
+  "province": "NS",
+  "website": "http://www.rscdsnovascotia.ca/",
+  "source_url": "http://www.rscdsnovascotia.ca/Classes.html",
+  "offers_lessons": "y",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Antigonish Highland Society",
+  "type": "scottish society",
+  "city": "Antigonish",
+  "province": "NS",
+  "website": "https://antigonishhighlandgames.ca/",
+  "source_url": "https://www.scotscanada.ca/en/antigonish",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Ship Hector Society",
+  "type": "scottish society",
+  "city": "Pictou",
+  "province": "NS",
+  "website": "https://www.shiphectorcampaign.com/",
+  "source_url": "https://www.scotscanada.ca/en/hector",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "College of Piping and Celtic Performing Arts of Canada",
+  "type": "piping & dance school",
+  "city": "Summerside",
+  "province": "PE",
+  "website": "https://collegeofpiping.com/",
+  "source_url": "https://collegeofpiping.com/",
+  "offers_lessons": "y",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Clan Baird Society - Canada",
+  "type": "clan society",
+  "city": "",
+  "province": "National",
+  "website": "https://www.clanbaird.ca",
+  "source_url": "https://www.scotscanada.ca/en/baird",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Clan Campbell Society (North America)",
+  "type": "clan society",
+  "city": "",
+  "province": "National",
+  "website": "https://www.ccsna.org/",
+  "source_url": "https://www.scotscanada.ca/en/campbell",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Clan Chisholm Society Canada Branch",
+  "type": "clan society",
+  "city": "",
+  "province": "National",
+  "website": "https://www.clanchisholmsociety.org",
+  "source_url": "https://www.scotscanada.ca/en/chisholm",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Clan Colquhoun of Canada",
+  "type": "clan society",
+  "city": "",
+  "province": "National",
+  "website": "https://www.clancolquhoun.com/",
+  "source_url": "https://www.scotscanada.ca/en/colquhoun",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Clan Donald Canada",
+  "type": "clan society",
+  "city": "",
+  "province": "National",
+  "website": "http://clandonaldcanada.net/",
+  "source_url": "https://www.scotscanada.ca/en/donald",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Clan Fraser Society of North America",
+  "type": "clan society",
+  "city": "",
+  "province": "National",
+  "website": "https://cfsna.com",
+  "source_url": "https://www.scotscanada.ca/en/fraser",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Clan Grant Society Canada",
+  "type": "clan society",
+  "city": "",
+  "province": "National",
+  "website": "https://www.clangrantcanada.com/",
+  "source_url": "https://www.scotscanada.ca/en/grantcanada",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Clan Gregor Society Canada Chapter",
+  "type": "clan society",
+  "city": "",
+  "province": "National",
+  "website": "https://www.mapleleafmacgregor.ca",
+  "source_url": "https://www.scotscanada.ca/en/gregor",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Clan Hunter Association, Canada",
+  "type": "clan society",
+  "city": "",
+  "province": "National",
+  "website": "https://www.clanhuntercanada.com/",
+  "source_url": "https://www.scotscanada.ca/en/hunter",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Clan Logan Society of Canada",
+  "type": "clan society",
+  "city": "",
+  "province": "National",
+  "website": "https://www.clanlogan.ca/",
+  "source_url": "https://www.scotscanada.ca/en/logan",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Clan MacBeth",
+  "type": "clan society",
+  "city": "",
+  "province": "National",
+  "website": "https://www.clanmacbeth.ca",
+  "source_url": "https://www.scotscanada.ca/en/macbeth",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Clan MacKenzie Society of Canada",
+  "type": "clan society",
+  "city": "",
+  "province": "National",
+  "website": "https://www.clanmackenziecanada.ca/",
+  "source_url": "https://www.scotscanada.ca/en/mackenzie",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Clan MacLennan Canada",
+  "type": "clan society",
+  "city": "",
+  "province": "National",
+  "website": "https://www.clanmaclennan-worldwide.com/canada",
+  "source_url": "https://www.scotscanada.ca/en/maclennan",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Clan MacLeod Societies of Canada",
+  "type": "clan society",
+  "city": "",
+  "province": "National",
+  "website": "https://www.clanmacleod-canada.com/",
+  "source_url": "https://www.scotscanada.ca/en/macleod",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Clan MacNeil in Canada",
+  "type": "clan society",
+  "city": "",
+  "province": "National",
+  "website": "https://www.clanmacneilincanada.ca/",
+  "source_url": "https://www.scotscanada.ca/en/macneil",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Clan MacPherson Association Canadian Branch",
+  "type": "clan society",
+  "city": "",
+  "province": "National",
+  "website": "https://www.clan-macpherson.org/canada",
+  "source_url": "https://www.scotscanada.ca/en/macpherson",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Clan MacRae Society of Canada",
+  "type": "clan society",
+  "city": "",
+  "province": "National",
+  "website": "https://www.clanmacraecanada.ca/",
+  "source_url": "https://www.scotscanada.ca/en/macrae",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Clan Munro Association of Canada",
+  "type": "clan society",
+  "city": "",
+  "province": "National",
+  "website": "https://www.clanmunro.ca/",
+  "source_url": "https://www.scotscanada.ca/en/munro",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Clan Sinclair Association (Canada)",
+  "type": "clan society",
+  "city": "",
+  "province": "National",
+  "website": "https://www.clansinclair.ca/",
+  "source_url": "https://www.scotscanada.ca/en/sinclair",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Elliot Clan Society of Canada",
+  "type": "clan society",
+  "city": "",
+  "province": "National",
+  "website": "https://www.elliotclan.com",
+  "source_url": "https://www.scotscanada.ca/en/elliot",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "MacFie Clan Society in Canada",
+  "type": "clan society",
+  "city": "",
+  "province": "National",
+  "website": "https://macfieclancanada.ca/",
+  "source_url": "https://www.scotscanada.ca/en/macfie",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Canadian Scottish Athletic Federation",
+  "type": "heavy events association",
+  "city": "",
+  "province": "National",
+  "website": "https://www.csaf.ca/",
+  "source_url": "https://www.csaf.ca/rankings",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "ScotDance Canada",
+  "type": "highland dance association",
+  "city": "",
+  "province": "National",
+  "website": "https://scotdance.ca/",
+  "source_url": "https://scotdance.ca/sdc-affiliates/",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ },
+ {
+  "name": "Scots of Canada (Clans and Scottish Societies of Canada)",
+  "type": "umbrella organization",
+  "city": "",
+  "province": "National",
+  "website": "https://www.scotscanada.ca/en/",
+  "source_url": "https://www.scotscanada.ca/en/name-search/member-list",
+  "offers_lessons": "n",
+  "verified": "2026-10-17"
+ }
+]

@@ -418,5 +418,83 @@
   "source_url": "https://celtic-colours.com/about/",
   "source_kind": "official",
   "notes": ""
+ },
+ {
+  "name": "Burns Club of Calgary 51st Annual Burns Supper",
+  "start_date": "2027-01-22",
+  "end_date": "2027-01-22",
+  "city": "Calgary",
+  "province_or_region": "AB",
+  "country": "Canada",
+  "type": "Burns Supper",
+  "source_url": "https://www.calgaryburnsclub.com/upcoming-events.html",
+  "source_kind": "official",
+  "notes": "Hotel Arts",
+  "added_date": "2026-10-17"
+ },
+ {
+  "name": "Burns Night at Cornerstone Music Cafe",
+  "start_date": "2027-01-23",
+  "end_date": "2027-01-23",
+  "city": "Calgary",
+  "province_or_region": "AB",
+  "country": "Canada",
+  "type": "Burns Supper",
+  "source_url": "https://www.eventbrite.ca/e/burns-night-tickets-1981961289570",
+  "source_kind": "official",
+  "notes": "",
+  "added_date": "2026-10-17"
+ },
+ {
+  "name": "A Celebration of Robbie Burns with Blackthorn",
+  "start_date": "2027-01-16",
+  "end_date": "2027-01-16",
+  "city": "Coquitlam",
+  "province_or_region": "BC",
+  "country": "Canada",
+  "type": "Burns Supper",
+  "source_url": "https://www.eventbrite.ca/e/a-celebration-of-robbie-burns-with-blackthorn-tickets-1984414108016",
+  "source_kind": "official",
+  "notes": "",
+  "added_date": "2026-10-17"
+ },
+ {
+  "name": "St. Andrew's Society of Toronto Burns Dinner",
+  "start_date": "2027-01-22",
+  "end_date": "2027-01-22",
+  "city": "Toronto",
+  "province_or_region": "ON",
+  "country": "Canada",
+  "type": "Burns Supper",
+  "source_url": "https://standrewstoronto.ca/sast_event/rabbie-burns-dinner/",
+  "source_kind": "official",
+  "notes": "",
+  "added_date": "2026-10-17"
+ },
+ {
+  "name": "Robert Burns Dinner, Barrie Legion",
+  "start_date": "2027-01-23",
+  "end_date": "2027-01-23",
+  "city": "Barrie",
+  "province_or_region": "ON",
+  "country": "Canada",
+  "type": "Burns Supper",
+  "source_url": "https://www.barriepipesanddrums.com/new-events/2027/1/23/robert-burns-dinner",
+  "source_kind": "official",
+  "notes": "",
+  "added_date": "2026-10-17"
+ },
+ {
+  "name": "Burns Supper at Tea On West",
+  "start_date": "2027-01-24",
+  "end_date": "2027-01-24",
+  "city": "Hamilton",
+  "province_or_region": "ON",
+  "country": "Canada",
+  "type": "Burns Supper",
+  "source_url": "https://tableagent.com/hamilton-ontario/tea-on-3/event/289214/burns-supper/",
+  "source_kind": "official",
+  "notes": "",
+  "added_date": "2026-10-17"
  }
 ]
