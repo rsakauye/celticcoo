@@ -1,0 +1,70 @@
+---
+import Base from '../../layouts/Base.astro';
+import { u } from '../../lib/site.js';
+const ideas = [
+  ['🥃', 'Burns suppers & ceilidhs', 'The classic January fundraiser. Many Legions and bands run a Burns dinner with a silent auction, and a ceilidh works any time of year.'],
+  ['🎩', "St Andrew's balls & charity dinners", 'A formal night in late November, often with a pipe band, dancers and a guest speaker.'],
+  ['🔨', 'Silent auctions', 'Ask local shops and members for donated items like a tartan throw, a whisky tasting or lessons. They pair well with any dinner.'],
+  ['🎟️', 'Raffles & 50/50 draws', 'Popular, but they need a provincial licence first (see the rules below), and you should print the licence number on every ticket.'],
+  ['♻️', 'Bottle drives, tag days & busking', 'Low cost and good for visibility. Check your city or mall rules before you busk or tag.'],
+  ['🎶', 'Paid gigs', 'Weddings, funerals, parades, Robbie Burns nights and corporate events. Publish a simple rate card.'],
+  ['💻', 'Crowdfunding', 'Bands often use it for trips to the Worlds, new drums or a recording. Set a clear goal and deadline, and keep kids\' names and faces off the page.'],
+  ['🎰', 'Casinos & bingos (Alberta)', 'Eligible non-profits can volunteer at a casino or bingo through AGLC. Groups that mainly serve members\' hobbies usually don\'t qualify.'],
+];
+const resources = [
+  { name: 'AGLC raffle licences ($20,000 and under)', url: 'https://aglc.ca/gaming/charitable-gaming-licensing/raffle-licences/raffle-20000-and-less', tag: 'Alberta', note: 'Any paid chance to win needs a licence. There\'s no fee for the small tier, but your group must be found eligible first.' },
+  { name: 'AGLC raffle FAQ', url: 'https://aglc.ca/gaming/licences/raffle-faq', tag: 'Alberta', note: 'Includes the larger (over $20,000) raffle rules and online sales.' },
+  { name: 'AGLC charitable gaming eligibility (casinos & bingo)', url: 'https://aglc.ca/gaming/charitablegaming/eligibility-charitable-gaming', tag: 'Alberta', note: 'You need real community programs, such as youth instruction or public performances.' },
+  { name: 'Community Initiatives Program (CIP) Project grant', url: 'https://www.alberta.ca/cip-project-grant', tag: 'Alberta grant', note: 'For registered Alberta non-profits with at least one year of operation.' },
+  { name: 'Community Facility Enhancement Program (CFEP)', url: 'https://www.alberta.ca/community-facility-enhancement-program-small', tag: 'Alberta grant', note: 'For facilities and equipment. Small needs one year of operation, Large needs two.' },
+  { name: 'Alberta Foundation for the Arts: voluntary arts organizations operating grant', url: 'https://affta.ab.ca/funding/find-funding/voluntary-based-arts-organizations-operating-funding', tag: 'Alberta grant', note: 'For volunteer-run arts groups. Next deadline: Dec 1, 2026.' },
+  { name: 'Canadian Heritage: Local Festivals (Building Communities through Arts and Heritage)', url: 'https://www.canada.ca/en/canadian-heritage/services/funding/building-communities/festivals.html', tag: 'Federal grant', note: 'For recurring local festivals, such as a Highland Games or Celtic festival. Deadlines have been Jan 31, Apr 30 and Oct 15.' },
+  { name: 'Scots of Canada Member Program Fund', url: 'https://www.scotscanada.ca/en/soc-resources/member-program-fund', tag: 'National', note: 'Matches 50%, up to $250 per event, for member groups\' not-for-profit events. Apply at least 7 days ahead.' },
+];
+---
+<Base title="Fundraising toolkit for pipe bands, dance schools & Celtic societies" description="Fundraising ideas, Alberta and national grants, raffle licensing rules and a 'Support a band' board for Celtic groups in Canada.">
+  <h1>Fundraising toolkit</h1>
+  <p>Bands, dance schools and societies run on volunteers and bake sales. Here are proven ideas, grants worth applying for, and the rules to know before you sell a single raffle ticket.</p>
+  <p class="card note">ℹ️ <b>General information, not legal or tax advice.</b> Rules change and differ by province. Check with the regulator or funder, or ask a lawyer or accountant, before you rely on anything here.</p>
+
+  <h2>Ideas that work</h2>
+  <div class="grid">{ideas.map(([e, t, d]) => <div class="card idea"><h3>{e} {t}</h3><p>{d}</p></div>)}</div>
+
+  <h2 id="resources">Grants, licences &amp; resources</h2>
+  <p class="muted">Dates are from our Oct 17, 2026 research. <b>Always confirm deadlines and eligibility on the funder's page</b>, since they change every year.</p>
+  <div class="grid">
+    {resources.map((r) => (
+      <article class="card res">
+        <span class="pill green">{r.tag}</span>
+        <h3><a href={r.url} rel="noopener" target="_blank">{r.name} ↗</a></h3>
+        <p>{r.note}</p>
+      </article>
+    ))}
+  </div>
+  <p class="muted">Outside Alberta, raffles and gaming are licensed by each province, for example BC's Gaming Policy and Enforcement Branch, the AGCO in Ontario, or SLGA in Saskatchewan. Start with your province's regulator.</p>
+
+  <h2 id="support">Support a band</h2>
+  <p>Want to help a group get to the Worlds, buy new drums or put on a festival? This board links straight to each group's <b>own</b> donation, ticket or crowdfunding page. <b>The Celtic Coo never handles money</b>. You give directly to the group.</p>
+  <div class="card empty">
+    <p style="margin:0 0 .6rem">No fundraisers are listed yet. Be the first.</p>
+    <a class="btn" href={u('submit/')}>Submit your group's fundraiser</a>
+    <p class="muted" style="margin:.6rem 0 0">Send us: the group's name, the cause (e.g. "Worlds 2028 travel"), a link to your own donate or ticket page, the deadline, and your raffle licence number if there is one. You must be authorized by the group to list it. Listings are free.</p>
+  </div>
+
+  <h2 id="cautions">Before you start</h2>
+  <ul class="cautions">
+    <li><b>Tax receipts:</b> only CRA-registered charities and other qualified donees can issue donation receipts. Most bands and dance schools are non-profits, not charities, so tickets and sponsorships usually aren't tax-deductible. Don't suggest that they are.</li>
+    <li><b>Raffles need a licence.</b> In Alberta that's from AGLC, and other provinces have their own rules. Online and out-of-province sales have extra rules. We only list raffles that show a licence number.</li>
+    <li><b>Protect minors' privacy.</b> Don't post children's names, photos or travel details on fundraising pages without parents' consent. Group photos and "our youth band" work just as well.</li>
+    <li><b>Label sponsored posts.</b> If a business pays for a mention, say so ("Sponsored by…"). We label any paid or featured listing too.</li>
+    <li><b>Email rules:</b> newsletters that promote a fundraiser fall under Canada's anti-spam law (CASL). Only email people who opted in, and include an unsubscribe link and a mailing address.</li>
+  </ul>
+  <p class="muted">Hosting a Burns supper fundraiser? List it on our <a href={u('burns-night/')}>Burns Night 2027</a> page.</p>
+</Base>
+<style>
+  .note { background:#eef5f0; border-color:#cfe3d6; margin:1rem 0; }
+  .idea h3, .res h3 { margin:.2rem 0 .35rem; font-size:1.06rem; } .idea p, .res p { margin:0; font-size:.94rem; }
+  .res h3 a { color:var(--green); }
+  .empty { background:#fff4e8; border-color:#f1cfae; }
+  .cautions li { margin:.45rem 0; }
+</style>

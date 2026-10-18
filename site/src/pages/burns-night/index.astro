@@ -1,0 +1,88 @@
+---
+import Base from '../../layouts/Base.astro';
+import { burns, counts } from '../../lib/data.js';
+import { u } from '../../lib/site.js';
+// Public venue lines only (research notes stay private).
+const VENUE = {
+  'burns-club-of-calgary-calgary': 'Hotel Arts',
+  'st-andrew-s-society-of-toronto-toronto': 'University Club of Toronto · tickets usually go on sale in November and sell out',
+  'royal-canadian-legion-410-st-vincent-st-barrie-barrie-pipes-and-drums-barrie': 'Barrie Legion, 410 St. Vincent St · with Barrie Pipes & Drums',
+  'place-des-arts-coquitlam': 'Place des Arts · concert with haggis at intermission',
+  'scottish-cultural-centre-vancouver-scottish-societies-vancouver': 'Scottish Cultural Centre, 8886 Hudson St',
+  'community-gathering-allan-gardens-toronto': 'Robert Burns statue, Allan Gardens · free, outdoors',
+  'flagstaff-scottish-club-killam': 'Killam Community Hall',
+};
+const dated = burns.filter((b) => b.dated);
+const tba = burns.filter((b) => !b.dated);
+const link = (b) => b.ticket_info_url || b.source_url;
+---
+<Base title="Burns Night 2027: Burns suppers in Canada" description="What happens at a Burns Supper, and where to find one in Calgary, Alberta and across Canada for Burns Night 2027 (January 25).">
+  <div class="intro">
+    <div>
+      <p class="kicker">Monday, January 25, 2027 · Robert Burns' 268th birthday</p>
+      <h1>Burns Night 2027</h1>
+      <p class="lede">Every January, Scots and friends of Scotland around the world raise a glass to the poet Robert Burns (1759–1796) with a Burns Supper. Most suppers happen on the nearest weekend, so look from mid-January to early February.</p>
+    </div>
+    <img src={u('coo.svg')} alt="Ceilidh the Coo" width="140" height="140" />
+  </div>
+
+  <h2>What happens at a Burns Supper?</h2>
+  <div class="grid steps">
+    <div class="card"><h3>🙏 The Selkirk Grace</h3><p>A short four-line grace in Scots, often credited to Burns, opens the meal: some have meat and can't eat, some can eat but lack it, and we're thankful to have both.</p></div>
+    <div class="card"><h3>🥁 Piping in the haggis</h3><p>Everyone stands as a piper leads the haggis to the top table. It's a savoury pudding of oatmeal, spices and lamb, and vegetarian versions are common now.</p></div>
+    <div class="card"><h3>🗡️ The Address to a Haggis</h3><p>Someone performs Burns' poem to the haggis with plenty of drama, slicing it open at the line "an' cut you up wi' ready slight." Then there's a toast, usually with whisky.</p></div>
+    <div class="card"><h3>🍽️ Neeps, tatties and toasts</h3><p>Dinner comes with neeps and tatties (turnip and potato). Then come speeches: the Immortal Memory of Burns, a cheeky Toast to the Lassies, and the lassies' Reply.</p></div>
+    <div class="card"><h3>🤝 Auld Lang Syne</h3><p>The night ends with everyone in a circle, arms crossed and hands joined, singing Burns' Auld Lang Syne. Many suppers carry on with a ceilidh dance.</p></div>
+  </div>
+  <p class="muted">First time? Wear what you'd wear to a nice dinner. A kilt or a tartan scarf, tie or sash is welcome but never required. See <a href={u('what-to-wear/')}>what to wear</a>.</p>
+
+  <h2 id="suppers">Burns suppers in Canada, 2027</h2>
+  <p><b>{counts.burnsConfirmed}</b> confirmed by the host, venue or performers so far, plus {counts.burnsUnconfirmed} listed elsewhere and {counts.burnsTba} regulars who haven't announced a date yet. Hosts usually announce from November to December, and we'll add them as they do.</p>
+  <div class="grid">
+    {dated.map((b) => (
+      <article class="card ev burns" id={b.id} data-end={b.date}>
+        <div class="ev-date">{b.when}</div>
+        {b.confirmed ? <span class="pill green">✓ Confirmed by host</span> : <span class="pill tba">Unconfirmed, check with host</span>}
+        <h3>{b.name.replace(/^51st/, "Burns Club of Calgary's 51st")}</h3>
+        <div class="muted">{b.host} · {b.city}, {b.regionLabel}</div>
+        {VENUE[b.id] && <p style="margin:.35rem 0 0;font-size:.93rem">{VENUE[b.id]}</p>}
+        <p style="margin:.5rem 0 0;font-size:.92rem"><a href={link(b)} rel="noopener" target="_blank">{b.confirmed ? 'Details & tickets' : 'Where we saw it'} ↗</a></p>
+      </article>
+    ))}
+  </div>
+
+  <h2 id="tba">Usually held, date to come</h2>
+  <p class="muted">These hosts hold a Burns night most years. It's usually late January, so watch their page.</p>
+  <div class="grid">
+    {tba.map((b) => (
+      <article class="card" id={b.id}>
+        <span class="pill tba">Usually late January, watch their page</span>
+        <h3 style="margin:.3rem 0;font-size:1.05rem">{b.host}</h3>
+        <div class="muted">{b.city}, {b.regionLabel}</div>
+        <p style="margin:.45rem 0 0;font-size:.92rem"><a href={link(b)} rel="noopener" target="_blank">Host's page ↗</a></p>
+      </article>
+    ))}
+  </div>
+
+  <aside class="card cta">
+    <b>🥃 Hosting a Burns Night?</b> Listing is free for clubs, Legions, pubs and restaurants. <a class="btn" href={u('submit/')}>List your Burns Night</a>
+    <p class="muted" style="margin:.5rem 0 0">Raising money with it? See the <a href={u('fundraising/')}>fundraising toolkit</a>, including raffle rules.</p>
+  </aside>
+  <p class="muted">Confirmed suppers are also in our <a href={u('events/?type=Burns+Night')}>events calendar</a> and the <a href={u('events.ics')}>calendar feed</a>. Dates change, so always check with the host.</p>
+  <script is:inline>
+    (function () { var t = new Date(); var d = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+      document.querySelectorAll('.burns[data-end]').forEach(function (el) { if (el.dataset.end < d) el.hidden = true; }); })();
+  </script>
+</Base>
+<style>
+  .intro { display:flex; gap:1.5rem; align-items:center; justify-content:space-between; flex-wrap:wrap-reverse; }
+  .intro > div { flex:1; min-width:280px; max-width:720px; }
+  .kicker { color:var(--ginger); font-weight:600; margin:0; font-style:italic; }
+  .lede { font-size:1.1rem; color:#4a3a2e; }
+  .steps h3 { margin:.1rem 0 .4rem; font-size:1.08rem; } .steps p { margin:0; font-size:.95rem; }
+  .burns { border-top:5px solid var(--ginger); }
+  .burns h3 { margin:.35rem 0 .2rem; font-size:1.1rem; }
+  .ev-date { font-weight:700; color:var(--ginger); font-size:.95rem; }
+  .cta { margin-top:2rem; background:#fff4e8; border-color:#f1cfae; }
+  .cta .btn { margin-left:.5rem; }
+</style>

@@ -1,0 +1,80 @@
+---
+import Base from '../../layouts/Base.astro';
+import { champions } from '../../lib/data.js';
+import { getNews } from '../../lib/news.js';
+import { u } from '../../lib/site.js';
+const { items: news, feeds } = await getNews(4);
+// Link-only cards. We never copy results tables, PDFs or app data; follow the links to the official pages.
+const assoc = [
+  { abbr: 'ASPD', name: 'Alberta Society of Pipers & Drummers', area: 'Alberta', kind: 'Pipes & drums', results: 'https://www.aspd.ca/highland-games-events', standings: 'https://www.aspd.ca/aggregate-and-past-results', standingsLabel: 'Provincial aggregate winners', note: 'Results are posted on each games page.' },
+  { abbr: 'BCPA', name: "British Columbia Pipers' Association", area: 'BC & Pacific Northwest', kind: 'Pipes & drums', results: 'https://bcpipers.org/results/', standings: 'https://bcpipers.org/results/grand-aggregate-winners/', standingsLabel: 'Grand aggregate winners' },
+  { abbr: 'PPBSO', name: 'Pipers & Pipe Band Society of Ontario (Pipe Bands Ontario)', area: 'Ontario', kind: 'Pipes & drums', results: 'https://www.pipebandsontario.org/blog', standings: 'https://www.pipebandsontario.org/post/2026-ppbso-champion-supreme-winners', standingsLabel: '2026 Champion Supreme' },
+  { abbr: 'ACPBA', name: 'Atlantic Canada Pipe Band Association', area: 'NS, NB, PE & NL', kind: 'Pipes & drums', results: 'https://acpba.org/keydates-2', standings: 'https://acpba.org/announcements', standingsLabel: 'Champion Supreme lists' },
+  { abbr: 'PPBAM', name: 'Prairie Pipe Band Association of Manitoba', area: 'Manitoba', kind: 'Pipes & drums', results: 'https://www.ppbam.org/', standings: '', note: 'Results are usually reported through the association and pipes|drums.' },
+  { abbr: 'SPBA', name: 'Saskatchewan Pipe Band Association', area: 'Saskatchewan', kind: 'Pipes & drums', results: 'https://www.saskpipebands.org/', standings: '', note: 'No season standings page yet.' },
+  { abbr: 'RSPBA', name: 'Royal Scottish Pipe Band Association', area: 'Scotland & the Worlds', kind: 'Pipes & drums', results: 'https://rspba.org/results/pipe-band-results/', standings: 'https://rspba.org/band-champion-of-champions/', standingsLabel: 'Champion of Champions' },
+  { abbr: 'EUSPBA', name: 'Eastern United States Pipe Band Association', area: 'Eastern USA', kind: 'Pipes & drums', results: 'https://www.euspba.org/results', standings: 'https://www.euspba.org/results', standingsLabel: 'Results Explorer (Champion Supreme)' },
+  { abbr: 'CSAF', name: 'Canadian Scottish Athletic Federation', area: 'Canada', kind: 'Heavy events', results: 'https://www.csaf.ca/games', standings: 'https://www.csaf.ca/rankings', standingsLabel: 'Current rankings', extra: ['Canadian records', 'https://www.csaf.ca/records'] },
+  { abbr: 'NASGA', name: 'North American Scottish Games Athletes', area: 'North America', kind: 'Heavy events', results: 'http://www.nasgaweb.com/dbase/main.asp', standings: 'http://www.nasgaweb.com/dbase/main.asp', standingsLabel: 'Athlete database & rankings', note: 'Results are entered by the community.' },
+  { abbr: 'ScotDance Canada', name: 'ScotDance Canada', area: 'Canada', kind: 'Highland dance', results: 'https://scotdance.app/', standings: 'https://scotdance.ca/sdccs/', standingsLabel: 'Canadian Championships (SDCCS)', note: 'Most dancers are children, so we only link to official results.' },
+];
+const fmt = (d) => { const t = new Date(d); return isNaN(t) ? '' : t.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', timeZone: 'America/Edmonton' }); };
+---
+<Base title="Pipe band, heavy events & Highland dance results" description="Links to the latest results and season standings from every major pipe band, heavy events and Highland dance association, plus season band champions with sources.">
+  <h1>Results &amp; standings</h1>
+  <p>Where to find the latest contest results and season standings, straight from the associations that run them. We link to their official pages rather than copying them, so you always see their latest, correct version.</p>
+
+  <h2>Associations</h2>
+  <div class="grid">
+    {assoc.map((a) => (
+      <article class="card assoc" id={a.abbr.toLowerCase().replace(/\s+/g, '-')}>
+        <span class="pill green">{a.kind}</span><span class="pill">{a.area}</span>
+        <h3>{a.abbr}</h3>
+        <div class="muted">{a.name}</div>
+        <p class="links">
+          <a href={a.results} rel="noopener" target="_blank">Latest results ↗</a>
+          {a.standings && <a href={a.standings} rel="noopener" target="_blank">{a.standingsLabel || 'Season standings'} ↗</a>}
+          {a.extra && <a href={a.extra[1]} rel="noopener" target="_blank">{a.extra[0]} ↗</a>}
+        </p>
+        {a.note && <p class="muted" style="margin:0">{a.note}</p>}
+      </article>
+    ))}
+  </div>
+  <p class="muted">Quebec bands: see the <a href="https://www.montrealhighlandgames.com/corps-de-cornemuses.html" rel="noopener" target="_blank">Montreal Highland Games pipe band page ↗</a>.</p>
+
+  <h2 id="champions">Season champions: bands</h2>
+  <p>Band-level season winners by grade, typed in from each association's published list. Bands only: we don't list individual soloists here, since many are kids.</p>
+  {champions.length ? (
+    <div class="tables">
+      {champions.map((c) => (
+        <div class="card">
+          <h3 style="margin:0 0 .4rem">{c.association} {c.season} · {c.title}</h3>
+          <table>
+            <thead><tr><th scope="col">Grade</th><th scope="col">Band</th></tr></thead>
+            <tbody>{c.winners.map(([g, b]) => <tr><td>{g}</td><td>{b}</td></tr>)}</tbody>
+          </table>
+          <p class="muted" style="margin:.5rem 0 0">Source: <a href={c.source_url} rel="noopener" target="_blank">{c.association} ↗</a> · checked {c.checked}</p>
+        </div>
+      ))}
+    </div>
+  ) : <p class="card">Coming soon. We're checking each association's published list first.</p>}
+  <p class="muted">Alberta (ASPD) winners are on <a href="https://www.aspd.ca/aggregate-and-past-results" rel="noopener" target="_blank">ASPD's aggregate page ↗</a>. We'll add them here once we have ASPD's OK. Spot a mistake? <a href={u('submit/')}>Send a correction</a>.</p>
+
+  <h2 id="news">Latest from the piping press</h2>
+  {news.length ? (
+    <ul class="news">
+      {news.map((n) => <li><a href={n.link} rel="noopener" target="_blank">{n.title}</a> <span class="muted">· {n.source}{fmt(n.date) && `, ${fmt(n.date)}`}</span></li>)}
+    </ul>
+  ) : <p class="muted">Headlines are unavailable right now.</p>}
+  <p class="muted">Headlines and links from the publishers' public RSS feeds, updated daily: {feeds.map((f, i) => <>{i > 0 && ' · '}<a href={f.home} rel="noopener" target="_blank">{f.source} ↗</a></>)}. Articles belong to their publishers.</p>
+</Base>
+<style>
+  .assoc { border-top:5px solid var(--navy); }
+  .assoc h3 { margin:.35rem 0 .1rem; font-size:1.2rem; }
+  .assoc .links { display:flex; flex-direction:column; gap:.2rem; margin:.6rem 0 .4rem; font-size:.95rem; }
+  .tables { display:grid; gap:1rem; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); }
+  table { width:100%; border-collapse:collapse; font-size:.95rem; }
+  th, td { text-align:left; padding:.3rem .4rem; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:600; font-size:.85rem; }
+  .news { padding-left:1.1rem; } .news li { margin:.35rem 0; }
+</style>

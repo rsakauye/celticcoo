@@ -1,0 +1,80 @@
+---
+import Base from '../../layouts/Base.astro';
+import { groups, featuredGroup, counts, GROUP_EMOJI } from '../../lib/data.js';
+import { u } from '../../lib/site.js';
+const provs = [...new Set(groups.map((g) => g.province))].map((p) => ({ p, label: groups.find((g) => g.province === p).regionLabel }));
+const kinds = [...new Set(groups.map((g) => g.kind))].sort();
+---
+<Base title="Celtic clubs, pipe bands & lessons in Canada" description="Find a pipe band, Highland dance school, clan society, Gaelic class, Scottish country dance group or Burns club near you, and who offers lessons.">
+  <h1>Clubs &amp; lessons</h1>
+  <p>Pipe bands, Highland and Scottish country dance, clan societies, Gaelic classes, Burns clubs and more: <b>{counts.groups}</b> groups across Canada, <b>{counts.groupsLessons}</b> of them offering lessons. Every website was checked on Oct 17, 2026. Ask the group directly about schedules and fees.</p>
+
+  {featuredGroup && (
+    <aside class="card featured" id={featuredGroup.id}>
+      <span class="pill tba">⭐ Featured in Alberta</span>
+      <h2 style="margin:.3rem 0">{featuredGroup.name}</h2>
+      <p style="margin:.2rem 0">Calgary youth pipe band and living-history program in the 1757 uniform of the 78th Fraser Highlanders. Members learn piping, drumming, music theory, drill, history and Highland dance, and travel every second year to events in places like Inverness, Louisbourg, Quebec City and Montreal. Practices are on Sundays in Calgary, and new members are interviewed in September.</p>
+      <p style="margin:.4rem 0 0"><a href={featuredGroup.website} rel="noopener" target="_blank">Visit the Youth Squad's page ↗</a> · Part of the <a href="https://78fraserscalgary.ca/" rel="noopener" target="_blank">Fort Calgary Garrison ↗</a></p>
+    </aside>
+  )}
+
+  <form class="filters card" onsubmit="return false">
+    <label>Province<br /><select id="g-prov"><option value="">All</option>{provs.map((x) => <option value={x.p}>{x.label}</option>)}</select></label>
+    <label>Type<br /><select id="g-kind"><option value="">All types</option>{kinds.map((k) => <option value={k}>{GROUP_EMOJI[k]} {k}</option>)}</select></label>
+    <label style="align-self:end"><input type="checkbox" id="g-lessons" /> Offers lessons</label>
+    <span style="align-self:end"><button type="button" class="btn ghost small" id="g-clans">🛡️ Clan societies ({counts.clans})</button></span>
+    <div class="muted" id="g-count" style="align-self:end" aria-live="polite"></div>
+  </form>
+
+  <div class="grid" id="g-list">
+    {groups.map((g) => (
+      <article class="card grp" id={g.id} data-prov={g.province} data-kind={g.kind} data-lessons={g.lessons ? 'y' : 'n'}>
+        <span class="pill green">{GROUP_EMOJI[g.kind]} {g.kind}</span>
+        {g.lessons && <span class="pill tba">🎓 Lessons</span>}
+        <h3>{g.name}</h3>
+        <div class="muted">📍 {g.city && g.city !== 'National' ? `${g.city}, ` : ''}{g.regionLabel}</div>
+        {g.type.toLowerCase() !== g.kind.toLowerCase() && <p class="muted" style="margin:.3rem 0 0;font-size:.85rem">{g.type}</p>}
+        <a href={g.website} rel="noopener" target="_blank" style="font-size:.92rem;display:inline-block;margin-top:.4rem">Visit website ↗</a>
+      </article>
+    ))}
+  </div>
+  <p id="g-empty" class="card" hidden>No groups match yet. Know one? <a href={u('submit/')}>Tell us about it</a>.</p>
+
+  <aside class="card" style="margin-top:2rem">
+    <b>Run a band, dance school, society or class?</b> Listings are free. <a href={u('submit/')}>Add or update your group</a>. We list organizations only, never members' or students' names.
+  </aside>
+  <script is:inline>
+    (function () {
+      var $ = function (id) { return document.getElementById(id); };
+      var prov = $('g-prov'), kind = $('g-kind'), les = $('g-lessons');
+      var q = new URLSearchParams(location.search);
+      if (q.get('province')) prov.value = q.get('province');
+      if (q.get('type')) kind.value = q.get('type');
+      if (q.get('lessons')) les.checked = true;
+      function apply() {
+        var n = 0;
+        document.querySelectorAll('.grp').forEach(function (el) {
+          var ok = (!prov.value || el.dataset.prov === prov.value) && (!kind.value || el.dataset.kind === kind.value) && (!les.checked || el.dataset.lessons === 'y');
+          el.hidden = !ok; if (ok) n++;
+        });
+        $('g-count').textContent = n + (n === 1 ? ' group' : ' groups');
+        $('g-empty').hidden = n > 0;
+        var p = new URLSearchParams();
+        if (prov.value) p.set('province', prov.value); if (kind.value) p.set('type', kind.value); if (les.checked) p.set('lessons', '1');
+        history.replaceState(null, '', location.pathname + (p.toString() ? '?' + p : '') + location.hash);
+      }
+      [prov, kind, les].forEach(function (el) { el.addEventListener('change', apply); });
+      $('g-clans').addEventListener('click', function () { kind.value = 'Clan society'; prov.value = ''; les.checked = false; apply(); });
+      apply();
+    })();
+  </script>
+</Base>
+<style>
+  .featured { margin:1.2rem 0; background:#fff4e8; border-color:#f1cfae; border-left:6px solid var(--ginger); }
+  .filters { display:flex; flex-wrap:wrap; gap:.8rem 1.2rem; margin:1rem 0; position:sticky; top:0; z-index:5; box-shadow:0 4px 12px rgba(60,30,10,.06); }
+  .filters label { font-size:.85rem; color:var(--muted); }
+  .filters select { min-width:180px; margin-top:.15rem; }
+  .btn.small { padding:.35rem .7rem; font-size:.9rem; }
+  .grp { border-left:5px solid var(--navy); }
+  .grp h3 { margin:.3rem 0 .25rem; font-size:1.08rem; }
+</style>
