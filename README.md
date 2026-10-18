@@ -2,7 +2,8 @@
 
 A Canada-first hub for Celtic and Gaelic culture: an events calendar (Highland Games, pipe bands,
 Highland dance, Gaelic, festivals), a directory of Celtic shops and makers, and a newsletter.
-Mascot: a friendly Highland coo (original SVG in `site/public/coo.svg`).
+Mascot: **Ceilidh the Coo** (said "Kaylee"), a friendly ginger Highland coo with a bow in Canada's national
+**Maple Leaf tartan** (original SVG in `site/public/coo.svg`; tartan rendered from its threadcount by `scripts/make_tartan.py`).
 
 Same pattern as [UsedGlass](https://github.com/rsakauye/usedglass): an Astro static site built by
 GitHub Actions and deployed to Cloudflare Pages with wrangler.
@@ -14,9 +15,12 @@ GitHub Actions and deployed to Cloudflare Pages with wrangler.
 | `data/events_2027.json` | **Confirmed** events. Each date was checked on the organizer's or association's site. Published, in the ICS and RSS feeds. |
 | `data/events_2027_pending.json` | Expected events without a confirmed date. Shown on /events/ **only as "Date TBA"** (Canada only, no tentative dates) and never in the feeds. |
 | `data/shops_canada.json` | Shops and makers directory. |
+| `data/groups_canada.json` | Clubs, bands, dance schools, clan societies, Gaelic classes (/groups/). Organizations only, never members' names. |
+| `data/burns_2027.json` | Burns Night 2027 suppers (/burns-night/). Host-confirmed rows are also in `events_2027.json` (type "Burns Supper"). |
+| `data/season_champions.json` | Hand-entered band-level season winners by grade, each with its source link (/results/). No soloists. |
 | `data/sources_and_orgs.csv` | Calendars and associations re-checked weekly. |
 | `data/source_state.json` | Last snapshot from the weekly source check (written by the workflow). |
-| `site/` | Astro site: `/`, `/events/`, `/shops/`, `/submit/`, `/about/`, `/newsletter/`, `/events.ics`, `/rss.xml`, 404. |
+| `site/` | Astro site: `/`, `/events/`, `/results/`, `/groups/`, `/burns-night/`, `/shops/`, `/fundraising/`, `/what-to-wear/`, `/tartans/`, `/roots/`, `/submit/`, `/about/`, `/newsletter/`, `/events.ics`, `/rss.xml`, `/sitemap.xml`, 404. `/results/` pulls headline + link only from the pipes\|drums and Piping Press RSS feeds at build time. |
 | `scripts/check_sources.py` | Weekly re-check of source pages (standard library only). |
 | `.github/workflows/deploy.yml` | Build on push, daily at 7am MT, or manual. Deploys to Cloudflare Pages project `celticcoo` only if the secrets exist; otherwise it builds and skips. |
 | `.github/workflows/source-check.yml` | Mondays 8am MT. Opens (or comments on) an issue labelled `source-check` when a source page's dates change, a page disappears, or one of our dates is no longer on its page. |
