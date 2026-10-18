@@ -1,5 +1,5 @@
 // Simple sitemap of the site's pages (no extra dependency).
-const PAGES = ['', 'events/', 'results/', 'groups/', 'burns-night/', 'shops/', 'fundraising/', 'what-to-wear/', 'tartans/', 'roots/', 'submit/', 'about/', 'newsletter/'];
+const PAGES = ['', 'events/', 'results/', 'groups/', 'burns-night/', 'shops/', 'fundraising/', 'what-to-wear/', 'tartans/', 'roots/', 'submit/', 'about/', 'newsletter/', 'privacy/', 'terms/'];
 export function GET(context) {
   const site = new URL(import.meta.env.BASE_URL, context.site).href;
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Edmonton' });
