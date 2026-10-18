@@ -4,7 +4,10 @@ import { u, SITE_NAME } from '../lib/site.js';
 const { title = SITE_NAME, description = 'Highland Games, pipe bands, Highland dance, Gaelic and Celtic festivals across Canada, plus the shops and makers who keep the culture going.' } = Astro.props;
 const fullTitle = title === SITE_NAME ? 'The Celtic Coo: Highland Games & Celtic events in Canada' : `${title} · The Celtic Coo`;
 const path = Astro.url.pathname;
-const nav = [['', 'Home'], ['events/', 'Events'], ['shops/', 'Shops & makers'], ['submit/', 'Add yours'], ['about/', 'About']];
+const nav = [['', 'Home'], ['events/', 'Events'], ['results/', 'Results'], ['groups/', 'Clubs & lessons'], ['burns-night/', 'Burns Night'], ['shops/', 'Shops'], ['fundraising/', 'Fundraising']];
+const navNew = [['what-to-wear/', 'What to wear'], ['tartans/', 'Find your tartan'], ['roots/', 'Trace your roots'], ['about/', 'About Ceilidh']];
+const navEnd = [['submit/', 'Add yours']];
+const tartanBg = `background-image:url(${u('tartan-maple-leaf.svg')})`;
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
 ---
 <!doctype html>
@@ -20,6 +23,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
   <meta property="og:image" content={new URL(u('coo.svg'), Astro.site).href} />
   <meta name="theme-color" content="#1f4d3a" />
   <link rel="icon" href={u('favicon.svg')} type="image/svg+xml" />
+  <link rel="sitemap" type="application/xml" href={u('sitemap.xml')} />
   <link rel="alternate" type="application/rss+xml" title="The Celtic Coo: upcoming events" href={u('rss.xml')} />
   <style is:global>
     :root {
@@ -34,10 +38,8 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
     h2 { font-size:1.5rem; margin:2rem 0 .7rem; }
     .wrap { max-width:1100px; margin:0 auto; padding:.8rem 1.1rem; }
     main.wrap { padding-top:1.4rem; padding-bottom:3rem; }
-    /* tartan band: original CSS pattern */
-    .tartan { height:10px; background:
-      repeating-linear-gradient(90deg, rgba(200,100,42,.85) 0 6px, transparent 6px 22px, rgba(255,255,255,.35) 22px 24px, transparent 24px 40px),
-      repeating-linear-gradient(0deg, rgba(29,53,87,.7) 0 3px, transparent 3px 10px), var(--green); }
+    /* tartan band: Canada's national Maple Leaf tartan, rendered from its threadcount (scripts/make_tartan.py) */
+    .tartan { height:10px; background:var(--green) 0 0 / 68px 68px repeat; }
     header.site { background:var(--green); color:#fff; }
     header.site .wrap { display:flex; flex-wrap:wrap; gap:.6rem 1.4rem; align-items:center; justify-content:space-between; }
     header.site a { color:#fff; text-decoration:none; }
@@ -60,22 +62,31 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
     footer.site a { color:#fff; }
     footer.site .wrap { display:flex; flex-wrap:wrap; gap:1.5rem 3rem; justify-content:space-between; padding-top:1.4rem; padding-bottom:1.6rem; font-size:.92rem; }
     footer.site .muted { color:#c7d8ce; }
+    header.site nav { display:flex; flex-wrap:wrap; align-items:center; }
+    details.more { position:relative; margin-right:1rem; font-size:.97rem; }
+    details.more summary { cursor:pointer; opacity:.85; list-style:none; padding:.2rem 0; }
+    details.more summary::after { content:" ▾"; font-size:.8em; }
+    details.more[open] summary, details.more summary:hover { opacity:1; }
+    details.more > div { position:absolute; z-index:20; top:100%; left:0; background:var(--green); border:1px solid #2f6b52; border-radius:10px; padding:.4rem .8rem; min-width:190px; box-shadow:0 8px 20px rgba(0,0,0,.2); }
+    details.more > div a { display:block; margin:0; padding:.3rem 0; }
     .sr-only { position:absolute; left:-9999px; }
   </style>
 </head>
 <body>
-  <div class="tartan" aria-hidden="true"></div>
+  <div class="tartan" aria-hidden="true" style={tartanBg}></div>
   <header class="site">
     <div class="wrap">
       <a class="brand" href={u('')}><img src={u('coo.svg')} alt="" width="46" height="46" /><span>The Celtic Coo<small>Celtic &amp; Highland life in Canada</small></span></a>
       <nav>
         {nav.map(([p, label]) => <a href={u(p)} aria-current={path === u(p) ? 'page' : undefined}>{label}</a>)}
+        <details class="more"><summary>New here?</summary><div>{navNew.map(([p, label]) => <a href={u(p)} aria-current={path === u(p) ? 'page' : undefined}>{label}</a>)}</div></details>
+        {navEnd.map(([p, label]) => <a href={u(p)} aria-current={path === u(p) ? 'page' : undefined}>{label}</a>)}
       </nav>
     </div>
   </header>
   <main class="wrap"><slot /></main>
   <footer class="site">
-    <div class="tartan" aria-hidden="true"></div>
+    <div class="tartan" aria-hidden="true" style={tartanBg}></div>
     <div class="wrap">
       <div style="max-width:420px">
         <b>The Coo's Letter</b> <span class="muted">· a short weekly email of what's on</span><br />
@@ -83,10 +94,15 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
       </div>
       <div class="muted" style="max-width:460px">
         Dates come from organizers' and associations' websites and can change. Always confirm with the organizer before you travel.<br />
-        <a href={u('events.ics')}>Calendar (ICS)</a> · <a href={u('rss.xml')}>RSS</a> · <a href={u('submit/')}>Add an event or shop</a> · <a href={u('about/')}>About</a><br />
+        <a href={u('events.ics')}>Calendar (ICS)</a> · <a href={u('rss.xml')}>RSS</a> · <a href={u('submit/')}>Add an event or shop</a> · <a href={u('about/')}>About</a> · <a href={u('sitemap.xml')}>Sitemap</a><br />
+        Mascot: Ceilidh the Coo (say "Kaylee"), in Canada's Maple Leaf tartan.<br />
         © {new Date().getFullYear()} The Celtic Coo · CelticCoo.ca
       </div>
     </div>
   </footer>
+  <script is:inline>
+    // Personal banner tartan chosen on /tartans/. Stored only in this browser (localStorage); no accounts, nothing sent anywhere.
+    try { var t = localStorage.getItem('coo-tartan-svg'); if (t) document.querySelectorAll('.tartan').forEach(function (el) { el.style.backgroundImage = 'url("data:image/svg+xml,' + encodeURIComponent(t) + '")'; }); } catch (e) {}
+  </script>
 </body>
 </html>

@@ -21,9 +21,11 @@ const calgary = tba.find((e) => e.city === 'Calgary');
         <div><b>{counts.canadaEvents}</b> confirmed Canadian events</div>
         <div><b>{counts.provinces}</b> provinces</div>
         <div><b>{counts.shops}</b> shops &amp; makers</div>
+        <div><b>{counts.groups}</b> clubs &amp; groups</div>
       </div>
+      <p class="meet">🐮 Meet <b>Ceilidh the Coo</b>, said "Kaylee". She's named after the <i>ceilidh</i>, a Gaelic get-together with music and dancing, and that's what this site is for. <a href={u('about/#ceilidh')}>More about her</a>.</p>
     </div>
-    <img src={u('coo.svg')} alt="The Celtic Coo mascot, a smiling shaggy Highland cow" width="260" height="260" />
+    <img src={u('coo.svg')} alt="Ceilidh the Coo, our smiling ginger Highland coo mascot, wearing a Maple Leaf tartan bow" width="260" height="260" />
   </section>
 
   {calgary && (
@@ -35,6 +37,15 @@ const calgary = tba.find((e) => e.city === 'Calgary');
   <h2>Coming up in Canada</h2>
   <div class="grid">{canada.map((e) => <EventCard e={e} />)}</div>
   <p><a href={u('events/')}>See all {counts.events} confirmed events, filter by province or type →</a></p>
+
+  <h2>Ceilidh's picks</h2>
+  <div class="grid picks">
+    <a class="card" href={u('burns-night/')}><h3>🥃 Burns Night 2027</h3><p>What happens at a Burns Supper, and {counts.burnsConfirmed} confirmed suppers so far, including Calgary's on Jan 22.</p></a>
+    <a class="card" href={u('groups/?lessons=1')}><h3>🎓 Learn something new</h3><p>{counts.groupsLessons} groups offer lessons in pipes, drums, dance and Gaelic.</p></a>
+    <a class="card" href={u('results/')}><h3>🏆 Results &amp; standings</h3><p>Every association's latest results in one place, plus season band champions.</p></a>
+    <a class="card" href={u('what-to-wear/')}><h3>👗 What to wear</h3><p>First Highland Games? Here's what to wear, kilt etiquette, and Alberta weather tips.</p></a>
+  </div>
+  <p class="muted signoff">Mìle taing, and see you at the games! · Ceilidh 🐮</p>
 
   <h2>Worth the trip</h2>
   <div class="grid">{intl.map((e) => <EventCard e={e} />)}</div>
@@ -55,7 +66,7 @@ const calgary = tba.find((e) => e.city === 'Calgary');
     <img src={u('coo.svg')} alt="" width="84" height="84" />
     <div style="flex:1;min-width:260px">
       <h2 style="margin:0 0 .3rem">Get the Coo's Letter</h2>
-      <p style="margin:0 0 .5rem">A short weekly email with what's on near you, new events and a wee bit of Gaelic.</p>
+      <p style="margin:0 0 .5rem">A short weekly email from Ceilidh with what's on near you, new events and a wee bit of Gaelic.</p>
       <NewsletterForm />
     </div>
   </section>
@@ -74,5 +85,10 @@ const calgary = tba.find((e) => e.city === 'Calgary');
   .explain { grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); }
   .explain h3 { margin:.1rem 0 .4rem; font-size:1.1rem; }
   .explain p { margin:0; font-size:.95rem; }
+  .meet { margin:.9rem 0 0; font-size:.98rem; color:#4a3a2e; }
+  .picks a { text-decoration:none; color:inherit; border-top:5px solid var(--green2); }
+  .picks a:hover { border-color:var(--ginger); }
+  .picks h3 { margin:.1rem 0 .35rem; font-size:1.08rem; } .picks p { margin:0; font-size:.94rem; }
+  .signoff { font-style:italic; margin-top:.6rem; }
   .nl { display:flex; gap:1.2rem; align-items:center; flex-wrap:wrap; margin-top:2.4rem; background:#f2ead8; }
 </style>
