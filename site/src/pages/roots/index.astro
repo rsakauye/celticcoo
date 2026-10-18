@@ -1,0 +1,55 @@
+---
+import Base from '../../layouts/Base.astro';
+import { u } from '../../lib/site.js';
+// Every link checked Oct 17-18, 2026. No affiliate links yet; if we add any, they'll be labelled "affiliate link".
+const sections = [
+  { h: '🇨🇦 Start in Canada', items: [
+    ['Library and Archives Canada: Genealogy and family history', 'https://library-archives.canada.ca/eng/collection/research-help/genealogy-family-history', 'Free census, immigration, passenger list, military and land records. The best first stop for any Canadian family.'],
+    ['Alberta Genealogical Society', 'https://www.abgenealogy.ca/', 'Ten branches across Alberta, including Calgary, plus the Alberta Records Name Index, homestead indexes and beginner courses.'],
+    ['Ontario Ancestors: Scottish Special Interest Group', 'https://scottishsig.ogs.on.ca/', "The Ontario Genealogical Society's group for Scottish research, with talks, resources and a members' area."],
+    ['Nova Scotia Archives: Genealogy Guide', 'https://archives.novascotia.ca/genealogy-guide/', "Vital records, early censuses and more for the province with Canada's deepest Scottish roots."],
+    ['HAGGIS: Hector Archiving Gateway (Pictou, NS)', 'https://haggis.mccullochcentre.ca/', 'Records of the families who came on the ship Hector in 1773 and settled Pictou County and northern Nova Scotia.'],
+  ]},
+  { h: '🏴 Scotland', items: [
+    ["ScotlandsPeople", 'https://www.scotlandspeople.gov.uk/', "Scotland's official records: births, marriages, deaths, censuses, wills and old parish registers. Searching is free, and viewing images costs credits."],
+    ['The Scottish Genealogy Society', 'https://www.scotsgenealogy.com/', "Edinburgh's volunteer-run family history centre, with a library, beginner classes and talks, many on Zoom."],
+  ]},
+  { h: '☘️ Ireland & Ulster', items: [
+    ['Ulster Historical Foundation', 'https://ulsterhistoricalfoundation.com/', 'A non-profit with more than 2 million searchable Ulster records and research help. Good for Scots-Irish families.'],
+    ['Irish Genealogical Research Society', 'https://www.igrsoc.org/', 'A learned society, founded in 1936, with a reference library and journal. Best once you have traced your family back to about 1850.'],
+  ]},
+  { h: '🛡️ Clan societies', items: [
+    ['Clan societies in our directory', '__groups', 'Many clan societies have a genealogist or a DNA project, and they will often help members trace a surname.'],
+    ['Scots of Canada member list', 'https://www.scotscanada.ca/en/name-search/member-list', 'Clan, family and Scottish societies across Canada.'],
+    ['COSCA: Council of Scottish Clans & Associations', 'https://www.cosca.scot/members', 'Clan and family associations across North America.'],
+  ]},
+];
+---
+<Base title="Trace your Scottish & Irish roots" description="Where to start tracing Scottish, Irish and Ulster ancestors from Canada: archives, genealogical societies and clan societies.">
+  <h1>Trace your roots</h1>
+  <p>Wondering where your family came from? Start with what you know: names, dates and places from relatives, old letters and family Bibles. Then work backwards one generation at a time. These archives and societies can help, and many have free records and volunteers who love a good mystery.</p>
+  {sections.map((s) => (
+    <section>
+      <h2>{s.h}</h2>
+      <div class="grid">
+        {s.items.map(([name, url, note]) => (
+          <article class="card src">
+            <h3><a href={url === '__groups' ? u('groups/?type=Clan+society') : url} rel={url === '__groups' ? undefined : 'noopener'} target={url === '__groups' ? undefined : '_blank'}>{name}{url !== '__groups' && ' ↗'}</a></h3>
+            <p>{note}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  ))}
+  <h2>Tips</h2>
+  <ul>
+    <li>Scottish surnames are spelled many ways (MacDonald, McDonald, M'Donald), so search all of them.</li>
+    <li>Many Scots came to Canada through Ulster, the US or England. Follow the records, not the family legend.</li>
+    <li>A surname doesn't always mean a clan link. Clan societies can tell you which names they count as septs (associated families).</li>
+    <li>Found your clan? <a href={u('tartans/')}>Find your tartan</a>.</li>
+  </ul>
+  <p class="muted">We don't make money from these links. If we ever add paid genealogy services like Ancestry or MyHeritage, they'll be clearly labelled as affiliate links.</p>
+</Base>
+<style>
+  .src h3 { margin:.1rem 0 .35rem; font-size:1.05rem; } .src h3 a { color:var(--green); } .src p { margin:0; font-size:.94rem; }
+</style>

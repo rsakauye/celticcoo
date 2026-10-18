@@ -1,0 +1,53 @@
+---
+import Base from '../../layouts/Base.astro';
+import { shops } from '../../lib/data.js';
+import { u } from '../../lib/site.js';
+const hire = shops.filter((s) => /hire|rental/i.test(s.category));
+---
+<Base title="What to wear to a Highland Games, Burns Night or ceilidh" description="A friendly first-timer's guide: what to wear to a Highland Games, kilt basics and etiquette, Burns Night and ceilidh outfits, and Alberta weather tips.">
+  <div style="max-width:800px">
+    <h1>What to wear</h1>
+    <p class="lede">Short answer: whatever you're comfortable in. Nobody checks your roots at the gate. Here's a first-timer's guide, from Ceilidh. 🐮</p>
+
+    <h2>🏟️ At a Highland Games (as a spectator)</h2>
+    <ul>
+      <li><b>Casual is perfect.</b> Jeans or shorts, a t-shirt and a layer. Most visitors don't wear a kilt.</li>
+      <li><b>Comfy shoes.</b> You'll walk on grass, gravel and the odd muddy patch between the heavy events, the dance stage and the pipe band field.</li>
+      <li><b>A wee touch of tartan</b>, if you like: a scarf, cap, tie or socks. It's a fun nod, and nobody expects it.</li>
+      <li><b>Bring:</b> a hat, sunscreen, water, a folding chair or blanket, cash for the vendor tents, and ear plugs for little ones near massed bands.</li>
+    </ul>
+
+    <h2 id="kilts">👗 Kilt basics &amp; etiquette</h2>
+    <ul>
+      <li><b>Do I need a clan tartan?</b> No. Anyone can wear a <b>district or national tartan</b>. In Canada, the <a href={u('about/#tartan')}>Maple Leaf tartan</a> is for everyone, and many provinces and cities have their own. "Universal" tartans like Black Watch (also called Government) are worn by all sorts of people too.</li>
+      <li><b>Wearing a clan tartan you're not connected to?</b> Generally fine, as long as you wear it respectfully. Clan tartans are traditionally worn by family members, and most clans welcome friends wearing them. Just don't claim to be a member. A few tartans are restricted (royal or personal ones). If in doubt, ask the clan society. <a href={u('tartans/')}>Find your family tartan</a>.</li>
+      <li><b>The outfit:</b> a kilt sits at the natural waist (higher than trousers) and the hem lands mid-knee. Add kilt hose (socks) with flashes, a sporran in front, and a <i>sgian-dubh</i>, a small knife tucked in the right sock. Day wear is a shirt or sweater, and evening wear adds a Prince Charlie or Argyll jacket.</li>
+      <li><b>Women's Highland dress:</b> a tartan sash over the shoulder, a kilted skirt or tartan dress, or an <i>arisaid</i> (shawl). Any of these looks great.</li>
+      <li><b>The famous question:</b> what's worn under a kilt is entirely your own business. 😉</li>
+    </ul>
+
+    <h2 id="burns">🥃 Burns Night &amp; ceilidhs</h2>
+    <ul>
+      <li><b>Burns Supper:</b> dress like you would for a nice dinner out. Some come in full Highland evening dress, others wear a jacket and tie or a dress. Add a tartan tie, sash or scarf if you have one. See our <a href={u('burns-night/')}>Burns Night 2027 guide</a>.</li>
+      <li><b>Ceilidh dance:</b> wear something you can move and spin in, plus flat shoes with some grip. It gets warm, so pick layers you can shed.</li>
+      <li><b>St Andrew's balls</b> are usually the dressiest night of the year: formal wear or evening Highland dress.</li>
+    </ul>
+
+    <h2 id="alberta">🌦️ Alberta weather tips</h2>
+    <ul>
+      <li><b>Pack layers.</b> A summer games day in the foothills can go from a chilly morning to 28°C and back again by late afternoon.</li>
+      <li><b>The sun is strong at altitude.</b> Calgary and Canmore sit above 1,000 m, so wear a hat and sunscreen even when it's cloudy.</li>
+      <li><b>Bring a rain shell.</b> Afternoon thunderstorms roll in fast. Most games carry on, but pipe band contests can pause for lightning.</li>
+      <li><b>Wool kilts are warm.</b> They're grand on a cool day and toasty in July. A lighter "casual" kilt or poly-viscose blend helps in the heat.</li>
+      <li><b>Burns Night in January:</b> it can be −30°C. Wear warm boots and your parka over the kilt, then change your shoes inside. Kilt hose won't keep your knees warm!</li>
+    </ul>
+
+    <h2 id="buy">🛍️ Where to rent or buy</h2>
+    <p>Renting is a great way to try a kilt for a wedding or Burns Night before you buy. These shops in our directory list kilt hire or rentals:</p>
+    <ul>{hire.map((s) => <li><a href={s.url} rel="noopener" target="_blank">{s.name} ↗</a> <span class="muted">· {s.city}, {s.regionLabel}</span></li>)}</ul>
+    <p>Or browse every <a href={u('shops/')}>shop and maker</a>, from Highland dress outfitters to one-person kiltmakers. Ask about made-to-measure options, since a good kilt can last a lifetime.</p>
+
+    <p class="muted" style="margin-top:2rem">Want to read more? The <a href="https://www.tartanregister.gov.uk/FAQ.aspx" rel="noopener" target="_blank">Scottish Register of Tartans FAQ ↗</a> covers the basics of tartan.</p>
+  </div>
+</Base>
+<style>.lede { font-size:1.1rem; color:#4a3a2e; } li { margin:.35rem 0; }</style>
