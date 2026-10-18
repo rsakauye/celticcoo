@@ -1,0 +1,78 @@
+---
+import Base from '../layouts/Base.astro';
+import EventCard from '../components/EventCard.astro';
+import ShopCard from '../components/ShopCard.astro';
+import NewsletterForm from '../components/NewsletterForm.astro';
+import HidePast from '../components/HidePast.astro';
+import { upcoming, featuredShops, tba, counts } from '../lib/data.js';
+import { u } from '../lib/site.js';
+const canada = upcoming.filter((e) => e.isCanada).slice(0, 6);
+const intl = upcoming.filter((e) => !e.isCanada).slice(0, 3);
+const calgary = tba.find((e) => e.city === 'Calgary');
+---
+<Base>
+  <section class="hero">
+    <div>
+      <p class="kicker">Ceud mìle fàilte · a hundred thousand welcomes</p>
+      <h1>Find your next Highland Games, ceilidh or pipe band contest.</h1>
+      <p class="lede">The Celtic Coo gathers Highland Games, pipe bands, Highland dance, Gaelic and Celtic festivals from across Canada into one friendly calendar, along with the shops and makers who outfit them. No kilt required.</p>
+      <p style="display:flex;gap:.6rem;flex-wrap:wrap"><a class="btn" href={u('events/')}>Browse 2027 events</a><a class="btn ghost" href={u('shops/')}>Find a kilt shop</a></p>
+      <div class="stats">
+        <div><b>{counts.canadaEvents}</b> confirmed Canadian events</div>
+        <div><b>{counts.provinces}</b> provinces</div>
+        <div><b>{counts.shops}</b> shops &amp; makers</div>
+      </div>
+    </div>
+    <img src={u('coo.svg')} alt="The Celtic Coo mascot, a smiling shaggy Highland cow" width="260" height="260" />
+  </section>
+
+  {calgary && (
+    <aside class="card callout">
+      <b>🐮 Coming home to Alberta:</b> the {calgary.name} is planned for 2027. <span class="pill tba">Date TBA</span> We'll post the date as soon as the organizers confirm it. <a href={u('events/#coming-2027')}>See all events with dates still to come</a>.
+    </aside>
+  )}
+
+  <h2>Coming up in Canada</h2>
+  <div class="grid">{canada.map((e) => <EventCard e={e} />)}</div>
+  <p><a href={u('events/')}>See all {counts.events} confirmed events, filter by province or type →</a></p>
+
+  <h2>Worth the trip</h2>
+  <div class="grid">{intl.map((e) => <EventCard e={e} />)}</div>
+
+  <h2>New to all this?</h2>
+  <div class="grid explain">
+    <div class="card"><h3>🏋️ Highland Games</h3><p>Outdoor gatherings with caber tossing, stone throws, pipe bands, dancing, clan tents and plenty of food. Families welcome, and you don't need any Scottish roots.</p></div>
+    <div class="card"><h3>🥁 Pipe bands</h3><p>Bagpipes and drums, often competing by grade from beginners to world champions. Canada's SFU Pipe Band from BC is one of the best in the world.</p></div>
+    <div class="card"><h3>💃 Highland dance</h3><p>A fast, athletic dance style with competitions for kids through adults, from local contests to national championships.</p></div>
+    <div class="card"><h3>🗣️ Gaelic</h3><p>Scottish Gaelic is still spoken in Canada, mostly in Nova Scotia. Classes, song sessions and festivals keep it alive.</p></div>
+  </div>
+
+  <h2>Featured shops &amp; makers</h2>
+  <div class="grid">{featuredShops.map((s) => <ShopCard s={s} />)}</div>
+  <p><a href={u('shops/')}>Browse all {counts.shops} shops and makers →</a></p>
+
+  <section class="card nl">
+    <img src={u('coo.svg')} alt="" width="84" height="84" />
+    <div style="flex:1;min-width:260px">
+      <h2 style="margin:0 0 .3rem">Get the Coo's Letter</h2>
+      <p style="margin:0 0 .5rem">A short weekly email with what's on near you, new events and a wee bit of Gaelic.</p>
+      <NewsletterForm />
+    </div>
+  </section>
+  <HidePast />
+</Base>
+<style>
+  .hero { display:flex; gap:2rem; align-items:center; justify-content:space-between; flex-wrap:wrap-reverse; padding:1rem 0 .5rem; }
+  .hero > div { flex:1; min-width:280px; max-width:640px; }
+  .hero img { width:min(260px,60vw); height:auto; filter:drop-shadow(0 8px 14px rgba(60,30,10,.18)); }
+  .hero h1 { font-size:clamp(1.9rem,4vw,2.7rem); }
+  .kicker { color:var(--ginger); font-weight:600; margin:0; font-style:italic; }
+  .lede { font-size:1.12rem; color:#4a3a2e; }
+  .stats { display:flex; gap:1.6rem; flex-wrap:wrap; margin-top:1rem; color:var(--muted); font-size:.92rem; }
+  .stats b { display:block; font-size:1.6rem; color:var(--green); font-family:Georgia,serif; }
+  .callout { margin-top:1.2rem; background:#fff4e8; border-color:#f1cfae; }
+  .explain { grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); }
+  .explain h3 { margin:.1rem 0 .4rem; font-size:1.1rem; }
+  .explain p { margin:0; font-size:.95rem; }
+  .nl { display:flex; gap:1.2rem; align-items:center; flex-wrap:wrap; margin-top:2.4rem; background:#f2ead8; }
+</style>

@@ -1,0 +1,30 @@
+---
+import Base from '../../layouts/Base.astro';
+import ShopCard from '../../components/ShopCard.astro';
+import { shops, regionName } from '../../lib/data.js';
+import { u } from '../../lib/site.js';
+const provinces = [...new Set(shops.map((s) => s.province))];
+---
+<Base title="Celtic shops & makers in Canada" description="Kilt shops, Highland dress, bagpipe makers, Highland dance supplies and Celtic gifts across Canada.">
+  <h1>Celtic shops &amp; makers in Canada</h1>
+  <p>Kilts, Highland dress, bagpipes, dance shoes, tartan and Celtic gifts, from big stores to one-person workshops. Many of them also have tents at the Highland Games.</p>
+  <p class="muted">Jump to: {provinces.map((p, i) => <>{i > 0 && ' · '}<a href={`#prov-${p}`}>{regionName(p)}</a></>)} · <label><input type="checkbox" id="makers-only" /> Makers only</label></p>
+  {provinces.map((p) => (
+    <section class="prov" id={`prov-${p}`}>
+      <h2>{regionName(p)}</h2>
+      <div class="grid">{shops.filter((s) => s.province === p).map((s) => <ShopCard s={s} />)}</div>
+    </section>
+  ))}
+  <aside class="card" style="margin-top:2rem">
+    <b>Own a Celtic shop or make something by hand?</b> Listings are free. <a href={u('submit/')}>Add your shop</a> or send us a correction.
+  </aside>
+  <script is:inline>
+    document.getElementById('makers-only').addEventListener('change', function (ev) {
+      document.querySelectorAll('.prov').forEach(function (sec) {
+        var shown = 0;
+        sec.querySelectorAll('.shop').forEach(function (el) { el.hidden = ev.target.checked && el.dataset.maker !== 'yes'; if (!el.hidden) shown++; });
+        sec.hidden = shown === 0;
+      });
+    });
+  </script>
+</Base>
