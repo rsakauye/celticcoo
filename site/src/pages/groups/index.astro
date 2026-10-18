@@ -7,7 +7,7 @@ const kinds = [...new Set(groups.map((g) => g.kind))].sort();
 ---
 <Base title="Celtic clubs, pipe bands & lessons in Canada" description="Find a pipe band, Highland dance school, clan society, Gaelic class, Scottish country dance group or Burns club near you, and who offers lessons.">
   <h1>Clubs &amp; lessons</h1>
-  <p>Pipe bands, Highland and Scottish country dance, clan societies, Gaelic classes, Burns clubs and more: <b>{counts.groups}</b> groups across Canada, <b>{counts.groupsLessons}</b> of them offering lessons. Every website was checked on Oct 17, 2026. Ask the group directly about schedules and fees.</p>
+  <p>Pipe bands, Highland and Scottish country dance, clan societies, Gaelic classes, Burns clubs, heavy events, trad sessions, whisky societies and more: <b>{counts.groups}</b> groups across Canada, <b>{counts.groupsLessons}</b> of them offering lessons. Every website was checked on Oct 17–18, 2026. Ask the group directly about schedules and fees.</p>
 
   {featuredGroup && (
     <aside class="card featured" id={featuredGroup.id}>
@@ -34,6 +34,7 @@ const kinds = [...new Set(groups.map((g) => g.kind))].sort();
         <h3>{g.name}</h3>
         <div class="muted">📍 {g.city && g.city !== 'National' ? `${g.city}, ` : ''}{g.regionLabel}</div>
         {g.type.toLowerCase() !== g.kind.toLowerCase() && <p class="muted" style="margin:.3rem 0 0;font-size:.85rem">{g.type}</p>}
+        {g.note && <p style="margin:.35rem 0 0;font-size:.92rem">{g.note}</p>}
         <a href={g.website} rel="noopener" target="_blank" style="font-size:.92rem;display:inline-block;margin-top:.4rem">Visit website ↗</a>
       </article>
     ))}
@@ -41,7 +42,8 @@ const kinds = [...new Set(groups.map((g) => g.kind))].sort();
   <p id="g-empty" class="card" hidden>No groups match yet. Know one? <a href={u('submit/')}>Tell us about it</a>.</p>
 
   <aside class="card" style="margin-top:2rem">
-    <b>Run a band, dance school, society or class?</b> Listings are free. <a href={u('submit/')}>Add or update your group</a>. We list organizations only, never members' or students' names.
+    <b>Want to try heavy events?</b> The <a href="https://www.csaf.ca/page/contact-us" rel="noopener" target="_blank">CSAF lists practice contacts ↗</a> across Canada, including Calgary and Edmonton. Whisky societies are for adults of legal drinking age only.<br /><br />
+    <b>Run a band, dance school, society, session or class?</b> Listings are free. <a href={u('submit/')}>Add or update your group</a>. We list organizations only, never members' or students' names.
   </aside>
   <script is:inline>
     (function () {

@@ -2,7 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import EventCard from '../../components/EventCard.astro';
 import HidePast from '../../components/HidePast.astro';
-import { events, tba, regionName, CATEGORY_EMOJI } from '../../lib/data.js';
+import { events, tba, regionName, CATEGORY_EMOJI, FEATURES } from '../../lib/data.js';
 import { u } from '../../lib/site.js';
 const countries = [...new Set(events.map((e) => e.country))].sort((a, b) => (a === 'Canada' ? -1 : b === 'Canada' ? 1 : a.localeCompare(b)));
 const regions = [...new Set(events.map((e) => `${e.country}|${e.region}`))].sort().map((k) => { const [c, r] = k.split('|'); return { c, r, label: regionName(r) }; });
@@ -10,14 +10,16 @@ const cats = [...new Set(events.map((e) => e.category))].sort();
 const months = [...new Set(events.map((e) => e.start_date.slice(0, 7)))].sort();
 const monthLabel = (m) => new Date(m + '-15T12:00:00Z').toLocaleDateString('en-CA', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 ---
-<Base title="Celtic events calendar 2027" description="Confirmed 2027 Highland Games, pipe band championships, Highland dance and Celtic festivals in Canada and abroad. Filter by province, country and type, or subscribe in your calendar app.">
-  <h1>Celtic &amp; Highland events, 2027</h1>
+<Base title="Celtic events calendar 2026–27" description="Confirmed 2027 Highland Games, pipe band championships, Highland dance and Celtic festivals in Canada and abroad. Filter by province, country and type, or subscribe in your calendar app.">
+  <h1>Celtic &amp; Highland events, 2026–27</h1>
+  <p class="muted">"At the games" tags (clan tents, vendor village, heavy events) come from each organizer's own site, usually from their latest year. Check closer to the date.</p>
   <p>Every date below is confirmed on the organizer's or association's own website. Subscribe to the whole calendar in Google, Apple or Outlook: <a href={u('events.ics')}><b>events.ics</b></a> (or copy the link into "subscribe by URL").</p>
 
   <form class="filters card" id="filters" onsubmit="return false">
     <label>Country<br /><select id="f-country"><option value="">All countries</option>{countries.map((c) => <option value={c}>{c}</option>)}</select></label>
     <label>Province / region<br /><select id="f-region"><option value="">All</option>{regions.map((r) => <option value={r.r} data-country={r.c}>{r.label}{r.c !== 'Canada' ? ` (${r.c})` : ''}</option>)}</select></label>
     <label>Type<br /><select id="f-cat"><option value="">All types</option>{cats.map((c) => <option value={c}>{CATEGORY_EMOJI[c]} {c}</option>)}</select></label>
+    <label>At the games<br /><select id="f-feat"><option value="">Anything</option>{Object.entries(FEATURES).map(([k, [em, l]]) => <option value={k}>{em} {l}</option>)}</select></label>
     <label style="align-self:end"><input type="checkbox" id="f-past" /> Show past events</label>
     <div class="muted" id="f-count" style="align-self:end" aria-live="polite"></div>
   </form>
@@ -39,6 +41,7 @@ const monthLabel = (m) => new Date(m + '-15T12:00:00Z').toLocaleDateString('en-C
         <h3 style="margin:.3rem 0;font-size:1.08rem">{e.name}</h3>
         <div class="muted">{e.city ? `${e.city}, ` : ''}{e.regionLabel}</div>
         <span class="pill green" style="margin-top:.4rem">{CATEGORY_EMOJI[e.category]} {e.category}</span>
+        {e.features.length > 0 && <div>{e.features.map((f) => <a class="pill" style="background:#e3ebf5;color:var(--navy);text-decoration:none" href={e.features_source} rel="noopener" target="_blank">{FEATURES[f][0]} {FEATURES[f][1]}</a>)}</div>}
         <p style="margin:.4rem 0 0;font-size:.92rem"><a href={e.source_url} rel="noopener" target="_blank">Organizer / source ↗</a></p>
       </article>
     ))}
@@ -47,11 +50,12 @@ const monthLabel = (m) => new Date(m + '-15T12:00:00Z').toLocaleDateString('en-C
   <script is:inline>
     (function () {
       var $ = function (id) { return document.getElementById(id); };
-      var country = $('f-country'), region = $('f-region'), cat = $('f-cat'), past = $('f-past');
+      var country = $('f-country'), region = $('f-region'), cat = $('f-cat'), feat = $('f-feat'), past = $('f-past');
       var params = new URLSearchParams(location.search);
       if (params.get('country')) country.value = params.get('country');
       if (params.get('region')) region.value = params.get('region');
       if (params.get('type')) cat.value = params.get('type');
+      if (params.get('feature')) feat.value = params.get('feature');
       function apply() {
         Array.prototype.forEach.call(region.options, function (o) { o.hidden = !!(o.value && country.value && o.dataset.country !== country.value); });
         if (region.selectedOptions[0] && region.selectedOptions[0].hidden) region.value = '';
@@ -60,7 +64,7 @@ const monthLabel = (m) => new Date(m + '-15T12:00:00Z').toLocaleDateString('en-C
           var shown = 0;
           sec.querySelectorAll('.ev').forEach(function (el) {
             var ok = (!country.value || el.dataset.country === country.value) && (!region.value || el.dataset.region === region.value) &&
-              (!cat.value || el.dataset.cat === cat.value) && (past.checked || !el.dataset.past);
+              (!cat.value || el.dataset.cat === cat.value) && (!feat.value || (' ' + el.dataset.features + ' ').indexOf(' ' + feat.value + ' ') > -1) && (past.checked || !el.dataset.past);
             el.hidden = !ok; if (ok) shown++;
           });
           sec.hidden = shown === 0; n += shown;
@@ -68,10 +72,10 @@ const monthLabel = (m) => new Date(m + '-15T12:00:00Z').toLocaleDateString('en-C
         $('f-count').textContent = n + (n === 1 ? ' event' : ' events');
         $('f-empty').hidden = n > 0;
         var q = new URLSearchParams();
-        if (country.value) q.set('country', country.value); if (region.value) q.set('region', region.value); if (cat.value) q.set('type', cat.value);
+        if (country.value) q.set('country', country.value); if (region.value) q.set('region', region.value); if (cat.value) q.set('type', cat.value); if (feat.value) q.set('feature', feat.value);
         history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
       }
-      [country, region, cat, past].forEach(function (el) { el.addEventListener('change', apply); });
+      [country, region, cat, feat, past].forEach(function (el) { el.addEventListener('change', apply); });
       apply();
     })();
   </script>
