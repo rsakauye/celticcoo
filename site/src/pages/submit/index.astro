@@ -1,0 +1,34 @@
+---
+import Base from '../../layouts/Base.astro';
+import { CONTACT_EMAIL, SUBMIT_FORM_URL } from '../../lib/site.js';
+// TODO: replace the mailto with a real form (Tally / Google Form / Cloudflare worker) once an inbox exists.
+const mail = (subject, body) => `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+const eventBody = 'Event name:\nStart date (YYYY-MM-DD):\nEnd date:\nCity and province:\nType (Highland Games, pipe band, dance, Gaelic, festival, other):\nOfficial website or page that shows the date:\nYour name and role (organizer, volunteer, fan):\n';
+const shopBody = 'Shop or maker name:\nCity and province:\nWhat you sell or make:\nWebsite:\nAre you at any Highland Games this year? Which ones?\nYour name and role:\n';
+---
+<Base title="Add an event or list your shop" description="Tell The Celtic Coo about a Celtic event, Highland Games, or a Celtic shop or maker in Canada. Listings are free.">
+  <h1>Add an event or list your shop</h1>
+  <p>The Celtic Coo is free to list on. We check every date against the organizer's own site before it goes on the calendar, so please include a link that shows it.</p>
+  <div class="grid" style="margin-top:1rem">
+    <div class="card">
+      <h2 style="margin-top:0">📅 Submit an event</h2>
+      <p>Highland Games, pipe band contests, dance competitions, Gaelic classes, ceilidhs, Burns suppers, fundraisers and festivals are all welcome.</p>
+      {SUBMIT_FORM_URL
+        ? <a class="btn" href={SUBMIT_FORM_URL} rel="noopener" target="_blank">Open the submission form</a>
+        : <a class="btn" href={mail('Event for The Celtic Coo', eventBody)}>Email us the details</a>}
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">🛍️ List your shop or craft</h2>
+      <p>Kilt makers, Highland dress, piping and drumming supply, dance shoes, jewellery, tartan, food and gifts. Shops anywhere in Canada.</p>
+      {SUBMIT_FORM_URL
+        ? <a class="btn" href={SUBMIT_FORM_URL} rel="noopener" target="_blank">Open the listing form</a>
+        : <a class="btn" href={mail('Shop listing for The Celtic Coo', shopBody)}>Email us your shop</a>}
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">✏️ Fix something</h2>
+      <p>Spotted a wrong date, a moved venue, or a shop that has closed? Let us know and we'll correct it.</p>
+      <a class="btn ghost" href={mail('Correction for The Celtic Coo', 'Page or listing:\nWhat should change:\nSource link:\n')}>Send a correction</a>
+    </div>
+  </div>
+  {!SUBMIT_FORM_URL && <p class="muted" style="margin-top:1.5rem">Or write to <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. An online form is on the way.</p>}
+</Base>

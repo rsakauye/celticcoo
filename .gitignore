@@ -1,0 +1,5 @@
+node_modules/
+site/dist/
+site/.astro/
+source-check-report.md
+.DS_Store
