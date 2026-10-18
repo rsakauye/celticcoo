@@ -1,0 +1,12 @@
+---
+const { s } = Astro.props;
+---
+<article class="card shop" id={s.id} data-province={s.province} data-maker={s.isMaker ? 'yes' : 'no'}>
+  <h3 style="margin:0 0 .3rem;font-size:1.12rem"><a href={s.url} rel="noopener" target="_blank" style="color:inherit;text-decoration:none">{s.name}</a></h3>
+  <div class="muted" style="margin-bottom:.45rem">📍 {s.city}, {s.regionLabel}</div>
+  {s.isMaker ? <span class="pill green">🧵 Maker</span> : <span class="pill green">🛍️ Shop</span>}
+  {s.note && <span class="pill">{s.note}</span>}
+  <p style="margin:.4rem 0 .5rem;font-size:.95rem">{s.category}</p>
+  <a href={s.url} rel="noopener" target="_blank" style="font-size:.92rem">Visit website ↗</a>
+</article>
+<style>.shop { border-left:5px solid var(--green2); }</style>
