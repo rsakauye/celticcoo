@@ -1,0 +1,18 @@
+name,scope,province_or_region,type,calendar_or_list_url,scrapeable,notes
+ScotsCanada (CASSOC) events calendar,National,Canada,Aggregator calendar,https://www.scotscanada.ca/en/events,Yes - static HTML table (but updated irregularly; last update seen May 2026),Best single Canadian seed list
+ScotDance Canada,National,Canada,Highland dance body,https://scotdance.ca/events/,Partly - JS-rendered pages; needs headless browser or manual,Annual event list + SDCCS championships
+ScotDance New Brunswick,Provincial,NB/Maritimes,Highland dance,https://www.scotdancenb.com/competitons-and-workshops,Partly (Wix) - manual,Maritime dance competitions
+Alberta Society of Pipers & Drummers (ASPD),Provincial,AB,Pipe band association,https://www.aspd.ca/highland-games-events,Partly - manual,Alberta games/contest list
+BC Pipers' Association,Provincial,BC/PNW,Pipe band association,https://bcpipers.org/competitors-corner/competition-schedule-for-2024-2025/,Yes - WordPress HTML table,Already has 2026-27 season
+Pipers' & Pipe Band Society of Ontario (PPBSO),Provincial,ON,Pipe band association,https://ppbso.org/games/,Yes - HTML table,2027 not posted yet
+Prairie Pipe Band Association of Manitoba,Provincial,MB,Pipe band association,https://www.pipesdrums.com/article/association-leadership-spotlight-ian-aastrom-prairie-pipe-band-association-of-manitoba-part-1/,Manual,Find own site later
+Saskatchewan Pipe Band Association,Provincial,SK,Pipe band association,https://www.saskpipebands.org/,Manual,
+Atlantic Canada Pipe Band Association,Regional,NS/NB/PE/NL,Pipe band association,https://bcpipers.org/members/affliated-pipe-band-associations/,Manual,Listed among affiliated associations
+RSPBA,International,UK,Pipe band governing body,https://rspba.org/contest-calendar/,Yes - WordPress,Majors + contest calendar
+Clan Campbell Society (NA) Games Calendar,International,North America,Aggregator calendar,https://www.ccsna.org/calendar,Yes - HTML (large single page),US+Canada games
+Clan Bell Society Event List,International,North America,Aggregator list,https://clanbellsociety.org/event-list/,Yes - HTML table,Province/state tables
+Scottish Banner calendar,International,Global,Aggregator calendar,https://www.scottishbanner.com/calendar/category/canada/,Yes - The Events Calendar (WordPress) - often has iCal/REST feed,Canada category exists
+Comhairle na Gaidhlig (NS Gaelic Council),Provincial,NS,Gaelic language,https://www.gaelic.ca/,Manual,
+Gaelic Affairs Nova Scotia,Provincial,NS,Gaelic language (gov),https://gaelic.novascotia.ca/work,Manual,Resource guide PDF lists orgs
+Comunn Gaidhlig Thoronto (Gaelic Society of Toronto),Local,ON,Gaelic language,https://www.gaelicsocietytoronto.com/tachartasan--fiosrachadh-na-coimhearsnachd--community-events--info.html,Manual,Lists Gaelic orgs/events in ON and beyond
+CelticMFF,International,Global,COMPETITOR directory,https://celticmff.com/,n/a,"516 festivals/games, weekly re-verify, free basic + paid enhanced listings"
