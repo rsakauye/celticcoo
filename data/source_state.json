@@ -1,0 +1,1257 @@
+{
+ "pages": {
+  "https://antigonishhighlandgames.ca/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "jul 23 2026",
+    "jul 4-11 2027",
+    "jul 5-12 2026",
+    "oct 15 2026"
+   ],
+   "events": {
+    "Antigonish Highland Games": true
+   },
+   "labels": [],
+   "length": 2956,
+   "sha256": "cf73ac48224ee03e5c12d32014a7e0c08bb87ded8da69c02f0dee017a44c51a9",
+   "status": 200
+  },
+  "https://bcpipers.org/competitors-corner/competition-schedule-for-2024-2025/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [],
+   "events": {
+    "Campbell River Highland Gathering": null,
+    "Kamloops Highland Games": null,
+    "Pacific Northwest Scottish Highland Games": null,
+    "Penticton Scottish Festival": null,
+    "Portland Highland Games": null,
+    "Skagit Valley Highland Games": null
+   },
+   "labels": [
+    "BC Pipers' Association"
+   ],
+   "length": null,
+   "sha256": null,
+   "status": 202
+  },
+  "https://bcpipers.org/members/affliated-pipe-band-associations/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [],
+   "events": {},
+   "labels": [
+    "Atlantic Canada Pipe Band Association"
+   ],
+   "length": null,
+   "sha256": null,
+   "status": 202
+  },
+  "https://canmorehighlandgames.ca/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [],
+   "events": {},
+   "labels": [],
+   "length": 2505,
+   "sha256": "4597553b205e75e0848794c453fcbddddf54e98416734f959e06a894229be667",
+   "status": 200
+  },
+  "https://celtic-colours.com/about/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "oct 6-oct 14",
+    "oct 8-oct 16 2028",
+    "oct 9-17 2026",
+    "oct 9-oct 17 2027"
+   ],
+   "events": {
+    "Celtic Colours International Festival": true
+   },
+   "labels": [],
+   "length": 10039,
+   "sha256": "42a930c205c3905bbd11daa2d8690c97a16febd7ebbabdc57ee6a9bd9e7d637c",
+   "status": 200
+  },
+  "https://celticfestival.ca/home": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "aug 2-6 2027",
+    "aug 6-8 2027"
+   ],
+   "events": {
+    "Goderich Celtic College & Kids Camp": true,
+    "Goderich Celtic Roots Festival": true
+   },
+   "labels": [],
+   "length": 1012,
+   "sha256": "419499226e783876089be85bf166e5b1589e8e60662162dc70bc26ed930b549e",
+   "status": 200
+  },
+  "https://clanbellsociety.org/event-list/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "apr 10 2027",
+    "apr 10-12 2026",
+    "apr 11 2026",
+    "apr 11-12 2026",
+    "apr 17-18 2026",
+    "apr 18 2026",
+    "apr 18-19 2026",
+    "apr 25 2026",
+    "apr 3-4 2026",
+    "apr 30-may 3 2026",
+    "apr 4-5 2026",
+    "apr 5-6 2025",
+    "apr 9-10 2027",
+    "aug 1 2026",
+    "aug 13 2026",
+    "aug 13-16 2026",
+    "aug 15 2026",
+    "aug 15-16 2026",
+    "aug 16 2026",
+    "aug 2 2026",
+    "aug 2-3 2025",
+    "aug 21 2026",
+    "aug 21-22 2026",
+    "aug 22 2026",
+    "aug 22-23 2026",
+    "aug 27 2026",
+    "aug 27-29 2026",
+    "aug 29 2026",
+    "aug 5 2026",
+    "aug 7 2026",
+    "aug 7-8 2026",
+    "aug 7-9 2026",
+    "aug 8 2026",
+    "aug 9 2026",
+    "dec 31 2026",
+    "dec 5 2026",
+    "feb 14 2026",
+    "feb 20-22 2026",
+    "feb 28 2026",
+    "feb 7-8 2026",
+    "jan 10-11 2026",
+    "jan 17-18 2026",
+    "jan 31 2026",
+    "jul 1 2026",
+    "jul 10-11 2026",
+    "jul 11 2026",
+    "jul 11-12 2026",
+    "jul 13 2024",
+    "jul 17-19 2026",
+    "jul 18 2026",
+    "jul 18-19 2026",
+    "jul 19 2026",
+    "jul 20 2026",
+    "jul 21 2026",
+    "jul 24 2026",
+    "jul 24-26 2026",
+    "jul 25 2026",
+    "jul 25-26 2026",
+    "jul 26 2026",
+    "jul 29 2026",
+    "jul 3-4 2026",
+    "jul 3-5 2026",
+    "jul 31-aug 1 2026",
+    "jul 4 2026",
+    "jul 5-12 2026",
+    "jul 8-11 2027",
+    "jun 12-13 2026",
+    "jun 12-14 2026",
+    "jun 13 2026",
+    "jun 13-14 2026",
+    "jun 14 2025",
+    "jun 14 2026",
+    "jun 16-18 2023",
+    "jun 18-19 2027",
+    "jun 19-20 2026",
+    "jun 19-21 2026",
+    "jun 20 2026",
+    "jun 20-21 2026",
+    "jun 21 2026",
+    "jun 26-27 2026",
+    "jun 27 2026",
+    "jun 27-28 2026",
+    "jun 4-7 2026",
+    "jun 5-8 2026",
+    "jun 6 2026",
+    "jun 6-7 2026",
+    "jun 7 2025",
+    "jun 9-13 2026",
+    "mar 14-15 2026",
+    "mar 17 2026",
+    "mar 21-22 2026",
+    "mar 26-29 2026",
+    "mar 28 2026",
+    "mar 28-29",
+    "mar 28-29 2026",
+    "mar 29 2026",
+    "mar 4-8 2026",
+    "mar 6-7 2026",
+    "mar 6-8 2026",
+    "mar 8 2025",
+    "may 1-3 2026",
+    "may 10 2025",
+    "may 10 2026",
+    "may 16 2026",
+    "may 16-17 2026",
+    "may 16-18 2025",
+    "may 17 2025",
+    "may 17 2026",
+    "may 2 2026",
+    "may 2-3 2026",
+    "may 22-23 2026",
+    "may 22-24 2026",
+    "may 23 2026",
+    "may 23-24 2026",
+    "may 25 2025",
+    "may 29-31 2026",
+    "may 30 2026",
+    "may 31 2026",
+    "may 8 2027",
+    "nov 13-15 2026",
+    "nov 14 2026",
+    "nov 14-15 2026",
+    "nov 4-5 2023",
+    "nov 7 2026",
+    "nov 7-8 2026",
+    "oct 10 2026",
+    "oct 10-11 2026",
+    "oct 11 2025",
+    "oct 12 2024",
+    "oct 16-18 2026",
+    "oct 17 2026",
+    "oct 17-18 2026",
+    "oct 18 2025",
+    "oct 2-4 2026",
+    "oct 23-25 2026",
+    "oct 24 2026",
+    "oct 3-4 2026",
+    "sep 11-12 2026",
+    "sep 11-13 2026",
+    "sep 12 2026",
+    "sep 12-13 2026",
+    "sep 18-20 2026",
+    "sep 19 2026",
+    "sep 19-20 2026",
+    "sep 25-27 2026",
+    "sep 26 2026",
+    "sep 26-27 2026",
+    "sep 27 2025",
+    "sep 27 2026",
+    "sep 4-6 2026",
+    "sep 5 2026",
+    "sep 5-6 2026",
+    "sep 6 2026"
+   ],
+   "events": {},
+   "labels": [
+    "Clan Bell Society Event List"
+   ],
+   "length": 17809,
+   "sha256": "de12d2ab32ce20b706d3959102cb822c3f28b14e9e2cba0090af887dc91deed1",
+   "status": 200
+  },
+  "https://fergusscottishfestival.com/faq/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "aug 10-12 2029",
+    "aug 11-13 2028",
+    "aug 13-15 2027",
+    "aug 7",
+    "aug 8",
+    "aug 8-10 2031",
+    "aug 9",
+    "aug 9-11 2030"
+   ],
+   "events": {
+    "Fergus Scottish Festival & Highland Games": true
+   },
+   "labels": [],
+   "length": 21939,
+   "sha256": "57628767eb6f7a43598f72979de3d77a8835e906d3a8b8eb62a893e617b216ff",
+   "status": 200
+  },
+  "https://festival-celtique.com/en/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [],
+   "events": {},
+   "labels": [],
+   "length": 7943,
+   "sha256": "328444b72fea5d74ae843d0debd9ee9096d14de3efd323f46280216b1f44ff0d",
+   "status": 200
+  },
+  "https://fleadhcheoil.ie/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "aug 8 2027"
+   ],
+   "events": {
+    "Fleadh Cheoil na hEireann": false
+   },
+   "labels": [],
+   "length": 1585,
+   "sha256": "550faaa4b012f558c629865aea77ddefa61fbf0da7f0681c2f9f8f878b61b149",
+   "status": 200
+  },
+  "https://gaelic.novascotia.ca/work": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "jun 15",
+    "jun 19 2026",
+    "mar 15",
+    "may 19",
+    "nov 15",
+    "oct 1 2026"
+   ],
+   "events": {},
+   "labels": [
+    "Gaelic Affairs Nova Scotia"
+   ],
+   "length": 4961,
+   "sha256": "12934ee09210d77f2ba4da6d2e07080bd25b93ebfbc41ab1dfd03976f54eed49",
+   "status": 200
+  },
+  "https://gatheringofthescots.com/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "jun 3-6 2027"
+   ],
+   "events": {
+    "Gathering of the Scots Festival": true
+   },
+   "labels": [],
+   "length": 1035,
+   "sha256": "73a97a73ef82784bdc78d790fc8e551cf4a2bdebf0b3ec4fe2398dca908862ba",
+   "status": 200
+  },
+  "https://gmhg.org/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "jul 8-11 2027"
+   ],
+   "events": {
+    "Grandfather Mountain Highland Games": true
+   },
+   "labels": [],
+   "length": 5789,
+   "sha256": "214db4e8e340473b1a5e218c01d0ababe0b22afb8c24b7c3960ff3d8d609a97a",
+   "status": 200
+  },
+  "https://irishfest.com/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "aug 14",
+    "aug 19-22 2027",
+    "dec 6",
+    "nov 13",
+    "oct 23"
+   ],
+   "events": {
+    "Milwaukee Irish Fest": true
+   },
+   "labels": [],
+   "length": 4276,
+   "sha256": "19c5c9b707d12a748f6c378f1a29020cf599489fce4f2af64879a10664e182c3",
+   "status": 200
+  },
+  "https://kincardinescottishfestival.ca/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "jul 2-4 2027",
+    "jul 5"
+   ],
+   "events": {
+    "Kincardine Scottish Festival & Highland Games": true
+   },
+   "labels": [],
+   "length": 4807,
+   "sha256": "8d563a1863b29d96f95b28fe82d18977e51eef5c4c36bd32abfcabbf5dfad5e9",
+   "status": 200
+  },
+  "https://manitobahighlandgathering.org/forms/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "jun 19-20 2027"
+   ],
+   "events": {},
+   "labels": [],
+   "length": 3310,
+   "sha256": "44d3613d98fa21dd18eb2e6a9a056f8cf0eb680beaff177ca8973738ce906b19",
+   "status": 200
+  },
+  "https://monctonhighlandgames.com/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "jun 11",
+    "jun 12",
+    "jun 12-13 2027",
+    "jun 6-13 2027"
+   ],
+   "events": {
+    "Greater Moncton Highland Games & Scottish Festival": true,
+    "SAI Masters World Championships (heavy events)": true
+   },
+   "labels": [],
+   "length": 2134,
+   "sha256": "c7a95ef6f94a9f3868b3ba1e11b52ec1c9be73dd919f389c0bf614c9a858fe7a",
+   "status": 200
+  },
+  "https://ppbso.org/games/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "apr 12 2014",
+    "apr 12 2025",
+    "apr 13 2019",
+    "apr 13 2024",
+    "apr 14 2018",
+    "apr 15 2017",
+    "apr 15 2023",
+    "apr 17 2015",
+    "apr 18 2026",
+    "apr 19 2014",
+    "apr 19 2025",
+    "apr 25 2014",
+    "apr 25 2026",
+    "apr 30 2016",
+    "apr 4 2015",
+    "apr 4 2026",
+    "apr 9 2016",
+    "aug 1 2015",
+    "aug 1 2026",
+    "aug 1-aug 2 2014",
+    "aug 1-aug 2 2025",
+    "aug 10 2019",
+    "aug 10 2024",
+    "aug 11 2018",
+    "aug 11-aug 12 2008",
+    "aug 11-aug 12 2009",
+    "aug 11-aug 12 2010",
+    "aug 11-aug 12 2011",
+    "aug 11-aug 12 2012",
+    "aug 12 2017",
+    "aug 12 2023",
+    "aug 13 2016",
+    "aug 13 2022",
+    "aug 14 2021",
+    "aug 16 2020",
+    "aug 2 2014",
+    "aug 2 2020",
+    "aug 2 2025",
+    "aug 2-aug 3 2013",
+    "aug 2-aug 3 2019",
+    "aug 2-aug 3 2024",
+    "aug 21 2021",
+    "aug 22 2015",
+    "aug 22 2026",
+    "aug 23 2014",
+    "aug 23 2020",
+    "aug 23 2025",
+    "aug 24 2013",
+    "aug 24 2019",
+    "aug 24 2024",
+    "aug 25 2008",
+    "aug 25 2009",
+    "aug 25 2010",
+    "aug 25 2011",
+    "aug 25 2012",
+    "aug 25 2018",
+    "aug 26 2017",
+    "aug 26 2023",
+    "aug 27 2016",
+    "aug 27 2022",
+    "aug 3",
+    "aug 3 2013",
+    "aug 3 2019",
+    "aug 3 2024",
+    "aug 3-aug 4 2018",
+    "aug 30 2020",
+    "aug 4",
+    "aug 4 2008",
+    "aug 4 2009",
+    "aug 4 2010",
+    "aug 4 2011",
+    "aug 4 2012",
+    "aug 4 2018",
+    "aug 4-aug 5 2008",
+    "aug 4-aug 5 2009",
+    "aug 4-aug 5 2010",
+    "aug 4-aug 5 2011",
+    "aug 4-aug 5 2012",
+    "aug 4-aug 5 2017",
+    "aug 4-aug 5 2023",
+    "aug 5",
+    "aug 5 2017",
+    "aug 5 2023",
+    "aug 6 2016",
+    "aug 6 2022",
+    "aug 8 2015",
+    "aug 8 2026",
+    "aug 8-aug 10 2014",
+    "aug 9 2020",
+    "aug 9 2025",
+    "aug 9-aug 11 2013",
+    "jul 1 2008",
+    "jul 1 2009",
+    "jul 1 2010",
+    "jul 1 2011",
+    "jul 1 2012",
+    "jul 1 2013",
+    "jul 1 2014",
+    "jul 1 2015",
+    "jul 1 2016",
+    "jul 1 2017",
+    "jul 1 2018",
+    "jul 1 2019",
+    "jul 1 2021",
+    "jul 1 2022",
+    "jul 1 2023",
+    "jul 1 2024",
+    "jul 1 2025",
+    "jul 1 2026",
+    "jul 10 2015",
+    "jul 10 2021",
+    "jul 10 2026",
+    "jul 11 2014",
+    "jul 11 2025",
+    "jul 12 2013",
+    "jul 12 2019",
+    "jul 12 2020",
+    "jul 12 2024",
+    "jul 13 2012",
+    "jul 13 2018",
+    "jul 14 2008",
+    "jul 14 2009",
+    "jul 14 2010",
+    "jul 14 2011",
+    "jul 14 2017",
+    "jul 14 2023",
+    "jul 15 2017",
+    "jul 15 2023",
+    "jul 16 2016",
+    "jul 16 2022",
+    "jul 17 2021",
+    "jul 18 2014",
+    "jul 18 2015",
+    "jul 18 2026",
+    "jul 19 2013",
+    "jul 19 2014",
+    "jul 19 2020",
+    "jul 19 2025",
+    "jul 2",
+    "jul 2 2016",
+    "jul 2 2022",
+    "jul 20 2013",
+    "jul 20 2019",
+    "jul 20 2024",
+    "jul 21 2008",
+    "jul 21 2009",
+    "jul 21 2010",
+    "jul 21 2011",
+    "jul 21 2012",
+    "jul 21 2018",
+    "jul 22 2017",
+    "jul 22 2023",
+    "jul 23 2016",
+    "jul 23 2022",
+    "jul 25 2015",
+    "jul 26 2020",
+    "jul 29-jul 30 2016",
+    "jul 29-jul 30 2022",
+    "jul 3 2021",
+    "jul 31 2021",
+    "jul 31-1 2026",
+    "jul 31-aug 1 2015",
+    "jul 31-aug 1 2026",
+    "jul 4 2015",
+    "jul 4 2026",
+    "jul 5 2014",
+    "jul 5 2025",
+    "jul 6 2013",
+    "jul 6 2019",
+    "jul 6 2024",
+    "jul 7 2018",
+    "jul 7-jul 9 2008",
+    "jul 7-jul 9 2009",
+    "jul 7-jul 9 2010",
+    "jul 7-jul 9 2011",
+    "jul 7-jul 9 2012",
+    "jul 8 2016",
+    "jul 8 2017",
+    "jul 8 2022",
+    "jun 1",
+    "jun 1 2019",
+    "jun 1 2024",
+    "jun 10 2008",
+    "jun 10 2009",
+    "jun 10 2010",
+    "jun 10 2011",
+    "jun 10 2012",
+    "jun 10 2013",
+    "jun 10 2014",
+    "jun 10 2015",
+    "jun 10 2016",
+    "jun 10 2017",
+    "jun 10 2018",
+    "jun 10 2019",
+    "jun 10 2022",
+    "jun 10 2023",
+    "jun 10 2024",
+    "jun 10 2025",
+    "jun 10 2026",
+    "jun 11 2016",
+    "jun 11 2022",
+    "jun 12 2021",
+    "jun 13 2015",
+    "jun 13 2026",
+    "jun 14 2014",
+    "jun 14 2020",
+    "jun 14 2025",
+    "jun 15 2013",
+    "jun 15 2019",
+    "jun 15 2024",
+    "jun 16 2008",
+    "jun 16 2009",
+    "jun 16 2010",
+    "jun 16 2011",
+    "jun 16 2012",
+    "jun 16 2018",
+    "jun 17 2017",
+    "jun 17 2021",
+    "jun 17 2023",
+    "jun 18 2016",
+    "jun 18 2022",
+    "jun 20 2015",
+    "jun 20 2020",
+    "jun 20 2026",
+    "jun 21 2014",
+    "jun 21 2025",
+    "jun 22 2019",
+    "jun 22 2024",
+    "jun 24 2017",
+    "jun 24 2023",
+    "jun 25 2016",
+    "jun 25 2022",
+    "jun 26 2021",
+    "jun 27 2015",
+    "jun 27 2026",
+    "jun 28 2014",
+    "jun 28 2025",
+    "jun 29 2013",
+    "jun 29 2019",
+    "jun 29 2024",
+    "jun 3 2023",
+    "jun 30 2008",
+    "jun 30 2009",
+    "jun 30 2010",
+    "jun 30 2011",
+    "jun 30 2012",
+    "jun 30 2018",
+    "jun 4 2022",
+    "jun 6 2026",
+    "jun 7 2025",
+    "jun 8 2013",
+    "jun 8 2019",
+    "jun 8 2024",
+    "jun 9 2008",
+    "jun 9 2009",
+    "jun 9 2010",
+    "jun 9 2011",
+    "jun 9 2012",
+    "jun 9 2018",
+    "mar 28 2015",
+    "may 1 2015",
+    "may 10 2014",
+    "may 10 2025",
+    "may 16 2026",
+    "may 17 2025",
+    "may 18 2013",
+    "may 18 2019",
+    "may 18 2024",
+    "may 19 2008",
+    "may 19 2009",
+    "may 19 2010",
+    "may 19 2011",
+    "may 19 2012",
+    "may 19 2018",
+    "may 20 2017",
+    "may 20 2023",
+    "may 21 2016",
+    "may 21 2022",
+    "may 23 2015",
+    "may 23 2026",
+    "may 24 2014",
+    "may 24 2025",
+    "may 25 2013",
+    "may 25 2019",
+    "may 25 2024",
+    "may 26 2018",
+    "may 27 2017",
+    "may 27 2023",
+    "may 28 2016",
+    "may 28 2022",
+    "may 29 2021",
+    "may 3 2025",
+    "may 30 2015",
+    "may 30 2026",
+    "may 31 2014",
+    "may 31 2025",
+    "may 4 2019",
+    "may 4 2024",
+    "may 5 2018",
+    "may 6 2017",
+    "may 6 2023",
+    "may 8 2021",
+    "may 9 2015",
+    "may 9 2026",
+    "sep 11 2021"
+   ],
+   "events": {},
+   "labels": [
+    "Pipers' & Pipe Band Society of Ontario (PPBSO)"
+   ],
+   "length": 17649,
+   "sha256": "51e0ee44f08d12c21128006fb107ba7f11e253f378d44746ed1e4fd311d432e3",
+   "status": 200
+  },
+  "https://rspba.org/2026/08/16/2027-major-championships/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "aug 14",
+    "aug 7",
+    "jul 24",
+    "may 29"
+   ],
+   "events": {
+    "RSPBA British Pipe Band Championships": true,
+    "RSPBA European Pipe Band Championships": true,
+    "RSPBA Scottish Pipe Band Championships": true
+   },
+   "labels": [],
+   "length": 3196,
+   "sha256": "c4a260d314ab92e6b4af7a494c3fcdfa978da8538e4bd55ec00dfbe9091f0b30",
+   "status": 200
+  },
+  "https://rspba.org/contest-calendar/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [],
+   "events": {},
+   "labels": [
+    "RSPBA"
+   ],
+   "length": 3954,
+   "sha256": "f5c361b091860bc4de11d05a088495eb61973aff359d295ae57ceac8cbd8c144",
+   "status": 200
+  },
+  "https://scotdance.ca/events/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [],
+   "events": {},
+   "labels": [
+    "ScotDance Canada"
+   ],
+   "length": null,
+   "sha256": null,
+   "status": 202
+  },
+  "https://scotdance.ca/sdccs/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [],
+   "events": {},
+   "labels": [],
+   "length": null,
+   "sha256": null,
+   "status": 202
+  },
+  "https://scotfestbc.com/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "dec 1",
+    "dec 1 2026",
+    "jun 18",
+    "jun 18-19 2027",
+    "jun 19 2027",
+    "jun 19-20 2026"
+   ],
+   "events": {
+    "ScotFestBC - British Columbia Highland Games": true
+   },
+   "labels": [],
+   "length": 6827,
+   "sha256": "c7405f937adf1502d083455bb6f185ffe6bf743b38bb4882f27076dd3f549122",
+   "status": 200
+  },
+  "https://thecalgarygames.ca/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "oct 16 2026"
+   ],
+   "events": {},
+   "labels": [],
+   "length": 1488,
+   "sha256": "0429d5b81af3a61a94293ffc9222023ed97f76c8f8b9585015eac0679b35baa8",
+   "status": 200
+  },
+  "https://thescottishgames.com/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "sep 4-5 2027",
+    "sep 5-6"
+   ],
+   "events": {
+    "Scottish Highland Gathering & Games (Pleasanton)": true
+   },
+   "labels": [],
+   "length": 5082,
+   "sha256": "65a88f5dce12f247b00fdaff7c23c9aedbfb08b33639f256d5ae00abd4f47513",
+   "status": 200
+  },
+  "https://victoriahighlandgames.com/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "may 13",
+    "may 15-23 2027",
+    "may 16-17",
+    "may 21",
+    "may 9",
+    "may 9-17 2026"
+   ],
+   "events": {
+    "Victoria Highland Games & Celtic Festival": true
+   },
+   "labels": [],
+   "length": 4359,
+   "sha256": "a6d4a6810eaeb3fb07c3128ee1b94aec0298a0739582b3a7d7798b9cd40a5571",
+   "status": 200
+  },
+  "https://www.ancomunn.co.uk/nationalmod/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "jun 5 2025",
+    "may 31",
+    "nov 18 2025",
+    "nov 24",
+    "oct 15 2026",
+    "oct 16 2026",
+    "oct 17 2026",
+    "sep 29 2025"
+   ],
+   "events": {},
+   "labels": [],
+   "length": 3961,
+   "sha256": "cffccca73f1ac394a7e8fb05fce452048f62a0266aef325a3671fc43bef6641b",
+   "status": 200
+  },
+  "https://www.aspd.ca/highland-games-events": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "jul 25 2025",
+    "jul 25 2026",
+    "jun 20-21 2026",
+    "jun 27 2026",
+    "may 2 2026",
+    "sep 5-6 2026"
+   ],
+   "events": {},
+   "labels": [
+    "Alberta Society of Pipers & Drummers (ASPD)"
+   ],
+   "length": 2211,
+   "sha256": "2e883c904e55119bd3f003e7d924a84d5cef023cf6b5d6f9571e2167679245bb",
+   "status": 200
+  },
+  "https://www.braemargathering.org/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "feb 1 2027",
+    "nov 1 2024",
+    "sep 4 2027"
+   ],
+   "events": {
+    "Braemar Gathering": true
+   },
+   "labels": [],
+   "length": 4043,
+   "sha256": "2fc3b8a92d7a2a3118e1aac2627fd9e93739a6a5c1c731bd6c06a323a79ecab6",
+   "status": 200
+  },
+  "https://www.ccsna.org/calendar": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "aug 28 2026"
+   ],
+   "events": {},
+   "labels": [
+    "Clan Campbell Society (NA) Games Calendar"
+   ],
+   "length": 24986,
+   "sha256": "874d06d408e69f0df7cb955decbdc1dae10f8f42780de3a41527c4d68f816b4a",
+   "status": 200
+  },
+  "https://www.celticconnections.com/about-celtic-connections/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "jan 14",
+    "jan 31 2027"
+   ],
+   "events": {
+    "Celtic Connections": true
+   },
+   "labels": [],
+   "length": 2300,
+   "sha256": "ecdc0c6f6d6a203adf5e51ecb925ff1d7306523422196dbb1259923862d5f0da",
+   "status": 200
+  },
+  "https://www.cowalgathering.com/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [],
+   "events": {},
+   "labels": [],
+   "length": null,
+   "sha256": null,
+   "status": 202
+  },
+  "https://www.edintattoo.co.uk/tickets/tattoo-2027": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "aug 6-28 2027"
+   ],
+   "events": {
+    "Royal Edinburgh Military Tattoo": false
+   },
+   "labels": [],
+   "length": 4033,
+   "sha256": "fcb4541248cd2236a092e7dff20595567a3043172d2eae3ec21a7886ba3ac742",
+   "status": 200
+  },
+  "https://www.edmontonscottishsociety.org/hg2025": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "jun 20 2026",
+    "jun 20-21 2026",
+    "jun 21 2026"
+   ],
+   "events": {},
+   "labels": [],
+   "length": 1741,
+   "sha256": "3cbbd70a2b8a8c139a8bfb7ac3fdd9c352193ed7da5a848d7b56585af85fbd05",
+   "status": 200
+  },
+  "https://www.festival-interceltique.bzh/actualites/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "sep 10 2026",
+    "sep 24 2026"
+   ],
+   "events": {},
+   "labels": [],
+   "length": 4256,
+   "sha256": "8ac79c001fa6b2e1e37aabf7cde0ccdb86a23d8792ab6030666fae0d24afafb1",
+   "status": 200
+  },
+  "https://www.gaelic.ca/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [],
+   "events": {},
+   "labels": [
+    "Comhairle na Gaidhlig (NS Gaelic Council)"
+   ],
+   "length": 3887,
+   "sha256": "fb9dd1722c47e3432f78f0fc6835a7234a30815cea90225b59a08f75754b412e",
+   "status": 200
+  },
+  "https://www.gaelicsocietytoronto.com/tachartasan--fiosrachadh-na-coimhearsnachd--community-events--info.html": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "jan 27",
+    "jan 28 2023",
+    "may 31 2025",
+    "nov 25 2023"
+   ],
+   "events": {},
+   "labels": [
+    "Comunn Gaidhlig Thoronto (Gaelic Society of Toronto)"
+   ],
+   "length": 4892,
+   "sha256": "c272b2ed5db704a4fa05ec7a125da4b3944b56d4eaa61299628f554bbc0df3eb",
+   "status": 200
+  },
+  "https://www.glasgowlife.org.uk/arts-music-and-culture/world-pipe-band-championships": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "aug 13",
+    "aug 14",
+    "aug 14 2027"
+   ],
+   "events": {
+    "World Pipe Band Championships": true
+   },
+   "labels": [],
+   "length": 4984,
+   "sha256": "1a45cc7abde5fa2d975c794bfa8f0ea892411984e15e8b3fa68e34f077113c80",
+   "status": 200
+  },
+  "https://www.glengarryhighlandgames.com/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "apr 17 2026",
+    "jul 30-31 2027",
+    "jul 31-aug 1 2026"
+   ],
+   "events": {
+    "Glengarry Highland Games (North American Pipe Band Championships)": true
+   },
+   "labels": [],
+   "length": 2339,
+   "sha256": "f6042b539a05e0268052c223fbe53de3c5301a7f62d23b22d1d844ff2b1c77ba",
+   "status": 200
+  },
+  "https://www.halifaxhighlandgames.ca/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [],
+   "events": {},
+   "labels": [],
+   "length": 338,
+   "sha256": "73be4c3628856666209554213bb7c6506b35aca456a0b4557b236c23e7ce21d4",
+   "status": 200
+  },
+  "https://www.highlandgames.ca/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "jul 23-25 2027"
+   ],
+   "events": {
+    "New Brunswick Highland Games Festival": true
+   },
+   "labels": [],
+   "length": 2676,
+   "sha256": "5cab54e662addb7b0602ddf483101cb2a963c7c1597b465e53d1fdbc7340184d",
+   "status": 200
+  },
+  "https://www.hppb.ca/events.html": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "aug 2 2027",
+    "aug 7 2027",
+    "jul 1 2027",
+    "jul 17 2027",
+    "jun 12 2027",
+    "jun 5 2027",
+    "may 15 2027"
+   ],
+   "events": {},
+   "labels": [],
+   "length": 660,
+   "sha256": "0e82926eccec07fa57a9b8f9524e853f8dc45719badd74867f9e0eae7a99c236",
+   "status": 200
+  },
+  "https://www.montrealhighlandgames.com/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "aug 1 2027"
+   ],
+   "events": {
+    "Montreal Highland Games and Festival": true
+   },
+   "labels": [],
+   "length": 3928,
+   "sha256": "8ba276c2bb17a808f80057d6223c1675330c19216434003dd6c609a5961cc823",
+   "status": 200
+  },
+  "https://www.northumberlandhighlandgames.ca/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "jun 18-19 2027"
+   ],
+   "events": {
+    "Northumberland Scottish Festival & Highland Games": true
+   },
+   "labels": [],
+   "length": 2438,
+   "sha256": "3f1215c2e23d7d4e66f4e2fb56295b05f7b648034bb987d262cf490654e3f080",
+   "status": 200
+  },
+  "https://www.pipesdrums.com/article/association-leadership-spotlight-ian-aastrom-prairie-pipe-band-association-of-manitoba-part-1/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "apr 10 2024",
+    "apr 18 2025",
+    "feb 2 2024",
+    "feb 4 2024",
+    "jun 14 2024",
+    "jun 19 2024",
+    "mar 4 2025",
+    "may 10 2024",
+    "may 14 2024",
+    "oct 13 2026"
+   ],
+   "events": {},
+   "labels": [
+    "Prairie Pipe Band Association of Manitoba"
+   ],
+   "length": 14132,
+   "sha256": "7d1659680e49630f28f3c5602b9c90156c05a9c440d75c79cdd8a2f161359e12",
+   "status": 200
+  },
+  "https://www.reddeerhighlandgames.com/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "jun 26 2027"
+   ],
+   "events": {
+    "Red Deer Highland Games": true
+   },
+   "labels": [],
+   "length": 1737,
+   "sha256": "7325dcb462cdadb54e382a9c090d46c89364d06b745d07a20d55873ce742722d",
+   "status": 200
+  },
+  "https://www.saskhighland.ca/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "may 21-22 2027"
+   ],
+   "events": {
+    "Saskatchewan Highland Gathering & Celtic Festival": true
+   },
+   "labels": [],
+   "length": 2406,
+   "sha256": "dafcdd055530777ca782c24c463ffb573b42906089ab41f9aa02fb82ada6ce3f",
+   "status": 200
+  },
+  "https://www.saskpipebands.org/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "apr 18",
+    "jul 25",
+    "jun 20",
+    "may 16 2026",
+    "nov 11",
+    "nov 28",
+    "nov 7",
+    "oct 15",
+    "oct 17",
+    "sep 20",
+    "sep 5"
+   ],
+   "events": {},
+   "labels": [
+    "Saskatchewan Pipe Band Association"
+   ],
+   "length": 5234,
+   "sha256": "252cc93ec66d8cba56b8cd2655810d0949f4de7376ac255aa28a0ce5479ee1e8",
+   "status": 200
+  },
+  "https://www.scotdancenb.com/competitons-and-workshops": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "apr 11-12 2026",
+    "apr 18 2026",
+    "apr 19 2026",
+    "dec 5-6 2026",
+    "feb 7 2026",
+    "jul 11-12 2026",
+    "jul 25-26 2026",
+    "jul 5-10 2026",
+    "jun 13 2026",
+    "jun 6-7 2026",
+    "mar 28-29 2026",
+    "mar 7-8 2026",
+    "may 10 2026",
+    "may 23-24 2026",
+    "may 9 2026",
+    "nov 14-15 2026",
+    "oct 24 2026",
+    "oct 3-4 2026",
+    "sep 26 2026"
+   ],
+   "events": {},
+   "labels": [
+    "ScotDance New Brunswick"
+   ],
+   "length": 3379,
+   "sha256": "e238d2df9483de21814c21c362ae8dc51e00dc441943340884e4ac2dacf95a1a",
+   "status": 200
+  },
+  "https://www.scotscanada.ca/en/events": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "dec 20",
+    "dec 6",
+    "jan 28-mar 4",
+    "nov 14",
+    "nov 21",
+    "nov 27",
+    "nov 28",
+    "oct 16 2026",
+    "oct 26",
+    "oct 31"
+   ],
+   "events": {},
+   "labels": [
+    "ScotsCanada (CASSOC) events calendar"
+   ],
+   "length": 2065,
+   "sha256": "19d30a7bc557afb5ba2ee79c99d36a8685e0d8f68eb844ca418bc98f274f9440",
+   "status": 200
+  },
+  "https://www.scottishbanner.com/calendar/category/canada/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "aug 13 2027",
+    "aug 15 2027",
+    "dec 25",
+    "dec 31",
+    "dec 5",
+    "dec 6",
+    "jan 16 2027",
+    "jan 22 2027",
+    "jan 23 2027",
+    "jan 25 2027",
+    "jul 2 2027",
+    "jul 30 2027",
+    "jul 31 2027",
+    "jul 4 2027",
+    "jun 12",
+    "jun 12-13",
+    "jun 13 2027",
+    "jun 18 2027",
+    "jun 19 2027",
+    "jun 6 2027",
+    "nov 14",
+    "nov 21",
+    "nov 27",
+    "nov 28",
+    "nov 29",
+    "nov 30",
+    "nov 7",
+    "oct 22-oct 24",
+    "oct 24",
+    "oct 25",
+    "oct 9-oct 17",
+    "sep 16-nov 22",
+    "sep 16-oct 21",
+    "sep 30-oct 25"
+   ],
+   "events": {},
+   "labels": [
+    "Scottish Banner calendar"
+   ],
+   "length": 13348,
+   "sha256": "e3a79065209a72114f44da605eb50b5c8a6361407bd978e2110f99482dfbf1c2",
+   "status": 200
+  },
+  "https://www.sphg.ca/": {
+   "checked_at": "2026-10-18T05:25:56Z",
+   "dates": [
+    "jul 24-25 2027"
+   ],
+   "events": {
+    "Sherwood Park Highland Gathering": true
+   },
+   "labels": [],
+   "length": 1679,
+   "sha256": "94a7c493b419bbdddff6b7fdf38a783cd69f45fd9f085220e72bb477f42be56d",
+   "status": 200
+  }
+ },
+ "updated_at": "2026-10-18T05:25:56Z"
+}
