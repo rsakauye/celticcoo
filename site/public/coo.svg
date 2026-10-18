@@ -1,6 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="t">
-  <title id="t">The Celtic Coo: a friendly Highland cow</title>
-  <!-- Original artwork for The Celtic Coo (CelticCoo.ca). -->
+  <title id="t">Ceilidh the Coo: a friendly ginger Highland coo with a Maple Leaf tartan bow</title>
+  <!-- Original artwork for The Celtic Coo (CelticCoo.ca). Mascot: Ceilidh the Coo (say "Kaylee"). -->
+  <defs><pattern id="ml" width="16.32" height="16.32" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect x="0" y="0" width="16.32" height="1.92" fill="#b8925e"/><rect x="0" y="1.92" width="16.32" height="1.92" fill="#b3141c"/><rect x="0" y="3.84" width="16.32" height="0.48" fill="#1f5a34"/><rect x="0" y="4.32" width="16.32" height="0.48" fill="#b3141c"/><rect x="0" y="4.8" width="16.32" height="2.88" fill="#1f5a34"/><rect x="0" y="7.68" width="16.32" height="0.96" fill="#e0a51e"/><rect x="0" y="8.64" width="16.32" height="0.96" fill="#b8925e"/><rect x="0" y="9.6" width="16.32" height="0.96" fill="#6a4127"/><rect x="0" y="10.56" width="16.32" height="2.88" fill="#1f5a34"/><rect x="0" y="13.44" width="16.32" height="0.48" fill="#b3141c"/><rect x="0" y="13.92" width="16.32" height="0.48" fill="#1f5a34"/><rect x="0" y="14.4" width="16.32" height="1.92" fill="#b3141c"/><rect x="0" y="0" width="1.92" height="16.32" fill="#b8925e" opacity=".55"/><rect x="1.92" y="0" width="1.92" height="16.32" fill="#b3141c" opacity=".55"/><rect x="3.84" y="0" width="0.48" height="16.32" fill="#1f5a34" opacity=".55"/><rect x="4.32" y="0" width="0.48" height="16.32" fill="#b3141c" opacity=".55"/><rect x="4.8" y="0" width="2.88" height="16.32" fill="#1f5a34" opacity=".55"/><rect x="7.68" y="0" width="0.96" height="16.32" fill="#e0a51e" opacity=".55"/><rect x="8.64" y="0" width="0.96" height="16.32" fill="#b8925e" opacity=".55"/><rect x="9.6" y="0" width="0.96" height="16.32" fill="#6a4127" opacity=".55"/><rect x="10.56" y="0" width="2.88" height="16.32" fill="#1f5a34" opacity=".55"/><rect x="13.44" y="0" width="0.48" height="16.32" fill="#b3141c" opacity=".55"/><rect x="13.92" y="0" width="0.48" height="16.32" fill="#1f5a34" opacity=".55"/><rect x="14.4" y="0" width="1.92" height="16.32" fill="#b3141c" opacity=".55"/></pattern></defs>
   <!-- horns -->
   <path d="M38 44 C24 44 12 36 8 20 C18 30 28 32 40 32 Z" fill="#f4e6c8" stroke="#3b2414" stroke-width="3" stroke-linejoin="round"/>
   <path d="M82 44 C96 44 108 36 112 20 C102 30 92 32 80 32 Z" fill="#f4e6c8" stroke="#3b2414" stroke-width="3" stroke-linejoin="round"/>
@@ -13,6 +14,8 @@
   <path d="M30 46 C32 30 88 30 90 46 L88 60 L82 52 L78 64 L71 53 L66 66 L60 54 L54 66 L49 53 L42 64 L38 52 L32 60 Z" fill="#e0843f" stroke="#3b2414" stroke-width="3" stroke-linejoin="round"/>
   <!-- tuft on top -->
   <path d="M48 34 C50 22 56 26 58 32 C60 20 68 22 68 32 C72 26 78 30 74 36" fill="#e0843f" stroke="#3b2414" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+  <!-- wee lashes peeking out under the fringe -->
+  <path d="M44 66 l-2 4 M48 67 l-1 4.5 M76 66 l2 4 M72 67 l1 4.5" stroke="#3b2414" stroke-width="2" stroke-linecap="round"/>
   <!-- muzzle -->
   <ellipse cx="60" cy="92" rx="22" ry="14" fill="#f2c4a2" stroke="#3b2414" stroke-width="3"/>
   <ellipse cx="52" cy="92" rx="3.2" ry="4.2" fill="#3b2414"/>
@@ -22,4 +25,12 @@
   <!-- rosy cheeks -->
   <circle cx="38" cy="80" r="4" fill="#e88a6a" opacity=".55"/>
   <circle cx="82" cy="80" r="4" fill="#e88a6a" opacity=".55"/>
+  <!-- Ceilidh's bow, in the Maple Leaf tartan (Canada's national tartan; see scripts/make_tartan.py) -->
+  <g transform="translate(79 35) rotate(-14)" stroke="#3b2414" stroke-width="2.2" stroke-linejoin="round">
+    <path d="M-2 2 L-7 13 L-3.5 11.5 L-1.5 14 L1 3 Z" fill="url(#ml)"/>
+    <path d="M2 2 L7 13 L3.5 11.5 L1.5 14 L-1 3 Z" fill="url(#ml)"/>
+    <path d="M0 0 C-5 -10 -17 -9 -16 0 C-17 9 -5 10 0 0 Z" fill="url(#ml)"/>
+    <path d="M0 0 C5 -10 17 -9 16 0 C17 9 5 10 0 0 Z" fill="url(#ml)"/>
+    <rect x="-4" y="-4.5" width="8" height="9" rx="2.5" fill="url(#ml)"/>
+  </g>
 </svg>

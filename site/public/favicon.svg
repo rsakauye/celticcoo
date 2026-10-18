@@ -22,4 +22,9 @@
   <!-- rosy cheeks -->
   <circle cx="38" cy="80" r="4" fill="#e88a6a" opacity=".55"/>
   <circle cx="82" cy="80" r="4" fill="#e88a6a" opacity=".55"/>
+  <g transform="translate(79 35) rotate(-14)" stroke="#3b2414" stroke-width="3" stroke-linejoin="round">
+    <path d="M0 0 C-5 -10 -17 -9 -16 0 C-17 9 -5 10 0 0 Z" fill="#b3141c"/>
+    <path d="M0 0 C5 -10 17 -9 16 0 C17 9 5 10 0 0 Z" fill="#b3141c"/>
+    <rect x="-4" y="-4.5" width="8" height="9" rx="2.5" fill="#e0a51e"/>
+  </g>
 </svg>
