@@ -1,6 +1,9 @@
 import verified from '../../../data/events_2027.json';
 import pendingRaw from '../../../data/events_2027_pending.json';
 import shopsRaw from '../../../data/shops_canada.json';
+import groupsRaw from '../../../data/groups_canada.json';
+import burnsRaw from '../../../data/burns_2027.json';
+import championsRaw from '../../../data/season_champions.json';
 
 // ---------- helpers ----------
 export const slugify = (s) => String(s).toLowerCase()
@@ -18,6 +21,7 @@ export const COUNTRY_FLAG = { Canada: '🇨🇦', USA: '🇺🇸', UK: '🇬🇧
 // Friendly categories for filtering (raw research types are kept for display).
 export function category(type) {
   const t = String(type).toLowerCase();
+  if (t.includes('burns')) return 'Burns Night';
   if (t.includes('dance')) return 'Highland dance';
   if (t.includes('pipe') || t.includes('piping') || t.includes('drum') || t.includes('tattoo')) return 'Pipes & drums';
   if (t.includes('heavy')) return 'Heavy events';
@@ -28,7 +32,7 @@ export function category(type) {
 }
 export const CATEGORY_EMOJI = {
   'Highland Games': '🏋️', 'Pipes & drums': '🥁', 'Highland dance': '💃', 'Heavy events': '🪵',
-  'Gaelic language': '🗣️', 'Celtic music': '🎻', 'Festivals': '🎉',
+  'Gaelic language': '🗣️', 'Celtic music': '🎻', 'Festivals': '🎉', 'Burns Night': '🥃',
 };
 
 // Research notes include internal sourcing remarks; only publish venue-style snippets.
@@ -104,3 +108,61 @@ export const counts = {
   tba: tba.length,
   shops: shops.length,
 };
+
+// ---------- clubs, groups & lessons ----------
+
+// Friendly group types for filtering; the raw research type is kept for display.
+export function groupKind(type) {
+  const t = String(type).toLowerCase();
+  if (t.includes('clan')) return 'Clan society';
+  if (t.includes('re-enactment')) return 'Pipe band / living history';
+  if (t.includes('pipe band association')) return 'Association';
+  if (t.includes('pipe band') || t.includes('piping')) return 'Pipe band / piping';
+  if (t.includes('country dance')) return 'Scottish country dance';
+  if (t.includes('highland dance')) return t.includes('association') ? 'Association' : 'Highland dance';
+  if (t.includes('gaelic')) return 'Gaelic';
+  if (t.includes('irish') || t.includes('welsh')) return 'Irish & Welsh';
+  if (t.includes('heavy') || t.includes('umbrella')) return 'Association';
+  return 'Scottish society & Burns club';
+}
+export const GROUP_EMOJI = {
+  'Clan society': '🛡️', 'Pipe band / piping': '🥁', 'Pipe band / living history': '🎖️', 'Highland dance': '💃',
+  'Scottish country dance': '👯', 'Gaelic': '🗣️', 'Irish & Welsh': '☘️', 'Scottish society & Burns club': '🥃', 'Association': '🏛️',
+};
+const FEATURED_GROUP = '78th Fraser Highlanders Fort Calgary Garrison Youth Squad';
+const pName = (p) => (p === 'National' ? 'National / multi-province' : regionName(p));
+export const groups = groupsRaw.map((g) => ({
+  ...g,
+  id: slugify(g.name),
+  kind: groupKind(g.type),
+  regionLabel: pName(g.province),
+  lessons: g.offers_lessons === 'y',
+  featured: g.name === FEATURED_GROUP,
+})).sort((a, b) => (a.province === 'AB' ? -1 : 0) - (b.province === 'AB' ? -1 : 0) || (a.province === 'National' ? 1 : 0) - (b.province === 'National' ? 1 : 0)
+  || a.province.localeCompare(b.province) || sortName(a.name).localeCompare(sortName(b.name)));
+export const featuredGroup = groups.find((g) => g.featured);
+
+// ---------- Burns Night 2027 ----------
+// status: "confirmed (...)" = host/organizer/venue page; "listed (...)" = secondary source; "date TBA".
+export const burns = burnsRaw.map((r) => {
+  const dated = /^\d{4}-\d\d-\d\d$/.test(r.date);
+  return {
+    ...r,
+    id: slugify(`${r.host}-${r.city}`),
+    dated,
+    confirmed: dated && /^confirmed/i.test(r.status),
+    unconfirmed: dated && !/^confirmed/i.test(r.status),
+    regionLabel: regionName(r.province),
+    when: dated ? dateRange(r.date, r.date) : 'Usually late January, watch their page',
+  };
+}).sort((a, b) => (a.dated === b.dated ? 0 : a.dated ? -1 : 1) || (a.dated ? a.date.localeCompare(b.date) : 0) || (a.province === 'AB' ? -1 : 0) - (b.province === 'AB' ? -1 : 0) || a.city.localeCompare(b.city));
+
+// ---------- season champions (band level only, hand-entered with sources) ----------
+export const champions = championsRaw;
+
+counts.groups = groups.length;
+counts.groupsLessons = groups.filter((g) => g.lessons).length;
+counts.clans = groups.filter((g) => g.kind === 'Clan society').length;
+counts.burnsConfirmed = burns.filter((b) => b.confirmed).length;
+counts.burnsUnconfirmed = burns.filter((b) => b.unconfirmed).length;
+counts.burnsTba = burns.filter((b) => !b.dated).length;
