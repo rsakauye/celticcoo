@@ -1,0 +1,41 @@
+name: Weekly source check
+
+on:
+  schedule:
+    # Mondays 14:00 UTC = 8:00 a.m. MDT / 7:00 a.m. MST.
+    - cron: "0 14 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: source-check
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Re-check source pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/check_sources.py --open-issue --report source-check-report.md
+
+      - name: Save snapshot
+        run: |
+          git config user.name "celticcoo-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/source_state.json
+          if git diff --cached --quiet; then echo "No snapshot changes"; exit 0; fi
+          git commit -m "chore: weekly source snapshot $(TZ=America/Edmonton date +%F)"
+          git pull --rebase origin main
+          git push origin HEAD:main

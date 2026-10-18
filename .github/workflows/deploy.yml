@@ -1,0 +1,68 @@
+name: Build & deploy site
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "data/**"
+      - "!data/source_state.json"
+      - ".github/workflows/deploy.yml"
+  schedule:
+    # Daily rebuild so past events drop off "upcoming". 13:00 UTC = 7:00 a.m. MDT / 6:00 a.m. MST.
+    - cron: "0 13 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CF_DEPLOY: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - name: Build site
+        working-directory: site
+        env:
+          SITE_URL: ${{ vars.SITE_URL || 'https://celticcoo.ca' }}
+          BASE_PATH: /
+          PUBLIC_KIT_FORM_ID: ${{ vars.KIT_FORM_ID }}
+          PUBLIC_CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL }}
+          PUBLIC_SUBMIT_FORM_URL: ${{ vars.SUBMIT_FORM_URL }}
+        run: |
+          npm ci
+          npm run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-dist
+          path: site/dist
+          retention-days: 7
+
+      - name: Cloudflare secrets not set, skipping deploy
+        if: env.CF_DEPLOY != 'true'
+        run: echo "::notice::CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID not set. Built only; skipped the Cloudflare Pages deploy. See README."
+
+      # Deploys to the existing Cloudflare Pages project "celticcoo" (create it once first; see README).
+      - name: Deploy to Cloudflare Pages (celticcoo)
+        if: env.CF_DEPLOY == 'true'
+        working-directory: site
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4 pages deploy dist --project-name=celticcoo --branch=main --commit-dirty=true
