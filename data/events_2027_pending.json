@@ -45,7 +45,11 @@
   "type": "Highland Games",
   "source_url": "https://www.edmontonscottishsociety.org/hg2025",
   "source_kind": "official",
-  "notes": "2027 date not on site yet"
+  "notes": "2027 date not on site yet",
+  "features": [
+   "heavy-events"
+  ],
+  "features_source": "https://www.heavyevents.ab.ca/competitions"
  },
  {
   "name": "Canmore Highland Games",
@@ -57,7 +61,13 @@
   "type": "Highland Games",
   "source_url": "https://canmorehighlandgames.ca/",
   "source_kind": "pattern",
-  "notes": "Always Labour Day weekend"
+  "notes": "Always Labour Day weekend",
+  "features": [
+   "clan-tents",
+   "vendor-village",
+   "heavy-events"
+  ],
+  "features_source": "https://canmorehighlandgames.ca/vendors-market/"
  },
  {
   "name": "Halifax Highland Games & Scottish Festival",

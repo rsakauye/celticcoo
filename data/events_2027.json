@@ -21,7 +21,13 @@
   "type": "Highland Games",
   "source_url": "https://victoriahighlandgames.com/",
   "source_kind": "official",
-  "notes": "164th; Topaz Park. BCPA lists piping/band contests May 22-23"
+  "notes": "164th; Topaz Park. BCPA lists piping/band contests May 22-23",
+  "features": [
+   "clan-tents",
+   "vendor-village",
+   "heavy-events"
+  ],
+  "features_source": "https://victoriahighlandgames.com/attractions/clan-tents/"
  },
  {
   "name": "Saskatchewan Highland Gathering & Celtic Festival",
@@ -33,7 +39,12 @@
   "type": "Highland Games",
   "source_url": "https://www.saskhighland.ca/",
   "source_kind": "official",
-  "notes": "Victoria Park"
+  "notes": "Victoria Park",
+  "features": [
+   "vendor-village",
+   "heavy-events"
+  ],
+  "features_source": "https://www.saskhighland.ca/celtic-market"
  },
  {
   "name": "RSPBA British Pipe Band Championships",
@@ -81,7 +92,13 @@
   "type": "Highland Games",
   "source_url": "https://monctonhighlandgames.com/",
   "source_kind": "official",
-  "notes": "21st edition; hosts SAI Masters World Championships"
+  "notes": "21st edition; hosts SAI Masters World Championships",
+  "features": [
+   "clan-tents",
+   "vendor-village",
+   "heavy-events"
+  ],
+  "features_source": "https://monctonhighlandgames.com/clans-%26-attractions"
  },
  {
   "name": "SAI Masters World Championships (heavy events)",
@@ -105,7 +122,13 @@
   "type": "Highland Games",
   "source_url": "https://scotfestbc.com/",
   "source_kind": "official",
-  "notes": "Moved from Coquitlam to Paterson Park, Ladner (Delta Optimist, Sep 21 2026)"
+  "notes": "Moved from Coquitlam to Paterson Park, Ladner (Delta Optimist, Sep 21 2026)",
+  "features": [
+   "clan-tents",
+   "vendor-village",
+   "heavy-events"
+  ],
+  "features_source": "https://scotfestbc.com/get-involved/clans-non-profits/"
  },
  {
   "name": "Northumberland Scottish Festival & Highland Games",
@@ -117,7 +140,13 @@
   "type": "Highland Games",
   "source_url": "https://www.northumberlandhighlandgames.ca/",
   "source_kind": "official",
-  "notes": "63rd"
+  "notes": "63rd",
+  "features": [
+   "clan-tents",
+   "vendor-village",
+   "heavy-events"
+  ],
+  "features_source": "https://www.northumberlandhighlandgames.ca/clans"
  },
  {
   "name": "Red Deer Highland Games",
@@ -129,7 +158,13 @@
   "type": "Highland Games",
   "source_url": "https://www.reddeerhighlandgames.com/",
   "source_kind": "official",
-  "notes": "Central Middle School"
+  "notes": "Central Middle School",
+  "features": [
+   "clan-tents",
+   "vendor-village",
+   "heavy-events"
+  ],
+  "features_source": "https://www.reddeerhighlandgames.com/portfolio"
  },
  {
   "name": "Kamloops Highland Games",
@@ -153,7 +188,12 @@
   "type": "Highland Games",
   "source_url": "https://kincardinescottishfestival.ca/",
   "source_kind": "official",
-  "notes": ""
+  "notes": "",
+  "features": [
+   "clan-tents",
+   "vendor-village"
+  ],
+  "features_source": "https://kincardinescottishfestival.ca/represent-your-clan"
  },
  {
   "name": "Penticton Scottish Festival",
@@ -177,7 +217,12 @@
   "type": "Highland Games",
   "source_url": "https://antigonishhighlandgames.ca/",
   "source_kind": "official",
-  "notes": "162nd; also Tourism NS listing"
+  "notes": "162nd; also Tourism NS listing",
+  "features": [
+   "clan-tents",
+   "heavy-events"
+  ],
+  "features_source": "https://antigonishhighlandgames.ca/clans/"
  },
  {
   "name": "Grandfather Mountain Highland Games",
@@ -213,7 +258,13 @@
   "type": "Highland Games",
   "source_url": "https://www.highlandgames.ca/",
   "source_kind": "official",
-  "notes": ""
+  "notes": "",
+  "features": [
+   "clan-tents",
+   "vendor-village",
+   "heavy-events"
+  ],
+  "features_source": "https://www.highlandgames.ca/registration-clans/"
  },
  {
   "name": "RSPBA Scottish Pipe Band Championships",
@@ -237,7 +288,12 @@
   "type": "Highland Games",
   "source_url": "https://www.sphg.ca/",
   "source_kind": "official",
-  "notes": "Broadmoor Lake Park"
+  "notes": "Broadmoor Lake Park",
+  "features": [
+   "vendor-village",
+   "heavy-events"
+  ],
+  "features_source": "https://www.sphg.ca/vendor-list/"
  },
  {
   "name": "Pacific Northwest Scottish Highland Games",
@@ -261,7 +317,12 @@
   "type": "Highland Games",
   "source_url": "https://www.glengarryhighlandgames.com/",
   "source_kind": "official",
-  "notes": "A pipe band site lists Aug 2; official site says Jul 30-31"
+  "notes": "A pipe band site lists Aug 2; official site says Jul 30-31",
+  "features": [
+   "clan-tents",
+   "vendor-village"
+  ],
+  "features_source": "https://www.glengarryhighlandgames.com/events/clans"
  },
  {
   "name": "Montreal Highland Games and Festival",
@@ -273,7 +334,12 @@
   "type": "Highland Games",
   "source_url": "https://www.montrealhighlandgames.com/",
   "source_kind": "official",
-  "notes": "Douglas Hospital grounds"
+  "notes": "Douglas Hospital grounds",
+  "features": [
+   "clan-tents",
+   "vendor-village"
+  ],
+  "features_source": "https://www.montrealhighlandgames.com/clans-community.html"
  },
  {
   "name": "Fleadh Cheoil na hEireann",
@@ -318,7 +384,7 @@
   "city": "Edinburgh",
   "province_or_region": "Scotland",
   "country": "UK",
-  "type": "Tattoo",
+  "type": "Military tattoo",
   "source_url": "https://www.edintattoo.co.uk/tickets/tattoo-2027",
   "source_kind": "official",
   "notes": ""
@@ -369,7 +435,11 @@
   "type": "Highland Games",
   "source_url": "https://fergusscottishfestival.com/faq/",
   "source_kind": "official",
-  "notes": "Official FAQ also lists 2028-2031 dates"
+  "notes": "Official FAQ also lists 2028-2031 dates",
+  "features": [
+   "clan-tents"
+  ],
+  "features_source": "https://fergusscottishfestival.com/clans-heritage/"
  },
  {
   "name": "Milwaukee Irish Fest",
@@ -496,5 +566,32 @@
   "source_kind": "official",
   "notes": "",
   "added_date": "2026-10-17"
+ },
+ {
+  "name": "Royal Nova Scotia International Tattoo",
+  "start_date": "2027-07-01",
+  "end_date": "2027-07-05",
+  "city": "Halifax",
+  "province_or_region": "NS",
+  "country": "Canada",
+  "type": "Military tattoo",
+  "source_url": "https://nstattoo.ca/show/",
+  "source_kind": "official",
+  "notes": "One show a day",
+  "added_date": "2026-10-18"
+ },
+ {
+  "name": "Spruce Meadows International Christmas Market",
+  "start_date": "2026-11-13",
+  "end_date": "2026-12-06",
+  "city": "Calgary",
+  "province_or_region": "AB",
+  "country": "Canada",
+  "type": "Christmas market",
+  "source_url": "https://sprucemeadows.com/christmasmarket/",
+  "source_kind": "official",
+  "notes": "Weekends only: Nov 13-15, 20-22, 27-29 and Dec 4-6",
+  "celtic_vendors": "Vendor list includes Scottish, Irish & UK imports (A Little Bit of Ireland) and a British butcher (British Banger Company)",
+  "added_date": "2026-10-18"
  }
 ]

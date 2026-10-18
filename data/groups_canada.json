@@ -885,9 +885,10 @@
   "city": "",
   "province": "National",
   "website": "https://www.csaf.ca/",
-  "source_url": "https://www.csaf.ca/rankings",
+  "source_url": "https://www.csaf.ca/page/contact-us",
   "offers_lessons": "n",
-  "verified": "2026-10-17"
+  "verified": "2026-10-17",
+  "note": "National heavy events body: rankings, records and a list of practice contacts across Canada."
  },
  {
   "name": "ScotDance Canada",
@@ -908,5 +909,148 @@
   "source_url": "https://www.scotscanada.ca/en/name-search/member-list",
   "offers_lessons": "n",
   "verified": "2026-10-17"
+ },
+ {
+  "name": "Alberta Scottish Athletic Association (ASAA)",
+  "type": "heavy events club",
+  "city": "",
+  "province": "AB",
+  "website": "https://www.heavyevents.ab.ca/",
+  "source_url": "https://www.heavyevents.ab.ca/athletes",
+  "offers_lessons": "y",
+  "verified": "2026-10-18",
+  "note": "Runs the heavy events at most Alberta games, plus beginner clinics. Members hold weekly practices around Alberta; ask the association to get connected."
+ },
+ {
+  "name": "Vancouver Island Scottish Throwing Association (VISTA)",
+  "type": "heavy events club",
+  "city": "Victoria",
+  "province": "BC",
+  "website": "https://www.csaf.ca/page/contact-us",
+  "source_url": "https://www.csaf.ca/page/contact-us",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-18",
+  "note": "Heavy events practice group listed by CSAF."
+ },
+ {
+  "name": "Irish Cultural Society trad session at Hickey's",
+  "type": "trad session",
+  "city": "Calgary",
+  "province": "AB",
+  "website": "https://www.calgaryics.org/traditional-irish-music-sessions/",
+  "source_url": "https://www.calgaryics.org/series/trad-irish-music-sessions/",
+  "offers_lessons": "n",
+  "verified": "2026-10-18",
+  "note": "Most Thursdays, September to June, 7:30-9:30 pm, 6452 35 Ave NW. Beginners and listeners welcome."
+ },
+ {
+  "name": "Irish trad session at The Nonsuch",
+  "type": "trad session",
+  "city": "Edmonton",
+  "province": "AB",
+  "website": "https://jaythefiddler.com/index.php/category/irish-session-edmonton/",
+  "source_url": "https://jaythefiddler.com/index.php/category/irish-session-edmonton/",
+  "offers_lessons": "n",
+  "verified": "2026-10-18",
+  "note": "Sundays 1-5 pm (not Easter or Christmas), 11807 Kingsway NW. First hour is beginner-friendly."
+ },
+ {
+  "name": "Celtic session at O'Byrne's Downtown",
+  "type": "trad session",
+  "city": "Edmonton",
+  "province": "AB",
+  "website": "https://downtown.obyrnes.com/live-music-downtown-edmonton",
+  "source_url": "https://downtown.obyrnes.com/live-music-downtown-edmonton",
+  "offers_lessons": "n",
+  "verified": "2026-10-18",
+  "note": "Every other Saturday, 2-5 pm."
+ },
+ {
+  "name": "Edmonton Irish Club jam session",
+  "type": "trad session",
+  "city": "Edmonton",
+  "province": "AB",
+  "website": "https://edmontonirishclub.ca/jam-session",
+  "source_url": "https://edmontonirishclub.ca/jam-session",
+  "offers_lessons": "n",
+  "verified": "2026-10-18",
+  "note": "Every second Friday, 7:45 pm, 12546 126 St NW. Check the club calendar for dates."
+ },
+ {
+  "name": "Trad session at Hynes Irish Pub",
+  "type": "trad session",
+  "city": "Vancouver",
+  "province": "BC",
+  "website": "https://www.hynesirishpub.com/events-1",
+  "source_url": "https://www.hynesirishpub.com/events-1",
+  "offers_lessons": "n",
+  "verified": "2026-10-18",
+  "note": "Wednesdays from 7 pm and Sundays from 5 pm, 3468 West Broadway."
+ },
+ {
+  "name": "Trad sessions at Noonan's Pub",
+  "type": "trad session",
+  "city": "Toronto",
+  "province": "ON",
+  "website": "https://noonanspub.ca/",
+  "source_url": "https://noonanspub.ca/",
+  "offers_lessons": "n",
+  "verified": "2026-10-18",
+  "note": "Weekly Irish trad sessions at 141 Danforth Ave. Check with the pub for the day."
+ },
+ {
+  "name": "Alberta Scotch Society",
+  "type": "whisky society",
+  "city": "Edmonton",
+  "province": "AB",
+  "website": "https://www.albertascotchsociety.com/",
+  "source_url": "https://www.albertascotchsociety.com/membership/",
+  "offers_lessons": "n",
+  "verified": "2026-10-18",
+  "note": "Tastings, dinners and a monthly social. Membership required (adults 18+)."
+ },
+ {
+  "name": "The Scotch Malt Whisky Society of Canada",
+  "type": "whisky society",
+  "city": "Calgary",
+  "province": "AB",
+  "website": "https://www.smws.ca/",
+  "source_url": "https://www.smws.ca/tastings-events/",
+  "offers_lessons": "n",
+  "verified": "2026-10-18",
+  "note": "Members club with monthly tastings in Calgary and Edmonton; tastings are open to non-members (adults 18+)."
+ },
+ {
+  "name": "West Coast Whisky Society",
+  "type": "whisky society",
+  "city": "Vancouver",
+  "province": "BC",
+  "website": "https://www.wcws.ca/home.php",
+  "source_url": "https://www.wcws.ca/home.php",
+  "offers_lessons": "n",
+  "verified": "2026-10-18",
+  "note": "Members-only tastings and events (adults 19+)."
+ },
+ {
+  "name": "Toronto Whisky Society",
+  "type": "whisky society",
+  "city": "Toronto",
+  "province": "ON",
+  "website": "https://torontowhiskysociety.ca/home/",
+  "source_url": "https://torontowhiskysociety.ca/events/",
+  "offers_lessons": "n",
+  "verified": "2026-10-18",
+  "note": "Membership club with about six events a year (adults 19+)."
+ },
+ {
+  "name": "The Commons Scotch Whisky Society",
+  "type": "whisky society",
+  "city": "Halifax",
+  "province": "NS",
+  "website": "https://www.commonswhisky.club/",
+  "source_url": "https://www.commonswhisky.club/",
+  "offers_lessons": "n",
+  "verified": "2026-10-18",
+  "note": "Monthly tastings; membership has a waitlist (adults 19+)."
  }
 ]

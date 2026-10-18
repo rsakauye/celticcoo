@@ -16,14 +16,18 @@ const PROVINCES = {
   YT: 'Yukon', NT: 'Northwest Territories', NU: 'Nunavut',
 };
 export const regionName = (r) => PROVINCES[r] || r;
+// Verified on-site features (from the organizer's own pages; see features_source).
+export const FEATURES = { 'clan-tents': ['🛡️', 'Clan tents'], 'vendor-village': ['🛍️', 'Vendor village'], 'heavy-events': ['🪵', 'Heavy events'] };
 export const COUNTRY_FLAG = { Canada: '🇨🇦', USA: '🇺🇸', UK: '🇬🇧', France: '🇫🇷' };
 
 // Friendly categories for filtering (raw research types are kept for display).
 export function category(type) {
   const t = String(type).toLowerCase();
   if (t.includes('burns')) return 'Burns Night';
+  if (t.includes('tattoo')) return 'Military tattoo';
+  if (t.includes('market')) return 'Markets';
   if (t.includes('dance')) return 'Highland dance';
-  if (t.includes('pipe') || t.includes('piping') || t.includes('drum') || t.includes('tattoo')) return 'Pipes & drums';
+  if (t.includes('pipe') || t.includes('piping') || t.includes('drum')) return 'Pipes & drums';
   if (t.includes('heavy')) return 'Heavy events';
   if (t.includes('gaelic')) return 'Gaelic language';
   if (t.includes('highland games')) return 'Highland Games';
@@ -32,7 +36,7 @@ export function category(type) {
 }
 export const CATEGORY_EMOJI = {
   'Highland Games': '🏋️', 'Pipes & drums': '🥁', 'Highland dance': '💃', 'Heavy events': '🪵',
-  'Gaelic language': '🗣️', 'Celtic music': '🎻', 'Festivals': '🎉', 'Burns Night': '🥃',
+  'Gaelic language': '🗣️', 'Celtic music': '🎻', 'Festivals': '🎉', 'Burns Night': '🥃', 'Military tattoo': '🎖️', 'Markets': '🎄',
 };
 
 // Research notes include internal sourcing remarks; only publish venue-style snippets.
@@ -78,6 +82,8 @@ export const tba = pendingRaw
     category: category(e.type),
     type: e.type,
     source_url: e.source_url,
+    features: e.features || [],
+    features_source: e.features_source || '',
     id: slugify(e.name),
   }))
   .sort((a, b) => (a.region === 'AB' ? -1 : 0) - (b.region === 'AB' ? -1 : 0) || a.region.localeCompare(b.region) || a.name.localeCompare(b.name));
@@ -114,6 +120,9 @@ export const counts = {
 // Friendly group types for filtering; the raw research type is kept for display.
 export function groupKind(type) {
   const t = String(type).toLowerCase();
+  if (t.includes('heavy')) return 'Heavy events';
+  if (t.includes('trad session')) return 'Trad sessions';
+  if (t.includes('whisky')) return 'Whisky societies';
   if (t.includes('clan')) return 'Clan society';
   if (t.includes('re-enactment')) return 'Pipe band / living history';
   if (t.includes('pipe band association')) return 'Association';
@@ -122,12 +131,12 @@ export function groupKind(type) {
   if (t.includes('highland dance')) return t.includes('association') ? 'Association' : 'Highland dance';
   if (t.includes('gaelic')) return 'Gaelic';
   if (t.includes('irish') || t.includes('welsh')) return 'Irish & Welsh';
-  if (t.includes('heavy') || t.includes('umbrella')) return 'Association';
+  if (t.includes('umbrella')) return 'Association';
   return 'Scottish society & Burns club';
 }
 export const GROUP_EMOJI = {
   'Clan society': '🛡️', 'Pipe band / piping': '🥁', 'Pipe band / living history': '🎖️', 'Highland dance': '💃',
-  'Scottish country dance': '👯', 'Gaelic': '🗣️', 'Irish & Welsh': '☘️', 'Scottish society & Burns club': '🥃', 'Association': '🏛️',
+  'Scottish country dance': '👯', 'Gaelic': '🗣️', 'Irish & Welsh': '☘️', 'Scottish society & Burns club': '🏴', 'Association': '🏛️', 'Heavy events': '🪵', 'Trad sessions': '🎻', 'Whisky societies': '🥃',
 };
 const FEATURED_GROUP = '78th Fraser Highlanders Fort Calgary Garrison Youth Squad';
 const pName = (p) => (p === 'National' ? 'National / multi-province' : regionName(p));
