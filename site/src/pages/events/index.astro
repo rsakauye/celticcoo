@@ -1,0 +1,83 @@
+---
+import Base from '../../layouts/Base.astro';
+import EventCard from '../../components/EventCard.astro';
+import HidePast from '../../components/HidePast.astro';
+import { events, tba, regionName, CATEGORY_EMOJI } from '../../lib/data.js';
+import { u } from '../../lib/site.js';
+const countries = [...new Set(events.map((e) => e.country))].sort((a, b) => (a === 'Canada' ? -1 : b === 'Canada' ? 1 : a.localeCompare(b)));
+const regions = [...new Set(events.map((e) => `${e.country}|${e.region}`))].sort().map((k) => { const [c, r] = k.split('|'); return { c, r, label: regionName(r) }; });
+const cats = [...new Set(events.map((e) => e.category))].sort();
+const months = [...new Set(events.map((e) => e.start_date.slice(0, 7)))].sort();
+const monthLabel = (m) => new Date(m + '-15T12:00:00Z').toLocaleDateString('en-CA', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+---
+<Base title="Celtic events calendar 2027" description="Confirmed 2027 Highland Games, pipe band championships, Highland dance and Celtic festivals in Canada and abroad. Filter by province, country and type, or subscribe in your calendar app.">
+  <h1>Celtic &amp; Highland events, 2027</h1>
+  <p>Every date below is confirmed on the organizer's or association's own website. Subscribe to the whole calendar in Google, Apple or Outlook: <a href={u('events.ics')}><b>events.ics</b></a> (or copy the link into "subscribe by URL").</p>
+
+  <form class="filters card" id="filters" onsubmit="return false">
+    <label>Country<br /><select id="f-country"><option value="">All countries</option>{countries.map((c) => <option value={c}>{c}</option>)}</select></label>
+    <label>Province / region<br /><select id="f-region"><option value="">All</option>{regions.map((r) => <option value={r.r} data-country={r.c}>{r.label}{r.c !== 'Canada' ? ` (${r.c})` : ''}</option>)}</select></label>
+    <label>Type<br /><select id="f-cat"><option value="">All types</option>{cats.map((c) => <option value={c}>{CATEGORY_EMOJI[c]} {c}</option>)}</select></label>
+    <label style="align-self:end"><input type="checkbox" id="f-past" /> Show past events</label>
+    <div class="muted" id="f-count" style="align-self:end" aria-live="polite"></div>
+  </form>
+
+  {months.map((m) => (
+    <section class="month" data-month={m}>
+      <h2>{monthLabel(m)}</h2>
+      <div class="grid">{events.filter((e) => e.start_date.startsWith(m)).map((e) => <EventCard e={e} />)}</div>
+    </section>
+  ))}
+  <p id="f-empty" class="card" hidden>No events match those filters yet. Know one we're missing? <a href={u('submit/')}>Tell us about it</a>.</p>
+
+  <h2 id="coming-2027">Coming in 2027, dates to be announced</h2>
+  <p class="muted">These Canadian events are expected in 2027, but we haven't confirmed the exact dates yet. They are <b>not</b> in the calendar feed. Check the organizer's site before making plans.</p>
+  <div class="grid">
+    {tba.map((e) => (
+      <article class="card" id={e.id}>
+        <span class="pill tba">Date TBA</span>
+        <h3 style="margin:.3rem 0;font-size:1.08rem">{e.name}</h3>
+        <div class="muted">{e.city ? `${e.city}, ` : ''}{e.regionLabel}</div>
+        <span class="pill green" style="margin-top:.4rem">{CATEGORY_EMOJI[e.category]} {e.category}</span>
+        <p style="margin:.4rem 0 0;font-size:.92rem"><a href={e.source_url} rel="noopener" target="_blank">Organizer / source ↗</a></p>
+      </article>
+    ))}
+  </div>
+  <HidePast />
+  <script is:inline>
+    (function () {
+      var $ = function (id) { return document.getElementById(id); };
+      var country = $('f-country'), region = $('f-region'), cat = $('f-cat'), past = $('f-past');
+      var params = new URLSearchParams(location.search);
+      if (params.get('country')) country.value = params.get('country');
+      if (params.get('region')) region.value = params.get('region');
+      if (params.get('type')) cat.value = params.get('type');
+      function apply() {
+        Array.prototype.forEach.call(region.options, function (o) { o.hidden = !!(o.value && country.value && o.dataset.country !== country.value); });
+        if (region.selectedOptions[0] && region.selectedOptions[0].hidden) region.value = '';
+        var n = 0;
+        document.querySelectorAll('.month').forEach(function (sec) {
+          var shown = 0;
+          sec.querySelectorAll('.ev').forEach(function (el) {
+            var ok = (!country.value || el.dataset.country === country.value) && (!region.value || el.dataset.region === region.value) &&
+              (!cat.value || el.dataset.cat === cat.value) && (past.checked || !el.dataset.past);
+            el.hidden = !ok; if (ok) shown++;
+          });
+          sec.hidden = shown === 0; n += shown;
+        });
+        $('f-count').textContent = n + (n === 1 ? ' event' : ' events');
+        $('f-empty').hidden = n > 0;
+        var q = new URLSearchParams();
+        if (country.value) q.set('country', country.value); if (region.value) q.set('region', region.value); if (cat.value) q.set('type', cat.value);
+        history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
+      }
+      [country, region, cat, past].forEach(function (el) { el.addEventListener('change', apply); });
+      apply();
+    })();
+  </script>
+</Base>
+<style>
+  .filters { display:flex; flex-wrap:wrap; gap:.8rem 1.2rem; margin:1rem 0 .5rem; position:sticky; top:0; z-index:5; box-shadow:0 4px 12px rgba(60,30,10,.06); }
+  .filters label { font-size:.85rem; color:var(--muted); }
+  .filters select { min-width:170px; margin-top:.15rem; }
+</style>
