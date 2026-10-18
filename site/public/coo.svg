@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="t">
+  <title id="t">The Celtic Coo: a friendly Highland cow</title>
+  <!-- Original artwork for The Celtic Coo (CelticCoo.ca). -->
+  <!-- horns -->
+  <path d="M38 44 C24 44 12 36 8 20 C18 30 28 32 40 32 Z" fill="#f4e6c8" stroke="#3b2414" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M82 44 C96 44 108 36 112 20 C102 30 92 32 80 32 Z" fill="#f4e6c8" stroke="#3b2414" stroke-width="3" stroke-linejoin="round"/>
+  <!-- ears -->
+  <ellipse cx="24" cy="56" rx="15" ry="8" transform="rotate(-18 24 56)" fill="#b4541f" stroke="#3b2414" stroke-width="3"/>
+  <ellipse cx="96" cy="56" rx="15" ry="8" transform="rotate(18 96 56)" fill="#b4541f" stroke="#3b2414" stroke-width="3"/>
+  <!-- head -->
+  <path d="M34 40 C34 28 86 28 86 40 L90 78 C90 100 76 110 60 110 C44 110 30 100 30 78 Z" fill="#cf6a2c" stroke="#3b2414" stroke-width="3" stroke-linejoin="round"/>
+  <!-- shaggy fringe over the eyes -->
+  <path d="M30 46 C32 30 88 30 90 46 L88 60 L82 52 L78 64 L71 53 L66 66 L60 54 L54 66 L49 53 L42 64 L38 52 L32 60 Z" fill="#e0843f" stroke="#3b2414" stroke-width="3" stroke-linejoin="round"/>
+  <!-- tuft on top -->
+  <path d="M48 34 C50 22 56 26 58 32 C60 20 68 22 68 32 C72 26 78 30 74 36" fill="#e0843f" stroke="#3b2414" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+  <!-- muzzle -->
+  <ellipse cx="60" cy="92" rx="22" ry="14" fill="#f2c4a2" stroke="#3b2414" stroke-width="3"/>
+  <ellipse cx="52" cy="92" rx="3.2" ry="4.2" fill="#3b2414"/>
+  <ellipse cx="68" cy="92" rx="3.2" ry="4.2" fill="#3b2414"/>
+  <!-- smile -->
+  <path d="M53 101 Q60 106 67 101" fill="none" stroke="#3b2414" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- rosy cheeks -->
+  <circle cx="38" cy="80" r="4" fill="#e88a6a" opacity=".55"/>
+  <circle cx="82" cy="80" r="4" fill="#e88a6a" opacity=".55"/>
+</svg>

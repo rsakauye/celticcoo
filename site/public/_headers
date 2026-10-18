@@ -1,0 +1,14 @@
+# Cloudflare Pages headers
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+/events.ics
+  Content-Type: text/calendar; charset=utf-8
+  Cache-Control: public, max-age=3600
+
+/rss.xml
+  Cache-Control: public, max-age=3600
+
+/favicon.svg
+  Cache-Control: public, max-age=604800
