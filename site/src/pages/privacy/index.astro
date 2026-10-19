@@ -1,6 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
-import { u, CONTACT_EMAIL } from '../../lib/site.js';
+import { u, CONTACT_EMAIL, MAILING_ADDRESS } from '../../lib/site.js';
 ---
 <Base title="Privacy Policy" description="What The Celtic Coo collects, why, and the choices you have.">
   <div style="max-width:760px">
@@ -46,7 +46,7 @@ import { u, CONTACT_EMAIL } from '../../lib/site.js';
     <p>Canada's privacy law for businesses, the Personal Information Protection and Electronic Documents Act (PIPEDA), applies to The Celtic Coo, along with Alberta's Personal Information Protection Act (PIPA) where it applies. You can ask to see the personal information we hold about you, have it corrected, or have it deleted. If you're not happy with our answer, you can contact the <a href="https://www.priv.gc.ca/" rel="noopener" target="_blank">Office of the Privacy Commissioner of Canada</a>.</p>
 
     <h2 id="contact">Contact</h2>
-    <p>Questions, requests or concerns? Email us at <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.</p>
+    <p>Questions, requests or concerns? Email us at <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>, or write to The Celtic Coo, {MAILING_ADDRESS}.</p>
 
     <h2 id="changes">Changes to this policy</h2>
     <p>If we change how we handle information, we'll update this page and the effective date above.</p>

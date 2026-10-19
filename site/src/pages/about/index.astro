@@ -1,7 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import { counts } from '../../lib/data.js';
-import { u, CONTACT_EMAIL } from '../../lib/site.js';
+import { u, CONTACT_EMAIL, MAILING_ADDRESS } from '../../lib/site.js';
 ---
 <Base title="About" description="Why The Celtic Coo exists, how we check dates, and how to get listed.">
   <div style="max-width:760px">
@@ -25,7 +25,7 @@ import { u, CONTACT_EMAIL } from '../../lib/site.js';
     <p>Right now we list <b>{counts.events}</b> confirmed events ({counts.canadaEvents} in Canada), <b>{counts.tba}</b> Canadian events with dates to come, <b>{counts.shops}</b> shops and makers, and <b>{counts.groups}</b> clubs and groups.</p>
 
     <h2>Shops, organizers and corrections</h2>
-    <p>Basic listings are free. If you run an event or a shop and want something changed or removed, <a href={u('submit/')}>let us know</a> or email <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. Shop names, logos and trademarks belong to their owners, and we link straight to their sites.</p>
+    <p>Basic listings are free. If you run an event or a shop and want something changed or removed, <a href={u('submit/')}>let us know</a> or email <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> (mail: The Celtic Coo, {MAILING_ADDRESS}). Shop names, logos and trademarks belong to their owners, and we link straight to their sites.</p>
 
     <h2>Take it with you</h2>
     <ul>

@@ -1,6 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
-import { u, CONTACT_EMAIL } from '../../lib/site.js';
+import { u, CONTACT_EMAIL, MAILING_ADDRESS } from '../../lib/site.js';
 ---
 <Base title="Terms of Use" description="The simple terms for using The Celtic Coo.">
   <div style="max-width:760px">
@@ -27,6 +27,6 @@ import { u, CONTACT_EMAIL } from '../../lib/site.js';
     <p>We may update these terms from time to time. We'll change the effective date above when we do. These terms are governed by the laws of Alberta and Canada.</p>
 
     <h2 id="contact">Contact</h2>
-    <p>Questions? Email us at <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>, or use our <a href={u('submit/')}>Add yours</a> page to send a correction.</p>
+    <p>Questions? Email us at <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>, write to The Celtic Coo, {MAILING_ADDRESS}, or use our <a href={u('submit/')}>Add yours</a> page to send a correction.</p>
   </div>
 </Base>
