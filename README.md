@@ -47,7 +47,7 @@ python3 scripts/check_sources.py --no-save   # dry-run source check
    Cloudflare zones, attach `celticcoo.ca` (and `www`) as custom domains on the Pages project,
    and redirect `thecelticcoo.ca` → `https://celticcoo.ca` with a Cloudflare redirect rule.
 4. **Optional repo variables** (*Variables* tab):
-   - `KIT_FORM_ID`: numeric Kit form ID. Until set, the newsletter box shows "Sign-up opens soon".
+   - `KIT_FORM_ID`: numeric Kit form ID. Defaults to 10068901 (Coo's Letter signup); set to `off` to show "Sign-up opens soon".
    - `CONTACT_EMAIL`: defaults to `hello@celticcoo.ca` (**TODO: that inbox doesn't exist yet**,
      e.g. set up Cloudflare Email Routing).
    - `SUBMIT_FORM_URL`: link to a hosted submission form (**TODO**). Until set, /submit/ uses mailto links.
