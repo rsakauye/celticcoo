@@ -1,9 +1,33 @@
-// Simple sitemap of the site's pages plus one page per confirmed event (no extra dependency).
+// Sitemap of the site's pages plus one page per confirmed event (no extra dependency).
+// <lastmod> is the date the page's content really changed (see lib/lastmod.js), or omitted when unknown,
+// so search engines and the IndexNow ping (scripts/indexnow.mjs) only see genuine updates.
 import { events } from '../lib/data.js';
-const PAGES = ['', 'events/', 'results/', 'groups/', 'burns-night/', 'shops/', 'fundraising/', 'what-to-wear/', 'tartans/', 'roots/', 'submit/', 'about/', 'newsletter/', 'privacy/', 'terms/'];
+import { gitDate, eventLastmod } from '../lib/lastmod.js';
+const P = (f) => `site/src/pages/${f}`;
+const D = (f) => `data/${f}`;
+const PAGES = {
+  '': [P('index.astro'), D('events_2027.json')],
+  'events/': [P('events/index.astro'), D('events_2027.json'), D('events_2027_pending.json')],
+  'results/': [P('results/index.astro'), D('season_champions.json')],
+  'groups/': [P('groups/index.astro'), D('groups_canada.json')],
+  'burns-night/': [P('burns-night/index.astro'), D('burns_2027.json')],
+  'shops/': [P('shops/index.astro'), D('shops_canada.json')],
+  'fundraising/': [P('fundraising/index.astro')],
+  'what-to-wear/': [P('what-to-wear/index.astro')],
+  'tartans/': [P('tartans/index.astro')],
+  'roots/': [P('roots/index.astro')],
+  'submit/': [P('submit/index.astro')],
+  'about/': [P('about/index.astro')],
+  'newsletter/': [P('newsletter/index.astro')],
+  'privacy/': [P('privacy/index.astro')],
+  'terms/': [P('terms/index.astro')],
+};
 export function GET(context) {
   const site = new URL(import.meta.env.BASE_URL, context.site).href;
-  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Edmonton' });
-  const urls = [...PAGES, ...events.map((e) => `events/${e.id}/`)].map((p) => `  <url><loc>${site}${p}</loc><lastmod>${today}</lastmod></url>`).join('\n');
+  const entries = [
+    ...Object.entries(PAGES).map(([p, deps]) => [p, gitDate(deps)]),
+    ...events.map((e) => [`events/${e.id}/`, eventLastmod(e.id)]),
+  ];
+  const urls = entries.map(([p, d]) => `  <url><loc>${site}${p}</loc>${d ? `<lastmod>${d}</lastmod>` : ''}</url>`).join('\n');
   return new Response(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`, { headers: { 'Content-Type': 'application/xml; charset=utf-8' } });
 }

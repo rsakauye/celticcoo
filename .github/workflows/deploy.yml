@@ -28,6 +28,10 @@ jobs:
       CF_DEPLOY: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history (trees only, blobs on demand) so the sitemap can use real git last-modified dates.
+          fetch-depth: 0
+          filter: blob:none
 
       - uses: actions/setup-node@v4
         with:
@@ -57,6 +61,11 @@ jobs:
       - name: Cloudflare secrets not set, skipping deploy
         if: env.CF_DEPLOY != 'true'
         run: echo "::notice::CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID not set. Built only; skipped the Cloudflare Pages deploy. See README."
+
+      - name: IndexNow snapshot of the live sitemap (before deploy)
+        if: env.CF_DEPLOY == 'true'
+        continue-on-error: true
+        run: node scripts/indexnow.mjs --snapshot
 
       # Deploys to the existing Cloudflare Pages project "celticcoo" (create it once first; see README).
       - name: Deploy to Cloudflare Pages (celticcoo)
