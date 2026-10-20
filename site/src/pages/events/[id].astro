@@ -23,6 +23,7 @@ const eventLd = {
   url: `${ORIGIN}/events/${e.id}/`,
   sameAs: e.source_url,
 };
+const TAG_LABEL = { 'highland-games': 'Highland Games', 'pipe-band': 'Pipe bands', 'highland-dance': 'Highland dance', 'scottish-country-dance': 'Scottish country dance', ceilidh: 'Ceilidh', burns: 'Burns', 'st-andrews': "St Andrew's", music: 'Music', 'heavy-events': 'Heavy events', 'ball-formal': 'Ball / formal', 'workshop-class': 'Workshops & classes', irish: 'Irish', 'family-friendly': 'Family-friendly', other: 'Other' };
 const near = events.filter((x) => x.id !== e.id && x.region === e.region && x.country === e.country).slice(0, 6);
 const sameType = events.filter((x) => x.id !== e.id && x.category === e.category && !near.includes(x)).slice(0, 3);
 ---
@@ -32,6 +33,8 @@ const sameType = events.filter((x) => x.id !== e.id && x.category === e.category
   <p class="when">{e.when}</p>
   <p>{COUNTRY_FLAG[e.country] || ''} {place}</p>
   <p><span class="pill green">{CATEGORY_EMOJI[e.category]} {e.category}</span>{e.type !== e.category && <span class="pill">{e.type}</span>}</p>
+  {e.summary && <p class="ev-sum">{e.summary} <span class="muted">(From the {e.source_kind === 'official' ? "organizer's" : "association's"} page.)</span></p>}
+  {e.tags && e.tags.length > 0 && <p>Tags: {e.tags.map((t) => <a class="pill tag" href={u(`events/?tags=${t}`)}>{TAG_LABEL[t] || t}<span class="sr-only">: see all events with this tag</span></a>)}</p>}
   {e.features && e.features.length > 0 && <p>At the games: {e.features.map((f) => <a class="pill" style="background:#e3ebf5;color:var(--navy);text-decoration:none" href={e.features_source} rel="noopener" target="_blank">{FEATURES[f][0]} {FEATURES[f][1]}</a>)} <span class="muted">(from the organizer's site)</span></p>}
   {e.note && <p>{e.note}</p>}
   {e.celtic_vendors && <p>🏴 {e.celtic_vendors}</p>}
@@ -43,5 +46,7 @@ const sameType = events.filter((x) => x.id !== e.id && x.category === e.category
   <p><a href={u('events/')}>← All Celtic &amp; Highland events</a></p>
 </Base>
 <style>
+  .ev-sum { font-size:1.08rem; max-width:44rem; }
+  .tag { text-decoration:underline; text-underline-offset:2px; }
   .when { font-weight:700; color:var(--ginger); font-size:1.15rem; margin:.2rem 0; }
 </style>

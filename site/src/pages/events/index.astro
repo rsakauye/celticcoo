@@ -8,6 +8,11 @@ const countries = [...new Set(events.map((e) => e.country))].sort((a, b) => (a =
 const regions = [...new Set(events.map((e) => `${e.country}|${e.region}`))].sort().map((k) => { const [c, r] = k.split('|'); return { c, r, label: regionName(r) }; });
 const cats = [...new Set(events.map((e) => e.category))].sort();
 const months = [...new Set(events.map((e) => e.start_date.slice(0, 7)))].sort();
+// Tags: picked from a fixed list, each backed by a quote from the organizer's page or our data (tag_quotes in data/events_2027.json).
+const TAG_LABEL = { 'highland-games': 'Highland Games', 'pipe-band': 'Pipe bands', 'highland-dance': 'Highland dance', 'scottish-country-dance': 'Scottish country dance', ceilidh: 'Ceilidh', burns: 'Burns', 'st-andrews': "St Andrew's", music: 'Music', 'heavy-events': 'Heavy events', 'ball-formal': 'Ball / formal', 'workshop-class': 'Workshops & classes', irish: 'Irish', 'family-friendly': 'Family-friendly', other: 'Other' };
+const tagCount = {}; events.forEach((e) => (e.tags || []).forEach((t) => { tagCount[t] = (tagCount[t] || 0) + 1; }));
+const tagList = Object.keys(TAG_LABEL).filter((t) => tagCount[t]);
+const tagMap = Object.fromEntries(events.map((e) => [e.id, e.tags || []]));
 const monthLabel = (m) => new Date(m + '-15T12:00:00Z').toLocaleDateString('en-CA', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 ---
 <Base title="Celtic events calendar 2026–27" description="Confirmed 2027 Highland Games, pipe band championships, Highland dance and Celtic festivals in Canada and abroad. Filter by province, country and type, or subscribe in your calendar app.">
@@ -22,6 +27,11 @@ const monthLabel = (m) => new Date(m + '-15T12:00:00Z').toLocaleDateString('en-C
     <label>Type<br /><select id="f-cat"><option value="">All types</option>{cats.map((c) => <option value={c}>{CATEGORY_EMOJI[c]} {c}</option>)}</select></label>
     <label>At the games<br /><select id="f-feat"><option value="">Anything</option>{Object.entries(FEATURES).map(([k, [em, l]]) => <option value={k}>{em} {l}</option>)}</select></label>
     <label style="align-self:end"><input type="checkbox" id="f-past" /> Show past events</label>
+    <div class="tags" role="group" aria-labelledby="f-tags-label">
+      <span id="f-tags-label" class="tags-label">Tags <span class="muted">(pick any; shows events with at least one)</span></span>
+      <div class="chips">{tagList.map((t) => <button type="button" class="chip" data-tag={t} aria-pressed="false"><span class="chip-mark" aria-hidden="true"></span>{TAG_LABEL[t]} <span class="chip-n">({tagCount[t]})</span></button>)}
+        <button type="button" class="chip-clear" id="f-tags-clear" hidden>Clear tags</button></div>
+    </div>
     <div class="muted" id="f-count" style="align-self:end" aria-live="polite"></div>
   </form>
 
@@ -47,6 +57,7 @@ const monthLabel = (m) => new Date(m + '-15T12:00:00Z').toLocaleDateString('en-C
       </article>
     ))}
   </div>
+  <script type="application/json" id="ev-tags" set:html={JSON.stringify(tagMap)} />
   <HidePast />
   <script is:inline>
     (function () {
@@ -57,15 +68,26 @@ const monthLabel = (m) => new Date(m + '-15T12:00:00Z').toLocaleDateString('en-C
       if (params.get('region')) region.value = params.get('region');
       if (params.get('type')) cat.value = params.get('type');
       if (params.get('feature')) feat.value = params.get('feature');
+      var TAGS = JSON.parse($('ev-tags').textContent), chips = document.querySelectorAll('.chip'), clear = $('f-tags-clear');
+      document.querySelectorAll('.month .ev').forEach(function (el) { el.dataset.tags = (TAGS[el.id] || []).join(' '); });
+      var picked = (params.get('tags') || '').split(',').filter(Boolean);
+      chips.forEach(function (b) {
+        b.setAttribute('aria-pressed', picked.indexOf(b.dataset.tag) > -1 ? 'true' : 'false');
+        b.addEventListener('click', function () { b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'); apply(); });
+      });
+      clear.addEventListener('click', function () { chips.forEach(function (b) { b.setAttribute('aria-pressed', 'false'); }); apply(); chips[0] && chips[0].focus(); });
+      function sel() { return Array.prototype.filter.call(chips, function (b) { return b.getAttribute('aria-pressed') === 'true'; }).map(function (b) { return b.dataset.tag; }); }
       function apply() {
         Array.prototype.forEach.call(region.options, function (o) { o.hidden = !!(o.value && country.value && o.dataset.country !== country.value); });
         if (region.selectedOptions[0] && region.selectedOptions[0].hidden) region.value = '';
-        var n = 0;
+        var n = 0, tg = sel();
+        clear.hidden = tg.length === 0;
         document.querySelectorAll('.month').forEach(function (sec) {
           var shown = 0;
           sec.querySelectorAll('.ev').forEach(function (el) {
             var ok = (!country.value || el.dataset.country === country.value) && (!region.value || el.dataset.region === region.value) &&
-              (!cat.value || el.dataset.cat === cat.value) && (!feat.value || (' ' + el.dataset.features + ' ').indexOf(' ' + feat.value + ' ') > -1) && (past.checked || !el.dataset.past);
+              (!cat.value || el.dataset.cat === cat.value) && (!feat.value || (' ' + el.dataset.features + ' ').indexOf(' ' + feat.value + ' ') > -1) && (past.checked || !el.dataset.past) &&
+              (!tg.length || tg.some(function (t) { return (' ' + el.dataset.tags + ' ').indexOf(' ' + t + ' ') > -1; }));
             el.hidden = !ok; if (ok) shown++;
           });
           sec.hidden = shown === 0; n += shown;
@@ -73,7 +95,7 @@ const monthLabel = (m) => new Date(m + '-15T12:00:00Z').toLocaleDateString('en-C
         $('f-count').textContent = n + (n === 1 ? ' event' : ' events');
         $('f-empty').hidden = n > 0;
         var q = new URLSearchParams();
-        if (country.value) q.set('country', country.value); if (region.value) q.set('region', region.value); if (cat.value) q.set('type', cat.value); if (feat.value) q.set('feature', feat.value);
+        if (country.value) q.set('country', country.value); if (region.value) q.set('region', region.value); if (cat.value) q.set('type', cat.value); if (feat.value) q.set('feature', feat.value); if (tg.length) q.set('tags', tg.join(','));
         history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
       }
       [country, region, cat, feat, past].forEach(function (el) { el.addEventListener('change', apply); });
@@ -85,4 +107,15 @@ const monthLabel = (m) => new Date(m + '-15T12:00:00Z').toLocaleDateString('en-C
   .filters { display:flex; flex-wrap:wrap; gap:.8rem 1.2rem; margin:1rem 0 .5rem; position:sticky; top:0; z-index:5; box-shadow:0 4px 12px rgba(60,30,10,.06); }
   .filters label { font-size:.85rem; color:var(--muted); }
   .filters select { min-width:170px; margin-top:.15rem; }
+  .tags { flex-basis:100%; }
+  .tags-label { font-size:.85rem; color:var(--muted); display:block; margin-bottom:.3rem; }
+  .chips { display:flex; flex-wrap:wrap; gap:.4rem; }
+  .chip, .chip-clear { font:500 .88rem system-ui,sans-serif; min-height:32px; padding:.25rem .7rem; border-radius:99px; border:1px solid var(--muted); background:var(--card); color:var(--fg); cursor:pointer; }
+  .chip-n { color:var(--muted); font-size:.8rem; }
+  .chip[aria-pressed="true"] { background:var(--green); border-color:var(--green); color:#fff; font-weight:700; text-decoration:underline; text-underline-offset:3px; }
+  .chip[aria-pressed="true"] .chip-n { color:#fff; }
+  .chip[aria-pressed="true"] .chip-mark::before { content:"✓ "; }
+  .chip-clear { border-style:dashed; }
+  @media (max-width:640px) { .filters { position:static; } }
+  .chip:focus-visible, .chip-clear:focus-visible { outline:3px solid var(--ginger); outline-offset:2px; }
 </style>

@@ -9,7 +9,18 @@
   "type": "Celtic music festival",
   "source_url": "https://www.celticconnections.com/about-celtic-connections/",
   "source_kind": "official",
-  "notes": ""
+  "notes": "",
+  "tags": [
+   "music"
+  ],
+  "tag_quotes": {
+   "music": "international celebration of Celtic music"
+  },
+  "summary": "The festival features a kaleidoscope of internationally-renowned music and exciting new performances. The event includes more than 300 events across multiple genres of music.",
+  "summary_quotes": [
+   "a kaleidoscope of internationally-renowned music, exciting new performances",
+   "programmes more than 300 events across multiple genres of music"
+  ]
  },
  {
   "name": "Victoria Highland Games & Celtic Festival",
@@ -27,7 +38,28 @@
    "vendor-village",
    "heavy-events"
   ],
-  "features_source": "https://victoriahighlandgames.com/attractions/clan-tents/"
+  "features_source": "https://victoriahighlandgames.com/attractions/clan-tents/",
+  "tags": [
+   "highland-games",
+   "pipe-band",
+   "highland-dance",
+   "heavy-events",
+   "irish",
+   "family-friendly"
+  ],
+  "tag_quotes": {
+   "highland-games": "Victoria Highland Games & Celtic Festival",
+   "pipe-band": "Piping and Drumming",
+   "highland-dance": "Highland Dance Competition",
+   "heavy-events": "Heavy Events",
+   "irish": "Irish Dance",
+   "family-friendly": "Childrens Area"
+  },
+  "summary": "The festival features traditional heavy events and piping and drumming. Attendees can enjoy highland dance competitions and a dedicated children's area.",
+  "summary_quotes": [
+   "Heavy Events ... Piping and Drumming",
+   "Highland Dance Competition ... Childrens Area"
+  ]
  },
  {
   "name": "Saskatchewan Highland Gathering & Celtic Festival",
@@ -44,7 +76,26 @@
    "vendor-village",
    "heavy-events"
   ],
-  "features_source": "https://www.saskhighland.ca/celtic-market"
+  "features_source": "https://www.saskhighland.ca/celtic-market",
+  "tags": [
+   "highland-games",
+   "pipe-band",
+   "highland-dance",
+   "heavy-events",
+   "family-friendly"
+  ],
+  "tag_quotes": {
+   "highland-games": "Saskatchewan Highland Gathering and Celtic Festival",
+   "pipe-band": "Piping, Drumming, and Pipe Bands",
+   "highland-dance": "Highland Dance",
+   "heavy-events": "Scottish Heavy Athletics",
+   "family-friendly": "Children’s Activities"
+  },
+  "summary": "The festival features various cultural activities including Highland Dance and pipe bands. Attendees can view Scottish Heavy Athletics and participate in children's activities.",
+  "summary_quotes": [
+   "Piping, Drumming, and Pipe Bands ... Highland Dance",
+   "Scottish Heavy Athletics ... Children’s Activities"
+  ]
  },
  {
   "name": "RSPBA British Pipe Band Championships",
@@ -56,7 +107,15 @@
   "type": "Pipe band major",
   "source_url": "https://rspba.org/2026/08/16/2027-major-championships/",
   "source_kind": "association",
-  "notes": ""
+  "notes": "",
+  "tags": [
+   "pipe-band",
+   "music"
+  ],
+  "tag_quotes": {
+   "pipe-band": "British Pipe Band Championships",
+   "music": "THE HEART AND HOME OF THE PIPE BAND WORLD"
+  }
  },
  {
   "name": "Gathering of the Scots Festival",
@@ -68,7 +127,14 @@
   "type": "Scottish festival",
   "source_url": "https://gatheringofthescots.com/",
   "source_kind": "official",
-  "notes": ""
+  "notes": "",
+  "tags": [],
+  "tag_quotes": {},
+  "summary": "The festival celebrates Scottish heritage and culture. The event features a massed band.",
+  "summary_quotes": [
+   "Celebrating 26 years of Scottish heritage and culture!",
+   "Gathering of the Scots 2022 Massed Band"
+  ]
  },
  {
   "name": "Portland Highland Games",
@@ -80,7 +146,13 @@
   "type": "Highland Games",
   "source_url": "https://bcpipers.org/competitors-corner/competition-schedule-for-2024-2025/",
   "source_kind": "association",
-  "notes": "BCPA-sanctioned contest"
+  "notes": "BCPA-sanctioned contest",
+  "tags": [
+   "highland-games"
+  ],
+  "tag_quotes": {
+   "highland-games": "Portland Highland Games"
+  }
  },
  {
   "name": "Greater Moncton Highland Games & Scottish Festival",
@@ -98,7 +170,26 @@
    "vendor-village",
    "heavy-events"
   ],
-  "features_source": "https://monctonhighlandgames.com/clans-%26-attractions"
+  "features_source": "https://monctonhighlandgames.com/clans-%26-attractions",
+  "tags": [
+   "highland-games",
+   "pipe-band",
+   "highland-dance",
+   "ceilidh",
+   "heavy-events"
+  ],
+  "tag_quotes": {
+   "highland-games": "The 21st annual Greater Moncton Highland Games & Scottish Festival",
+   "pipe-band": "Piping, drumming, Highland dance, sword, & 5K run",
+   "highland-dance": "Piping, drumming, Highland dance, sword, & 5K run",
+   "ceilidh": "Ceilidh Tent",
+   "heavy-events": "at the games (checked on organizer site): heavy-events"
+  },
+  "summary": "The festival features piping, drumming, and Highland dancing. Attendees can enjoy feats of strength and a ceilidh tent.",
+  "summary_quotes": [
+   "Piping, drumming, Highland dance, sword, & 5K run will take place",
+   "Feats of Strength 💪 ... Ceilidh Tent"
+  ]
  },
  {
   "name": "SAI Masters World Championships (heavy events)",
@@ -110,7 +201,24 @@
   "type": "Heavy events championship",
   "source_url": "https://monctonhighlandgames.com/",
   "source_kind": "official",
-  "notes": "Piping, drumming, dance on June 12"
+  "notes": "Piping, drumming, dance on June 12",
+  "tags": [
+   "highland-games",
+   "pipe-band",
+   "highland-dance",
+   "heavy-events"
+  ],
+  "tag_quotes": {
+   "highland-games": "Greater Moncton Highland Games & Scottish Festival",
+   "pipe-band": "Piping, drumming, Highland dance, sword, & 5K run",
+   "highland-dance": "Piping, drumming, Highland dance, sword, & 5K run",
+   "heavy-events": "SAI Masters World Championships (heavy events)"
+  },
+  "summary": "The event features a heavy events championship and various competitions. The festival includes piping, drumming, Highland dance, and a Ceilidh Tent.",
+  "summary_quotes": [
+   "SAI Masters World Championships (heavy events)",
+   "Piping, drumming, Highland dance, sword, & 5K run will take place Saturday, June 12, along with historical and cultural demonstrations, food & craft vendors, Ceilidh Tent, and more."
+  ]
  },
  {
   "name": "ScotFestBC - British Columbia Highland Games",
@@ -128,7 +236,32 @@
    "vendor-village",
    "heavy-events"
   ],
-  "features_source": "https://scotfestbc.com/get-involved/clans-non-profits/"
+  "features_source": "https://scotfestbc.com/get-involved/clans-non-profits/",
+  "tags": [
+   "highland-games",
+   "pipe-band",
+   "highland-dance",
+   "scottish-country-dance",
+   "music",
+   "heavy-events",
+   "workshop-class",
+   "family-friendly"
+  ],
+  "tag_quotes": {
+   "highland-games": "The British Columbia Highland Games",
+   "pipe-band": "hundreds of pipers, drummers, highland dancers and pipe bands assemble",
+   "highland-dance": "the artistry of Highland dancing",
+   "scottish-country-dance": "you will also find Scottish country dancing",
+   "music": "the best in live Celtic music all day long",
+   "heavy-events": "the jaw-dropping strength of the heavy events",
+   "workshop-class": "cultural educational workshops",
+   "family-friendly": "a smorgasbord of events and activities for the whole family"
+  },
+  "summary": "The event features various competitions including pipe bands, highland dancing, and heavy events. Attendees can enjoy live Celtic music, Scottish country dancing, and educational workshops.",
+  "summary_quotes": [
+   "hundreds of pipers, drummers, highland dancers and pipe bands assemble... the jaw-dropping strength of the heavy events",
+   "you will also find Scottish country dancing... and a Big Tent stage with the best in live Celtic music all day long... cultural educational workshops"
+  ]
  },
  {
   "name": "Northumberland Scottish Festival & Highland Games",
@@ -146,7 +279,26 @@
    "vendor-village",
    "heavy-events"
   ],
-  "features_source": "https://www.northumberlandhighlandgames.ca/clans"
+  "features_source": "https://www.northumberlandhighlandgames.ca/clans",
+  "tags": [
+   "highland-games",
+   "pipe-band",
+   "highland-dance",
+   "ceilidh",
+   "heavy-events"
+  ],
+  "tag_quotes": {
+   "highland-games": "The 63rd Northumberland Scottish Festival & Highland Games",
+   "pipe-band": "With 25 Pipe and Drum bands",
+   "highland-dance": "150 Highland Dancers",
+   "ceilidh": "Ceilidh performers taking part in our event",
+   "heavy-events": "nearly 50 Heavy Athletes"
+  },
+  "summary": "The festival features competitions for pipe and drum bands, highland dancers, and heavy athletes. The event includes a ceilidh and various vendors.",
+  "summary_quotes": [
+   "With 25 Pipe and Drum bands, 150 Highland Dancers, nearly 50 Heavy Athletes",
+   "Ceilidh performers taking part in our event... food and merchant vendors"
+  ]
  },
  {
   "name": "Red Deer Highland Games",
@@ -164,7 +316,24 @@
    "vendor-village",
    "heavy-events"
   ],
-  "features_source": "https://www.reddeerhighlandgames.com/portfolio"
+  "features_source": "https://www.reddeerhighlandgames.com/portfolio",
+  "tags": [
+   "highland-games",
+   "pipe-band",
+   "highland-dance",
+   "heavy-events"
+  ],
+  "tag_quotes": {
+   "highland-games": "Red Deer Highland Games",
+   "pipe-band": "PIPE BANDS",
+   "highland-dance": "HIGHLAND DANCE",
+   "heavy-events": "HEAVY EVENTS"
+  },
+  "summary": "The event features pipe bands and highland dancing. The games include heavy events and a highland hounds dog show.",
+  "summary_quotes": [
+   "PIPE BANDS ... HIGHLAND DANCE",
+   "HEAVY EVENTS ... HIGHLAND HOUNDS DOG SHOW"
+  ]
  },
  {
   "name": "Kamloops Highland Games",
@@ -176,7 +345,13 @@
   "type": "Highland Games",
   "source_url": "https://bcpipers.org/competitors-corner/competition-schedule-for-2024-2025/",
   "source_kind": "association",
-  "notes": "BCPA schedule"
+  "notes": "BCPA schedule",
+  "tags": [
+   "highland-games"
+  ],
+  "tag_quotes": {
+   "highland-games": "Kamloops Highland Games"
+  }
  },
  {
   "name": "Kincardine Scottish Festival & Highland Games",
@@ -193,7 +368,28 @@
    "clan-tents",
    "vendor-village"
   ],
-  "features_source": "https://kincardinescottishfestival.ca/represent-your-clan"
+  "features_source": "https://kincardinescottishfestival.ca/represent-your-clan",
+  "tags": [
+   "highland-games",
+   "pipe-band",
+   "highland-dance",
+   "music",
+   "workshop-class",
+   "family-friendly"
+  ],
+  "tag_quotes": {
+   "highland-games": "Kincardine Scottish Festival & Highland Games",
+   "pipe-band": "march with the historic Kincardine Scottish Pipe Band down Queen Street",
+   "highland-dance": "Cheer on your favourite, Highland athletes and dancers",
+   "music": "Enjoy three days and nights of lively music",
+   "workshop-class": "cultural workshops",
+   "family-friendly": "Bring the whole family to Victoria Park"
+  },
+  "summary": "The event features lively music, cultural workshops, and competitions. Attendees can watch Highland athletes and dancers or march with a pipe band.",
+  "summary_quotes": [
+   "Enjoy three days and nights of lively music , exciting competitions , cultural workshops",
+   "Cheer on your favourite, Highland athletes and dancers, trace out your ancestry, march with the historic Kincardine Scottish Pipe Band"
+  ]
  },
  {
   "name": "Penticton Scottish Festival",
@@ -205,7 +401,13 @@
   "type": "Highland Games",
   "source_url": "https://bcpipers.org/competitors-corner/competition-schedule-for-2024-2025/",
   "source_kind": "association",
-  "notes": "BCPA schedule"
+  "notes": "BCPA schedule",
+  "tags": [
+   "highland-games"
+  ],
+  "tag_quotes": {
+   "highland-games": "type: Highland Games"
+  }
  },
  {
   "name": "Antigonish Highland Games",
@@ -222,7 +424,24 @@
    "clan-tents",
    "heavy-events"
   ],
-  "features_source": "https://antigonishhighlandgames.ca/clans/"
+  "features_source": "https://antigonishhighlandgames.ca/clans/",
+  "tags": [
+   "highland-games",
+   "pipe-band",
+   "highland-dance",
+   "heavy-events"
+  ],
+  "tag_quotes": {
+   "highland-games": "Come Join Us for the 162nd Highland Games!",
+   "pipe-band": "Piping, Drumming, and Pipe Bands",
+   "highland-dance": "Highland Dancing",
+   "heavy-events": "Scottish Heavy Events"
+  },
+  "summary": "The event features traditional Scottish heavy events and piping. The games include highland dancing and various athletic competitions.",
+  "summary_quotes": [
+   "Scottish Heavy Events ... Piping, Drumming, and Pipe Bands",
+   "Highland Dancing ... 5 Mile Road Race ... Tug-of-War"
+  ]
  },
  {
   "name": "Grandfather Mountain Highland Games",
@@ -234,7 +453,30 @@
   "type": "Highland Games",
   "source_url": "https://gmhg.org/",
   "source_kind": "official",
-  "notes": "MacRae Meadows"
+  "notes": "MacRae Meadows",
+  "tags": [
+   "highland-games",
+   "pipe-band",
+   "highland-dance",
+   "ceilidh",
+   "music",
+   "heavy-events",
+   "family-friendly"
+  ],
+  "tag_quotes": {
+   "highland-games": "Grandfather Mountain Highland Games",
+   "pipe-band": "Pipe Bands",
+   "highland-dance": "Highland Dance",
+   "ceilidh": "Gaelic Ceilidh Tent",
+   "music": "Music Performances",
+   "heavy-events": "Highland Athletics Caber, stones, weights, and strength",
+   "family-friendly": "I’m bringing children Find family activities"
+  },
+  "summary": "The event features Scottish heritage, music, athletics, and dance. Visitors can experience highland athletics and various cultural performances.",
+  "summary_quotes": [
+   "four days of Scottish heritage, music, athletics, dance, family traditions",
+   "Highland Athletics Caber, stones, weights, and strength"
+  ]
  },
  {
   "name": "Skagit Valley Highland Games",
@@ -246,7 +488,13 @@
   "type": "Highland Games",
   "source_url": "https://bcpipers.org/competitors-corner/competition-schedule-for-2024-2025/",
   "source_kind": "association",
-  "notes": "BCPA schedule"
+  "notes": "BCPA schedule",
+  "tags": [
+   "highland-games"
+  ],
+  "tag_quotes": {
+   "highland-games": "Skagit Valley Highland Games"
+  }
  },
  {
   "name": "New Brunswick Highland Games Festival",
@@ -264,7 +512,24 @@
    "vendor-village",
    "heavy-events"
   ],
-  "features_source": "https://www.highlandgames.ca/registration-clans/"
+  "features_source": "https://www.highlandgames.ca/registration-clans/",
+  "tags": [
+   "highland-games",
+   "music",
+   "heavy-events",
+   "workshop-class"
+  ],
+  "tag_quotes": {
+   "highland-games": "New Brunswick Highland Games Festival",
+   "music": "two nights of live music",
+   "heavy-events": "heavy-events",
+   "workshop-class": "We offer workshops"
+  },
+  "summary": "The festival features heavy events and live music performances. Visitors can participate in workshops and browse artisan crafts.",
+  "summary_quotes": [
+   "Heavy Events Competitor Information... two nights of live music",
+   "We offer workshops... Browse tartan, artisan crafts, and Celtic-inspired goods"
+  ]
  },
  {
   "name": "RSPBA Scottish Pipe Band Championships",
@@ -276,7 +541,17 @@
   "type": "Pipe band major",
   "source_url": "https://rspba.org/2026/08/16/2027-major-championships/",
   "source_kind": "association",
-  "notes": ""
+  "notes": "",
+  "tags": [
+   "pipe-band"
+  ],
+  "tag_quotes": {
+   "pipe-band": "RSPBA Scottish Pipe Band Championships"
+  },
+  "summary": "The event is a pipe band championship.",
+  "summary_quotes": [
+   "RSPBA Scottish Pipe Band Championships"
+  ]
  },
  {
   "name": "Sherwood Park Highland Gathering",
@@ -293,7 +568,27 @@
    "vendor-village",
    "heavy-events"
   ],
-  "features_source": "https://www.sphg.ca/vendor-list/"
+  "features_source": "https://www.sphg.ca/vendor-list/",
+  "tags": [
+   "highland-games",
+   "pipe-band",
+   "highland-dance",
+   "ceilidh",
+   "heavy-events",
+   "family-friendly"
+  ],
+  "tag_quotes": {
+   "highland-games": "The Sherwood Park Highland Gathering is an outdoor event",
+   "pipe-band": "piping and drumming competitions , massed band performances",
+   "highland-dance": "Highland Dance",
+   "ceilidh": "and a family Ceilidh",
+   "heavy-events": "Scottish heavy games",
+   "family-friendly": "There will also be children’s activities"
+  },
+  "summary": "Attendees can enjoy Scottish heavy games and a family Ceilidh.",
+  "summary_quotes": [
+   "and Scottish heavy games. There will also be... a family Ceilidh."
+  ]
  },
  {
   "name": "Pacific Northwest Scottish Highland Games",
@@ -305,7 +600,13 @@
   "type": "Highland Games",
   "source_url": "https://bcpipers.org/competitors-corner/competition-schedule-for-2024-2025/",
   "source_kind": "association",
-  "notes": "BCPA schedule"
+  "notes": "BCPA schedule",
+  "tags": [
+   "highland-games"
+  ],
+  "tag_quotes": {
+   "highland-games": "Pacific Northwest Scottish Highland Games"
+  }
  },
  {
   "name": "Glengarry Highland Games (North American Pipe Band Championships)",
@@ -322,7 +623,30 @@
    "clan-tents",
    "vendor-village"
   ],
-  "features_source": "https://www.glengarryhighlandgames.com/events/clans"
+  "features_source": "https://www.glengarryhighlandgames.com/events/clans",
+  "tags": [
+   "highland-games",
+   "pipe-band",
+   "highland-dance",
+   "heavy-events",
+   "ball-formal",
+   "workshop-class",
+   "family-friendly"
+  ],
+  "tag_quotes": {
+   "highland-games": "one of the largest Highland Games in the world",
+   "pipe-band": "North American Pipe Band Championships®",
+   "highland-dance": "highland dancing",
+   "heavy-events": "heavyweight events",
+   "ball-formal": "Tartan Ball",
+   "workshop-class": "Harp Workshop",
+   "family-friendly": "Children’s Events"
+  },
+  "summary": "The event features a display of music, dance, sports, and traditional Celtic entertainment. The weekend includes various activities such as a Tartan Ball and a Harp Workshop.",
+  "summary_quotes": [
+   "witness an outstanding display of music, dance, sports, fiddling, pageantry, and tradition.",
+   "Tartan Ball, Tattoo, and Whisky Tasting"
+  ]
  },
  {
   "name": "Montreal Highland Games and Festival",
@@ -339,7 +663,28 @@
    "clan-tents",
    "vendor-village"
   ],
-  "features_source": "https://www.montrealhighlandgames.com/clans-community.html"
+  "features_source": "https://www.montrealhighlandgames.com/clans-community.html",
+  "tags": [
+   "highland-games",
+   "pipe-band",
+   "highland-dance",
+   "ceilidh",
+   "music",
+   "family-friendly"
+  ],
+  "tag_quotes": {
+   "highland-games": "Montreal Highland Games and Festival",
+   "pipe-band": "Pipe bands",
+   "highland-dance": "Highland dancing",
+   "ceilidh": "Ceilidh Tent",
+   "music": "SCOTTISH ATHLETICS · PIPE BANDS · HIGHLAND DANCING · CELTIC MUSIC",
+   "family-friendly": "Family Village"
+  },
+  "summary": "The festival celebrates Scottish sport, music and culture. The event features various competitions and attractions including pipe bands and highland dancing.",
+  "summary_quotes": [
+   "Montreal's celebration of Scottish sport, music and culture",
+   "SCOTTISH ATHLETICS · PIPE BANDS · HIGHLAND DANCING"
+  ]
  },
  {
   "name": "Fleadh Cheoil na hEireann",
@@ -351,7 +696,20 @@
   "type": "Irish music festival",
   "source_url": "https://fleadhcheoil.ie/",
   "source_kind": "official",
-  "notes": ""
+  "notes": "",
+  "tags": [
+   "music",
+   "irish"
+  ],
+  "tag_quotes": {
+   "music": "Discover lively pub sessions, spontaneous street performances and dramatic stage shows",
+   "irish": "world’s biggest celebration of Irish music, song, dance and language"
+  },
+  "summary": "The festival features lively pub sessions, street performances, and stage shows. The event includes all-Ireland level competitions across over 180 categories.",
+  "summary_quotes": [
+   "Discover lively pub sessions, spontaneous street performances and dramatic stage shows",
+   "All‑Ireland level competitions are at the heart of Fleadh with over 180 categories."
+  ]
  },
  {
   "name": "Goderich Celtic College & Kids Camp",
@@ -363,7 +721,22 @@
   "type": "Celtic music school",
   "source_url": "https://celticfestival.ca/home",
   "source_kind": "official",
-  "notes": ""
+  "notes": "",
+  "tags": [
+   "music",
+   "workshop-class",
+   "family-friendly"
+  ],
+  "tag_quotes": {
+   "music": "Celtic music school",
+   "workshop-class": "Craft Workshops",
+   "family-friendly": "Kids Camp"
+  },
+  "summary": "The event features a Celtic music school and a camp for children. Attendees can participate in various craft workshops.",
+  "summary_quotes": [
+   "Celtic music school... Kids Camp",
+   "Craft Workshops"
+  ]
  },
  {
   "name": "Goderich Celtic Roots Festival",
@@ -375,7 +748,17 @@
   "type": "Celtic music festival",
   "source_url": "https://celticfestival.ca/home",
   "source_kind": "official",
-  "notes": ""
+  "notes": "",
+  "tags": [
+   "music"
+  ],
+  "tag_quotes": {
+   "music": "Celtic music festival"
+  },
+  "summary": "The event is a Celtic music festival located on the shores of Lake Huron.",
+  "summary_quotes": [
+   "The ultimate Celtic experience on the shores of Lake Huron"
+  ]
  },
  {
   "name": "Royal Edinburgh Military Tattoo",
@@ -387,7 +770,18 @@
   "type": "Military tattoo",
   "source_url": "https://www.edintattoo.co.uk/tickets/tattoo-2027",
   "source_kind": "official",
-  "notes": ""
+  "notes": "",
+  "tags": [
+   "pipe-band"
+  ],
+  "tag_quotes": {
+   "pipe-band": "Pipes and Drums"
+  },
+  "summary": "The show celebrates drumming talent and musical performances from around the world. The performance features a collaboration between military acts and Scottish and British talent.",
+  "summary_quotes": [
+   "celebrates drumming talent from around the world",
+   "collaboration between military acts from around the world and Scottish and British talent"
+  ]
  },
  {
   "name": "Campbell River Highland Gathering",
@@ -399,7 +793,13 @@
   "type": "Highland Games",
   "source_url": "https://bcpipers.org/competitors-corner/competition-schedule-for-2024-2025/",
   "source_kind": "association",
-  "notes": "BCPA schedule"
+  "notes": "BCPA schedule",
+  "tags": [
+   "highland-games"
+  ],
+  "tag_quotes": {
+   "highland-games": "type: Highland Games"
+  }
  },
  {
   "name": "RSPBA European Pipe Band Championships",
@@ -411,7 +811,19 @@
   "type": "Pipe band major",
   "source_url": "https://rspba.org/2026/08/16/2027-major-championships/",
   "source_kind": "association",
-  "notes": ""
+  "notes": "",
+  "tags": [
+   "pipe-band",
+   "music"
+  ],
+  "tag_quotes": {
+   "pipe-band": "type: Pipe band major",
+   "music": "THE ROYAL SCOTTISH PIPE BAND ASSOCIATION"
+  },
+  "summary": "The event is a pipe band major championship held in Perth.",
+  "summary_quotes": [
+   "Europeans – 7th August, Perth"
+  ]
  },
  {
   "name": "World Pipe Band Championships",
@@ -423,7 +835,20 @@
   "type": "Pipe band major",
   "source_url": "https://www.glasgowlife.org.uk/arts-music-and-culture/world-pipe-band-championships",
   "source_kind": "official",
-  "notes": "Glasgow Green; SFU (BC) are 2026 Grade 1 champions"
+  "notes": "Glasgow Green; SFU (BC) are 2026 Grade 1 champions",
+  "tags": [
+   "pipe-band",
+   "music"
+  ],
+  "tag_quotes": {
+   "pipe-band": "the world's finest pipe bands will once again compete",
+   "music": "Get involved in more music"
+  },
+  "summary": "The world's finest pipe bands compete for the most prestigious title in the pipe band calendar. The event takes place at Glasgow Green.",
+  "summary_quotes": [
+   "the world's finest pipe bands will once again compete for the most prestigious title in the pipe band calendar.",
+   "The Championships will return to Glasgow Green"
+  ]
  },
  {
   "name": "Fergus Scottish Festival & Highland Games",
@@ -439,7 +864,22 @@
   "features": [
    "clan-tents"
   ],
-  "features_source": "https://fergusscottishfestival.com/clans-heritage/"
+  "features_source": "https://fergusscottishfestival.com/clans-heritage/",
+  "tags": [
+   "highland-games",
+   "music",
+   "family-friendly"
+  ],
+  "tag_quotes": {
+   "highland-games": "Fergus Scottish Festival and Highland Games",
+   "music": "There will be a concert with Ally the Piper",
+   "family-friendly": "All activities for children in the McKiddies area are free"
+  },
+  "summary": "The festival features thrilling competitions and entertainment. Children can enjoy free activities in a dedicated area.",
+  "summary_quotes": [
+   "you can expect the same great events, thrilling competitions, educational components and entertainment",
+   "All activities for children in the McKiddies area are free"
+  ]
  },
  {
   "name": "Milwaukee Irish Fest",
@@ -451,7 +891,22 @@
   "type": "Irish/Celtic festival",
   "source_url": "https://irishfest.com/",
   "source_kind": "official",
-  "notes": "Henry Maier Festival Park"
+  "notes": "Henry Maier Festival Park",
+  "tags": [
+   "music",
+   "irish",
+   "family-friendly"
+  ],
+  "tag_quotes": {
+   "music": "17 stages of music, dance, and cultural entertainment.",
+   "irish": "Milwaukee Irish Fest",
+   "family-friendly": "Family Activities"
+  },
+  "summary": "The festival features multiple stages of music, dance, and cultural entertainment. The event includes activities specifically for families.",
+  "summary_quotes": [
+   "17 stages of music, dance, and cultural entertainment.",
+   "Family Activities"
+  ]
  },
  {
   "name": "Braemar Gathering",
@@ -463,7 +918,18 @@
   "type": "Highland Games",
   "source_url": "https://www.braemargathering.org/",
   "source_kind": "official",
-  "notes": "Tickets on sale Feb 1 2027"
+  "notes": "Tickets on sale Feb 1 2027",
+  "tags": [
+   "highland-games"
+  ],
+  "tag_quotes": {
+   "highland-games": "it is the most prominent and well-attended Highland games in the world"
+  },
+  "summary": "The event is a prominent Highland games tradition held in the Cairngorms village of Braemar. Massed bands parade through the village at scheduled times during the day.",
+  "summary_quotes": [
+   "it is the most prominent and well-attended Highland games in the world",
+   "The Massed Bands parade at 11.30am from the Invercauld Arms Hotel and at 3pm"
+  ]
  },
  {
   "name": "Scottish Highland Gathering & Games (Pleasanton)",
@@ -475,7 +941,24 @@
   "type": "Highland Games",
   "source_url": "https://thescottishgames.com/",
   "source_kind": "official",
-  "notes": "161st; Alameda County Fairgrounds"
+  "notes": "161st; Alameda County Fairgrounds",
+  "tags": [
+   "highland-games",
+   "pipe-band",
+   "highland-dance",
+   "heavy-events"
+  ],
+  "tag_quotes": {
+   "highland-games": "161st Annual Scottish Highland Gathering & Games",
+   "pipe-band": "Piping & Drumming",
+   "highland-dance": "Highland Dancing",
+   "heavy-events": "Heavy Athletics"
+  },
+  "summary": "The event features heavy athletics, piping and drumming, and highland dancing. Attendees can experience various activities including a kilted mile and sheepdog trials.",
+  "summary_quotes": [
+   "celebrate the athletics, music, dance, ceremony, traditions, and fellowship of Scotland",
+   "Kilted Mile • Living History • Sheepdog Trials"
+  ]
  },
  {
   "name": "Celtic Colours International Festival",
@@ -487,7 +970,17 @@
   "type": "Celtic music festival",
   "source_url": "https://celtic-colours.com/about/",
   "source_kind": "official",
-  "notes": ""
+  "notes": "",
+  "tags": [
+   "music"
+  ],
+  "tag_quotes": {
+   "music": "World Class Concerts"
+  },
+  "summary": "The festival features world-class concerts with musicians, singers, and dancers in various venues across the island.",
+  "summary_quotes": [
+   "At any one of the many concerts you’ll find some of the world’s finest musicians sharing the stage with Cape Breton’s best singers, dancers"
+  ]
  },
  {
   "name": "Burns Club of Calgary 51st Annual Burns Supper",
@@ -500,7 +993,18 @@
   "source_url": "https://www.calgaryburnsclub.com/upcoming-events.html",
   "source_kind": "official",
   "notes": "Hotel Arts",
-  "added_date": "2026-10-17"
+  "added_date": "2026-10-17",
+  "tags": [
+   "burns"
+  ],
+  "tag_quotes": {
+   "burns": "51st Annual Burns Supper"
+  },
+  "summary": "The Burns Club of Calgary's 51st annual Burns Supper. Traditionally, a jacket and tie are requested for gentlemen.",
+  "summary_quotes": [
+   "51st Annual Burns Supper",
+   "Gentlemen: Traditionally a jacket and tie are requested!"
+  ]
  },
  {
   "name": "Burns Night at Cornerstone Music Cafe",
@@ -513,7 +1017,20 @@
   "source_url": "https://www.eventbrite.ca/e/burns-night-tickets-1981961289570",
   "source_kind": "official",
   "notes": "",
-  "added_date": "2026-10-17"
+  "added_date": "2026-10-17",
+  "tags": [
+   "burns",
+   "music"
+  ],
+  "tag_quotes": {
+   "burns": "Celebrate Robbie Burns Night at Cornerstone",
+   "music": "Enjoy live music and spoken-word poetry"
+  },
+  "summary": "Attendees can enjoy live music and spoken-word poetry while celebrating the legacy of Robert Burns. The evening features a traditional Scottish feast and a closing ceremony of singing.",
+  "summary_quotes": [
+   "Celebrate the life and legacy of Scotland's beloved poet, Robert Burns, with an evening filled with music, poetry",
+   "A Traditional Scottish Feast... Join in a heartfelt singing of Auld Lang Syne to conclude the evening."
+  ]
  },
  {
   "name": "A Celebration of Robbie Burns with Blackthorn",
@@ -526,7 +1043,24 @@
   "source_url": "https://www.eventbrite.ca/e/a-celebration-of-robbie-burns-with-blackthorn-tickets-1984414108016",
   "source_kind": "official",
   "notes": "",
-  "added_date": "2026-10-17"
+  "added_date": "2026-10-17",
+  "tags": [
+   "pipe-band",
+   "highland-dance",
+   "burns",
+   "music"
+  ],
+  "tag_quotes": {
+   "pipe-band": "a special guest piper",
+   "highland-dance": "Highland dance company the Wee Drams",
+   "burns": "Celebrate Scotland’s National Bard, Robbie Burns!",
+   "music": "Enjoy superb live music performances by talented local musicians."
+  },
+  "summary": "The event features live music, a guest piper, and a Highland dance company to celebrate the musical traditions of Scotland. Haggis is served during the intermission of the performance.",
+  "summary_quotes": [
+   "Celtic band Blackthorn, a special guest piper and Highland dance company the Wee Drams feature the musical traditions of Scotland",
+   "Haggis will be served during intermission for those fancying a bite of the national dish of Scotland!"
+  ]
  },
  {
   "name": "St. Andrew's Society of Toronto Burns Dinner",
@@ -539,7 +1073,22 @@
   "source_url": "https://standrewstoronto.ca/sast_event/rabbie-burns-dinner/",
   "source_kind": "official",
   "notes": "",
-  "added_date": "2026-10-17"
+  "added_date": "2026-10-17",
+  "tags": [
+   "burns",
+   "music",
+   "ball-formal"
+  ],
+  "tag_quotes": {
+   "burns": "type: Burns Supper",
+   "music": "musical entertainment",
+   "ball-formal": "The Burns Dinner is a formal event – black tie or business suits for men"
+  },
+  "summary": "The event is a traditional dinner to celebrate Scotland's national poet. The evening includes a formal meal with musical entertainment and traditional toasts.",
+  "summary_quotes": [
+   "Celebrate Scotland’s national poet with a formal event in downtown Toronto!",
+   "The event follows the time-honoured format with the Address to a Haggis, the toast to The Immortal Memory and toasts to the Lassies and Laddies and musical entertainment."
+  ]
  },
  {
   "name": "Robert Burns Dinner, Barrie Legion",
@@ -552,7 +1101,20 @@
   "source_url": "https://www.barriepipesanddrums.com/new-events/2027/1/23/robert-burns-dinner",
   "source_kind": "official",
   "notes": "",
-  "added_date": "2026-10-17"
+  "added_date": "2026-10-17",
+  "tags": [
+   "pipe-band",
+   "burns"
+  ],
+  "tag_quotes": {
+   "pipe-band": "Barrie Pipes & Drums performing at the Barrie Legion",
+   "burns": "type: Burns Supper"
+  },
+  "summary": "The event features a traditional dinner to celebrate Robert Burns. A pipe band will be performing during the evening.",
+  "summary_quotes": [
+   "performing at the Barrie Legion for the traditional Robert Burn’s Dinner!",
+   "Barrie Pipes & Drums performing at the Barrie Legion"
+  ]
  },
  {
   "name": "Burns Supper at Tea On West",
@@ -565,7 +1127,13 @@
   "source_url": "https://tableagent.com/hamilton-ontario/tea-on-3/event/289214/burns-supper/",
   "source_kind": "official",
   "notes": "",
-  "added_date": "2026-10-17"
+  "added_date": "2026-10-17",
+  "tags": [
+   "burns"
+  ],
+  "tag_quotes": {
+   "burns": "Burns Supper"
+  }
  },
  {
   "name": "Royal Nova Scotia International Tattoo",
@@ -578,7 +1146,13 @@
   "source_url": "https://nstattoo.ca/show/",
   "source_kind": "official",
   "notes": "One show a day",
-  "added_date": "2026-10-18"
+  "added_date": "2026-10-18",
+  "tags": [
+   "music"
+  ],
+  "tag_quotes": {
+   "music": "Find out who’s performing in the show"
+  }
  },
  {
   "name": "Spruce Meadows International Christmas Market",
@@ -592,6 +1166,19 @@
   "source_kind": "official",
   "notes": "Weekends only: Nov 13-15, 20-22, 27-29 and Dec 4-6",
   "celtic_vendors": "Vendor list includes Scottish, Irish & UK imports (A Little Bit of Ireland) and a British butcher (British Banger Company)",
-  "added_date": "2026-10-18"
+  "added_date": "2026-10-18",
+  "tags": [
+   "family-friendly",
+   "other"
+  ],
+  "tag_quotes": {
+   "family-friendly": "All ages are welcome —bring family and friends to make merry memories!",
+   "other": "type: Christmas market"
+  },
+  "summary": "A Christmas market with a variety of vendors, including Scottish, Irish and UK imports. All ages are welcome.",
+  "summary_quotes": [
+   "Vendor list includes Scottish, Irish & UK imports (A Little Bit of Ireland)",
+   "All ages are welcome —bring family and friends to make merry memories!"
+  ]
  }
 ]
