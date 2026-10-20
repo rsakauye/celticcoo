@@ -15,6 +15,7 @@ const monthLabel = (m) => new Date(m + '-15T12:00:00Z').toLocaleDateString('en-C
   <p class="muted">"At the games" tags (clan tents, vendor village, heavy events) come from each organizer's own site, usually from their latest year. Check closer to the date.</p>
   <p>Every date below is confirmed on the organizer's or association's own website. Subscribe to the whole calendar in Google, Apple or Outlook: <a href={u('events.ics')}><b>events.ics</b></a> (or copy the link into "subscribe by URL").</p>
 
+  <p class="card" style="background:#fff4e8;border-color:#f1cfae">🏴󠁧󠁢󠁳󠁣󠁴󠁿 <b>St Andrew's Day is Monday, November 30.</b> See <a href={u('st-andrews-day/')}>St Andrew's balls and ceilidhs in Calgary and across Canada</a>, or plan ahead for <a href={u('burns-night/')}>Burns Night</a>.</p>
   <form class="filters card" id="filters" onsubmit="return false">
     <label>Country<br /><select id="f-country"><option value="">All countries</option>{countries.map((c) => <option value={c}>{c}</option>)}</select></label>
     <label>Province / region<br /><select id="f-region"><option value="">All</option>{regions.map((r) => <option value={r.r} data-country={r.c}>{r.label}{r.c !== 'Canada' ? ` (${r.c})` : ''}</option>)}</select></label>

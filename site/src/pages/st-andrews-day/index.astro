@@ -1,0 +1,97 @@
+---
+import Base from '../../layouts/Base.astro';
+import { u } from '../../lib/site.js';
+// St Andrew's Day events. Only what the host (or their own ticket page) has posted; checked Oct 20, 2026.
+// status: 'confirmed' = date posted by the host; 'tba' = host holds one most years, 2026 date not posted yet.
+const EVENTS = [
+  { date: '2026-11-21', when: 'Sat, Nov 21, 2026', name: "143rd St. Andrew's Ball", host: 'St. Andrew-Caledonian Society of Calgary', city: 'Calgary', prov: 'Alberta', venue: 'Polish Canadian Cultural Centre, 3015 15 St NE · doors 5:30 pm, dinner 6:30 pm · Highland dancers, pipers and a Scottish country dance', url: 'https://standrewcaledonian.ca/upcoming-events-2/', also: ['RSCDS Calgary listing', 'https://rscdscalgary.org/calgarybranch/event/st-andrews-ball/'], status: 'confirmed' },
+  { date: '', when: 'Usually in November', name: "St Andrew's Night", host: 'Edmonton Scottish Society', city: 'Edmonton', prov: 'Alberta', venue: 'The society holds a St Andrew\'s Night each November. The 2026 date isn\'t posted yet, so watch their page.', url: 'https://www.edmontonscottishsociety.org/social-events', status: 'tba' },
+  { date: '2026-11-21', when: 'Sat, Nov 21, 2026', name: "155th Celebration of St. Andrew's Day", host: "St. Andrew's Society of Winnipeg", city: 'Winnipeg', prov: 'Manitoba', venue: 'Centro Caboto Centre, 1055 Wilkes Ave · 5:00–10:30 pm', url: 'https://www.standrewssocietywinnipeg.com/event-calendar/2026/11/21/155th-celebration-of-st-andrews-day', status: 'confirmed' },
+  { date: '2026-11-21', when: 'Sat, Nov 21, 2026', name: "St. Andrew's Charity Ball", host: "St. Andrew's Society of Toronto", city: 'Toronto', prov: 'Ontario', venue: 'Fairmont Royal York · black tie · cèilidh-only tickets for the dancing after dinner', url: 'https://standrewstoronto.ca/sast_event/charity-ball/', status: 'confirmed' },
+  { date: '2026-11-27', when: 'Fri, Nov 27, 2026', name: "St. Andrew's Charity Ball", host: "St. Andrew's Society of Montreal", city: 'Montreal', prov: 'Quebec', venue: 'Marriott Château Champlain · in support of the Douglas Hospital Foundation', url: 'https://www.standrewsball.com/', status: 'confirmed' },
+  { date: '2026-11-28', when: 'Sat, Nov 28, 2026', name: "St. Andrew's Ball & Cèilidh", host: "St. Andrew's & Caledonian Society of Vancouver", city: 'Vancouver', prov: 'British Columbia', venue: 'Scottish Cultural Centre · dinner and cèilidh, or cèilidh only from 8 pm', url: 'https://www.standrewsvancouver.ca/events', status: 'confirmed' },
+  { date: '2026-11-28', when: 'Sat, Nov 28, 2026', name: "St. Andrew's Ceilidh and Dinner", host: 'Sons of Scotland, Vernon', city: 'Vernon', prov: 'British Columbia', venue: 'Schubert Centre, 3505 30th Ave · dinner with haggis, Scottish country, Cape Breton step and Highland dancing', url: 'https://ticketing.purchase.ticketseller.ca/ticketseller/website/EventDetails.aspx?EventId=79201', status: 'ticket' },
+];
+const dated = EVENTS.filter((e) => e.date);
+const tba = EVENTS.filter((e) => !e.date);
+---
+<Base title="St Andrew's Day 2026 in Canada: what it is and where to celebrate" crumb="St Andrew's Day" description="St Andrew's Day is Monday, November 30, 2026. What Scotland's national day is, easy ways to mark it, and St Andrew's balls and ceilidhs in Calgary, Edmonton and across Canada.">
+  <div class="intro">
+    <div>
+      <p class="kicker">Monday, November 30, 2026 · Scotland's national day</p>
+      <h1>St Andrew's Day 2026</h1>
+      <p class="lede">St Andrew is Scotland's patron saint, and November 30 is his feast day. In Scotland it's an official bank holiday. Here in Canada, St Andrew's societies have hosted balls and dinners for well over a century, and most of them fall on the weekend before the day itself.</p>
+    </div>
+    <img src={u('coo.svg')} alt="Ceilidh the Coo" width="140" height="140" />
+  </div>
+
+  <h2>What is St Andrew's Day?</h2>
+  <div class="grid steps">
+    <div class="card"><h3>✝️ Who was St Andrew?</h3><p>Andrew was one of the twelve apostles and the brother of St Peter. He's also patron saint of other countries, including Greece and Romania. Scotland's 1320 Declaration of Arbroath names him as the nation's patron.</p></div>
+    <div class="card"><h3>🏴󠁧󠁢󠁳󠁣󠁴󠁿 The Saltire</h3><p>Scotland's flag, a white diagonal cross on blue, is St Andrew's cross. Legend says a white X appeared in a blue sky before a battle long ago, and the Scots took it as their sign.</p></div>
+    <div class="card"><h3>🗓️ A day off? Sometimes</h3><p>Scotland made it a bank holiday in 2007, but employers don't have to give the day off, and most don't. In 2026 it falls on a Monday, so most parties are on the Saturday before.</p></div>
+    <div class="card"><h3>🗣️ Say it in Gaelic</h3><p>In Scottish Gaelic the day is <i>Là Fhèill Anndrais</i>. It's a lovely one to try on your friends at a ceilidh.</p></div>
+  </div>
+
+  <h2>How to mark it</h2>
+  <ul class="ways">
+    <li>🏴󠁧󠁢󠁳󠁣󠁴󠁿 Fly a Saltire or wear a bit of tartan. A scarf or tie counts. See <a href={u('what-to-wear/')}>what to wear</a> and the <a href={u('tartans/')}>tartan guide</a>.</li>
+    <li>💃 Go to a ball or ceilidh. Most have easy dances for beginners, and someone will walk you through them.</li>
+    <li>🎓 Try a Scottish country dance or Highland dance class. Find one in <a href={u('groups/?lessons=1')}>clubs &amp; lessons</a>.</li>
+    <li>🍲 Cook a Scottish supper: cullen skink (smoked fish soup), haggis with neeps and tatties, and cranachan or shortbread for pudding.</li>
+    <li>🥁 Listen to some pipes and drums. Look up a local band in <a href={u('groups/')}>clubs &amp; lessons</a>.</li>
+    <li>🌳 Look into your <a href={u('roots/')}>Scottish roots</a>. A long, dark November evening is perfect for it.</li>
+  </ul>
+
+  <h2 id="events">St Andrew's events in Alberta and across Canada</h2>
+  <p>Every date below comes from the host's own page (or their ticket page), checked October 20, 2026. Tickets for the bigger balls often sell out, so book early and confirm with the host.</p>
+  <div class="grid">
+    {dated.map((e) => (
+      <article class="card ev sa" data-end={e.date}>
+        <div class="ev-date">{e.when}</div>
+        {e.status === 'confirmed' ? <span class="pill green">✓ Date posted by host</span> : <span class="pill tba">From the host's ticket page</span>}
+        <h3>{e.name}</h3>
+        <div class="muted">{e.host} · {e.city}, {e.prov}</div>
+        <p style="margin:.35rem 0 0;font-size:.93rem">{e.venue}</p>
+        <p style="margin:.5rem 0 0;font-size:.92rem"><a href={e.url} rel="noopener" target="_blank">Details &amp; tickets ↗</a>{e.also && <> · <a href={e.also[1]} rel="noopener" target="_blank">{e.also[0]} ↗</a></>}</p>
+      </article>
+    ))}
+  </div>
+
+  <h2 id="tba">Usually held, date to come</h2>
+  <div class="grid">
+    {tba.map((e) => (
+      <article class="card">
+        <span class="pill tba">Unconfirmed: 2026 date not posted yet</span>
+        <h3 style="margin:.3rem 0;font-size:1.05rem">{e.name}</h3>
+        <div class="muted">{e.host} · {e.city}, {e.prov}</div>
+        <p style="margin:.35rem 0 0;font-size:.93rem">{e.venue}</p>
+        <p style="margin:.45rem 0 0;font-size:.92rem"><a href={e.url} rel="noopener" target="_blank">Host's page ↗</a></p>
+      </article>
+    ))}
+  </div>
+
+  <aside class="card cta">
+    <b>🏴󠁧󠁢󠁳󠁣󠁴󠁿 Hosting a St Andrew's night?</b> Listing is free for clubs, societies, Legions, pubs and restaurants. <a class="btn" href={u('submit/')}>Tell us about it</a>
+  </aside>
+  <p class="muted">Looking further ahead? <a href={u('burns-night/')}>Burns Night</a> is January 25, and the full <a href={u('events/')}>events calendar</a> runs through 2027.</p>
+  <p class="muted signoff">Happy St Andrew's Day from the foothills! · Ceilidh 🐮</p>
+  <script is:inline>
+    (function () { var t = new Date(); var d = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+      document.querySelectorAll('.sa[data-end]').forEach(function (el) { if (el.dataset.end < d) el.hidden = true; }); })();
+  </script>
+</Base>
+<style>
+  .intro { display:flex; gap:1.5rem; align-items:center; justify-content:space-between; flex-wrap:wrap-reverse; }
+  .intro > div { flex:1; min-width:280px; max-width:720px; }
+  .kicker { color:var(--ginger); font-weight:600; margin:0; font-style:italic; }
+  .lede { font-size:1.1rem; color:#4a3a2e; }
+  .steps h3 { margin:.1rem 0 .4rem; font-size:1.08rem; } .steps p { margin:0; font-size:.95rem; }
+  .ways { padding-left:1.2rem; max-width:760px; } .ways li { margin:.35rem 0; }
+  .sa { border-top:5px solid #0065bd; }
+  .sa h3 { margin:.35rem 0 .2rem; font-size:1.1rem; }
+  .ev-date { font-weight:700; color:var(--ginger); font-size:.95rem; }
+  .cta { margin-top:2rem; background:#fff4e8; border-color:#f1cfae; }
+  .cta .btn { margin-left:.5rem; }
+  .signoff { margin-top:1rem; }
+</style>

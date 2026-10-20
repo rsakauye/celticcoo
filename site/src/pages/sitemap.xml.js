@@ -11,6 +11,7 @@ const PAGES = {
   'results/': [P('results/index.astro'), D('season_champions.json')],
   'groups/': [P('groups/index.astro'), D('groups_canada.json')],
   'burns-night/': [P('burns-night/index.astro'), D('burns_2027.json')],
+  'st-andrews-day/': [P('st-andrews-day/index.astro')],
   'shops/': [P('shops/index.astro'), D('shops_canada.json')],
   'fundraising/': [P('fundraising/index.astro')],
   'what-to-wear/': [P('what-to-wear/index.astro')],
