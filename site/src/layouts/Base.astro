@@ -1,14 +1,31 @@
 ---
 import NewsletterForm from '../components/NewsletterForm.astro';
 import { u, SITE_NAME } from '../lib/site.js';
-const { title = SITE_NAME, description = 'Highland Games, pipe bands, Highland dance, Gaelic and Celtic festivals across Canada, plus the shops and makers who keep the culture going.' } = Astro.props;
+const { noindex = false, breadcrumbs = null, jsonld = null, ogType = 'website', crumb = null, title = SITE_NAME, description = 'Highland Games, pipe bands, Highland dance, Gaelic and Celtic festivals across Canada, plus the shops and makers who keep the culture going.' } = Astro.props;
 const fullTitle = title === SITE_NAME ? 'The Celtic Coo: Highland Games & Celtic events in Canada' : `${title} · The Celtic Coo`;
 const path = Astro.url.pathname;
 const nav = [['', 'Home'], ['events/', 'Events'], ['results/', 'Results'], ['groups/', 'Clubs & lessons'], ['burns-night/', 'Burns Night'], ['shops/', 'Shops'], ['fundraising/', 'Fundraising']];
 const navNew = [['what-to-wear/', 'What to wear'], ['tartans/', 'Find your tartan'], ['roots/', 'Trace your roots'], ['about/', 'About Ceilidh']];
 const navEnd = [['submit/', 'Add yours']];
 const tartanBg = `background-image:url(${u('tartan-maple-leaf.svg')})`;
-const canonical = new URL(Astro.url.pathname, Astro.site).href;
+// SEO: canonical always points at the production domain (celticcoo.pages.dev is a duplicate host).
+const ORIGIN = 'https://celticcoo.ca';
+const BASE_URL = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const relPath = path.startsWith(BASE_URL) ? path.slice(BASE_URL.length) : path.replace(/^\//, '');
+const canonical = `${ORIGIN}/${relPath}`;
+const isProd = !Astro.site || Astro.site.host === 'celticcoo.ca';
+const robots = noindex || !isProd ? 'noindex, follow' : 'index, follow, max-image-preview:large';
+const ogImage = `${ORIGIN}/og.png`;
+const ld = [];
+if (relPath === '') {
+  ld.push({ '@context': 'https://schema.org', '@type': 'Organization', '@id': `${ORIGIN}/#org`, name: SITE_NAME, url: `${ORIGIN}/`, logo: `${ORIGIN}/og.png`, address: { '@type': 'PostalAddress', postOfficeBoxNumber: '1604', addressLocality: 'Okotoks', addressRegion: 'AB', postalCode: 'T1S 1B5', addressCountry: 'CA' } });
+  ld.push({ '@context': 'https://schema.org', '@type': 'WebSite', '@id': `${ORIGIN}/#website`, name: SITE_NAME, url: `${ORIGIN}/`, inLanguage: 'en-CA', publisher: { '@id': `${ORIGIN}/#org` } });
+} else if (!noindex) {
+  const crumbs = [[SITE_NAME, ''], ...(breadcrumbs || []), [crumb || title, relPath]];
+  ld.push({ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: crumbs.map(([name, p], i) => ({ '@type': 'ListItem', position: i + 1, name, item: `${ORIGIN}/${p}` })) });
+}
+if (jsonld) ld.push(...(Array.isArray(jsonld) ? jsonld : [jsonld]));
+const ldJson = JSON.stringify(ld.length === 1 ? ld[0] : ld).replace(/</g, '\\u003c');
 ---
 <!doctype html>
 <html lang="en-CA">
@@ -17,10 +34,23 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{fullTitle}</title>
   <meta name="description" content={description} />
-  <link rel="canonical" href={canonical} />
+  <meta name="robots" content={robots} />
+  {!noindex && <link rel="canonical" href={canonical} />}
+  <meta property="og:site_name" content={SITE_NAME} />
+  <meta property="og:type" content={ogType} />
+  <meta property="og:locale" content="en_CA" />
   <meta property="og:title" content={fullTitle} />
   <meta property="og:description" content={description} />
-  <meta property="og:image" content={new URL(u('coo.svg'), Astro.site).href} />
+  <meta property="og:url" content={canonical} />
+  <meta property="og:image" content={ogImage} />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Ceilidh the Coo, The Celtic Coo's Highland coo mascot" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={fullTitle} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image" content={ogImage} />
+  {ld.length > 0 && <script type="application/ld+json" set:html={ldJson} />}
   <meta name="theme-color" content="#1f4d3a" />
   <link rel="icon" href={u('favicon.svg')} type="image/svg+xml" />
   <link rel="sitemap" type="application/xml" href={u('sitemap.xml')} />

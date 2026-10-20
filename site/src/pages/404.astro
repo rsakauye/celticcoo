@@ -2,7 +2,7 @@
 import Base from '../layouts/Base.astro';
 import { u } from '../lib/site.js';
 ---
-<Base title="Page not found">
+<Base title="Page not found" noindex={true} description="That page isn't on The Celtic Coo. Try the Celtic and Highland events calendar for Canada instead.">
   <h1>This coo has wandered off.</h1>
   <p>We couldn't find that page. Try the <a href={u('events/')}>events calendar</a> or the <a href={u('')}>home page</a>.</p>
 </Base>
