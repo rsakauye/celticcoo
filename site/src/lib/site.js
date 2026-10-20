@@ -11,7 +11,7 @@ const kitId = (import.meta.env.PUBLIC_KIT_FORM_ID || '').trim() || '10068901';
 export const KIT_FORM_ID = /^\d+$/.test(kitId) ? kitId : '';
 export const kitAction = KIT_FORM_ID ? `https://app.kit.com/forms/${KIT_FORM_ID}/subscriptions` : '';
 
-// TODO: hello@celticcoo.ca does not exist yet (needs Cloudflare Email Routing or another inbox).
+// Contact inbox (forwards via Cloudflare Email Routing).
 // Override with repo variable CONTACT_EMAIL (PUBLIC_CONTACT_EMAIL).
 export const CONTACT_EMAIL = (import.meta.env.PUBLIC_CONTACT_EMAIL || '').trim() || 'hello@celticcoo.ca';
 // Business mailing address (CASL sender identification; also shown on privacy, terms and about).

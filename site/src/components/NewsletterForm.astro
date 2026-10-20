@@ -8,7 +8,7 @@ const id = compact ? 'nl-email-footer' : 'nl-email';
     <label for={id} class="sr-only">Email address</label>
     <input id={id} type="email" name="email_address" required placeholder="you@example.com" autocomplete="email" style="flex:1;min-width:200px" />
     <button class="btn" type="submit">{compact ? 'Subscribe' : 'Send me the Coo\'s Letter'}</button>
-    {!compact && <p class="muted" style="flex-basis:100%;margin:.25rem 0 0">Free. About one email a week. Unsubscribe anytime.</p>}
+    {!compact && <p class="muted" style="flex-basis:100%;margin:.25rem 0 0">Free. One email every two weeks, on Tuesdays. Unsubscribe anytime.</p>}
   </form>
 ) : (
   compact
