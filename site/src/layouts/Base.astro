@@ -55,13 +55,18 @@ const ldJson = JSON.stringify(ld.length === 1 ? ld[0] : ld).replace(/</g, '\\u00
   <link rel="icon" href={u('favicon.svg')} type="image/svg+xml" />
   <link rel="sitemap" type="application/xml" href={u('sitemap.xml')} />
   <link rel="alternate" type="application/rss+xml" title="The Celtic Coo: upcoming events" href={u('rss.xml')} />
+  <script is:inline define:vars={{ FONT: u('fonts/atkinson.css') }}>
+    // Accessibility settings before first paint (saved choice, else the OS preference): no flash.
+    (function(){var d=document.documentElement,s={};try{s=JSON.parse(localStorage.getItem('a11y')||'{}')||{}}catch(e){}function m(q){return!!(window.matchMedia&&matchMedia(q).matches)}d.setAttribute('data-a11y-size',s.size||'m');d.setAttribute('data-a11y-contrast',s.contrast||(m('(prefers-contrast: more)')?'high':'normal'));d.setAttribute('data-a11y-motion',s.motion||(m('(prefers-reduced-motion: reduce)')?'reduce':'full'));['font','cb','space','links','tables'].forEach(function(k){if(s[k]&&s[k]!=='default')d.setAttribute('data-a11y-'+k,s[k])});if(s.font==='readable'){var l=document.createElement('link');l.id='a11y-font';l.rel='stylesheet';l.href=FONT;document.head.appendChild(l)}})();
+  </script>
   <style is:global>
     :root {
       --fg:#2a1d14; --muted:#6b5a4c; --bg:#fbf6ec; --card:#fffdf8; --line:#eadfcb;
-      --green:#1f4d3a; --green2:#2f6b52; --ginger:#c8642a; --ginger2:#e0843f; --cream:#f4e6c8; --navy:#1d3557;
+      --green:#1f4d3a; --green2:#2f6b52; --ginger:#a54e1e; --ginger2:#e0843f; --cream:#f4e6c8; --navy:#1d3557;
+      --focus:#1d3557; --focus-halo:#fff;
     }
     * { box-sizing:border-box; }
-    body { margin:0; font:17px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:var(--fg); background:var(--bg); }
+    body { margin:0; font:1.0625rem/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:var(--fg); background:var(--bg); }
     a { color:var(--green2); }
     h1,h2,h3 { font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif; line-height:1.2; color:var(--green); }
     h1 { font-size:2.1rem; margin:.3rem 0 .6rem; }
@@ -85,7 +90,7 @@ const ldJson = JSON.stringify(ld.length === 1 ? ld[0] : ld).replace(/</g, '\\u00
     .pill.green { background:#dcebe2; color:var(--green); }
     .pill.tba { background:#fde7d6; color:#8a3b0d; }
     .btn { display:inline-block; background:var(--ginger); color:#fff; border:0; border-radius:10px; padding:.6rem 1rem; font:600 1rem system-ui,sans-serif; text-decoration:none; cursor:pointer; }
-    .btn:hover { background:#b0551f; }
+    .btn:hover { background:#8a4118; }
     .btn.ghost { background:transparent; color:var(--green); border:2px solid var(--green); }
     input, select { font:inherit; padding:.5rem .6rem; border:1px solid #cdbda3; border-radius:8px; background:#fff; color:var(--fg); }
     footer.site { background:var(--green); color:#e9f1ec; margin-top:2rem; }
@@ -100,21 +105,50 @@ const ldJson = JSON.stringify(ld.length === 1 ? ld[0] : ld).replace(/</g, '\\u00
     details.more > div { position:absolute; z-index:20; top:100%; left:0; background:var(--green); border:1px solid #2f6b52; border-radius:10px; padding:.4rem .8rem; min-width:190px; box-shadow:0 8px 20px rgba(0,0,0,.2); }
     details.more > div a { display:block; margin:0; padding:.3rem 0; }
     .sr-only { position:absolute; left:-9999px; }
+    /* ---------- Accessibility (WCAG 2.2 AA) + settings menu (public/a11y.js). Choices live in localStorage only. ---------- */
+    .skip { position:absolute; left:.5rem; top:.5rem; transform:translateY(-200%); z-index:100; background:#fff; color:#000; padding:.6rem 1rem; border:3px solid #000; border-radius:6px; font-weight:700; text-decoration:underline; }
+    .skip:focus { transform:none; }
+    :focus-visible { outline:3px solid var(--focus); outline-offset:2px; box-shadow:0 0 0 5px var(--focus-halo); }
+    main:focus { outline:none; box-shadow:none; }
+    html[data-a11y-size=s] { font-size:87.5%; } html[data-a11y-size=l] { font-size:118.75%; } html[data-a11y-size=xl] { font-size:137.5%; }
+    html[data-a11y-motion=reduce] *, html[data-a11y-motion=reduce] *::before, html[data-a11y-motion=reduce] *::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; }
+    html[data-a11y-links=on] a { text-decoration:underline !important; text-underline-offset:.15em; }
+    html[data-a11y-space=on] body { line-height:1.8; letter-spacing:.03em; word-spacing:.1em; }
+    html[data-a11y-space=on] p { margin-bottom:1.3em; }
+    html[data-a11y-space=on] button, html[data-a11y-space=on] .btn, html[data-a11y-space=on] input, html[data-a11y-space=on] select { min-height:48px; padding:.65rem 1rem; }
+    html[data-a11y-space=on] nav a, html[data-a11y-space=on] footer a, html[data-a11y-space=on] .a11y-link { display:inline-block; padding:.55rem .2rem; }
+    html[data-a11y-font=readable] body, html[data-a11y-font=readable] body * { font-family:'Atkinson Hyperlegible', system-ui, sans-serif !important; }
+    .a11y-table { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+    html[data-a11y-tables=on] .a11y-table { position:static; width:auto; height:auto; overflow:visible; clip:auto; white-space:normal; margin-top:.8rem; }
+    .a11y-link { background:none; border:0; padding:0; color:inherit; text-decoration:underline; font:inherit; cursor:pointer; border-radius:0; }
+    header.site :focus-visible, footer.site :focus-visible { outline-color:#fff; box-shadow:0 0 0 5px #000; }
+    html[data-a11y-contrast=high] { --fg:#000; --muted:#1f1f1f; --bg:#fff; --card:#fff; --line:#000; --green:#0d2e22; --green2:#0b4a32; --ginger:#7a3510; }
+    html[data-a11y-contrast=high] .card { border:2px solid #000; }
+    html[data-a11y-contrast=high] a { text-decoration:underline; }
+    html[data-a11y-contrast=high] header.site nav a, html[data-a11y-contrast=high] details.more summary { opacity:1; }
+    html[data-a11y-contrast=high] footer.site .muted { color:#fff; }
+    html[data-a11y-cb=on] { --green2:#005a9c; --ginger:#9a4a00; }
+    /* menu skin: parchment card with a tartan band, like the site */
+    #a11y-dlg { --a11y-bg:var(--card); --a11y-fg:var(--fg); --a11y-muted:#5a4a3d; --a11y-line:var(--line); --a11y-ctl:#8a7560; --a11y-ctl-bg:#fff; --a11y-on:var(--green); --a11y-on-fg:#fff; --a11y-focus:#1d3557; --a11y-border:3px solid var(--green); --a11y-radius:14px; --a11y-ctl-radius:10px; }
+    #a11y-dlg .a11y-in { border-top:10px solid var(--green); background-image:linear-gradient(var(--green),var(--green)); background-size:100% 0; }
+    #a11y-dlg h2 { font-family:Georgia,"Iowan Old Style",serif; color:var(--green); }
+    html[data-a11y-contrast=high] #a11y-dlg { --a11y-muted:#000; --a11y-line:#000; --a11y-ctl:#000; }
   </style>
 </head>
 <body>
+  <a class="skip" href="#main">Skip to main content</a>
   <div class="tartan" aria-hidden="true" style={tartanBg}></div>
   <header class="site">
     <div class="wrap">
       <a class="brand" href={u('')}><img src={u('coo.svg')} alt="" width="46" height="46" /><span>The Celtic Coo<small>Celtic &amp; Highland life in Canada</small></span></a>
-      <nav>
+      <nav aria-label="Main">
         {nav.map(([p, label]) => <a href={u(p)} aria-current={path === u(p) ? 'page' : undefined}>{label}</a>)}
         <details class="more"><summary>New here?</summary><div>{navNew.map(([p, label]) => <a href={u(p)} aria-current={path === u(p) ? 'page' : undefined}>{label}</a>)}</div></details>
         {navEnd.map(([p, label]) => <a href={u(p)} aria-current={path === u(p) ? 'page' : undefined}>{label}</a>)}
       </nav>
     </div>
   </header>
-  <main class="wrap"><slot /></main>
+  <main class="wrap" id="main" tabindex="-1"><slot /></main>
   <footer class="site">
     <div class="tartan" aria-hidden="true" style={tartanBg}></div>
     <div class="wrap">
@@ -124,7 +158,7 @@ const ldJson = JSON.stringify(ld.length === 1 ? ld[0] : ld).replace(/</g, '\\u00
       </div>
       <div class="muted" style="max-width:460px">
         Dates come from organizers' and associations' websites and can change. Always confirm with the organizer before you travel.<br />
-        <a href={u('events.ics')}>Calendar (ICS)</a> · <a href={u('rss.xml')}>RSS</a> · <a href={u('submit/')}>Add an event or shop</a> · <a href={u('about/')}>About</a> · <a href={u('sitemap.xml')}>Sitemap</a> · <a href={u('privacy/')}>Privacy</a> · <a href={u('terms/')}>Terms</a><br />
+        <a href={u('events.ics')}>Calendar (ICS)</a> · <a href={u('rss.xml')}>RSS</a> · <a href={u('submit/')}>Add an event or shop</a> · <a href={u('about/')}>About</a> · <a href={u('sitemap.xml')}>Sitemap</a> · <a href={u('privacy/')}>Privacy</a> · <a href={u('terms/')}>Terms</a> · <button type="button" class="a11y-link" data-a11y-open aria-haspopup="dialog">Accessibility</button><br />
         Mascot: Ceilidh the Coo (say "Kaylee"), in Canada's Maple Leaf tartan.<br />
         © {new Date().getFullYear()} The Celtic Coo · CelticCoo.ca
       </div>
@@ -134,5 +168,6 @@ const ldJson = JSON.stringify(ld.length === 1 ? ld[0] : ld).replace(/</g, '\\u00
     // Personal banner tartan chosen on /tartans/. Stored only in this browser (localStorage); no accounts, nothing sent anywhere.
     try { var t = localStorage.getItem('coo-tartan-svg'); if (t) document.querySelectorAll('.tartan').forEach(function (el) { el.style.backgroundImage = 'url("data:image/svg+xml,' + encodeURIComponent(t) + '")'; }); } catch (e) {}
   </script>
+  <script is:inline src={u('a11y.js')} data-font={u('fonts/atkinson.css')} data-omit="tables" defer></script>
 </body>
 </html>
