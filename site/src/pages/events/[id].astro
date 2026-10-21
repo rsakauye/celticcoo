@@ -10,6 +10,7 @@ export function getStaticPaths() {
 const { e } = Astro.props;
 const ORIGIN = 'https://celticcoo.ca';
 const COUNTRY_CODE = { Canada: 'CA', USA: 'US', UK: 'GB', France: 'FR' };
+const CURRENCY = { Canada: 'CAD', USA: 'USD', UK: 'GBP', France: 'EUR' };
 const place = [e.city, e.regionLabel, e.country !== 'Canada' && e.country !== e.regionLabel ? e.country : ''].filter(Boolean).join(', ');
 const pageTitle = `${e.name}: ${e.when}, ${e.city}`;
 const description = `${e.name} (${e.type}) in ${place}, ${e.when}. Date confirmed on the ${e.source_kind === 'official' ? "organizer's" : "association's"} website, with the official link and similar events nearby.`;
@@ -22,6 +23,13 @@ const eventLd = {
   description: [e.type, e.note].filter(Boolean).join('. '),
   url: `${ORIGIN}/events/${e.id}/`,
   sameAs: e.source_url,
+  // No per-event photos yet, so every event uses the site's real share image (never generated art).
+  image: [`${ORIGIN}/og.png`],
+  // Organizer and performers only where our data names them (see events_2027.json); otherwise left out.
+  ...(e.organizer ? { organizer: e.organizer.map((o) => ({ '@type': 'Organization', ...o })) } : {}),
+  ...(e.performers ? { performer: e.performers.map((name) => ({ '@type': 'PerformingGroup', name })) } : {}),
+  // Info/ticket link on the organizer's own page. No price: we never publish one we haven't seen.
+  ...(e.source_kind === 'official' || e.organizer ? { offers: { '@type': 'Offer', url: e.source_url, priceCurrency: CURRENCY[e.country] || 'CAD', availability: 'https://schema.org/InStock', ...(e.tickets_on_sale ? { validFrom: e.tickets_on_sale } : {}) } } : {}),
 };
 const TAG_LABEL = { 'highland-games': 'Highland Games', 'pipe-band': 'Pipe bands', 'highland-dance': 'Highland dance', 'scottish-country-dance': 'Scottish country dance', ceilidh: 'Ceilidh', burns: 'Burns', 'st-andrews': "St Andrew's", music: 'Music', 'heavy-events': 'Heavy events', 'ball-formal': 'Ball / formal', 'workshop-class': 'Workshops & classes', irish: 'Irish', 'family-friendly': 'Family-friendly', other: 'Other' };
 const near = events.filter((x) => x.id !== e.id && x.region === e.region && x.country === e.country).slice(0, 6);

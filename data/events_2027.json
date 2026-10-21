@@ -115,7 +115,13 @@
   "tag_quotes": {
    "pipe-band": "British Pipe Band Championships",
    "music": "THE HEART AND HOME OF THE PIPE BAND WORLD"
-  }
+  },
+  "organizer": [
+   {
+    "name": "Royal Scottish Pipe Band Association",
+    "url": "https://rspba.org/"
+   }
+  ]
  },
  {
   "name": "Gathering of the Scots Festival",
@@ -551,6 +557,12 @@
   "summary": "The event is a pipe band championship.",
   "summary_quotes": [
    "RSPBA Scottish Pipe Band Championships"
+  ],
+  "organizer": [
+   {
+    "name": "Royal Scottish Pipe Band Association",
+    "url": "https://rspba.org/"
+   }
   ]
  },
  {
@@ -823,6 +835,12 @@
   "summary": "The event is a pipe band major championship held in Perth.",
   "summary_quotes": [
    "Europeans – 7th August, Perth"
+  ],
+  "organizer": [
+   {
+    "name": "Royal Scottish Pipe Band Association",
+    "url": "https://rspba.org/"
+   }
   ]
  },
  {
@@ -929,7 +947,8 @@
   "summary_quotes": [
    "it is the most prominent and well-attended Highland games in the world",
    "The Massed Bands parade at 11.30am from the Invercauld Arms Hotel and at 3pm"
-  ]
+  ],
+  "tickets_on_sale": "2027-02-01"
  },
  {
   "name": "Scottish Highland Gathering & Games (Pleasanton)",
@@ -1004,6 +1023,12 @@
   "summary_quotes": [
    "51st Annual Burns Supper",
    "Gentlemen: Traditionally a jacket and tie are requested!"
+  ],
+  "organizer": [
+   {
+    "name": "Burns Club of Calgary",
+    "url": "https://www.calgaryburnsclub.com/upcoming-events.html"
+   }
   ]
  },
  {
@@ -1030,6 +1055,12 @@
   "summary_quotes": [
    "Celebrate the life and legacy of Scotland's beloved poet, Robert Burns, with an evening filled with music, poetry",
    "A Traditional Scottish Feast... Join in a heartfelt singing of Auld Lang Syne to conclude the evening."
+  ],
+  "organizer": [
+   {
+    "name": "Cornerstone Music Cafe",
+    "url": "https://www.eventbrite.ca/e/burns-night-tickets-1981961289570"
+   }
   ]
  },
  {
@@ -1060,6 +1091,15 @@
   "summary_quotes": [
    "Celtic band Blackthorn, a special guest piper and Highland dance company the Wee Drams feature the musical traditions of Scotland",
    "Haggis will be served during intermission for those fancying a bite of the national dish of Scotland!"
+  ],
+  "organizer": [
+   {
+    "name": "Place des Arts",
+    "url": "https://www.eventbrite.ca/e/a-celebration-of-robbie-burns-with-blackthorn-tickets-1984414108016"
+   }
+  ],
+  "performers": [
+   "Blackthorn"
   ]
  },
  {
@@ -1088,6 +1128,12 @@
   "summary_quotes": [
    "Celebrate Scotland’s national poet with a formal event in downtown Toronto!",
    "The event follows the time-honoured format with the Address to a Haggis, the toast to The Immortal Memory and toasts to the Lassies and Laddies and musical entertainment."
+  ],
+  "organizer": [
+   {
+    "name": "St. Andrew's Society of Toronto",
+    "url": "https://standrewstoronto.ca/sast_event/rabbie-burns-dinner/"
+   }
   ]
  },
  {
@@ -1114,6 +1160,18 @@
   "summary_quotes": [
    "performing at the Barrie Legion for the traditional Robert Burn’s Dinner!",
    "Barrie Pipes & Drums performing at the Barrie Legion"
+  ],
+  "organizer": [
+   {
+    "name": "Royal Canadian Legion (Barrie)"
+   },
+   {
+    "name": "Barrie Pipes & Drums",
+    "url": "https://www.barriepipesanddrums.com/new-events/2027/1/23/robert-burns-dinner"
+   }
+  ],
+  "performers": [
+   "Barrie Pipes & Drums"
   ]
  },
  {
@@ -1133,7 +1191,13 @@
   ],
   "tag_quotes": {
    "burns": "Burns Supper"
-  }
+  },
+  "organizer": [
+   {
+    "name": "Tea On West",
+    "url": "https://tableagent.com/hamilton-ontario/tea-on-3/event/289214/burns-supper/"
+   }
+  ]
  },
  {
   "name": "Royal Nova Scotia International Tattoo",
@@ -1179,6 +1243,12 @@
   "summary_quotes": [
    "Vendor list includes Scottish, Irish & UK imports (A Little Bit of Ireland)",
    "All ages are welcome —bring family and friends to make merry memories!"
+  ],
+  "organizer": [
+   {
+    "name": "Spruce Meadows",
+    "url": "https://sprucemeadows.com/christmasmarket/"
+   }
   ]
  }
 ]
