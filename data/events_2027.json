@@ -503,6 +503,30 @@
   }
  },
  {
+  "name": "ScotDance Canada Championship Series 2027",
+  "start_date": "2027-07-13",
+  "end_date": "2027-07-17",
+  "city": "Edmonton",
+  "province_or_region": "AB",
+  "country": "Canada",
+  "type": "Highland dance championship",
+  "source_url": "https://scotdance.ca/sdccs/schedule/",
+  "source_kind": "official",
+  "notes": "Ice Palace, West Edmonton Mall",
+  "tags": [
+   "highland-dance"
+  ],
+  "tag_quotes": {
+   "highland-dance": "ScotDance Canada Championship Series"
+  },
+  "summary": "The ScotDance Canada Championship Series is at the Ice Palace in Edmonton from July 13 to 17, 2027.",
+  "summary_quotes": [
+   "July 13-17, 2027",
+   "Ice Palace, WEM",
+   "Edmonton, AB"
+  ]
+ },
+ {
   "name": "New Brunswick Highland Games Festival",
   "start_date": "2027-07-23",
   "end_date": "2027-07-25",
@@ -924,6 +948,36 @@
   "summary_quotes": [
    "17 stages of music, dance, and cultural entertainment.",
    "Family Activities"
+  ]
+ },
+ {
+  "name": "Cowal Highland Gathering",
+  "start_date": "2027-08-26",
+  "end_date": "2027-08-28",
+  "city": "Dunoon",
+  "province_or_region": "Scotland",
+  "country": "UK",
+  "type": "Highland Games",
+  "source_url": "https://www.cowalgathering.com/",
+  "source_kind": "official",
+  "notes": "",
+  "tags": [
+   "highland-games",
+   "pipe-band",
+   "family-friendly"
+  ],
+  "tag_quotes": {
+   "highland-games": "one of the largest, most spectacular Highland games in the world",
+   "pipe-band": "world-class pipers, dancers and athletes",
+   "family-friendly": "unbeatable event for all the family"
+  },
+  "summary": "The Cowal Gathering in Dunoon is one of the largest Highland games in the world, with pipers, dancers and athletes, and it is an event for all the family. The 2027 gathering is Thursday 26 to Saturday 28 August.",
+  "summary_quotes": [
+   "The Cowal Gathering held in Dunoon, Argyll, is one of the largest, most spectacular Highland games in the world",
+   "world-class pipers, dancers and athletes",
+   "unbeatable event for all the family",
+   "COWAL GATHERING 2027",
+   "Thursday 26th - Saturday 28th August"
   ]
  },
  {
