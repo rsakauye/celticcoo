@@ -10,5 +10,8 @@
   },
   "dependencies": {
     "astro": "^5.14.0"
+  },
+  "overrides": {
+    "vite": "^6.4.5"
   }
 }
