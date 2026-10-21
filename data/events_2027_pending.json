@@ -12,18 +12,6 @@
   "notes": "Organizers say Calgary Celtic Festival at Spruce Meadows in 2027 and full Highland Games return in 2027; no date yet."
  },
  {
-  "name": "ScotDance Canada Championship Series 2027",
-  "start_date": "2027-07-13?",
-  "end_date": "2027-07-17?",
-  "city": "Edmonton",
-  "province_or_region": "AB",
-  "country": "Canada",
-  "type": "Highland dance championship",
-  "source_url": "https://scotdance.ca/sdccs/",
-  "source_kind": "search summary only",
-  "notes": "A search summary said Ice Palace, West Edmonton Mall; SDC page would not render to confirm"
- },
- {
   "name": "Manitoba Highland Gathering (59th)",
   "start_date": "June 2027",
   "end_date": "",
@@ -164,18 +152,6 @@
   "source_url": "https://bcpipers.org/competitors-corner/competition-schedule-for-2024-2025/",
   "source_kind": "association",
   "notes": "City not stated"
- },
- {
-  "name": "Cowal Highland Gathering",
-  "start_date": "2027-08-26?",
-  "end_date": "2027-08-28?",
-  "city": "Dunoon",
-  "province_or_region": "Scotland",
-  "country": "UK",
-  "type": "Highland Games",
-  "source_url": "https://www.cowalgathering.com/",
-  "source_kind": "secondary",
-  "notes": "Running-event listing only; official site did not load"
  },
  {
   "name": "Royal National Mod 2027",
