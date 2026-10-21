@@ -25,6 +25,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Test the source checker
+        run: python scripts/test_check_sources.py
+
       - name: Re-check source pages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
