@@ -5,13 +5,16 @@ Fetches every calendar/list URL in data/sources_and_orgs.csv plus every event so
 data/events_2027*.json, and compares each page with the last snapshot in data/source_state.json:
 
   * HTTP status / reachability changes
-  * the set of dates mentioned on the page (e.g. "July 30-31, 2027", "30 July 2027", "2027-07-30")
+  * dates on the page that could still matter for the current or upcoming season
   * whether each confirmed event's start date can still be found on its source page
   * a hash of the visible text (minor changes are listed but don't open an issue on their own)
 
-If anything significant changed, it writes a Markdown report and (with --open-issue and a
-GITHUB_TOKEN) opens a GitHub issue labelled "source-check", or comments on the open one, so a
-human reviews dates before they are published. Standard library only.
+A failed read (non-200, or a short page) is not stored as "this page has no dates". Date diffs
+run only against a previous successful read, or against dates carried forward from one. Page
+chrome, blog publish dates, and related-article dates are ignored, as are dates that are already
+in the past. If anything significant changed, it writes a Markdown report and (with --open-issue
+and a GITHUB_TOKEN) opens a GitHub issue labelled "source-check", or comments on the open one, so
+a human reviews dates before they are published. Standard library only.
 
 Usage: python scripts/check_sources.py [--open-issue] [--report report.md] [--no-save]
 """
@@ -31,6 +34,32 @@ YEAR_RE = r"(?:,?\s+(20\d\d))?"
 MD = re.compile(r"\b" + MON_RE + r"\s+" + DAY_RE + RANGE_RE + YEAR_RE + r"\b", re.I)
 DM = re.compile(r"\b" + DAY_RE + r"(?:\s*(?:-|–)\s*" + DAY_RE + r")?\s+(?:of\s+)?" + MON_RE + YEAR_RE + r"\b", re.I)
 ISO = re.compile(r"\b(20\d\d)-(\d\d)-(\d\d)\b")
+MENTION_RE = re.compile(
+    r"^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec) (\d{1,2})"
+    r"(?:-(?:(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec) )?(\d{1,2}))?"
+    r"(?: (20\d\d))?$"
+)
+# Publication chrome and blog/related-article widgets. Tokens are matched whole, so
+# "header-date" (a real event line on some sites) is not the same as "header-bottom".
+NOISE_CLASSES = {
+    "topbar", "header-bottom", "date-time",
+    "posted-on", "entry-date", "entry-meta", "entry-time", "post-date", "byline",
+    "wp-block-post-date", "wp-block-latest-posts",
+    "t-entry", "t-entry-date", "t-entry-meta",
+    "tag_date", "tag_block",
+    "related-wrap", "related-post", "related-posts", "h_news-item",
+}
+_EMBEDDED = re.compile(r"(?is)<(script|style|noscript|template|svg)\b.*?</\1>|<!--.*?-->")
+_TAG = re.compile(r"<(/?)([a-zA-Z][\w:-]*)([^>]*)>")
+_CLASS = re.compile(r"""(?i)\bclass\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))""")
+_VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}
+_STATUS_ELEMENT = re.compile(
+    r"(?is)<(p|span|div|li|time|h[1-6])\b[^>]*>\s*"
+    r"((?:last\s+)?updated|posted(?:\s+on)?|published(?:\s+on)?)\s*:?\s+"
+    r"(?:" + MON_RE + r"\s+" + DAY_RE + r"|" + DAY_RE + r"\s+(?:of\s+)?" + MON_RE + r")"
+    r"(?:,?\s+20\d\d)?"
+    r"\s*</\1>"
+)
 
 
 def mon(s):
@@ -38,10 +67,79 @@ def mon(s):
 
 
 def visible_text(raw):
-    raw = re.sub(r"(?is)<(script|style|noscript|svg|template)\b.*?</\1>", " ", raw)
-    raw = re.sub(r"(?is)<!--.*?-->", " ", raw)
+    raw = _EMBEDDED.sub(" ", raw)
     raw = re.sub(r"(?s)<[^>]+>", " ", raw)
     return re.sub(r"\s+", " ", html.unescape(raw)).strip()
+
+
+def _noise_class(attrs):
+    m = _CLASS.search(attrs or "")
+    if not m:
+        return False
+    classes = (m.group(1) or m.group(2) or m.group(3) or "").split()
+    return any(c.lower() in NOISE_CLASSES for c in classes)
+
+
+# A blog card or related-article widget is short. A layout wrapper with the same class
+# name can enclose the whole schedule; leave those alone so event dates stay visible.
+_NOISE_TEXT_LIMIT = 4000
+
+
+def _matching_end(tags, start_i, tag):
+    """End offset of the element opened by tags[start_i], counting only the same tag name."""
+    depth = 1
+    for m in tags[start_i + 1:]:
+        if m.group(2).lower() != tag:
+            continue
+        attrs = m.group(3) or ""
+        if tag in _VOID or attrs.rstrip().endswith("/"):
+            continue
+        if m.group(1):
+            depth -= 1
+            if depth == 0:
+                return m.end()
+        else:
+            depth += 1
+    return None
+
+
+def strip_noise_html(raw):
+    """Drop publication chrome and blog/related widgets.
+
+    Tags stay in the page (visible_text turns them into spaces) so a year that sits in its
+    own element is not glued to the day. An unclosed widget is left in place. A match that
+    contains a long stretch of text is treated as a layout wrapper, not a date chip.
+    """
+    raw = _EMBEDDED.sub(" ", raw)
+    raw = _STATUS_ELEMENT.sub(" ", raw)
+    tags = list(_TAG.finditer(raw))
+    spans = []
+    for i, m in enumerate(tags):
+        closing, tag, attrs = m.group(1), m.group(2).lower(), m.group(3) or ""
+        if closing or tag in _VOID or attrs.rstrip().endswith("/") or not _noise_class(attrs):
+            continue
+        end = _matching_end(tags, i, tag)
+        if end is None:
+            continue
+        if len(re.sub(r"<[^>]+>", "", raw[m.start():end])) > _NOISE_TEXT_LIMIT:
+            continue
+        spans.append((m.start(), end))
+    if not spans:
+        return raw
+    spans.sort()
+    merged = []
+    for a, b in spans:
+        if merged and a <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], b))
+        else:
+            merged.append((a, b))
+    out, pos = [], 0
+    for a, b in merged:
+        out.append(raw[pos:a])
+        out.append(" ")
+        pos = b
+    out.append(raw[pos:])
+    return "".join(out)
 
 
 def date_mentions(text):
@@ -65,19 +163,84 @@ def date_mentions(text):
     return sorted(out)
 
 
+def page_dates(raw_html):
+    """Dates worth storing, after page chrome and blog/related widgets are removed."""
+    return date_mentions(visible_text(strip_noise_html(raw_html)))
+
+
+def mention_end(mention):
+    """Last calendar day of a stored mention, or None when it has no year or doesn't parse."""
+    m = MENTION_RE.match(mention)
+    if not m or not m.group(5):
+        return None
+    mon1, d1, mon2, d2, year = m.group(1), int(m.group(2)), m.group(3), m.group(4), int(m.group(5))
+    end_m = MONTHS.index(mon2) + 1 if mon2 else MONTHS.index(mon1) + 1
+    end_d = int(d2) if d2 else d1
+    try:
+        return dt.date(year, end_m, end_d)
+    except ValueError:
+        return None
+
+
+def actionable_date(mention, today):
+    """True when a date change could matter for events in the current or upcoming season.
+
+    Past years, dates that have already passed, and mentions with no year (blog headlines,
+    undated lines) are not flagged. A mention we cannot parse is kept, so an unusual
+    future date is not hidden.
+    """
+    if MENTION_RE.match(mention) and not MENTION_RE.match(mention).group(5):
+        return False
+    end = mention_end(mention)
+    if end is None:
+        return True
+    return end >= today
+
+
 def date_on_page(iso, text):
     """True if the event's start date appears in a common written form."""
     y, m, d = iso.split("-")
     mi, di = int(m), int(d)
     t = text.lower()
     full = dt.date(int(y), mi, di).strftime("%B").lower()
+    month = rf"(?:{MONTHS[mi - 1]}|{full})\.?"
+    ord_ = r"(?:st|nd|rd|th)?"
+    sep = r"(?:-|–|—|&|and|to)"
     pats = [
-        rf"\b({MONTHS[mi-1]}|{full})\.?\s+{di}(st|nd|rd|th)?\b",
-        rf"\b{di}(st|nd|rd|th)?\s+(of\s+)?({MONTHS[mi-1]}|{full})\b",
+        rf"\b{month}\s+{di}{ord_}\b",
+        rf"\b{di}{ord_}\s+(?:of\s+)?{month}\b",
+        # "6 – 28 August", "6-28 August", "1 to Sunday 8 August"
+        rf"\b{di}{ord_}\s*{sep}\s*(?:[a-z]+\s+)?\d{{1,2}}{ord_}\s+(?:of\s+)?{month}\b",
         rf"\b{y}-{m}-{d}\b",
         rf"\b{mi}/{di}/{y}\b|\b{di}/{mi}/{y}\b",
     ]
     return any(re.search(p, t) for p in pats)
+
+
+def fetch_succeeded(status, text):
+    return status == 200 and isinstance(text, str) and len(text) > 200
+
+
+def dates_basis(prev):
+    """Whether prev['dates'] came from a successful read.
+
+    'ok'      this snapshot's own read succeeded
+    'carried' a later read failed and the previous good dates were kept
+    'unknown' a failed read with nothing reliable before it (often stored as [])
+    Legacy snapshots have no dates_basis; a saved hash and length mean the dates
+    were taken from a real page, including when a later failure kept them.
+    """
+    if not prev:
+        return "unknown"
+    explicit = prev.get("dates_basis")
+    if explicit in ("ok", "carried", "unknown"):
+        return explicit
+    if prev.get("dates") is None:
+        return "unknown"
+    length = prev.get("length")
+    if prev.get("sha256") and isinstance(length, int) and length > 200:
+        return "ok" if prev.get("status") == 200 else "carried"
+    return "unknown"
 
 
 def fetch(url):
@@ -86,7 +249,7 @@ def fetch(url):
         try:
             with urllib.request.urlopen(req, timeout=30) as r:
                 body = r.read(3_000_000).decode(r.headers.get_content_charset() or "utf-8", "replace")
-                return {"status": r.status, "text": visible_text(body)}
+                return {"status": r.status, "text": visible_text(body), "html": body}
         except urllib.error.HTTPError as e:
             res = {"status": e.code, "text": ""}
         except Exception as e:  # network errors, timeouts, TLS
@@ -112,37 +275,39 @@ def load_targets():
     return targets
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--open-issue", action="store_true", help="open/comment a GitHub issue when significant changes are found")
-    ap.add_argument("--report", default="source-check-report.md")
-    ap.add_argument("--no-save", action="store_true")
-    args = ap.parse_args()
-
-    targets = load_targets()
-    old = json.loads(STATE.read_text()) if STATE.exists() else {}
+def run_check(targets, results, old, today, now):
+    """Compare one fetch per target with the saved snapshot. No network and no file writes."""
     baseline = not old
-    with ThreadPoolExecutor(max_workers=6) as ex:
-        results = dict(zip(targets, ex.map(fetch, targets)))
-
-    now = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     new_state, significant, minor, unconfirmed = {}, [], [], []
     for url, meta in targets.items():
         r = results[url]
-        ok = r["status"] == 200 and len(r["text"]) > 200
-        prev = old.get("pages", {}).get(url)
+        text = r.get("text") or ""
+        ok = fetch_succeeded(r.get("status"), text)
+        prev = (old.get("pages") or {}).get(url)
+        basis = dates_basis(prev)
+        if ok:
+            dates = page_dates(r["html"]) if r.get("html") else date_mentions(text)
+            date_state = "ok"
+        elif basis in ("ok", "carried"):
+            dates = prev.get("dates")
+            date_state = "carried"
+        else:
+            # Unknown, not an empty date list. The next good read must not look like every date was added.
+            dates = None
+            date_state = "unknown"
         rec = {
             "labels": meta["labels"],
-            "status": r["status"],
+            "status": r.get("status"),
             "checked_at": now,
-            "sha256": hashlib.sha256(r["text"].encode()).hexdigest() if ok else (prev or {}).get("sha256"),
-            "length": len(r["text"]) if ok else (prev or {}).get("length"),
-            "dates": date_mentions(r["text"]) if ok else (prev or {}).get("dates", []),
+            "sha256": hashlib.sha256(text.encode()).hexdigest() if ok else (prev or {}).get("sha256"),
+            "length": len(text) if ok else (prev or {}).get("length"),
+            "dates": dates,
+            "dates_basis": date_state,
             "events": {},
         }
         for ev in meta["events"]:
             if ev["confirmed"] and re.match(r"\d{4}-\d\d-\d\d$", ev["start_date"]):
-                rec["events"][ev["name"]] = date_on_page(ev["start_date"], r["text"]) if ok else (prev or {}).get("events", {}).get(ev["name"])
+                rec["events"][ev["name"]] = date_on_page(ev["start_date"], text) if ok else (prev or {}).get("events", {}).get(ev["name"])
         new_state[url] = rec
         names = ", ".join(meta["labels"] + [e["name"] for e in meta["events"]][:4]) or url
         for name, found in rec["events"].items():
@@ -152,11 +317,11 @@ def main():
             continue
         msgs = []
         # Bot challenges / timeouts come and go, so only a "page gone" status counts as significant.
-        if r["status"] in (404, 410) and prev.get("status") not in (404, 410):
-            msgs.append(f"page now returns `{r['status']}` (moved or removed?)")
-        if ok:
-            added = sorted(set(rec["dates"]) - set(prev.get("dates", [])))
-            removed = sorted(set(prev.get("dates", [])) - set(rec["dates"]))
+        if r.get("status") in (404, 410) and prev.get("status") not in (404, 410):
+            msgs.append(f"page now returns `{r.get('status')}` (moved or removed?)")
+        if ok and basis in ("ok", "carried"):
+            added = sorted(d for d in set(rec["dates"] or []) - set(prev.get("dates") or []) if actionable_date(d, today))
+            removed = sorted(d for d in set(prev.get("dates") or []) - set(rec["dates"] or []) if actionable_date(d, today))
             if added or removed:
                 msgs.append("dates on page changed: " + "; ".join(
                     ([f"added {', '.join(added[:12])}{' …' if len(added) > 12 else ''}"] if added else []) +
@@ -195,7 +360,31 @@ def main():
         lines += ["<details><summary>Pages that didn't load this run</summary>", ""]
         lines += [f"- {u}: `{s}`" for u, s in errors]
         lines += ["", "</details>", ""]
-    report = "\n".join(lines)
+    return {
+        "state": {"updated_at": now, "pages": new_state},
+        "significant": significant,
+        "minor": minor,
+        "unconfirmed": unconfirmed,
+        "errors": errors,
+        "report": "\n".join(lines),
+    }
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--open-issue", action="store_true", help="open/comment a GitHub issue when significant changes are found")
+    ap.add_argument("--report", default="source-check-report.md")
+    ap.add_argument("--no-save", action="store_true")
+    args = ap.parse_args()
+
+    targets = load_targets()
+    old = json.loads(STATE.read_text()) if STATE.exists() else {}
+    with ThreadPoolExecutor(max_workers=6) as ex:
+        results = dict(zip(targets, ex.map(fetch, targets)))
+
+    now_dt = dt.datetime.now(dt.timezone.utc)
+    checked = run_check(targets, results, old, now_dt.date(), now_dt.strftime("%Y-%m-%dT%H:%M:%SZ"))
+    report = checked["report"]
     Path(args.report).write_text(report, encoding="utf-8")
     print(report)
     if os.environ.get("GITHUB_STEP_SUMMARY"):
@@ -203,10 +392,10 @@ def main():
             f.write(report + "\n")
 
     if not args.no_save:
-        STATE.write_text(json.dumps({"updated_at": now, "pages": new_state}, indent=1, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8")
+        STATE.write_text(json.dumps(checked["state"], indent=1, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8")
 
-    if significant and args.open_issue:
-        open_issue(report, len(significant))
+    if checked["significant"] and args.open_issue:
+        open_issue(report, len(checked["significant"]))
     return 0
 
 
