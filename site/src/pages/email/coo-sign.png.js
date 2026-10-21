@@ -1,0 +1,32 @@
+// Newsletter image, served at /email/coo-sign.png for email clients (absolute URL in the HTML email).
+// Stored as base64 text so it can be committed as text; the build writes the exact PNG bytes.
+// sha256 05e8bdb8ffdbaa5238eaa51ca39383b097b3a39bd702c94b493484182a78ff85
+const B64 = `
+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
+7yPT/yHgv1Ou+k+ND6z/AAAAAElFTkSuQmCC
+`;
+export function GET() {
+  return new Response(Buffer.from(B64.replace(/\s+/g, ''), 'base64'), { headers: { 'Content-Type': 'image/png' } });
+}
