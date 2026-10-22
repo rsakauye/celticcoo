@@ -3,34 +3,22 @@
 import Base from '../../layouts/Base.astro';
 import EventCard from '../../components/EventCard.astro';
 import { events, CATEGORY_EMOJI, COUNTRY_FLAG, FEATURES } from '../../lib/data.js';
+import { eventJsonLd } from '../../lib/eventLd.js';
 import { u } from '../../lib/site.js';
 export function getStaticPaths() {
   return events.map((e) => ({ params: { id: e.id }, props: { e } }));
 }
 const { e } = Astro.props;
-const ORIGIN = 'https://celticcoo.ca';
-const COUNTRY_CODE = { Canada: 'CA', USA: 'US', UK: 'GB', France: 'FR' };
-const CURRENCY = { Canada: 'CAD', USA: 'USD', UK: 'GBP', France: 'EUR' };
 const place = [e.city, e.regionLabel, e.country !== 'Canada' && e.country !== e.regionLabel ? e.country : ''].filter(Boolean).join(', ');
 const pageTitle = `${e.name}: ${e.when}, ${e.city}`;
 const description = `${e.name} (${e.type}) in ${place}, ${e.when}. Date confirmed on the ${e.source_kind === 'official' ? "organizer's" : "association's"} website, with the official link and similar events nearby.`;
-const eventLd = {
-  '@context': 'https://schema.org', '@type': 'Event', name: e.name,
-  startDate: e.start_date, endDate: e.end_date,
-  eventStatus: 'https://schema.org/EventScheduled',
-  eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-  location: { '@type': 'Place', name: e.city, address: { '@type': 'PostalAddress', addressLocality: e.city, addressRegion: e.region, ...(COUNTRY_CODE[e.country] ? { addressCountry: COUNTRY_CODE[e.country] } : {}) } },
-  description: [e.type, e.note].filter(Boolean).join('. '),
-  url: `${ORIGIN}/events/${e.id}/`,
-  sameAs: e.source_url,
-  // No per-event photos yet, so every event uses the site's real share image (never generated art).
-  image: [`${ORIGIN}/og.png`],
-  // Organizer and performers only where our data names them (see events_2027.json); otherwise left out.
-  ...(e.organizer ? { organizer: e.organizer.map((o) => ({ '@type': 'Organization', ...o })) } : {}),
-  ...(e.performers ? { performer: e.performers.map((name) => ({ '@type': 'PerformingGroup', name })) } : {}),
-  // Info/ticket link on the organizer's own page. No price: we never publish one we haven't seen.
-  ...(e.source_kind === 'official' || e.organizer ? { offers: { '@type': 'Offer', url: e.source_url, priceCurrency: CURRENCY[e.country] || 'CAD', availability: 'https://schema.org/InStock', ...(e.tickets_on_sale ? { validFrom: e.tickets_on_sale } : {}) } } : {}),
-};
+const eventLd = eventJsonLd(e);
+const hosts = (Array.isArray(e.organizer) ? e.organizer : e.organizer ? [e.organizer] : []).filter((o) => o && o.name);
+const acts = (Array.isArray(e.performers) ? e.performers : e.performers ? [e.performers] : []).map((p) => (typeof p === 'string' ? { name: p } : p)).filter((p) => p && p.name);
+const ticketUrl = e.offers && e.offers.url;
+const ticketIsSource = ticketUrl && ticketUrl === e.source_url;
+const saleWhen = (iso) => new Date(String(iso).slice(0, 10) + 'T12:00:00Z').toLocaleDateString('en-CA', { timeZone: 'UTC', month: 'long', day: 'numeric', year: 'numeric' });
+const sourceLabel = ticketIsSource ? 'Tickets' : (e.source_kind === 'official' ? 'Official site' : 'Association listing');
 const TAG_LABEL = { 'highland-games': 'Highland Games', 'pipe-band': 'Pipe bands', 'highland-dance': 'Highland dance', 'scottish-country-dance': 'Scottish country dance', ceilidh: 'Ceilidh', burns: 'Burns', 'st-andrews': "St Andrew's", music: 'Music', 'heavy-events': 'Heavy events', 'ball-formal': 'Ball / formal', 'workshop-class': 'Workshops & classes', irish: 'Irish', 'family-friendly': 'Family-friendly', other: 'Other' };
 const near = events.filter((x) => x.id !== e.id && x.region === e.region && x.country === e.country).slice(0, 6);
 const sameType = events.filter((x) => x.id !== e.id && x.category === e.category && !near.includes(x)).slice(0, 3);
@@ -45,8 +33,18 @@ const sameType = events.filter((x) => x.id !== e.id && x.category === e.category
   {e.tags && e.tags.length > 0 && <p>Tags: {e.tags.map((t) => <a class="pill tag" href={u(`events/?tags=${t}`)}>{TAG_LABEL[t] || t}<span class="sr-only">: see all events with this tag</span></a>)}</p>}
   {e.features && e.features.length > 0 && <p>At the games: {e.features.map((f) => <a class="pill" style="background:#e3ebf5;color:var(--navy);text-decoration:none" href={e.features_source} rel="noopener" target="_blank">{FEATURES[f][0]} {FEATURES[f][1]}</a>)} <span class="muted">(from the organizer's site)</span></p>}
   {e.note && <p>{e.note}</p>}
+  {hosts.length > 0 && <p>Hosted by {hosts.map((o, i) => <>{i > 0 && (i === hosts.length - 1 ? ' and ' : ', ')}{o.url ? <a href={o.url} rel="noopener" target="_blank">{o.name}</a> : o.name}</>)}.</p>}
+  {acts.length > 0 && <p>On the bill: {acts.map((p, i) => <>{i > 0 && (i === acts.length - 1 ? ' and ' : ', ')}{p.url ? <a href={p.url} rel="noopener" target="_blank">{p.name}</a> : p.name}</>)}.</p>}
   {e.celtic_vendors && <p>🏴 {e.celtic_vendors}</p>}
-  <p><a class="btn" href={e.source_url} rel="noopener" target="_blank">{e.source_kind === 'official' ? 'Official site' : 'Association listing'} ↗</a></p>
+  <p>
+    <a class="btn" href={e.source_url} rel="noopener" target="_blank">{sourceLabel} ↗</a>
+    {ticketUrl && !ticketIsSource && <a class="btn" href={ticketUrl} rel="noopener" target="_blank" style="margin-left:.5rem">Tickets ↗</a>}
+  </p>
+  {e.offers?.availability === 'InStock' && <p class="muted">Tickets are on sale.</p>}
+  {e.offers?.availability === 'SoldOut' && <p class="muted">Tickets are sold out.</p>}
+  {e.offers?.availability === 'PreOrder' && <p class="muted">Tickets are available to pre-order.</p>}
+  {e.offers?.validFrom && e.offers.availability !== 'InStock' && <p class="muted">Tickets go on sale {saleWhen(e.offers.validFrom)}.</p>}
+  {e.offers && e.offers.price !== undefined && e.offers.priceCurrency && <p class="muted">{Number(e.offers.price) === 0 ? 'Admission is free.' : `Lowest published ticket price: ${e.offers.price} ${e.offers.priceCurrency}.`}</p>}
   <p class="muted">We confirmed this date on the {e.source_kind === 'official' ? "organizer's" : "association's"} own website. Dates and details can change, so check with the organizer before you travel. Add every confirmed event to your calendar with <a href={u('events.ics')}>events.ics</a>.</p>
   <p class="muted">Going? See <a href={u('what-to-wear/')}>what to wear</a>, find <a href={u('groups/')}>clubs &amp; lessons</a> or <a href={u('shops/')}>Celtic shops</a>{e.category === 'Burns Night' && <>, or read our <a href={u('burns-night/')}>Burns Night guide</a></>}.</p>
   {near.length > 0 && <section><h2>More in {e.regionLabel}</h2><div class="grid">{near.map((x) => <EventCard e={x} />)}</div></section>}

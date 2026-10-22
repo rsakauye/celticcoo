@@ -20,6 +20,12 @@
   "summary_quotes": [
    "a kaleidoscope of internationally-renowned music, exciting new performances",
    "programmes more than 300 events across multiple genres of music"
+  ],
+  "organizer": [
+   {
+    "name": "Glasgow Life",
+    "url": "https://www.glasgowlife.org.uk/"
+   }
   ]
  },
  {
@@ -59,6 +65,12 @@
   "summary_quotes": [
    "Heavy Events ... Piping and Drumming",
    "Highland Dance Competition ... Childrens Area"
+  ],
+  "organizer": [
+   {
+    "name": "Victoria Highland Games Association",
+    "url": "https://victoriahighlandgames.com/"
+   }
   ]
  },
  {
@@ -95,6 +107,12 @@
   "summary_quotes": [
    "Piping, Drumming, and Pipe Bands ... Highland Dance",
    "Scottish Heavy Athletics ... Children’s Activities"
+  ],
+  "organizer": [
+   {
+    "name": "Saskatchewan Highland Gathering & Celtic Festival",
+    "url": "https://www.saskhighland.ca/"
+   }
   ]
  },
  {
@@ -140,6 +158,12 @@
   "summary_quotes": [
    "Celebrating 26 years of Scottish heritage and culture!",
    "Gathering of the Scots 2022 Massed Band"
+  ],
+  "organizer": [
+   {
+    "name": "Gathering of the Scots Inc.",
+    "url": "https://gatheringofthescots.com/"
+   }
   ]
  },
  {
@@ -158,7 +182,13 @@
   ],
   "tag_quotes": {
    "highland-games": "Portland Highland Games"
-  }
+  },
+  "organizer": [
+   {
+    "name": "Portland Highland Games Association",
+    "url": "https://www.phga.org/"
+   }
+  ]
  },
  {
   "name": "Greater Moncton Highland Games & Scottish Festival",
@@ -195,6 +225,12 @@
   "summary_quotes": [
    "Piping, drumming, Highland dance, sword, & 5K run will take place",
    "Feats of Strength 💪 ... Ceilidh Tent"
+  ],
+  "organizer": [
+   {
+    "name": "Greater Moncton Scottish Association",
+    "url": "https://greatermonctonscots.org/"
+   }
   ]
  },
  {
@@ -224,6 +260,12 @@
   "summary_quotes": [
    "SAI Masters World Championships (heavy events)",
    "Piping, drumming, Highland dance, sword, & 5K run will take place Saturday, June 12, along with historical and cultural demonstrations, food & craft vendors, Ceilidh Tent, and more."
+  ],
+  "organizer": [
+   {
+    "name": "Greater Moncton Scottish Association",
+    "url": "https://greatermonctonscots.org/"
+   }
   ]
  },
  {
@@ -267,6 +309,12 @@
   "summary_quotes": [
    "hundreds of pipers, drummers, highland dancers and pipe bands assemble... the jaw-dropping strength of the heavy events",
    "you will also find Scottish country dancing... and a Big Tent stage with the best in live Celtic music all day long... cultural educational workshops"
+  ],
+  "organizer": [
+   {
+    "name": "United Scottish Cultural Society",
+    "url": "https://scotfestbc.com/"
+   }
   ]
  },
  {
@@ -304,6 +352,12 @@
   "summary_quotes": [
    "With 25 Pipe and Drum bands, 150 Highland Dancers, nearly 50 Heavy Athletes",
    "Ceilidh performers taking part in our event... food and merchant vendors"
+  ],
+  "organizer": [
+   {
+    "name": "Cobourg Highland Games Society",
+    "url": "https://www.northumberlandhighlandgames.ca/"
+   }
   ]
  },
  {
@@ -339,6 +393,12 @@
   "summary_quotes": [
    "PIPE BANDS ... HIGHLAND DANCE",
    "HEAVY EVENTS ... HIGHLAND HOUNDS DOG SHOW"
+  ],
+  "organizer": [
+   {
+    "name": "Red Deer Highland Games Festival",
+    "url": "https://www.reddeerhighlandgames.com/"
+   }
   ]
  },
  {
@@ -357,7 +417,13 @@
   ],
   "tag_quotes": {
    "highland-games": "Kamloops Highland Games"
-  }
+  },
+  "organizer": [
+   {
+    "name": "Kamloops Highland Games Society",
+    "url": "https://www.kamloopshighlandgames.org/"
+   }
+  ]
  },
  {
   "name": "Kincardine Scottish Festival & Highland Games",
@@ -395,6 +461,12 @@
   "summary_quotes": [
    "Enjoy three days and nights of lively music , exciting competitions , cultural workshops",
    "Cheer on your favourite, Highland athletes and dancers, trace out your ancestry, march with the historic Kincardine Scottish Pipe Band"
+  ],
+  "organizer": [
+   {
+    "name": "Kincardine Scottish Festival",
+    "url": "https://www.kincardinescottishfestival.ca/"
+   }
   ]
  },
  {
@@ -413,7 +485,13 @@
   ],
   "tag_quotes": {
    "highland-games": "type: Highland Games"
-  }
+  },
+  "organizer": [
+   {
+    "name": "Penticton Scottish Festival Society",
+    "url": "https://www.pentictonscottishfestival.ca/"
+   }
+  ]
  },
  {
   "name": "Antigonish Highland Games",
@@ -447,6 +525,12 @@
   "summary_quotes": [
    "Scottish Heavy Events ... Piping, Drumming, and Pipe Bands",
    "Highland Dancing ... 5 Mile Road Race ... Tug-of-War"
+  ],
+  "organizer": [
+   {
+    "name": "Antigonish Highland Society",
+    "url": "https://antigonishhighlandgames.ca/"
+   }
   ]
  },
  {
@@ -482,6 +566,12 @@
   "summary_quotes": [
    "four days of Scottish heritage, music, athletics, dance, family traditions",
    "Highland Athletics Caber, stones, weights, and strength"
+  ],
+  "organizer": [
+   {
+    "name": "Grandfather Mountain Highland Games",
+    "url": "https://gmhg.org/"
+   }
   ]
  },
  {
@@ -500,7 +590,13 @@
   ],
   "tag_quotes": {
    "highland-games": "Skagit Valley Highland Games"
-  }
+  },
+  "organizer": [
+   {
+    "name": "Celtic Arts Foundation",
+    "url": "https://www.celticarts.org/"
+   }
+  ]
  },
  {
   "name": "ScotDance Canada Championship Series 2027",
@@ -524,6 +620,12 @@
    "July 13-17, 2027",
    "Ice Palace, WEM",
    "Edmonton, AB"
+  ],
+  "organizer": [
+   {
+    "name": "ScotDance Canada",
+    "url": "https://scotdance.ca/"
+   }
   ]
  },
  {
@@ -559,6 +661,12 @@
   "summary_quotes": [
    "Heavy Events Competitor Information... two nights of live music",
    "We offer workshops... Browse tartan, artisan crafts, and Celtic-inspired goods"
+  ],
+  "organizer": [
+   {
+    "name": "New Brunswick Highland Games Festival",
+    "url": "https://www.highlandgames.ca/"
+   }
   ]
  },
  {
@@ -624,6 +732,12 @@
   "summary": "Attendees can enjoy Scottish heavy games and a family Ceilidh.",
   "summary_quotes": [
    "and Scottish heavy games. There will also be... a family Ceilidh."
+  ],
+  "organizer": [
+   {
+    "name": "Sherwood Park Highland Gathering",
+    "url": "https://www.sphg.ca/"
+   }
   ]
  },
  {
@@ -642,7 +756,13 @@
   ],
   "tag_quotes": {
    "highland-games": "Pacific Northwest Scottish Highland Games"
-  }
+  },
+  "organizer": [
+   {
+    "name": "Seattle Scottish Highland Games Association",
+    "url": "https://www.sshga.org/"
+   }
+  ]
  },
  {
   "name": "Glengarry Highland Games (North American Pipe Band Championships)",
@@ -682,6 +802,15 @@
   "summary_quotes": [
    "witness an outstanding display of music, dance, sports, fiddling, pageantry, and tradition.",
    "Tartan Ball, Tattoo, and Whisky Tasting"
+  ],
+  "organizer": [
+   {
+    "name": "Glengarry Highland Games",
+    "url": "https://www.glengarryhighlandgames.com/"
+   },
+   {
+    "name": "Kenyon Agricultural Society"
+   }
   ]
  },
  {
@@ -720,6 +849,12 @@
   "summary_quotes": [
    "Montreal's celebration of Scottish sport, music and culture",
    "SCOTTISH ATHLETICS · PIPE BANDS · HIGHLAND DANCING"
+  ],
+  "organizer": [
+   {
+    "name": "Montreal Highland Games Society",
+    "url": "https://www.montrealhighlandgames.com/"
+   }
   ]
  },
  {
@@ -745,6 +880,12 @@
   "summary_quotes": [
    "Discover lively pub sessions, spontaneous street performances and dramatic stage shows",
    "All‑Ireland level competitions are at the heart of Fleadh with over 180 categories."
+  ],
+  "organizer": [
+   {
+    "name": "Belfast Fleadh",
+    "url": "https://fleadhcheoil.ie/"
+   }
   ]
  },
  {
@@ -772,6 +913,12 @@
   "summary_quotes": [
    "Celtic music school... Kids Camp",
    "Craft Workshops"
+  ],
+  "organizer": [
+   {
+    "name": "Goderich Celtic Roots Festival",
+    "url": "https://celticfestival.ca/"
+   }
   ]
  },
  {
@@ -794,6 +941,12 @@
   "summary": "The event is a Celtic music festival located on the shores of Lake Huron.",
   "summary_quotes": [
    "The ultimate Celtic experience on the shores of Lake Huron"
+  ],
+  "organizer": [
+   {
+    "name": "Goderich Celtic Roots Festival",
+    "url": "https://celticfestival.ca/"
+   }
   ]
  },
  {
@@ -817,7 +970,17 @@
   "summary_quotes": [
    "celebrates drumming talent from around the world",
    "collaboration between military acts from around the world and Scottish and British talent"
-  ]
+  ],
+  "organizer": [
+   {
+    "name": "Royal Edinburgh Military Tattoo",
+    "url": "https://www.edintattoo.co.uk/"
+   }
+  ],
+  "offers": {
+   "url": "https://www.edintattoo.co.uk/tickets/tattoo-2027",
+   "availability": "InStock"
+  }
  },
  {
   "name": "Campbell River Highland Gathering",
@@ -890,7 +1053,17 @@
   "summary_quotes": [
    "the world's finest pipe bands will once again compete for the most prestigious title in the pipe band calendar.",
    "The Championships will return to Glasgow Green"
-  ]
+  ],
+  "organizer": [
+   {
+    "name": "Glasgow Life",
+    "url": "https://www.glasgowlife.org.uk/"
+   }
+  ],
+  "offers": {
+   "url": "https://www.glasgowlife.org.uk/arts-music-and-culture/world-pipe-band-championships/tickets",
+   "availability": "InStock"
+  }
  },
  {
   "name": "Fergus Scottish Festival & Highland Games",
@@ -921,6 +1094,12 @@
   "summary_quotes": [
    "you can expect the same great events, thrilling competitions, educational components and entertainment",
    "All activities for children in the McKiddies area are free"
+  ],
+  "organizer": [
+   {
+    "name": "Fergus Scottish Festival & Highland Games",
+    "url": "https://fergusscottishfestival.com/"
+   }
   ]
  },
  {
@@ -948,6 +1127,12 @@
   "summary_quotes": [
    "17 stages of music, dance, and cultural entertainment.",
    "Family Activities"
+  ],
+  "organizer": [
+   {
+    "name": "CelticMKE",
+    "url": "https://celticmke.com/"
+   }
   ]
  },
  {
@@ -978,6 +1163,12 @@
    "unbeatable event for all the family",
    "COWAL GATHERING 2027",
    "Thursday 26th - Saturday 28th August"
+  ],
+  "organizer": [
+   {
+    "name": "Cowal Highland Gathering",
+    "url": "https://www.cowalgathering.com/"
+   }
   ]
  },
  {
@@ -1002,7 +1193,17 @@
    "it is the most prominent and well-attended Highland games in the world",
    "The Massed Bands parade at 11.30am from the Invercauld Arms Hotel and at 3pm"
   ],
-  "tickets_on_sale": "2027-02-01"
+  "tickets_on_sale": "2027-02-01",
+  "organizer": [
+   {
+    "name": "Braemar Highland Gathering",
+    "url": "https://www.braemargathering.org/"
+   }
+  ],
+  "offers": {
+   "url": "https://www.braemargathering.org/tickets",
+   "validFrom": "2027-02-01"
+  }
  },
  {
   "name": "Scottish Highland Gathering & Games (Pleasanton)",
@@ -1031,6 +1232,12 @@
   "summary_quotes": [
    "celebrate the athletics, music, dance, ceremony, traditions, and fellowship of Scotland",
    "Kilted Mile • Living History • Sheepdog Trials"
+  ],
+  "organizer": [
+   {
+    "name": "Caledonian Club of San Francisco",
+    "url": "https://thescottishgames.com/"
+   }
   ]
  },
  {
@@ -1053,6 +1260,12 @@
   "summary": "The festival features world-class concerts with musicians, singers, and dancers in various venues across the island.",
   "summary_quotes": [
    "At any one of the many concerts you’ll find some of the world’s finest musicians sharing the stage with Cape Breton’s best singers, dancers"
+  ],
+  "organizer": [
+   {
+    "name": "Celtic Colours International Festival",
+    "url": "https://celtic-colours.com/"
+   }
   ]
  },
  {
@@ -1080,8 +1293,8 @@
   ],
   "organizer": [
    {
-    "name": "Burns Club of Calgary",
-    "url": "https://www.calgaryburnsclub.com/upcoming-events.html"
+    "name": "The Calgary Burns Club",
+    "url": "https://www.calgaryburnsclub.com/"
    }
   ]
  },
@@ -1113,9 +1326,12 @@
   "organizer": [
    {
     "name": "Cornerstone Music Cafe",
-    "url": "https://www.eventbrite.ca/e/burns-night-tickets-1981961289570"
+    "url": "https://www.cornerstonemusic.ca/"
    }
-  ]
+  ],
+  "offers": {
+   "url": "https://www.eventbrite.ca/e/burns-night-tickets-1981961289570"
+  }
  },
  {
   "name": "A Celebration of Robbie Burns with Blackthorn",
@@ -1149,12 +1365,20 @@
   "organizer": [
    {
     "name": "Place des Arts",
-    "url": "https://www.eventbrite.ca/e/a-celebration-of-robbie-burns-with-blackthorn-tickets-1984414108016"
+    "url": "https://placedesarts.ca/"
    }
   ],
   "performers": [
-   "Blackthorn"
-  ]
+   {
+    "name": "Blackthorn"
+   },
+   {
+    "name": "Wee Drams"
+   }
+  ],
+  "offers": {
+   "url": "https://www.eventbrite.ca/e/a-celebration-of-robbie-burns-with-blackthorn-tickets-1984414108016"
+  }
  },
  {
   "name": "St. Andrew's Society of Toronto Burns Dinner",
@@ -1186,7 +1410,7 @@
   "organizer": [
    {
     "name": "St. Andrew's Society of Toronto",
-    "url": "https://standrewstoronto.ca/sast_event/rabbie-burns-dinner/"
+    "url": "https://standrewstoronto.ca/"
    }
   ]
  },
@@ -1221,11 +1445,14 @@
    },
    {
     "name": "Barrie Pipes & Drums",
-    "url": "https://www.barriepipesanddrums.com/new-events/2027/1/23/robert-burns-dinner"
+    "url": "https://www.barriepipesanddrums.com/"
    }
   ],
   "performers": [
-   "Barrie Pipes & Drums"
+   {
+    "name": "Barrie Pipes & Drums",
+    "url": "https://www.barriepipesanddrums.com/"
+   }
   ]
  },
  {
@@ -1248,8 +1475,7 @@
   },
   "organizer": [
    {
-    "name": "Tea On West",
-    "url": "https://tableagent.com/hamilton-ontario/tea-on-3/event/289214/burns-supper/"
+    "name": "Tea On West"
    }
   ]
  },
@@ -1270,7 +1496,13 @@
   ],
   "tag_quotes": {
    "music": "Find out who’s performing in the show"
-  }
+  },
+  "organizer": [
+   {
+    "name": "Royal Nova Scotia International Tattoo",
+    "url": "https://nstattoo.ca/"
+   }
+  ]
  },
  {
   "name": "Spruce Meadows International Christmas Market",
@@ -1301,7 +1533,7 @@
   "organizer": [
    {
     "name": "Spruce Meadows",
-    "url": "https://sprucemeadows.com/christmasmarket/"
+    "url": "https://sprucemeadows.com/"
    }
   ]
  }
