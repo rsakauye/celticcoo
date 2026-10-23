@@ -1,6 +1,8 @@
 ---
 // One page per confirmed event, so each event has its own URL and Event structured data (Google requires a leaf page).
 import Base from '../../layouts/Base.astro';
+import BookLink from '../../components/BookLink.astro';
+import { bookingConfig } from '../../lib/booking.js';
 import EventCard from '../../components/EventCard.astro';
 import { events, CATEGORY_EMOJI, COUNTRY_FLAG, FEATURES } from '../../lib/data.js';
 import { eventJsonLd } from '../../lib/eventLd.js';
@@ -40,6 +42,10 @@ const sameType = events.filter((x) => x.id !== e.id && x.category === e.category
     <a class="btn" href={e.source_url} rel="noopener" target="_blank">{sourceLabel} ↗</a>
     {ticketUrl && !ticketIsSource && <a class="btn" href={ticketUrl} rel="noopener" target="_blank" style="margin-left:.5rem">Tickets ↗</a>}
   </p>
+  <aside class="card book-cta">
+    <p>{bookingConfig.eventCta}</p>
+    <BookLink eventId={e.id} name={e.name} button={true} />
+  </aside>
   {e.offers?.availability === 'InStock' && <p class="muted">Tickets are on sale.</p>}
   {e.offers?.availability === 'SoldOut' && <p class="muted">Tickets are sold out.</p>}
   {e.offers?.availability === 'PreOrder' && <p class="muted">Tickets are available to pre-order.</p>}
@@ -53,6 +59,8 @@ const sameType = events.filter((x) => x.id !== e.id && x.category === e.category
 </Base>
 <style>
   .ev-sum { font-size:1.08rem; max-width:44rem; }
+  .book-cta { background:#fff4e8; border-color:#f1cfae; margin:1rem 0; }
+  .book-cta p { margin:.1rem 0 .7rem; }
   .tag { text-decoration:underline; text-underline-offset:2px; }
   .when { font-weight:700; color:var(--ginger); font-size:1.15rem; margin:.2rem 0; }
 </style>

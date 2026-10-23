@@ -1,9 +1,12 @@
 ---
 import Base from '../../layouts/Base.astro';
+import BookLink from '../../components/BookLink.astro';
 import EventCard from '../../components/EventCard.astro';
 import HidePast from '../../components/HidePast.astro';
-import { events, tba, regionName, CATEGORY_EMOJI, FEATURES } from '../../lib/data.js';
+import { events, tba, TODAY, regionName, CATEGORY_EMOJI, FEATURES } from '../../lib/data.js';
+import { bookableFromData } from '../../lib/booking.js';
 import { u } from '../../lib/site.js';
+const bookableTba = new Map(bookableFromData(events, tba, TODAY).filter((e) => e.tba).map((e) => [e.sourceId, e.id]));
 const countries = [...new Set(events.map((e) => e.country))].sort((a, b) => (a === 'Canada' ? -1 : b === 'Canada' ? 1 : a.localeCompare(b)));
 const regions = [...new Set(events.map((e) => `${e.country}|${e.region}`))].sort().map((k) => { const [c, r] = k.split('|'); return { c, r, label: regionName(r) }; });
 const cats = [...new Set(events.map((e) => e.category))].sort();
@@ -54,6 +57,7 @@ const monthLabel = (m) => new Date(m + '-15T12:00:00Z').toLocaleDateString('en-C
         <span class="pill green" style="margin-top:.4rem">{CATEGORY_EMOJI[e.category]} {e.category}</span>
         {e.features.length > 0 && <div>{e.features.map((f) => <a class="pill" style="background:#e3ebf5;color:var(--navy);text-decoration:none" href={e.features_source} rel="noopener" target="_blank">{FEATURES[f][0]} {FEATURES[f][1]}</a>)}</div>}
         <p style="margin:.4rem 0 0;font-size:.92rem"><a href={e.source_url} rel="noopener" target="_blank">Organizer / source ↗</a></p>
+        <p style="margin:.35rem 0 0;font-size:.92rem"><BookLink eventId={bookableTba.get(e.id) || e.id} name={e.name} /></p>
       </article>
     ))}
   </div>

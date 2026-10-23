@@ -1,0 +1,23 @@
+---
+// Link into the booking form. Listed events pass eventId so ?event= can tick
+// that box. Other listings pass name, date, city and province, and the form
+// fills the "your own event" fields. The visible label comes from the niche file.
+import { u } from '../lib/site.js';
+import { bookingConfig } from '../lib/booking.js';
+const { eventId = '', name = '', date = '', city = '', province = '', venue = '', button = false } = Astro.props;
+const q = new URLSearchParams();
+if (eventId) q.set('event', eventId);
+else {
+  if (name) q.set('custom_name', name);
+  if (date && /^\d{4}-\d{2}-\d{2}$/.test(String(date))) q.set('custom_date', date);
+  if (city) q.set('custom_city', city);
+  if (province) q.set('custom_province', province);
+  if (venue && String(venue).length <= 200) q.set('custom_venue', venue);
+}
+const href = u(`book/${q.toString() ? `?${q}` : ''}`);
+const label = bookingConfig.linkLabel;
+const forName = name;
+---
+{button
+  ? <a class="btn" href={href}>{label}{forName && <span class="sr-only"> for {forName}</span>}</a>
+  : <a href={href}>{label}{forName && <span class="sr-only"> for {forName}</span>}</a>}

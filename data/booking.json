@@ -1,0 +1,130 @@
+{
+  "note": "Site Alpha niche file for this copy of the booking-request engine. A sister site replaces this file and keeps the form code. Performer id \"other\" opens a free-text field. The checklist is a worksheet people print and keep. It is not submitted and it is not a contract.",
+  "siteName": "The Celtic Coo",
+  "siteUrl": "https://celticcoo.ca",
+  "destinationEmail": "hello@celticcoo.ca",
+  "fromEmail": "bookings@celticcoo.ca",
+  "fromName": "The Celtic Coo",
+  "senderAddress": "PO Box 1604, Okotoks, AB T1S 1B5, Canada",
+  "privacyPath": "privacy/",
+  "mascotImage": "coo.svg",
+  "navLabel": "Book performers",
+  "linkLabel": "Need a piper or performer?",
+  "subjectPrefix": "Performer request",
+  "pageTitle": "Book Celtic performers",
+  "pageDescription": "Ask The Celtic Coo to introduce you to a piper, drummer, ceilidh band, Highland dancer or heavy athlete. We connect people with independent performers. We are not an agency.",
+  "heading": "Book Celtic performers",
+  "lede": "Need a piper for a wedding, a drummer for a dance competition, or a ceilidh band for the games? Tell Ceilidh what you need. She will pass the note to {email}, and we will write back.",
+  "disclosureHeading": "A wee note from Ceilidh",
+  "disclosure": "The Celtic Coo connects people with independent performers. We are not the performer, and we are not a booking agency. We share contact details privately, and only once both sides agree. We never publish the name of anyone under 18.",
+  "eventCta": "Ceilidh can pass a request to independent pipers, drummers, dancers and bands for this event. We make the introduction. We are not the agency.",
+  "eventsHint": "Pick one or more events already on The Celtic Coo, add your own, or both. Dates were confirmed on the organizer's site, except the ones marked Date TBA.",
+  "customHint": "Not on the list? Pick a type, then name the event. Fill this in as well as, or instead of, the list above.",
+  "customNamePlaceholder": "Family supper, opening ceremony, competition...",
+  "cityPlaceholder": "Calgary",
+  "regionPlaceholder": "Alberta",
+  "performersLegend": "Performers needed",
+  "performersHint": "Pick every kind of performer you need.",
+  "messageHint": "Please don't include a minor's full name. We never publish one.",
+  "budgetHint": "A rough range helps. It is not a quote, and nothing is booked until you and the performer agree.",
+  "under18Label": "Is the performer or competitor under 18?",
+  "under18Note": "Requests for anyone under 18 have to come from a parent or guardian. We never publish a minor's name, and this form does not ask for one.",
+  "guardianLabel": "I confirm that I am the parent or guardian making this request.",
+  "caslLabel": "I agree that The Celtic Coo may email me about this request. I can ask you to stop at any time.",
+  "storageHint": "Required fields are marked with an asterisk. We send the request to {email}. If the site cannot deliver the form, you can email that address yourself. We do not store the form on the website.",
+  "eventsBackLabel": "Back to the events",
+  "eventsBackPath": "events/",
+  "requesterTypes": [
+    ["individual", "Individual"],
+    ["organizer", "Event organizer or Games committee"],
+    ["guardian", "Parent or guardian (for an under-18 performer or competitor)"],
+    ["other", "Other"]
+  ],
+  "requestTypes": [
+    ["hire", "Hire performers for an event"],
+    ["accompanist", "Find an accompanist for a competition (for example a solo drummer or Highland dancer who needs a piper or drummer)"]
+  ],
+  "performerTypes": [
+    ["piper", "Piper"],
+    ["drummer", "Drummer"],
+    ["pipe-band", "Pipe band"],
+    ["ceilidh-band", "Ceilidh band"],
+    ["highland-dancer", "Highland dancer(s)"],
+    ["heavies", "Heavy athletics (demo or competitors)"],
+    ["other", "Other"]
+  ],
+  "customEventTypes": [
+    ["wedding", "Wedding"],
+    ["funeral", "Funeral or memorial"],
+    ["burns", "Burns supper"],
+    ["competition", "Competition"],
+    ["other", "Other"]
+  ],
+  "regions": [
+    "Alberta",
+    "British Columbia",
+    "Saskatchewan",
+    "Manitoba",
+    "Ontario",
+    "Quebec",
+    "New Brunswick",
+    "Nova Scotia",
+    "Prince Edward Island",
+    "Newfoundland and Labrador",
+    "Yukon",
+    "Northwest Territories",
+    "Nunavut"
+  ],
+  "email": {
+    "lead": "Ceilidh passed along a performer request.",
+    "replyNote": "Reply to this email to reach the requester. Do not publish it.",
+    "disclosure": "The Celtic Coo is not the performer or an agency. Share contact details only once both sides agree. Never publish a minor's name.",
+    "consent": "The requester agreed that The Celtic Coo may email them about this request (CASL).",
+    "performersHeading": "Performers needed",
+    "eventsHeading": "Events on the calendar",
+    "ownEventHeading": "Their own event"
+  },
+  "responses": {
+    "sentTitle": "Sent · {siteName}",
+    "thanksHeading": "Ceilidh has the note.",
+    "thanksSpam": ["Thank you. If we need anything else, we will write to the email you gave."],
+    "thanksSent": [
+      "Thank you. Your request is on its way to {email}. We will write back to the email you gave.",
+      "Nothing is booked yet. {siteName} only makes the introduction, and contact details are shared once you and the performer both agree. We never publish a minor's name."
+    ],
+    "fallbackTitle": "Email it to Ceilidh",
+    "fallbackHeading": "One more step.",
+    "fallbackMissing": [
+      "The form on the website cannot deliver mail yet. Your note is ready in an email to {email}. Open it and send.",
+      "Nothing is stored on the site."
+    ],
+    "fallbackFailed": [
+      "Your note is ready in an email to {email}. Open it and send, and we will take it from there.",
+      "Nothing is stored on the site."
+    ],
+    "clientFallback": "We could not send that from the website. Your note is ready in an email to {email}. Open it and press send. Nothing is stored on the site.",
+    "originParagraph": "Open the form on {siteName} and send it from there.",
+    "openEmailLabel": "Open the email",
+    "returnLabel": "Return to the form"
+  },
+  "checklist": {
+    "title": "Booking details checklist",
+    "description": "A short checklist both sides can print and fill in: date, set times, fee, deposit, cancellation, travel, sound or equipment, and dress. It is not a contract.",
+    "intro": "Once you and the performer are happy to talk, print this page and fill it in together. Each of you keeps a copy. The website does not save it, and it does not book anything.",
+    "disclaimer": "This is a checklist, not a contract or legal advice. The Celtic Coo isn't a party to any agreement. Please use your own agreement.",
+    "printLabel": "Print this checklist",
+    "backLabel": "Back to the request form",
+    "nameLabel": "Your name, for your own copy",
+    "otherNameLabel": "The other person's name, for your own copy",
+    "items": [
+      { "label": "Date", "hint": "The day of the performance or competition." },
+      { "label": "Set times", "hint": "When to arrive, when the set or competition starts, and when it finishes." },
+      { "label": "Fee", "hint": "The amount you both have in mind, and when it is paid." },
+      { "label": "Deposit", "hint": "Whether there is a deposit, how much, and when it is due." },
+      { "label": "Cancellation", "hint": "What you both want to do if the date changes or someone has to cancel." },
+      { "label": "Travel", "hint": "Who covers travel, and from where." },
+      { "label": "Sound or equipment", "hint": "What the venue provides, and what the performer brings." },
+      { "label": "Dress", "hint": "What to wear, if the event calls for it." }
+    ]
+  }
+}

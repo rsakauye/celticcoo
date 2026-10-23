@@ -1,0 +1,527 @@
+---
+import Base from '../../layouts/Base.astro';
+import BookEventOption from '../../components/BookEventOption.astro';
+import { events, tba, TODAY } from '../../lib/data.js';
+import { bookableFromData, bookingConfig, fillTemplate, REQUESTER_TYPES, REQUEST_TYPES, PERFORMERS, BUDGETS, PROVINCE_NAMES, MESSAGES } from '../../lib/booking.js';
+import { u } from '../../lib/site.js';
+
+const cfg = bookingConfig;
+const destinationEmail = cfg.destinationEmail;
+const lede = cfg.lede.split('{email}');
+const storageHint = fillTemplate(cfg.storageHint, { email: destinationEmail });
+const clientFallback = fillTemplate(cfg.responses.clientFallback, { email: destinationEmail });
+const thanksSent = (cfg.responses.thanksSent || []).map((p) => fillTemplate(p, { email: destinationEmail, siteName: cfg.siteName }));
+const performers = PERFORMERS.filter(([id]) => id !== 'other');
+
+const catalog = bookableFromData(events, tba, TODAY);
+const upcoming = catalog.filter((e) => !e.tba && !e.past);
+const past = catalog.filter((e) => e.past);
+const tbaEvents = catalog.filter((e) => e.tba);
+const byMonth = new Map();
+const months = [];
+for (const e of upcoming) {
+  const key = (e.sort || '').slice(0, 7) || 'undated';
+  if (!byMonth.has(key)) { byMonth.set(key, []); months.push(key); }
+  byMonth.get(key).push(e);
+}
+const monthLabel = (m) => (m === 'undated' ? 'Date to be confirmed' : new Date(`${m}-15T12:00:00Z`).toLocaleDateString('en-CA', { month: 'long', year: 'numeric', timeZone: 'UTC' }));
+const messagesJson = JSON.stringify(MESSAGES).replace(/</g, '\\u003c');
+---
+<Base title={cfg.pageTitle} description={cfg.pageDescription}>
+  <div class="book">
+    <h1>{cfg.heading}</h1>
+    <p class="lede">{lede[0]}<a href={`mailto:${destinationEmail}`}>{destinationEmail}</a>{lede[1]}</p>
+
+    <aside class="card disclosure" role="note">
+      {cfg.mascotImage && <img src={u(cfg.mascotImage)} alt="" width="72" height="72" />}
+      <div>
+        <h2>{cfg.disclosureHeading}</h2>
+        <p>{cfg.disclosure}</p>
+      </div>
+    </aside>
+
+    <section class="card checklist-note" aria-labelledby="checklist-title">
+      <h2 id="checklist-title">{cfg.checklist.title}</h2>
+      <p>{cfg.checklist.intro}</p>
+      <p class="disclaimer">{cfg.checklist.disclaimer}</p>
+      <ul>
+        {cfg.checklist.items.map((item) => <li><b>{item.label}.</b> {item.hint}</li>)}
+      </ul>
+      <p><a href={u('book/checklist/')}>{cfg.checklist.printLabel}</a></p>
+    </section>
+
+    <noscript>
+      <p class="card">Scripts are off in this browser, so an event link will not tick a box for you. Find the event in the list, or add it under "Your own event".</p>
+    </noscript>
+
+    <div id="form-errors" class="card errors" role="alert" tabindex="-1" hidden></div>
+
+    <form id="book-form" action={u('api/book')} method="post" accept-charset="UTF-8">
+      <div class="card">
+        <fieldset id="about-you">
+          <legend>About you</legend>
+          <div class="row two">
+            <div>
+              <label class="field" for="name">Your name <span aria-hidden="true">*</span></label>
+              <input id="name" name="name" type="text" autocomplete="name" required maxlength="120" />
+              <p class="err" id="err-name" hidden></p>
+            </div>
+            <div>
+              <label class="field" for="email">Email <span aria-hidden="true">*</span></label>
+              <input id="email" name="email" type="email" autocomplete="email" required maxlength="200" />
+              <p class="err" id="err-email" hidden></p>
+            </div>
+          </div>
+          <label class="field" for="phone">Phone <span class="hint-inline">(optional)</span></label>
+          <input id="phone" name="phone" type="tel" autocomplete="tel" maxlength="40" inputmode="tel" />
+          <p class="hint">Only if you are happy for us to call about this request.</p>
+          <p class="err" id="err-phone" hidden></p>
+
+          <fieldset id="requester_type" class="sub" tabindex="-1">
+            <legend class="subleg">I am <span aria-hidden="true">*</span></legend>
+            {REQUESTER_TYPES.map(([id, label]) => (
+              <label class="choice"><input type="radio" name="requester_type" value={id} required /> <span>{label}</span></label>
+            ))}
+            <p class="err" id="err-requester_type" hidden></p>
+          </fieldset>
+        </fieldset>
+      </div>
+
+      <div class="card">
+        <fieldset id="request_type" tabindex="-1">
+          <legend>What do you need? <span aria-hidden="true">*</span></legend>
+          {REQUEST_TYPES.map(([id, label]) => (
+            <label class="choice"><input type="radio" name="request_type" value={id} required /> <span>{label}</span></label>
+          ))}
+          <p class="err" id="err-request_type" hidden></p>
+        </fieldset>
+      </div>
+
+      <div class="card">
+        <fieldset id="events" tabindex="-1">
+          <legend>Which event? <span aria-hidden="true">*</span></legend>
+          <p class="hint">{cfg.eventsHint}</p>
+          <p id="event-count" class="selected-count" aria-live="polite">No events selected yet</p>
+          <ul id="selected-events" hidden></ul>
+          <label class="field" for="event-filter">Filter the list</label>
+          <input id="event-filter" type="search" placeholder="Name, city or province" autocomplete="off" />
+          <div class="months">
+            {months.map((m) => (
+              <div class="month">
+                <h3>{monthLabel(m)}</h3>
+                {byMonth.get(m).map((e) => <BookEventOption e={e} />)}
+              </div>
+            ))}
+            {tbaEvents.length > 0 && (
+              <div class="month">
+                <h3>Dates still to come</h3>
+                {tbaEvents.map((e) => <BookEventOption e={e} />)}
+              </div>
+            )}
+          </div>
+          {past.length > 0 && (
+            <details class="past" id="past-events">
+              <summary>Past events ({past.length})</summary>
+              <div class="month">
+                {past.map((e) => <BookEventOption e={e} />)}
+              </div>
+            </details>
+          )}
+          <p class="err" id="err-events" hidden></p>
+
+          <div class="custom">
+            <h3>Your own event</h3>
+            <p class="hint">{cfg.customHint}</p>
+            <label class="field" for="custom_type">Event type</label>
+            <select id="custom_type" name="custom_type">
+              <option value="">Choose if this is your own event</option>
+              {cfg.customEventTypes.map(([id, label]) => <option value={id}>{label}</option>)}
+            </select>
+            <p class="err" id="err-custom_type" hidden></p>
+            <label class="field" for="custom_name">Event name</label>
+            <input id="custom_name" name="custom_name" type="text" maxlength="160" placeholder={cfg.customNamePlaceholder} />
+            <p class="err" id="err-custom_name" hidden></p>
+            <div class="row two">
+              <div>
+                <label class="field" for="custom_date">Date</label>
+                <input id="custom_date" name="custom_date" type="date" />
+                <p class="err" id="err-custom_date" hidden></p>
+              </div>
+              <div>
+                <label class="field" for="custom_city">City</label>
+                <input id="custom_city" name="custom_city" type="text" maxlength="80" autocomplete="address-level2" placeholder={cfg.cityPlaceholder} />
+                <p class="err" id="err-custom_city" hidden></p>
+              </div>
+            </div>
+            <div class="row two">
+              <div>
+                <label class="field" for="custom_province">Province or region</label>
+                <input id="custom_province" name="custom_province" type="text" maxlength="60" list="province-names" autocomplete="address-level1" placeholder={cfg.regionPlaceholder} />
+                <datalist id="province-names">
+                  {PROVINCE_NAMES.map((name) => <option value={name} />)}
+                </datalist>
+                <p class="err" id="err-custom_province" hidden></p>
+              </div>
+              <div>
+                <label class="field" for="custom_venue">Venue <span class="hint-inline">(optional)</span></label>
+                <input id="custom_venue" name="custom_venue" type="text" maxlength="200" placeholder="Hall, park, hotel…" />
+                <p class="err" id="err-custom_venue" hidden></p>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+      </div>
+
+      <div class="card">
+        <fieldset id="performers" tabindex="-1">
+          <legend>{cfg.performersLegend} <span aria-hidden="true">*</span></legend>
+          <p class="hint">{cfg.performersHint}</p>
+          {performers.map(([id, label]) => (
+            <label class="choice"><input type="checkbox" name="performers" value={id} /> <span>{label}</span></label>
+          ))}
+          <div class="toggle-block">
+            <input id="perf-other" type="checkbox" name="performers" value="other" />
+            <label for="perf-other">Other</label>
+            <div class="reveal">
+              <label class="field" for="performer_other">What kind of performer?</label>
+              <input id="performer_other" name="performer_other" type="text" maxlength="160" />
+              <p class="err" id="err-performer_other" hidden></p>
+            </div>
+          </div>
+          <p class="err" id="err-performers" hidden></p>
+        </fieldset>
+      </div>
+
+      <div class="card">
+        <fieldset>
+          <legend>Details</legend>
+          <label class="field" for="message">Message <span aria-hidden="true">*</span></label>
+          <textarea id="message" name="message" required minlength="10" maxlength="4000" rows="6" placeholder="When, where, how many people, and what a player or dancer would need to know."></textarea>
+          <p class="hint">{cfg.messageHint}</p>
+          <p class="err" id="err-message" hidden></p>
+
+          <label class="field" for="budget">Budget range <span class="hint-inline">(optional)</span></label>
+          <select id="budget" name="budget">
+            <option value="">No budget in mind yet</option>
+            {BUDGETS.map(([id, label]) => <option value={id}>{label}</option>)}
+          </select>
+          <p class="hint">{cfg.budgetHint}</p>
+          <p class="err" id="err-budget" hidden></p>
+        </fieldset>
+      </div>
+
+      <div class="card">
+        <fieldset>
+          <legend>Under 18</legend>
+          <div class="toggle-block">
+            <input id="under18" type="checkbox" name="under18" value="yes" />
+            <label for="under18">{cfg.under18Label}</label>
+            <div class="reveal">
+              <p class="note">{cfg.under18Note}</p>
+              <label class="choice" for="guardian_confirm"><input id="guardian_confirm" type="checkbox" name="guardian_confirm" value="yes" /> <span>{cfg.guardianLabel}</span></label>
+              <p class="err" id="err-guardian_confirm" hidden></p>
+            </div>
+          </div>
+        </fieldset>
+      </div>
+
+      <div class="card">
+        <fieldset>
+          <legend>Permission to write back</legend>
+          <label class="choice" for="casl"><input id="casl" type="checkbox" name="casl" value="yes" required /> <span>{cfg.caslLabel} <span aria-hidden="true">*</span></span></label>
+          <p class="hint">{cfg.siteName}, {cfg.senderAddress}. <a href={u(cfg.privacyPath)}>Privacy policy</a>.</p>
+          <p class="err" id="err-casl" hidden></p>
+          <div class="hp">
+            <label for="booking_hp">Leave this field blank</label>
+            <input id="booking_hp" name="booking_hp" type="text" tabindex="-1" autocomplete="off" value="" />
+          </div>
+          <p class="hint">{storageHint}</p>
+          <button class="btn" id="book-submit" type="submit">Send the request</button>
+        </fieldset>
+      </div>
+    </form>
+
+    <div id="send-fallback" class="card fallback" hidden>
+      <h2>{cfg.responses.fallbackHeading}</h2>
+      <p id="send-fallback-text"></p>
+      <p><a class="btn" id="send-fallback-link" href={`mailto:${destinationEmail}`}>{cfg.responses.openEmailLabel}</a></p>
+    </div>
+
+    <div id="thanks" class="card thanks" hidden>
+      <h2 id="thanks-title" tabindex="-1">{cfg.responses.thanksHeading}</h2>
+      {thanksSent.map((p) => {
+        const at = p.indexOf(destinationEmail);
+        return at === -1
+          ? <p>{p}</p>
+          : <p>{p.slice(0, at)}<a href={`mailto:${destinationEmail}`}>{destinationEmail}</a>{p.slice(at + destinationEmail.length)}</p>;
+      })}
+      <p><a href={u(cfg.eventsBackPath)}>{cfg.eventsBackLabel}</a></p>
+    </div>
+
+    <script type="application/json" id="book-messages" set:html={messagesJson}></script>
+    <script is:inline define:vars={{ destinationEmail, subjectPrefix: cfg.subjectPrefix, clientFallback }}>
+      (function () {
+        var form = document.getElementById('book-form');
+        if (!form) return;
+        var MSG = JSON.parse(document.getElementById('book-messages').textContent);
+        var errorsBox = document.getElementById('form-errors');
+        var thanks = document.getElementById('thanks');
+        var fallback = document.getElementById('send-fallback');
+        var fallbackText = document.getElementById('send-fallback-text');
+        var fallbackLink = document.getElementById('send-fallback-link');
+        var submit = document.getElementById('book-submit');
+        var countEl = document.getElementById('event-count');
+        var selectedEl = document.getElementById('selected-events');
+        form.noValidate = true;
+
+        function checked(name) {
+          return Array.prototype.filter.call(document.querySelectorAll('input[name="' + name + '"]'), function (el) { return el.checked; });
+        }
+        function refreshEvents() {
+          var boxes = checked('events');
+          countEl.textContent = boxes.length === 0 ? 'No events selected yet' : (boxes.length === 1 ? '1 event selected' : boxes.length + ' events selected');
+          selectedEl.innerHTML = '';
+          boxes.forEach(function (box) {
+            var li = document.createElement('li');
+            li.textContent = box.getAttribute('data-label') || box.value;
+            selectedEl.appendChild(li);
+          });
+          selectedEl.hidden = boxes.length === 0;
+        }
+        function applyFilter() {
+          var q = (document.getElementById('event-filter').value || '').trim().toLowerCase();
+          document.querySelectorAll('.event-opt').forEach(function (el) {
+            var box = el.querySelector('input');
+            var hay = el.getAttribute('data-search') || '';
+            el.hidden = !(box && box.checked) && q && hay.indexOf(q) === -1;
+          });
+          document.querySelectorAll('.month').forEach(function (month) {
+            month.hidden = !month.querySelector('.event-opt:not([hidden])');
+          });
+        }
+        function applyQuery() {
+          var params = new URLSearchParams(location.search);
+          var ids = [];
+          params.getAll('event').forEach(function (value) {
+            value.split(',').forEach(function (id) {
+              id = id.trim();
+              if (/^[a-z0-9-]+$/.test(id)) ids.push(id);
+            });
+          });
+          ids.forEach(function (id) {
+            var box = form.querySelector('input[name="events"][value="' + id + '"]');
+            if (!box) return;
+            box.checked = true;
+            var details = box.closest('details');
+            if (details) details.open = true;
+          });
+          ['custom_name', 'custom_date', 'custom_city', 'custom_province', 'custom_venue'].forEach(function (key) {
+            var value = params.get(key);
+            var el = document.getElementById(key);
+            if (value && el && !el.value) el.value = value.slice(0, el.maxLength > 0 ? el.maxLength : 200);
+          });
+          refreshEvents();
+          applyFilter();
+        }
+        document.getElementById('event-filter').addEventListener('input', applyFilter);
+        form.addEventListener('change', function (ev) {
+          if (ev.target && ev.target.name === 'events') { refreshEvents(); applyFilter(); }
+        });
+        applyQuery();
+
+        function showErrors(errors) {
+          document.querySelectorAll('.err').forEach(function (el) { el.hidden = true; el.textContent = ''; });
+          document.querySelectorAll('[aria-invalid="true"]').forEach(function (el) { el.removeAttribute('aria-invalid'); });
+          var keys = Object.keys(errors);
+          errorsBox.hidden = keys.length === 0;
+          errorsBox.innerHTML = '';
+          if (!keys.length) return;
+          var lead = document.createElement('p');
+          lead.textContent = 'Please fix the following:';
+          var ul = document.createElement('ul');
+          keys.forEach(function (key) {
+            var li = document.createElement('li');
+            var a = document.createElement('a');
+            a.href = '#' + key;
+            a.textContent = errors[key];
+            li.appendChild(a);
+            ul.appendChild(li);
+            var err = document.getElementById('err-' + key);
+            if (err) { err.hidden = false; err.textContent = errors[key]; }
+            var field = document.getElementById(key);
+            if (field) field.setAttribute('aria-invalid', 'true');
+          });
+          errorsBox.appendChild(lead);
+          errorsBox.appendChild(ul);
+          errorsBox.focus();
+        }
+        function clientErrors() {
+          var errors = {};
+          var name = document.getElementById('name').value.trim();
+          var email = document.getElementById('email').value.trim();
+          var phone = document.getElementById('phone').value.trim();
+          if (name.length < 2 || name.length > 120 || /[\r\n]/.test(name)) errors.name = MSG.name;
+          if (email.length > 200 || /[\r\n]/.test(email) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = MSG.email;
+          if (phone && (phone.length > 40 || !/^[0-9+().\-\s]+$/.test(phone) || phone.replace(/\D/g, '').length < 7)) errors.phone = MSG.phone;
+          if (!checked('requester_type').length) errors.requester_type = MSG.requester_type;
+          if (!checked('request_type').length) errors.request_type = MSG.request_type;
+          var customType = document.getElementById('custom_type').value.trim();
+          var customName = document.getElementById('custom_name').value.trim();
+          var customDate = document.getElementById('custom_date').value.trim();
+          var customCity = document.getElementById('custom_city').value.trim();
+          var customProvince = document.getElementById('custom_province').value.trim();
+          var customVenue = document.getElementById('custom_venue').value.trim();
+          var anyCustom = customType || customName || customDate || customCity || customProvince || customVenue;
+          if (anyCustom) {
+            if (!customType) errors.custom_type = MSG.custom_type;
+            if (customName.length < 2 || /[\r\n]/.test(customName)) errors.custom_name = MSG.custom_name;
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(customDate)) errors.custom_date = MSG.custom_date;
+            if (customCity.length < 2 || /[\r\n]/.test(customCity)) errors.custom_city = MSG.custom_city;
+            if (customProvince.length < 2 || /[\r\n]/.test(customProvince)) errors.custom_province = MSG.custom_province;
+            if (/[\r\n]/.test(customVenue)) errors.custom_venue = MSG.custom_venue;
+          }
+          if (!checked('events').length && !anyCustom) errors.events = MSG.events;
+          var performers = checked('performers');
+          if (!performers.length) errors.performers = MSG.performers;
+          if (performers.some(function (el) { return el.value === 'other'; })) {
+            var other = document.getElementById('performer_other').value.trim();
+            if (other.length < 2 || /[\r\n]/.test(other)) errors.performer_other = MSG.performer_other;
+          }
+          var message = document.getElementById('message').value.trim();
+          if (message.length < 10) errors.message = MSG.message;
+          else if (message.length > 4000) errors.message = MSG.message_long;
+          if (document.getElementById('under18').checked && !document.getElementById('guardian_confirm').checked) errors.guardian_confirm = MSG.guardian_confirm;
+          if (!document.getElementById('casl').checked) errors.casl = MSG.casl;
+          return errors;
+        }
+        function mailtoHref() {
+          var lines = [];
+          lines.push('Name: ' + document.getElementById('name').value.trim());
+          lines.push('Email: ' + document.getElementById('email').value.trim());
+          lines.push('Phone: ' + (document.getElementById('phone').value.trim() || 'not given'));
+          var who = checked('requester_type')[0];
+          lines.push('Who they are: ' + (who ? who.parentNode.textContent.trim() : ''));
+          var kind = checked('request_type')[0];
+          lines.push('Request: ' + (kind ? kind.parentNode.textContent.trim() : ''));
+          lines.push('Under 18: ' + (document.getElementById('under18').checked ? 'Yes, parent or guardian confirmed' : 'No'));
+          lines.push('Events:');
+          var picked = checked('events');
+          if (!picked.length) lines.push('- none selected');
+          picked.forEach(function (box) { lines.push('- ' + (box.getAttribute('data-label') || box.value)); });
+          var typeSelect = document.getElementById('custom_type');
+          var typeText = typeSelect.value ? typeSelect.options[typeSelect.selectedIndex].text : '';
+          lines.push('Own event: ' + [typeText, document.getElementById('custom_name').value.trim(), document.getElementById('custom_date').value.trim(), document.getElementById('custom_city').value.trim(), document.getElementById('custom_province').value.trim(), document.getElementById('custom_venue').value.trim()].filter(Boolean).join(', ') || 'none');
+          lines.push('Performers:');
+          checked('performers').forEach(function (box) {
+            lines.push('- ' + (box.value === 'other' ? document.getElementById('performer_other').value.trim() : box.parentNode.textContent.trim()));
+          });
+          var budget = document.getElementById('budget');
+          lines.push('Budget: ' + (budget.value ? budget.options[budget.selectedIndex].text : 'not given'));
+          lines.push('Details:');
+          lines.push(document.getElementById('message').value.trim());
+          lines.push('The requester agreed to be emailed about this request.');
+          var body = lines.join('\n');
+          var href = 'mailto:' + destinationEmail + '?subject=' + encodeURIComponent(subjectPrefix) + '&body=' + encodeURIComponent(body);
+          if (href.length > 1800) href = 'mailto:' + destinationEmail + '?subject=' + encodeURIComponent(subjectPrefix) + '&body=' + encodeURIComponent(body.slice(0, 700) + '\n\n(Shortened to fit in an email link.)');
+          return href;
+        }
+        function showFallback(mailto) {
+          fallback.hidden = false;
+          fallbackText.textContent = clientFallback;
+          fallbackLink.href = mailto || mailtoHref();
+          fallback.scrollIntoView({ block: 'nearest' });
+          fallbackLink.focus();
+        }
+        function showThanks() {
+          form.hidden = true;
+          fallback.hidden = true;
+          errorsBox.hidden = true;
+          thanks.hidden = false;
+          document.getElementById('thanks-title').focus();
+        }
+        form.addEventListener('submit', function (ev) {
+          ev.preventDefault();
+          fallback.hidden = true;
+          if (document.getElementById('booking_hp').value.trim()) { showThanks(); return; }
+          var errors = clientErrors();
+          if (Object.keys(errors).length) { showErrors(errors); return; }
+          showErrors({});
+          submit.disabled = true;
+          var previous = submit.textContent;
+          submit.textContent = 'Sending…';
+          fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' } })
+            .then(function (res) {
+              return res.json().then(function (data) { return { res: res, data: data }; }, function () { return { res: res, data: null }; });
+            })
+            .then(function (out) {
+              if (out.res.ok && out.data && out.data.ok) showThanks();
+              else if (out.data && out.data.errors) showErrors(out.data.errors);
+              else showFallback(out.data && out.data.mailto);
+            })
+            .catch(function () { showFallback(); })
+            .then(function () {
+              submit.disabled = false;
+              submit.textContent = previous;
+            });
+        });
+      })();
+    </script>
+  </div>
+</Base>
+<style>
+  .book { max-width: 42rem; }
+  .book .lede { font-size: 1.08rem; }
+  .disclosure { display: flex; flex-direction: column; gap: .8rem; align-items: flex-start; background: #fff4e8; border-color: #f1cfae; margin: 1rem 0; }
+  .disclosure img { width: 72px; height: 72px; }
+  .disclosure h2 { margin: 0 0 .35rem; font-size: 1.35rem; }
+  .disclosure p { margin: 0; }
+  .book .card { margin: 0 0 1rem; }
+  .book fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+  .book legend { font-family: Georgia, "Iowan Old Style", serif; color: var(--green); font-size: 1.45rem; font-weight: 700; padding: 0; margin-bottom: .35rem; }
+  .book legend.subleg, .book .subleg { font-family: system-ui, sans-serif; font-size: 1rem; color: var(--fg); font-weight: 700; margin: .8rem 0 .2rem; }
+  .book fieldset.sub { margin-top: .4rem; }
+  .book h3 { font-size: 1.05rem; margin: 1rem 0 .4rem; }
+  .field { display: block; font-weight: 650; margin: .75rem 0 .25rem; }
+  .hint { color: var(--muted); font-size: .92rem; margin: .3rem 0 0; }
+  .hint-inline { font-weight: 400; color: var(--muted); }
+  .book input[type="text"], .book input[type="email"], .book input[type="tel"], .book input[type="date"], .book input[type="search"], .book select, .book textarea {
+    width: 100%; font: inherit; padding: .55rem .65rem; border: 1px solid #cdbda3; border-radius: 8px; background: #fff; color: var(--fg);
+  }
+  .book textarea { min-height: 8rem; resize: vertical; }
+  .row { display: flex; flex-direction: column; gap: .2rem; }
+  .choice { display: flex; gap: .65rem; align-items: flex-start; padding: .45rem 0; min-height: 44px; cursor: pointer; }
+  .choice input, .toggle-block > input { width: 1.2rem; height: 1.2rem; margin-top: .2rem; padding: 0; accent-color: var(--green); flex: 0 0 auto; }
+  .event-opt { border: 1px solid var(--line); border-radius: 10px; padding: .55rem .7rem; margin: .4rem 0; background: #fff; }
+  .event-opt:has(input:checked) { border-color: var(--green); background: #f3f8f5; }
+  .event-opt span { display: flex; flex-direction: column; }
+  .ev-name { font-weight: 700; }
+  .months { margin-top: .6rem; }
+  .selected-count { font-weight: 700; margin: .4rem 0; }
+  #selected-events { margin: .2rem 0 .6rem; padding-left: 1.2rem; }
+  .custom { border-top: 1px solid var(--line); margin-top: 1rem; padding-top: .4rem; }
+  .past { margin-top: .8rem; }
+  .past summary { cursor: pointer; font-weight: 700; color: var(--green); min-height: 44px; display: flex; align-items: center; }
+  .toggle-block { display: grid; grid-template-columns: 1.2rem 1fr; column-gap: .65rem; align-items: start; }
+  .toggle-block > label { padding: .45rem 0; min-height: 44px; }
+  .toggle-block .reveal { display: none; grid-column: 1 / -1; }
+  .toggle-block input:checked ~ .reveal { display: block; }
+  .note { background: #fff4e8; border: 1px solid #f1cfae; border-radius: 10px; padding: .7rem .8rem; margin: .4rem 0; }
+  .errors { background: #fff4e8; border-color: #e0843f; }
+  .errors ul { margin: .3rem 0 0; padding-left: 1.2rem; }
+  .err { color: #8a3b0d; font-weight: 700; margin: .25rem 0 0; }
+  .book [aria-invalid="true"] { border-color: #8a3b0d; }
+  .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+  .book .btn { width: 100%; text-align: center; margin-top: .9rem; }
+  .checklist-note ul { margin: .4rem 0 .8rem; padding-left: 1.2rem; }
+  .disclaimer { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: .7rem .8rem; font-weight: 650; }
+  .fallback, .thanks { background: #fff4e8; border-color: #f1cfae; }
+  .thanks h2, .fallback h2 { margin-top: 0; }
+  @media (min-width: 700px) {
+    .disclosure { flex-direction: row; align-items: center; }
+    .row.two { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem 1rem; }
+    .book .btn { width: auto; }
+  }
+  @media (max-width: 699px) {
+    .book legend { font-size: 1.3rem; }
+  }
+</style>
