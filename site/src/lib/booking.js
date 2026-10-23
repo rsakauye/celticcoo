@@ -450,7 +450,7 @@ export async function handleBookingRequest(request, deps = {}) {
     html: bookingHtml(result.value, textOpts),
   };
   if (typeof send !== 'function') {
-    console.error('booking email not configured: EMAIL binding missing');
+    console.error('booking email not configured: MAILER binding missing');
     const mailto = bookingMailto(result.value, to, textOpts);
     if (wantsJson(request)) return jsonResponse(503, { ok: false, code: 'email_not_configured', mailto });
     return htmlResponse(503, config, {

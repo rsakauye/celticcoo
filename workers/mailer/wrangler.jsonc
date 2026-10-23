@@ -1,0 +1,15 @@
+{
+  // Private mailer for booking requests. Pages calls it through the MAILER
+  // service binding. workers.dev and preview URLs are off, and there is no
+  // routes list, so this Worker is not publicly routed.
+  "name": "celticcoo-mailer",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-23",
+  "workers_dev": false,
+  "preview_urls": false,
+  "send_email": [
+    {
+      "name": "EMAIL"
+    }
+  ]
+}

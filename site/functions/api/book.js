@@ -1,11 +1,12 @@
 // Performer booking requests. Sends one email, then forgets the submission.
 // Nothing is written to the repo, to KV, or to a database.
 //
-// TODO(owner): delivery needs the EMAIL binding in site/wrangler.jsonc, which
-// the next `wrangler pages deploy` applies. On the Workers Free plan, Cloudflare
-// Email Service only delivers to a verified Email Routing destination, and only
-// from a domain that already has Email Routing (celticcoo.ca). That path is free:
-// no Workers Paid plan, no API key, no new account, and no DNS change.
+// Delivery goes through the MAILER service binding to the private
+// celticcoo-mailer Worker, which holds the send_email binding. Pages itself
+// cannot. On the Workers Free plan, Email Service delivers to a verified
+// Email Routing destination from a domain that already has Email Routing
+// (celticcoo.ca). That path is free: no Workers Paid plan, no API key, no
+// new account, and no DNS change.
 //
 // The destination address defaults to destinationEmail in data/booking.json.
 // If Cloudflare rejects that address because it is a routing rule rather than
@@ -18,6 +19,7 @@
 
 import { events, tba, TODAY } from '../../src/lib/data.js';
 import { bookableFromData, handleBookingRequest, BOOKING_FROM, BOOKING_TO_DEFAULT } from '../../src/lib/booking.js';
+import { mailerSend } from '../../src/lib/mailer.js';
 
 const catalog = bookableFromData(events, tba, TODAY);
 
@@ -30,6 +32,5 @@ export async function onRequest(context) {
     });
   }
   const to = String((env && env.BOOKING_TO) || BOOKING_TO_DEFAULT).trim() || BOOKING_TO_DEFAULT;
-  const send = env && env.EMAIL && typeof env.EMAIL.send === 'function' ? (msg) => env.EMAIL.send(msg) : null;
-  return handleBookingRequest(request, { catalog, send, to, from: BOOKING_FROM });
+  return handleBookingRequest(request, { catalog, send: mailerSend(env), to, from: BOOKING_FROM });
 }
