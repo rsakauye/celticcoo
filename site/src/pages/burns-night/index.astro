@@ -1,5 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
+import BookLink from '../../components/BookLink.astro';
 import { burns, counts } from '../../lib/data.js';
 import { u } from '../../lib/site.js';
 // Public venue lines only (research notes stay private).
@@ -47,6 +48,7 @@ const link = (b) => b.ticket_info_url || b.source_url;
         <div class="muted">{b.host} · {b.city}, {b.regionLabel}</div>
         {VENUE[b.id] && <p style="margin:.35rem 0 0;font-size:.93rem">{VENUE[b.id]}</p>}
         <p style="margin:.5rem 0 0;font-size:.92rem"><a href={link(b)} rel="noopener" target="_blank">{b.confirmed ? 'Details & tickets' : 'Where we saw it'} ↗</a></p>
+        <p style="margin:.35rem 0 0;font-size:.92rem"><BookLink name={b.name} date={b.dated ? b.date : ''} city={b.city} province={b.regionLabel} venue={VENUE[b.id] || ''} /></p>
       </article>
     ))}
   </div>
@@ -60,6 +62,7 @@ const link = (b) => b.ticket_info_url || b.source_url;
         <h3 style="margin:.3rem 0;font-size:1.05rem">{b.host}</h3>
         <div class="muted">{b.city}, {b.regionLabel}</div>
         <p style="margin:.45rem 0 0;font-size:.92rem"><a href={link(b)} rel="noopener" target="_blank">Host's page ↗</a></p>
+        <p style="margin:.35rem 0 0;font-size:.92rem"><BookLink name={b.name} city={b.city} province={b.regionLabel} /></p>
       </article>
     ))}
   </div>

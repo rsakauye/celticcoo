@@ -1,0 +1,63 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { bookingConfig } from '../../../lib/booking.js';
+import { u } from '../../../lib/site.js';
+
+const cfg = bookingConfig;
+const list = cfg.checklist;
+---
+<Base title={list.title} description={list.description}>
+  <article class="sheet">
+    <h1>{list.title}</h1>
+    <p class="lede">{list.intro}</p>
+    <p class="disclaimer" role="note">{list.disclaimer}</p>
+    <p class="no-print"><button class="btn" type="button" id="print-checklist">{list.printLabel}</button></p>
+    <ol>
+      {list.items.map((item) => (
+        <li>
+          <p class="item-label">{item.label}</p>
+          <p class="hint">{item.hint}</p>
+          <div class="write" aria-hidden="true"></div>
+          <div class="write" aria-hidden="true"></div>
+        </li>
+      ))}
+    </ol>
+    <div class="names">
+      <p class="item-label">{list.nameLabel}</p>
+      <div class="write" aria-hidden="true"></div>
+      <p class="item-label">{list.otherNameLabel}</p>
+      <div class="write" aria-hidden="true"></div>
+    </div>
+    <p class="disclaimer end">{list.disclaimer}</p>
+    <p class="no-print"><a href={u('book/')}>{list.backLabel}</a></p>
+  </article>
+  <script is:inline>
+    var button = document.getElementById('print-checklist');
+    if (button) button.addEventListener('click', function () { window.print(); });
+  </script>
+</Base>
+<style>
+  .sheet { max-width: 40rem; }
+  .sheet .lede { font-size: 1.05rem; }
+  .disclaimer { background: #fff4e8; border: 1px solid #f1cfae; border-radius: 10px; padding: .8rem .9rem; font-weight: 650; }
+  .disclaimer.end { margin-top: 1.2rem; }
+  .sheet ol { list-style: none; margin: 1rem 0; padding: 0; }
+  .sheet li { margin: 0 0 1rem; }
+  .item-label { font-weight: 750; margin: 0 0 .15rem; }
+  .hint { color: var(--muted); font-size: .92rem; margin: 0 0 .35rem; }
+  .write { border-bottom: 1px solid #8a7560; min-height: 1.7rem; margin: .35rem 0; }
+  .names { margin-top: 1.2rem; }
+  @media print {
+    header.site, footer.site, .tartan, .skip, .no-print { display: none !important; }
+    body, main { background: #fff !important; }
+    .sheet { max-width: none; }
+    .disclaimer { border-color: #000; background: #fff; }
+    a { color: #000; text-decoration: none; }
+  }
+</style>
+<style is:global>
+  @media print {
+    header.site, footer.site, .tartan, .skip { display: none !important; }
+    body { background: #fff !important; }
+  }
+</style>

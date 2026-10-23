@@ -1,0 +1,20 @@
+---
+const { e } = Astro.props;
+const place = [e.city, e.regionLabel].filter(Boolean).join(', ');
+const search = `${e.name} ${e.city} ${e.regionLabel} ${e.country}`.toLowerCase();
+const summary = `${e.name} — ${e.when}${place ? `, ${place}` : ''}`;
+---
+<label class="choice event-opt" data-search={search}>
+  <input type="checkbox" name="events" value={e.id} data-label={summary} />
+  <span>
+    <span class="ev-name">{e.name}</span>
+    <span class="muted">{e.when}{place ? ` · ${place}` : ''}</span>
+  </span>
+</label>
+<style>
+  .event-opt { display: flex; gap: .65rem; align-items: flex-start; padding: .55rem .7rem; min-height: 44px; cursor: pointer; border: 1px solid var(--line); border-radius: 10px; margin: .4rem 0; background: #fff; }
+  .event-opt input { width: 1.2rem; height: 1.2rem; margin-top: .2rem; padding: 0; accent-color: var(--green); flex: 0 0 auto; }
+  .event-opt span { display: flex; flex-direction: column; }
+  .ev-name { font-weight: 700; }
+  .event-opt:has(input:checked) { border-color: var(--green); background: #f3f8f5; }
+</style>

@@ -17,6 +17,8 @@ const PAGES = {
   'what-to-wear/': [P('what-to-wear/index.astro')],
   'tartans/': [P('tartans/index.astro')],
   'roots/': [P('roots/index.astro')],
+  'book/': [P('book/index.astro'), D('booking.json'), D('events_2027.json'), D('events_2027_pending.json')],
+  'book/checklist/': [P('book/checklist/index.astro'), D('booking.json')],
   'submit/': [P('submit/index.astro')],
   'about/': [P('about/index.astro')],
   'newsletter/': [P('newsletter/index.astro')],

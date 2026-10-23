@@ -1,4 +1,5 @@
 ---
+import BookLink from './BookLink.astro';
 import { CATEGORY_EMOJI, COUNTRY_FLAG, FEATURES } from '../lib/data.js';
 import { u } from '../lib/site.js';
 const { e } = Astro.props;
@@ -13,9 +14,11 @@ const { e } = Astro.props;
   {e.note && <p class="muted" style="margin:.4rem 0 0">{e.note}</p>}
   {e.celtic_vendors && <p style="margin:.4rem 0 0;font-size:.92rem">🏴 {e.celtic_vendors}</p>}
   <p style="margin:.55rem 0 0;font-size:.92rem"><a href={e.source_url} rel="noopener" target="_blank">{e.source_kind === 'official' ? 'Official site' : 'Association listing'} ↗</a></p>
+  <p class="need"><BookLink eventId={e.id} name={e.name} /></p>
 </article>
 <style>
   .ev { border-top:5px solid var(--ginger); }
   .feat { background:#e3ebf5; color:var(--navy); text-decoration:none; }
   .ev-date { font-weight:700; color:var(--ginger); font-size:.95rem; }
+  .need { margin:.35rem 0 0; font-size:.92rem; }
 </style>

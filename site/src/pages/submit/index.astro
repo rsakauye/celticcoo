@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
-import { CONTACT_EMAIL, SUBMIT_FORM_URL } from '../../lib/site.js';
+import { u, CONTACT_EMAIL, SUBMIT_FORM_URL } from '../../lib/site.js';
+import { bookingConfig } from '../../lib/booking.js';
 // TODO: replace the mailto with a real form (Tally / Google Form / Cloudflare worker) once an inbox exists.
 const mail = (subject, body) => `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 const eventBody = 'Event name:\nStart date (YYYY-MM-DD):\nEnd date:\nCity and province:\nType (Highland Games, pipe band, dance, Gaelic, festival, other):\nOfficial website or page that shows the date:\nYour name and role (organizer, volunteer, fan):\n';
@@ -9,6 +10,7 @@ const shopBody = 'Shop or maker name:\nCity and province:\nWhat you sell or make
 <Base title="Add an event or list your shop" description="Tell The Celtic Coo about a Celtic event, Highland Games, or a Celtic shop or maker in Canada. Listings are free.">
   <h1>Add an event or list your shop</h1>
   <p>The Celtic Coo is free to list on. We check every date against the organizer's own site before it goes on the calendar, so please include a link that shows it.</p>
+  <p>Looking for a piper, a band or a dancer instead? <a href={u('book/')}>{bookingConfig.heading}</a>. That request does not add the event to the calendar.</p>
   <div class="grid" style="margin-top:1rem">
     <div class="card">
       <h2 style="margin-top:0">📅 Submit an event</h2>
