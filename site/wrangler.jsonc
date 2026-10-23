@@ -11,11 +11,5 @@
       "binding": "MAILER",
       "service": "celticcoo-mailer"
     }
-  ],
-  "vars": {
-    // Overrides destinationEmail in data/booking.json when the routing address
-    // is not itself a verified Email Routing destination. Keep them the same
-    // until that happens.
-    "BOOKING_TO": "hello@celticcoo.ca"
-  }
+  ]
 }
