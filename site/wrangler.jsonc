@@ -1,19 +1,15 @@
 {
   // Pages project "celticcoo". This file becomes the source of truth for
   // Functions bindings on the next `wrangler pages deploy`. It does not change
-  // DNS. See functions/api/book.js for what the owner may still need to confirm.
+  // DNS. Pages cannot hold a send_email binding. Outbound mail is the private
+  // celticcoo-mailer Worker (workers/mailer/), called through MAILER.
   "name": "celticcoo",
   "pages_build_output_dir": "./dist",
   "compatibility_date": "2026-10-23",
-  "send_email": [
+  "services": [
     {
-      "name": "EMAIL"
+      "binding": "MAILER",
+      "service": "celticcoo-mailer"
     }
-  ],
-  "vars": {
-    // Overrides destinationEmail in data/booking.json when the routing address
-    // is not itself a verified Email Routing destination. Keep them the same
-    // until that happens.
-    "BOOKING_TO": "hello@celticcoo.ca"
-  }
+  ]
 }

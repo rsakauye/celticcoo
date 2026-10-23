@@ -7,6 +7,7 @@ on:
       - "site/**"
       - "data/**"
       - "!data/source_state.json"
+      - "workers/**"
       - ".github/workflows/deploy.yml"
   schedule:
     # Daily rebuild so past events drop off "upcoming". 13:00 UTC = 7:00 a.m. MDT / 6:00 a.m. MST.
@@ -66,6 +67,26 @@ jobs:
         if: env.CF_DEPLOY == 'true'
         continue-on-error: true
         run: node scripts/indexnow.mjs --snapshot
+
+      # The API token needs Workers Scripts:Edit so this can create and update
+      # celticcoo-mailer. BOOKING_TO is the verified Email Routing destination.
+      # It is a GitHub secret and must never be committed. Pages deploy runs
+      # after the Worker exists, because the Pages project binds to it.
+      # Every mailer deploy must pass --var. Wrangler drops vars that are not
+      # in the config, and this config does not name the destination.
+      - name: Deploy mailer Worker (celticcoo-mailer)
+        if: env.CF_DEPLOY == 'true'
+        working-directory: workers/mailer
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          BOOKING_TO: ${{ secrets.BOOKING_TO }}
+        run: |
+          if [ -z "${BOOKING_TO}" ]; then
+            echo "::error::GitHub secret BOOKING_TO is empty. Set it to the verified Email Routing destination inbox. Do not put that address in the repo."
+            exit 1
+          fi
+          npx --yes wrangler@4 deploy --var "BOOKING_TO:${BOOKING_TO}"
 
       # Deploys to the existing Cloudflare Pages project "celticcoo" (create it once first; see README).
       - name: Deploy to Cloudflare Pages (celticcoo)
