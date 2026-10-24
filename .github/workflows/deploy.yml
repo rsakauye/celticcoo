@@ -48,6 +48,7 @@ jobs:
           PUBLIC_KIT_FORM_ID: ${{ vars.KIT_FORM_ID }}
           PUBLIC_CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL }}
           PUBLIC_SUBMIT_FORM_URL: ${{ vars.SUBMIT_FORM_URL }}
+          PUBLIC_TURNSTILE_SITEKEY: ${{ vars.TURNSTILE_SITEKEY }}
         run: |
           npm ci
           npm run build
@@ -87,6 +88,16 @@ jobs:
             exit 1
           fi
           npx --yes wrangler@4 deploy --var "BOOKING_TO:${BOOKING_TO}"
+
+      # Substitutes the GitHub secret D1_DATABASE_ID into the checkout copy of
+      # wrangler.jsonc, or removes the D1 binding when that secret is empty.
+      # The real database id is never committed. See README.
+      - name: Apply intake database id for this deploy
+        if: env.CF_DEPLOY == 'true'
+        working-directory: site
+        env:
+          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+        run: node ../scripts/prepare-pages-config.mjs wrangler.jsonc
 
       # Deploys to the existing Cloudflare Pages project "celticcoo" (create it once first; see README).
       - name: Deploy to Cloudflare Pages (celticcoo)

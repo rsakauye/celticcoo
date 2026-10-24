@@ -31,7 +31,8 @@
   "under18Note": "Requests for anyone under 18 have to come from a parent or guardian. We never publish a minor's name, and this form does not ask for one.",
   "guardianLabel": "I confirm that I am the parent or guardian making this request.",
   "caslLabel": "I agree that The Celtic Coo may email me about this request. I can ask you to stop at any time.",
-  "storageHint": "Required fields are marked with an asterisk. We send the request to {email}. If the site cannot deliver the form, you can email that address yourself. We do not store the form on the website.",
+  "turnstileLabel": "Confirm you are a person",
+  "storageHint": "Required fields are marked with an asterisk. We keep your request in a private database so we can reply, and we email {email}. It is not published on the website. If the form cannot send it, you can email that address yourself.",
   "eventsBackLabel": "Back to the events",
   "eventsBackPath": "events/",
   "requesterTypes": [
@@ -92,17 +93,24 @@
       "Thank you. Your request is on its way to {email}. We will write back to the email you gave.",
       "Nothing is booked yet. {siteName} only makes the introduction, and contact details are shared once you and the performer both agree. We never publish a minor's name."
     ],
+    "thanksStored": [
+      "Thank you. We have saved your request and will write back to the email you gave.",
+      "The usual email notice did not go out, but the request is still saved privately. It is not published. Nothing is booked yet. {siteName} only makes the introduction, and contact details are shared once you and the performer both agree. We never publish a minor's name."
+    ],
     "fallbackTitle": "Email it to Ceilidh",
     "fallbackHeading": "One more step.",
     "fallbackMissing": [
       "The form on the website cannot deliver mail yet. Your note is ready in an email to {email}. Open it and send.",
-      "Nothing is stored on the site."
+      "Nothing from this attempt was saved, and nothing is published on the website."
     ],
     "fallbackFailed": [
       "Your note is ready in an email to {email}. Open it and send, and we will take it from there.",
-      "Nothing is stored on the site."
+      "Nothing from this attempt was saved, and nothing is published on the website."
     ],
-    "clientFallback": "We could not send that from the website. Your note is ready in an email to {email}. Open it and press send. Nothing is stored on the site.",
+    "clientFallback": "We could not send that from the website. Your note is ready in an email to {email}. Open it and press send. Nothing from this attempt was saved.",
+    "turnstileTitle": "Check the form",
+    "turnstileHeading": "We could not verify that request.",
+    "turnstileOff": "This copy of the form cannot confirm you are a person yet. Email {email} and we will take the request from there.",
     "originParagraph": "Open the form on {siteName} and send it from there.",
     "openEmailLabel": "Open the email",
     "returnLabel": "Return to the form"

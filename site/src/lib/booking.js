@@ -1,9 +1,12 @@
 // Booking-request engine. Niche words, option lists, and the destination
-// address live in data/booking.json. This file validates and sends. It does
-// not write a submission to disk. Pass a config object in tests to prove a
-// sister site can reuse the same logic.
+// address live in data/booking.json. This file validates and sends. When the
+// caller passes an intake, it also stores the request in that private
+// database. It does not write a submission into the site repo. Pass a config
+// object in tests to prove a sister site can reuse the same logic. Without
+// an intake, it only sends email.
 
 import bookingConfig from '../../../data/booking.json' with { type: 'json' };
+import { assessRisk, intakeStatus } from './intake.js';
 
 export { bookingConfig };
 
@@ -46,6 +49,8 @@ export const MESSAGES = {
   budget: 'Choose a budget range from the list, or leave it blank.',
   guardian_confirm: 'Tick the box to confirm you are the parent or guardian. Requests for anyone under 18 have to come from them.',
   casl: 'Tick the box if we may email you about this request.',
+  turnstile: 'Confirm you are a person, then send the request again.',
+  turnstile_unavailable: 'We could not verify this request just now. Please try again in a moment, or email us.',
 };
 
 const LIMITS = {
@@ -274,9 +279,17 @@ export function bookingText(value, opts = {}) {
   const eventTypeLabel = pairs(cfg.customEventTypes);
   const budgetLabel = pairs(BUDGETS);
   const sentFrom = opts.sentFrom || cfg.siteUrl || '';
-  const lines = [
-    email.lead || '',
-    '',
+  const lines = [email.lead || '', ''];
+  if (opts.intakeId || opts.status || Array.isArray(opts.riskFlags)) {
+    if (opts.intakeId) lines.push(`Intake id: ${oneLine(opts.intakeId)}`);
+    if (opts.status) lines.push(`Status: ${oneLine(opts.status)}`);
+    if (Array.isArray(opts.riskFlags)) {
+      const flags = opts.riskFlags.filter((flag) => /^[a-z0-9_]+$/.test(flag));
+      lines.push(`Risk flags: ${flags.length ? flags.join(', ') : 'none'}`);
+    }
+    lines.push('');
+  }
+  lines.push(
     email.replyNote || '',
     email.disclosure || '',
     '',
@@ -291,7 +304,7 @@ export function bookingText(value, opts = {}) {
     `Under 18: ${value.under18 ? 'Yes. The requester confirmed they are the parent or guardian.' : 'No'}`,
     '',
     email.eventsHeading || 'Events on the calendar',
-  ];
+  );
   if (value.events.length) value.events.forEach((e) => lines.push(eventLine(e)));
   else lines.push('- none selected');
   lines.push('', email.ownEventHeading || 'Their own event');
@@ -395,15 +408,28 @@ function wantsJson(request) {
   return (request.headers.get('accept') || '').includes('application/json');
 }
 
+async function noteFailure(intake, entry) {
+  if (!intake || typeof intake.log !== 'function') return;
+  try { await intake.log(entry); }
+  catch { console.error(JSON.stringify({ message: 'intake failure log threw', reason: 'log_failed' })); }
+}
+
+function turnstileMessage(reason) {
+  if (reason === 'turnstile_unavailable' || reason === 'turnstile_not_configured') return MESSAGES.turnstile_unavailable;
+  return MESSAGES.turnstile;
+}
+
 export async function handleBookingRequest(request, deps = {}) {
   const config = useConfig(deps.config);
   const responses = config.responses || {};
   const to = deps.to || config.destinationEmail;
   const from = deps.from || config.fromEmail;
-  const { send, catalog } = deps;
+  const { send, catalog, intake } = deps;
   const vars = { siteName: config.siteName, email: to };
+  const wants = wantsJson(request);
   if (!sameOrigin(request)) {
-    if (wantsJson(request)) return jsonResponse(403, { ok: false, code: 'origin' });
+    await noteFailure(intake, { reason: 'origin', detail: '' });
+    if (wants) return jsonResponse(403, { ok: false, code: 'origin' });
     return htmlResponse(403, config, {
       title: 'Could not send',
       heading: 'That request did not come from this site.',
@@ -412,26 +438,50 @@ export async function handleBookingRequest(request, deps = {}) {
   }
   const length = Number(request.headers.get('content-length') || 0);
   if (length > 200000) {
-    if (wantsJson(request)) return jsonResponse(413, { ok: false, code: 'too_large' });
+    await noteFailure(intake, { reason: 'too_large', detail: '' });
+    if (wants) return jsonResponse(413, { ok: false, code: 'too_large' });
     return htmlResponse(413, config, { title: 'Could not send', heading: 'That note is too long.', paragraphs: ['Shorten the details and try again.'] });
   }
   let formData;
   try { formData = await request.formData(); }
   catch {
-    if (wantsJson(request)) return jsonResponse(400, { ok: false, errors: { message: MESSAGES.message } });
+    await noteFailure(intake, { reason: 'unreadable', detail: '' });
+    if (wants) return jsonResponse(400, { ok: false, errors: { message: MESSAGES.message } });
     return htmlResponse(400, config, { title: 'Could not send', heading: 'We could not read that form.', paragraphs: ['Go back to the form and try again.'] });
   }
-  const result = validateBooking(readBookingForm(formData), catalog, config);
-  if (result.spam) {
-    if (wantsJson(request)) return jsonResponse(200, { ok: true });
+  const input = readBookingForm(formData);
+  if (input.honeypot) {
+    await noteFailure(intake, { reason: 'honeypot', detail: '' });
+    if (wants) return jsonResponse(200, { ok: true });
     return htmlResponse(200, config, {
       title: fillTemplate(responses.sentTitle, vars),
       heading: responses.thanksHeading,
       paragraphs: responses.thanksSpam || [],
     });
   }
+  if (typeof deps.verify === 'function') {
+    const token = String(formData.get('cf-turnstile-response') ?? '');
+    let verdict;
+    try { verdict = await deps.verify(token, request); }
+    catch { verdict = { ok: false, reason: 'turnstile_unavailable', detail: '' }; }
+    if (!verdict || verdict.ok !== true) {
+      const reason = (verdict && verdict.reason) || 'turnstile_rejected';
+      await noteFailure(intake, { reason, detail: (verdict && verdict.detail) || '' });
+      const message = turnstileMessage(reason);
+      if (wants) return jsonResponse(403, { ok: false, code: reason, errors: { turnstile: message } });
+      return htmlResponse(403, config, {
+        title: responses.turnstileTitle || 'Check the form',
+        heading: responses.turnstileHeading || 'We could not verify that request.',
+        paragraphs: [message],
+      });
+    }
+  }
+  const result = validateBooking(input, catalog, config);
   if (!result.ok) {
-    if (wantsJson(request)) return jsonResponse(400, { ok: false, errors: result.errors });
+    const fields = Object.keys(result.errors).sort().join(',');
+    const reason = result.errors.guardian_confirm ? 'minor_no_guardian' : 'validation';
+    await noteFailure(intake, { reason, detail: fields });
+    if (wants) return jsonResponse(400, { ok: false, errors: result.errors });
     return htmlResponse(400, config, {
       title: 'Check the form',
       heading: 'A few things still need a look.',
@@ -440,7 +490,36 @@ export async function handleBookingRequest(request, deps = {}) {
     });
   }
   const sentFrom = (() => { try { return new URL(request.url).origin; } catch { return config.siteUrl || ''; } })();
+  const flags = intake ? assessRisk(result.value) : null;
+  const status = flags ? intakeStatus(flags) : '';
+  let intakeId = '';
+  let stored = false;
+  if (intake) {
+    intakeId = crypto.randomUUID();
+    const now = new Date().toISOString();
+    try {
+      await intake.save({
+        id: intakeId,
+        createdAt: now,
+        updatedAt: now,
+        status,
+        flags,
+        value: result.value,
+        source: 'book',
+      });
+      stored = true;
+    } catch (err) {
+      const detail = err && err.code === 'not_configured' ? 'not_configured' : 'insert_failed';
+      await noteFailure(intake, { reason: 'store_failed', detail });
+      intakeId = '';
+    }
+  }
   const textOpts = { sentFrom, config };
+  if (flags) {
+    textOpts.riskFlags = flags;
+    textOpts.status = status;
+    if (stored && intakeId) textOpts.intakeId = intakeId;
+  }
   const payload = {
     to,
     from: { email: from, name: config.fromName || config.siteName },
@@ -449,34 +528,59 @@ export async function handleBookingRequest(request, deps = {}) {
     text: bookingText(result.value, textOpts),
     html: bookingHtml(result.value, textOpts),
   };
-  if (typeof send !== 'function') {
-    console.error('booking email not configured: MAILER binding missing');
-    const mailto = bookingMailto(result.value, to, textOpts);
-    if (wantsJson(request)) return jsonResponse(503, { ok: false, code: 'email_not_configured', mailto });
-    return htmlResponse(503, config, {
-      title: responses.fallbackTitle,
-      heading: responses.fallbackHeading,
-      paragraphs: (responses.fallbackMissing || []).map((p) => fillTemplate(p, vars)),
-      action: { href: mailto, label: responses.openEmailLabel || 'Open the email' },
-    });
-  }
-  try {
-    await send(payload);
-  } catch (err) {
-    console.error('booking email failed', err && err.code ? err.code : '', err && err.message ? err.message : err);
-    const mailto = bookingMailto(result.value, to, textOpts);
-    if (wantsJson(request)) return jsonResponse(503, { ok: false, code: 'email_failed', mailto });
-    return htmlResponse(503, config, {
-      title: responses.fallbackTitle,
-      heading: responses.fallbackHeading,
-      paragraphs: (responses.fallbackFailed || []).map((p) => fillTemplate(p, vars)),
-      action: { href: mailto, label: responses.openEmailLabel || 'Open the email' },
-    });
-  }
-  if (wantsJson(request)) return jsonResponse(200, { ok: true });
-  return htmlResponse(200, config, {
+  const notify = async () => {
+    if (typeof send !== 'function') return 'skipped';
+    try {
+      await send(payload);
+      return 'sent';
+    } catch (err) {
+      const code = err && err.code ? String(err.code).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40) : 'email_failed';
+      console.error(JSON.stringify({ message: 'booking notice failed', code }));
+      return 'failed';
+    }
+  };
+  const sentParagraphs = (responses.thanksSent || []).map((p) => fillTemplate(p, vars));
+  const storedParagraphs = (responses.thanksStored || responses.thanksSent || []).map((p) => fillTemplate(p, vars));
+  const thanks = (paragraphs) => htmlResponse(200, config, {
     title: fillTemplate(responses.sentTitle, vars),
     heading: responses.thanksHeading,
-    paragraphs: (responses.thanksSent || []).map((p) => fillTemplate(p, vars)),
+    paragraphs,
   });
+  const fallback = (code) => {
+    const mailto = bookingMailto(result.value, to, textOpts);
+    const missing = code === 'email_not_configured';
+    const paragraphs = ((missing ? responses.fallbackMissing : responses.fallbackFailed) || []).map((p) => fillTemplate(p, vars));
+    if (wants) return jsonResponse(503, { ok: false, code, mailto });
+    return htmlResponse(503, config, {
+      title: responses.fallbackTitle,
+      heading: responses.fallbackHeading,
+      paragraphs,
+      action: { href: mailto, label: responses.openEmailLabel || 'Open the email' },
+    });
+  };
+
+  if (intake) {
+    const emailStatus = await notify();
+    if (stored) {
+      try { await intake.markEmail(intakeId, emailStatus); }
+      catch { await noteFailure(intake, { reason: 'email_status_update_failed', detail: emailStatus }); }
+      console.log(JSON.stringify({ message: 'intake stored', status, flags, emailStatus }));
+      if (wants) return jsonResponse(200, { ok: true, stored: true, email: emailStatus });
+      return thanks(emailStatus === 'sent' ? sentParagraphs : storedParagraphs);
+    }
+    if (emailStatus === 'sent') {
+      if (wants) return jsonResponse(200, { ok: true, stored: false, email: 'sent' });
+      return thanks(sentParagraphs);
+    }
+    return fallback(emailStatus === 'skipped' ? 'email_not_configured' : 'email_failed');
+  }
+
+  if (typeof send !== 'function') {
+    console.error(JSON.stringify({ message: 'booking notice skipped', code: 'email_not_configured' }));
+    return fallback('email_not_configured');
+  }
+  const emailStatus = await notify();
+  if (emailStatus !== 'sent') return fallback('email_failed');
+  if (wants) return jsonResponse(200, { ok: true });
+  return thanks(sentParagraphs);
 }

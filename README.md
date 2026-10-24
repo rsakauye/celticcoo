@@ -20,7 +20,9 @@ GitHub Actions and deployed to Cloudflare Pages with wrangler.
 | `data/season_champions.json` | Hand-entered band-level season winners by grade, each with its source link (/results/). No soloists. |
 | `data/sources_and_orgs.csv` | Calendars and associations re-checked weekly. |
 | `data/source_state.json` | Last snapshot from the weekly source check (written by the workflow). |
-| `site/` | Astro site: `/`, `/events/`, `/results/`, `/groups/`, `/burns-night/`, `/shops/`, `/fundraising/`, `/what-to-wear/`, `/tartans/`, `/roots/`, `/submit/`, `/about/`, `/newsletter/`, `/events.ics`, `/rss.xml`, `/sitemap.xml`, 404. `/results/` pulls headline + link only from the pipes\|drums and Piping Press RSS feeds at build time. |
+| `site/` | Astro site: `/`, `/events/`, `/results/`, `/groups/`, `/burns-night/`, `/shops/`, `/fundraising/`, `/what-to-wear/`, `/tartans/`, `/roots/`, `/submit/`, `/about/`, `/newsletter/`, `/book/`, `/events.ics`, `/rss.xml`, `/sitemap.xml`, 404. `/results/` pulls headline + link only from the pipes\|drums and Piping Press RSS feeds at build time. |
+| `site/functions/api/book.js` | Booking form endpoint. Checks Turnstile, validates the fields, stores the request in private D1, then asks the mailer for a notice. |
+| `site/migrations/` | D1 schema for that private intake. Not applied until the setup below. |
 | `scripts/check_sources.py` | Weekly re-check of source pages (standard library only). |
 | `.github/workflows/deploy.yml` | Build on push, daily at 7am MT, or manual. Deploys to Cloudflare Pages project `celticcoo` only if the secrets exist; otherwise it builds and skips. |
 | `.github/workflows/source-check.yml` | Mondays 8am MT. Opens (or comments on) an issue labelled `source-check` when a source page's dates change, a page disappears, or one of our dates is no longer on its page. |
@@ -134,6 +136,78 @@ python3 scripts/check_sources.py --no-save   # dry-run source check
      e.g. set up Cloudflare Email Routing).
    - `SUBMIT_FORM_URL`: link to a hosted submission form (**TODO**). Until set, /submit/ uses mailto links.
    - `SITE_URL`: defaults to `https://celticcoo.ca`.
+5. **Private booking intake.** Do this before you rely on the booking form. Until the Turnstile secret and the public site key are both set, the form rejects submissions (the mailto link on the page still works). Steps are in the next section. Nothing in that section creates resources for you if you only read it; each command is yours to run.
+
+## Private booking intake (Russell, one-time)
+
+The booking form on `/book/` posts to the Pages Function `site/functions/api/book.js`. That function checks Cloudflare Turnstile, validates the fields, stores a valid request in a private D1 database, and then asks the existing `celticcoo-mailer` Worker to send a notice. The notice is sent **from** `bookings@celticcoo.ca` **to** the verified Email Routing destination in the GitHub secret `BOOKING_TO`. Pages cannot hold a `send_email` binding, so do not add one to the Pages project. If the notice fails, the database row stays.
+
+Do not commit the database id, the Turnstile secret, or a submission. The id in `site/wrangler.jsonc` is the placeholder `REPLACE_WITH_D1_DATABASE_ID`.
+
+1. **Create the D1 database.** From `site/`, with Wrangler already logged in to this Cloudflare account:
+
+   ```bash
+   cd site
+   npx wrangler d1 create celticcoo-intake
+   ```
+
+   If Wrangler asks to add the binding to the config, answer **No**. The binding is already in `site/wrangler.jsonc`. Copy the `database_id` UUID it prints. Do not paste it into the repo or into chat.
+
+2. **Apply the migration.** From the repo root, so the id stays out of shell history and out of git:
+
+   ```bash
+   read -rsp 'D1 database id: ' D1_DATABASE_ID; echo
+   export D1_DATABASE_ID
+   node scripts/apply-intake-migration.mjs
+   unset D1_DATABASE_ID
+   ```
+
+   That writes a gitignored `site/.wrangler-intake.jsonc`, runs `wrangler d1 migrations apply celticcoo-intake --remote`, and deletes the file. The schema is `site/migrations/0001_intake.sql` (`submissions` and `submission_failures`).
+
+3. **Give deploys the database id.** GitHub → Settings → Secrets and variables → Actions → Secrets → `D1_DATABASE_ID` = that same UUID. The deploy workflow copies it into the checkout for that deploy only. If the secret is empty, the workflow removes the D1 binding and the site still deploys, but requests are not stored.
+
+4. **Create the Turnstile widget.** Do not put the secret in the repo. Production hostnames on the widget can include local ones; the Pages allowlist below will not accept a localhost token.
+
+   ```bash
+   npx wrangler turnstile widget create "Celtic Coo bookings" \
+     --domain celticcoo.ca \
+     --domain www.celticcoo.ca \
+     --domain localhost \
+     --domain 127.0.0.1 \
+     --mode managed
+   ```
+
+   Keep the sitekey. Leave the secret in Wrangler's prompt output only long enough to do the next step. Do not commit either value. The widget's action is `book`.
+
+5. **Set the Turnstile secret on the Pages project** (prompted input, not a command argument):
+
+   ```bash
+   cd site
+   npx wrangler pages secret put TURNSTILE_SECRET --project-name celticcoo
+   ```
+
+   Set it before the deploy that should start accepting the form. `site/wrangler.jsonc` already has the production allowlist `TURNSTILE_HOSTNAMES=celticcoo.ca,www.celticcoo.ca`. Do not add `localhost` or `127.0.0.1` to that var.
+
+6. **Set the public site key** as a GitHub **variable** (not a secret), because the static page has to embed it: Settings → Secrets and variables → Actions → Variables → `TURNSTILE_SITEKEY`. The next build passes it as `PUBLIC_TURNSTILE_SITEKEY`. An empty variable means the widget is not rendered and the function rejects the post.
+
+7. **Confirm the notice can send.** The GitHub secret `BOOKING_TO` must already be the verified Email Routing destination used by `celticcoo-mailer`. The mailer sends only to that destination, from `bookings@celticcoo.ca`. No new email binding is required. A failed notice does not delete the saved row.
+
+8. **Read a request without publishing it.** Use the same unprinted id as step 2. This query leaves out the name, email, phone, and message:
+
+   ```bash
+   read -rsp 'D1 database id: ' D1_DATABASE_ID; echo
+   export D1_DATABASE_ID
+   node scripts/intake-d1.mjs execute --command "SELECT id, status, risk_flags, email_status, created_at FROM submissions ORDER BY created_at DESC LIMIT 20;"
+   unset D1_DATABASE_ID
+   ```
+
+   `status` is `new`, `flagged`, or `handled`. A row is flagged when a minor is mentioned or ticked and no guardian confirmed, when the message asks for someone's private contact details, when it talks about a cheque or another odd way to pay, or when the date or venue is missing. `submission_failures` stores reason codes (`turnstile_rejected`, `validation`, `minor_no_guardian`, `honeypot`, `store_failed`, and so on) and no message body. After you have dealt with a row, mark it handled (replace `THE_ID` with the id from the query above, not with anyone's email):
+
+   ```bash
+   node scripts/intake-d1.mjs execute --command "UPDATE submissions SET status = 'handled', updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = 'THE_ID';"
+   ```
+
+   Selecting the name, email, phone, or message prints personal data on your machine. Don't paste that output into chat, a commit, or a log. `npm test` in `site/` covers validation, Turnstile decisions, and flagging without a Cloudflare account. A local Pages session still rejects a token whose hostname is not `celticcoo.ca` or `www.celticcoo.ca`.
 
 ## Notes
 - Event dates change. The site tells visitors to confirm with organizers, and the weekly check

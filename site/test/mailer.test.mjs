@@ -182,7 +182,12 @@ test('pages config binds MAILER and does not use send_email', () => {
   assert.match(pages, /"binding": "MAILER"/);
   assert.match(pages, /"service": "celticcoo-mailer"/);
   assert.doesNotMatch(pages, /BOOKING_TO/);
-  assert.doesNotMatch(pages, /"vars"/);
+  assert.match(pages, /"binding": "INTAKE_DB"/);
+  assert.match(pages, /REPLACE_WITH_D1_DATABASE_ID/);
+  assert.match(pages, /"TURNSTILE_HOSTNAMES": "celticcoo.ca,www.celticcoo.ca"/);
+  const hostLine = pages.split('\n').find((line) => line.includes('"TURNSTILE_HOSTNAMES"'));
+  assert.doesNotMatch(hostLine, /localhost|127\.0\.0\.1/);
+  assert.doesNotMatch(pages, /"TURNSTILE_SECRET"\s*:/);
   assert.match(worker, /send_email/);
   assert.match(worker, /"workers_dev": false/);
   assert.match(worker, /"preview_urls": false/);
@@ -190,6 +195,8 @@ test('pages config binds MAILER and does not use send_email', () => {
   assert.doesNotMatch(worker, /allowed_destination_addresses/);
   assert.match(fn, /mailerSend\(env\)/);
   assert.match(fn, /BOOKING_TO_DEFAULT/);
+  assert.match(fn, /verifyFromEnv\(env\)/);
+  assert.match(fn, /intakeFromEnv\(env\)/);
   assert.doesNotMatch(fn, /env\.BOOKING_TO/);
   assert.doesNotMatch(fn, /env\.EMAIL/);
   assert.match(workflow, /workers\/mailer/);
@@ -197,6 +204,10 @@ test('pages config binds MAILER and does not use send_email', () => {
   assert.match(workflow, /secrets\.BOOKING_TO/);
   assert.match(workflow, /--var "BOOKING_TO:\$\{BOOKING_TO\}"/);
   assert.match(workflow, /GitHub secret BOOKING_TO is empty/);
+  assert.match(workflow, /prepare-pages-config\.mjs/);
+  assert.match(workflow, /secrets\.D1_DATABASE_ID/);
+  assert.match(workflow, /PUBLIC_TURNSTILE_SITEKEY/);
+  assert.match(workflow, /vars\.TURNSTILE_SITEKEY/);
   for (const src of [pages, worker, workerSrc, fn, workflow]) {
     assert.doesNotMatch(src, /gmail\.com/i);
   }
