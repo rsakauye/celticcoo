@@ -239,7 +239,7 @@ const messagesJson = JSON.stringify(MESSAGES).replace(/</g, '\\u003c');
             <label for="booking_hp">Leave this field blank</label>
             <input id="booking_hp" name="booking_hp" type="text" tabindex="-1" autocomplete="off" value="" />
           </div>
-          <div id="turnstile">
+          <div id="book-turnstile-field">
             <p class="field" id="turnstile-label">{cfg.turnstileLabel}</p>
             {turnstileSitekey
               ? <div class="turnstile" id="book-turnstile"></div>
@@ -350,6 +350,10 @@ const messagesJson = JSON.stringify(MESSAGES).replace(/</g, '\\u003c');
         });
         applyQuery();
 
+        /* turnstile-field */
+        var fieldIds = { turnstile: 'book-turnstile-field' };
+        function fieldId(key) { return fieldIds[key] || key; }
+        /* end-turnstile-field */
         function showErrors(errors) {
           document.querySelectorAll('.err').forEach(function (el) { el.hidden = true; el.textContent = ''; });
           document.querySelectorAll('[aria-invalid="true"]').forEach(function (el) { el.removeAttribute('aria-invalid'); });
@@ -363,13 +367,13 @@ const messagesJson = JSON.stringify(MESSAGES).replace(/</g, '\\u003c');
           keys.forEach(function (key) {
             var li = document.createElement('li');
             var a = document.createElement('a');
-            a.href = '#' + key;
+            a.href = '#' + fieldId(key);
             a.textContent = errors[key];
             li.appendChild(a);
             ul.appendChild(li);
             var err = document.getElementById('err-' + key);
             if (err) { err.hidden = false; err.textContent = errors[key]; }
-            var field = document.getElementById(key);
+            var field = document.getElementById(fieldId(key));
             if (field) field.setAttribute('aria-invalid', 'true');
           });
           errorsBox.appendChild(lead);
@@ -453,26 +457,37 @@ const messagesJson = JSON.stringify(MESSAGES).replace(/</g, '\\u003c');
           fallback.scrollIntoView({ block: 'nearest' });
           fallbackLink.focus();
         }
+        /* turnstile-boot */
         var turnstileId;
+        function turnstileApi() {
+          var api = window.turnstile;
+          // An element id of "turnstile" is exposed as window.turnstile, and that div has no render.
+          if (!api || typeof api.render !== 'function') return null;
+          return api;
+        }
         function renderTurnstile() {
-          if (!turnstileSitekey || turnstileId || !window.turnstile) return;
+          if (!turnstileSitekey || turnstileId) return;
+          var api = turnstileApi();
+          if (!api) return;
           var el = document.getElementById('book-turnstile');
           if (!el) return;
-          turnstileId = window.turnstile.render(el, { sitekey: turnstileSitekey, action: 'book', theme: 'light' });
+          turnstileId = api.render(el, { sitekey: turnstileSitekey, action: 'book', theme: 'light' });
         }
         function resetTurnstile() {
-          if (turnstileId && window.turnstile) window.turnstile.reset(turnstileId);
+          var api = turnstileApi();
+          if (turnstileId && api && typeof api.reset === 'function') api.reset(turnstileId);
         }
         if (turnstileSitekey) {
-          if (window.turnstile) renderTurnstile();
+          window.onBookTurnstileLoad = function () { renderTurnstile(); };
+          if (turnstileApi()) renderTurnstile();
           else {
             var turnstileScript = document.createElement('script');
-            turnstileScript.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+            turnstileScript.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onBookTurnstileLoad';
             turnstileScript.async = true;
-            turnstileScript.addEventListener('load', renderTurnstile, { once: true });
             document.head.appendChild(turnstileScript);
           }
         }
+        /* end-turnstile-boot */
         function showThanks(noticeFailed) {
           form.hidden = true;
           fallback.hidden = true;
