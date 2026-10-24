@@ -1,25 +1,23 @@
-// Performer booking requests. Sends one email, then forgets the submission.
-// Nothing is written to the repo, to KV, or to a database.
-//
-// Delivery goes through the MAILER service binding to the private
-// celticcoo-mailer Worker, which holds the send_email binding. Pages itself
-// cannot. On the Workers Free plan, Email Service delivers to a verified
-// Email Routing destination from a domain that already has Email Routing
-// (celticcoo.ca). That path is free: no Workers Paid plan, no API key, no
-// new account, and no DNS change.
+// Performer booking requests.
+// Turnstile is checked first, then the fields. A valid request is stored in
+// the private INTAKE_DB (D1) database. A notice is then sent through the
+// MAILER service binding to the private celticcoo-mailer Worker, which holds
+// the send_email binding. Pages itself cannot. If that notice fails, the
+// stored row stays.
 //
 // Visitors always see destinationEmail from data/booking.json. That public
 // routing address is the mailto fallback. The Worker does not send to it.
 // The verified destination inbox is the Worker's BOOKING_TO variable, injected
 // at deploy from the GitHub secret BOOKING_TO. Do not put that inbox in
-// this repo, and do not turn on paid Email Sending for this form.
+// this repo. The notice is sent from bookings@celticcoo.ca.
 //
-// If the binding is missing or a send fails, the form gives the visitor a
-// mailto link to the public routing address so the request can still be
-// sent by hand.
+// TURNSTILE_SECRET is a Pages secret. It is never read from the repo.
+// Rejected attempts are logged as a reason code only. The message body of a
+// rejected or spam attempt is not stored.
 
 import { events, tba, TODAY } from '../../src/lib/data.js';
 import { bookableFromData, handleBookingRequest, BOOKING_FROM, BOOKING_TO_DEFAULT } from '../../src/lib/booking.js';
+import { intakeFromEnv, verifyFromEnv } from '../../src/lib/intake.js';
 import { mailerSend } from '../../src/lib/mailer.js';
 
 const catalog = bookableFromData(events, tba, TODAY);
@@ -33,5 +31,12 @@ export async function onRequest(context) {
     });
   }
   const to = BOOKING_TO_DEFAULT;
-  return handleBookingRequest(request, { catalog, send: mailerSend(env), to, from: BOOKING_FROM });
+  return handleBookingRequest(request, {
+    catalog,
+    send: mailerSend(env),
+    to,
+    from: BOOKING_FROM,
+    verify: verifyFromEnv(env),
+    intake: intakeFromEnv(env),
+  });
 }

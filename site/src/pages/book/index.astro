@@ -10,7 +10,11 @@ const destinationEmail = cfg.destinationEmail;
 const lede = cfg.lede.split('{email}');
 const storageHint = fillTemplate(cfg.storageHint, { email: destinationEmail });
 const clientFallback = fillTemplate(cfg.responses.clientFallback, { email: destinationEmail });
+const turnstileOff = fillTemplate(cfg.responses.turnstileOff || '', { email: destinationEmail });
 const thanksSent = (cfg.responses.thanksSent || []).map((p) => fillTemplate(p, { email: destinationEmail, siteName: cfg.siteName }));
+const thanksStored = (cfg.responses.thanksStored || []).map((p) => fillTemplate(p, { email: destinationEmail, siteName: cfg.siteName }));
+const rawTurnstile = String(import.meta.env.PUBLIC_TURNSTILE_SITEKEY || '').trim();
+const turnstileSitekey = /^[A-Za-z0-9_-]{10,100}$/.test(rawTurnstile) ? rawTurnstile : '';
 const performers = PERFORMERS.filter(([id]) => id !== 'other');
 
 const catalog = bookableFromData(events, tba, TODAY);
@@ -51,7 +55,7 @@ const messagesJson = JSON.stringify(MESSAGES).replace(/</g, '\\u003c');
     </section>
 
     <noscript>
-      <p class="card">Scripts are off in this browser, so an event link will not tick a box for you. Find the event in the list, or add it under "Your own event".</p>
+      <p class="card">Scripts are off in this browser, so an event link will not tick a box for you. Find the event in the list, or add it under "Your own event". The person check needs scripts too. You can email the address above instead.</p>
     </noscript>
 
     <div id="form-errors" class="card errors" role="alert" tabindex="-1" hidden></div>
@@ -235,6 +239,13 @@ const messagesJson = JSON.stringify(MESSAGES).replace(/</g, '\\u003c');
             <label for="booking_hp">Leave this field blank</label>
             <input id="booking_hp" name="booking_hp" type="text" tabindex="-1" autocomplete="off" value="" />
           </div>
+          <div id="turnstile">
+            <p class="field" id="turnstile-label">{cfg.turnstileLabel}</p>
+            {turnstileSitekey
+              ? <div class="turnstile" id="book-turnstile"></div>
+              : <p class="note" id="turnstile-off">{turnstileOff}</p>}
+            <p class="err" id="err-turnstile" hidden></p>
+          </div>
           <p class="hint">{storageHint}</p>
           <button class="btn" id="book-submit" type="submit">Send the request</button>
         </fieldset>
@@ -249,17 +260,27 @@ const messagesJson = JSON.stringify(MESSAGES).replace(/</g, '\\u003c');
 
     <div id="thanks" class="card thanks" hidden>
       <h2 id="thanks-title" tabindex="-1">{cfg.responses.thanksHeading}</h2>
-      {thanksSent.map((p) => {
-        const at = p.indexOf(destinationEmail);
-        return at === -1
-          ? <p>{p}</p>
-          : <p>{p.slice(0, at)}<a href={`mailto:${destinationEmail}`}>{destinationEmail}</a>{p.slice(at + destinationEmail.length)}</p>;
-      })}
+      <div id="thanks-sent">
+        {thanksSent.map((p) => {
+          const at = p.indexOf(destinationEmail);
+          return at === -1
+            ? <p>{p}</p>
+            : <p>{p.slice(0, at)}<a href={`mailto:${destinationEmail}`}>{destinationEmail}</a>{p.slice(at + destinationEmail.length)}</p>;
+        })}
+      </div>
+      <div id="thanks-stored" hidden>
+        {thanksStored.map((p) => {
+          const at = p.indexOf(destinationEmail);
+          return at === -1
+            ? <p>{p}</p>
+            : <p>{p.slice(0, at)}<a href={`mailto:${destinationEmail}`}>{destinationEmail}</a>{p.slice(at + destinationEmail.length)}</p>;
+        })}
+      </div>
       <p><a href={u(cfg.eventsBackPath)}>{cfg.eventsBackLabel}</a></p>
     </div>
 
     <script type="application/json" id="book-messages" set:html={messagesJson}></script>
-    <script is:inline define:vars={{ destinationEmail, subjectPrefix: cfg.subjectPrefix, clientFallback }}>
+    <script is:inline define:vars={{ destinationEmail, subjectPrefix: cfg.subjectPrefix, clientFallback, turnstileSitekey }}>
       (function () {
         var form = document.getElementById('book-form');
         if (!form) return;
@@ -432,18 +453,47 @@ const messagesJson = JSON.stringify(MESSAGES).replace(/</g, '\\u003c');
           fallback.scrollIntoView({ block: 'nearest' });
           fallbackLink.focus();
         }
-        function showThanks() {
+        var turnstileId;
+        function renderTurnstile() {
+          if (!turnstileSitekey || turnstileId || !window.turnstile) return;
+          var el = document.getElementById('book-turnstile');
+          if (!el) return;
+          turnstileId = window.turnstile.render(el, { sitekey: turnstileSitekey, action: 'book', theme: 'light' });
+        }
+        function resetTurnstile() {
+          if (turnstileId && window.turnstile) window.turnstile.reset(turnstileId);
+        }
+        if (turnstileSitekey) {
+          if (window.turnstile) renderTurnstile();
+          else {
+            var turnstileScript = document.createElement('script');
+            turnstileScript.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+            turnstileScript.async = true;
+            turnstileScript.addEventListener('load', renderTurnstile, { once: true });
+            document.head.appendChild(turnstileScript);
+          }
+        }
+        function showThanks(noticeFailed) {
           form.hidden = true;
           fallback.hidden = true;
           errorsBox.hidden = true;
           thanks.hidden = false;
+          var sent = document.getElementById('thanks-sent');
+          var stored = document.getElementById('thanks-stored');
+          if (sent) sent.hidden = !!noticeFailed;
+          if (stored) stored.hidden = !noticeFailed;
           document.getElementById('thanks-title').focus();
         }
         form.addEventListener('submit', function (ev) {
           ev.preventDefault();
           fallback.hidden = true;
-          if (document.getElementById('booking_hp').value.trim()) { showThanks(); return; }
+          if (document.getElementById('booking_hp').value.trim()) { showThanks(false); return; }
           var errors = clientErrors();
+          if (turnstileSitekey) {
+            var tokenInput = form.querySelector('input[name="cf-turnstile-response"]');
+            var token = tokenInput ? tokenInput.value : '';
+            if (!token || token.length > 2048) errors.turnstile = MSG.turnstile;
+          }
           if (Object.keys(errors).length) { showErrors(errors); return; }
           showErrors({});
           submit.disabled = true;
@@ -454,7 +504,7 @@ const messagesJson = JSON.stringify(MESSAGES).replace(/</g, '\\u003c');
               return res.json().then(function (data) { return { res: res, data: data }; }, function () { return { res: res, data: null }; });
             })
             .then(function (out) {
-              if (out.res.ok && out.data && out.data.ok) showThanks();
+              if (out.res.ok && out.data && out.data.ok) showThanks(!!(out.data.stored && out.data.email !== 'sent'));
               else if (out.data && out.data.errors) showErrors(out.data.errors);
               else showFallback(out.data && out.data.mailto);
             })
@@ -462,6 +512,7 @@ const messagesJson = JSON.stringify(MESSAGES).replace(/</g, '\\u003c');
             .then(function () {
               submit.disabled = false;
               submit.textContent = previous;
+              resetTurnstile();
             });
         });
       })();
@@ -511,6 +562,7 @@ const messagesJson = JSON.stringify(MESSAGES).replace(/</g, '\\u003c');
   .err { color: #8a3b0d; font-weight: 700; margin: .25rem 0 0; }
   .book [aria-invalid="true"] { border-color: #8a3b0d; }
   .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+  .turnstile { margin: .4rem 0 .2rem; min-height: 65px; }
   .book .btn { width: 100%; text-align: center; margin-top: .9rem; }
   .checklist-note ul { margin: .4rem 0 .8rem; padding-left: 1.2rem; }
   .disclaimer { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: .7rem .8rem; font-weight: 650; }
