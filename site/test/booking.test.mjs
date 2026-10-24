@@ -317,3 +317,154 @@ test('mailto helper keeps a usable subject', () => {
   assert.match(href, /subject=Performer%20request/);
   assert.ok(href.length < 2000);
 });
+
+function bookPageSource() {
+  return readFileSync(new URL('../src/pages/book/index.astro', import.meta.url), 'utf8');
+}
+
+function marked(src, startMark, endMark) {
+  const start = src.indexOf(startMark);
+  const end = src.indexOf(endMark);
+  assert.ok(start !== -1 && end > start, startMark);
+  return src.slice(start + startMark.length, end);
+}
+
+function extractFunction(src, name) {
+  const needle = `function ${name}(`;
+  const start = src.indexOf(needle);
+  assert.notEqual(start, -1, name);
+  let depth = 0;
+  for (let i = src.indexOf('{', start); i < src.length; i++) {
+    if (src[i] === '{') depth++;
+    else if (src[i] === '}') {
+      depth--;
+      if (depth === 0) return src.slice(start, i + 1);
+    }
+  }
+  throw new Error(`unclosed ${name}`);
+}
+
+function bootTurnstile(sitekey, window, document) {
+  const src = bookPageSource();
+  const code = marked(src, '/* turnstile-boot */', '/* end-turnstile-boot */');
+  const run = new Function('window', 'document', 'turnstileSitekey', `${code}
+    return { renderTurnstile, resetTurnstile, turnstileApi };
+  `);
+  return run(window, document, sitekey);
+}
+
+test('no element id collides with the Turnstile API, and a missing token still points at the field', () => {
+  const src = bookPageSource();
+  const ids = [...src.matchAll(/\bid\s*=\s*["']([^"']+)["']/g)].map((match) => match[1]);
+  assert.equal(ids.includes('turnstile'), false);
+  assert.equal(ids.includes('onBookTurnstileLoad'), false);
+  assert.ok(ids.includes('book-turnstile-field'));
+  assert.ok(ids.includes('book-turnstile'));
+  assert.ok(ids.includes('err-turnstile'));
+  assert.ok(ids.includes('turnstile-off'));
+  assert.match(src, /id="book-turnstile-field"/);
+  assert.match(src, /id="turnstile-off"/);
+  assert.doesNotMatch(src, /if\s*\(\s*window\.turnstile\s*\)/);
+
+  const nodes = {};
+  function make(tag, id) {
+    const node = {
+      tag,
+      id,
+      hidden: true,
+      textContent: '',
+      children: [],
+      attributes: {},
+      setAttribute(key, value) { this.attributes[key] = value; },
+      removeAttribute(key) { delete this.attributes[key]; },
+      appendChild(child) { this.children.push(child); return child; },
+    };
+    if (id) nodes[id] = node;
+    return node;
+  }
+  nodes.name = make('input', 'name');
+  nodes['err-name'] = make('p', 'err-name');
+  nodes['book-turnstile-field'] = make('div', 'book-turnstile-field');
+  nodes['err-turnstile'] = make('p', 'err-turnstile');
+  const errorsBox = make('div', 'form-errors');
+  errorsBox.focus = function focus() { this.focused = true; };
+  const document = {
+    querySelectorAll() { return []; },
+    getElementById(id) { return nodes[id] || null; },
+    createElement(tag) { return make(tag); },
+  };
+  const showErrors = new Function('document', 'errorsBox', `${marked(src, '/* turnstile-field */', '/* end-turnstile-field */')}
+    ${extractFunction(src, 'showErrors')}
+    return showErrors;
+  `)(document, errorsBox);
+
+  const message = 'Confirm you are a person, then send the request again.';
+  showErrors({ name: 'Please add your name.', turnstile: message });
+  const links = errorsBox.children.find((node) => node.tag === 'ul').children.map((item) => item.children[0]);
+  assert.deepEqual(links.map((link) => link.href), ['#name', '#book-turnstile-field']);
+  assert.equal(links[1].textContent, message);
+  assert.equal(errorsBox.hidden, false);
+  assert.equal(errorsBox.focused, true);
+  assert.equal(nodes['err-turnstile'].hidden, false);
+  assert.equal(nodes['err-turnstile'].textContent, message);
+  assert.equal(nodes['book-turnstile-field'].attributes['aria-invalid'], 'true');
+  assert.equal(nodes.name.attributes['aria-invalid'], 'true');
+  assert.equal(document.getElementById(links[1].href.slice(1)), nodes['book-turnstile-field']);
+});
+
+test('a div named turnstile does not count as the Turnstile API', () => {
+  const calls = [];
+  const container = { id: 'book-turnstile' };
+  const head = [];
+  const document = {
+    getElementById(id) { return id === 'book-turnstile' ? container : null; },
+    createElement() { return { src: '', async: false }; },
+    head: { appendChild(node) { head.push(node); } },
+  };
+  const divNamedTurnstile = { id: 'turnstile', nodeType: 1 };
+  const waiting = { turnstile: divNamedTurnstile };
+  const blocked = bootTurnstile('test-site-key', waiting, document);
+  assert.equal(typeof blocked.renderTurnstile, 'function');
+  assert.equal(calls.length, 0);
+  assert.equal(head.length, 1);
+  assert.equal(head[0].async, true);
+  assert.equal(head[0].src, 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onBookTurnstileLoad');
+  assert.equal(typeof waiting.onBookTurnstileLoad, 'function');
+  waiting.onBookTurnstileLoad();
+  assert.equal(calls.length, 0);
+
+  waiting.turnstile = {
+    render(el, options) { calls.push({ el, options }); return 'widget-1'; },
+    reset(id) { calls.push({ reset: id }); },
+  };
+  waiting.onBookTurnstileLoad();
+  waiting.onBookTurnstileLoad();
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].el, container);
+  assert.deepEqual(calls[0].options, { sitekey: 'test-site-key', action: 'book', theme: 'light' });
+
+  const readyHead = [];
+  const ready = {
+    turnstile: {
+      render(el, options) { calls.push({ ready: true, el, options }); return 'widget-2'; },
+      reset(id) { calls.push({ reset: id }); },
+    },
+  };
+  const rendered = bootTurnstile('test-site-key', ready, {
+    getElementById(id) { return id === 'book-turnstile' ? container : null; },
+    createElement() { return { src: '', async: false }; },
+    head: { appendChild(node) { readyHead.push(node); } },
+  });
+  assert.equal(readyHead.length, 0);
+  assert.equal(calls.filter((call) => call.ready).length, 1);
+  rendered.resetTurnstile();
+  assert.equal(calls.at(-1).reset, 'widget-2');
+
+  const skipped = [];
+  bootTurnstile('', { turnstile: divNamedTurnstile }, {
+    getElementById() { return null; },
+    createElement() { throw new Error('no site key should not inject api.js'); },
+    head: { appendChild(node) { skipped.push(node); } },
+  });
+  assert.equal(skipped.length, 0);
+});

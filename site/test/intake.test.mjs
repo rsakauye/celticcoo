@@ -347,7 +347,7 @@ test('the pages config keeps a placeholder id and the deploy helper does not pri
   assert.match(migration, /CREATE TABLE submission_failures/);
   assert.match(migration, /CHECK \(status IN \('new', 'flagged', 'handled'\)\)/);
   assert.match(form, /action: 'book'/);
-  assert.match(form, /challenges\.cloudflare\.com\/turnstile\/v0\/api\.js\?render=explicit/);
+  assert.match(form, /challenges\.cloudflare\.com\/turnstile\/v0\/api\.js\?render=explicit&onload=onBookTurnstileLoad/);
   assert.doesNotMatch(form, /TURNSTILE_SECRET|1x00000000000000000000AA/);
 
   const stripped = preparePagesConfig(pages, {});
