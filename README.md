@@ -1,7 +1,7 @@
 # The Celtic Coo · CelticCoo.ca
 
 A Canada-first hub for Celtic and Gaelic culture: an events calendar (Highland Games, pipe bands,
-Highland dance, Gaelic, festivals), a directory of Celtic shops and makers, and a newsletter.
+Highland dance, ceilidhs, concerts, parades, cultural celebrations, Gaelic, festivals), a directory of Celtic shops and makers, and a newsletter.
 Mascot: **Ceilidh the Coo** (said "Kaylee"), a friendly ginger Highland coo with a bow in Canada's national
 **Maple Leaf tartan** (original SVG in `site/public/coo.svg`; tartan rendered from its threadcount by `scripts/make_tartan.py`).
 
@@ -47,8 +47,26 @@ turns that into the province name.
 Core fields: name, start_date, end_date, city, province_or_region, country, type, source_url,
 source_kind (`official`, `association`, or `organizer`), notes. Optional structured-data fields, used on each event page:
 
+`type` is free text. The calendar files it with the first match in `category()` (`site/src/lib/data.js`). These checks come first, because a later check would mis-file them (`dance` would turn "St. Patrick's Dinner & Dance" into Highland dance, and a concert would fall through to Festivals):
+
+| Words in `type` | Category |
+|---|---|
+| parade | Parades |
+| ceilidh, ceili | Ceilidhs |
+| performance, concert, demo | Performances & demos |
+| cultural, Tartan Day, Kirkin, St. Patrick, heritage | Cultural celebrations |
+
+Then the older groups: Burns Night, Military tattoo, Markets, Highland dance, Pipes & drums, Heavy events, Gaelic language, Highland Games, Celtic music, and Festivals.
+
+Useful `type` values for the newer groups: `Parade`, `Ceilidh`, `Performance (concert)`, `Performance & demo`, `Cultural celebration (Tartan Day)`, `Cultural celebration (St. Patrick's Day)`, `Cultural festival`.
+
+Newer tags, each still needing its own `tag_quotes` line: `parade`, `tartan-day`, `st-patricks`. `ceilidh`, `irish`, and `music` were already on the list. A free event shows a FREE badge, and `?free=1` on `/events/` is the Free only filter.
+
 | Field | When to set it |
 |---|---|
+| `cost` | `free`, `paid`, or `unknown`. Optional. Missing or any other value is treated as `unknown`, except that a missing cost with `offers.price` of `0` is free and a price above `0` is paid. Set `free` or `paid` only when the organizer's own page says so. Do not assume a street parade is free. |
+| `cost_quote` | The organizer's own words showing that admission is free or paid. Required when `cost` is `free` or `paid`. Use `""` when `cost` is `unknown`. |
+| `cost_source` | Optional URL of the page the quote is on, when that is not `source_url`. |
 | `organizer` | `[{ "name", "url?" }]`. The society or association that hosts the event. `url` is their own site, not a ticket vendor. Do not list a sanctioning association (BCPA, for example) as the host of someone else's games. |
 | `performers` | `[{ "name", "url?" }]` or a list of names. Only a person or group actually billed for this event. Leave it off for a competition full of unnamed bands. |
 | `offers` | `{ "url", "price?", "priceCurrency?", "availability?", "validFrom?" }`. `url` must be a page where the public can buy admission to this event. `price` and `priceCurrency` go together, and only for a price published for this edition (not last year's). `availability` is `InStock`, `SoldOut`, or `PreOrder` when we know it. If tickets are not on sale yet, omit `availability` and set `validFrom` to the published date. |
@@ -77,10 +95,9 @@ What the pages emit now:
   readable HTML on that check; the championship is still theirs because the date source is
   scotdance.ca/sdccs/schedule/. Victoria, Fergus, and Cowal blocked a direct fetch; their
   organizer names are from their own about or association pages as indexed that week.
-- **offers**, on 5 events where there is a real ticket page. No event has a `price`: the one page
-  that prints 2027 prices (the Worlds) also adds a transaction fee that is not a single per-ticket
-  number, and the Eventbrite listings do not show a price in the page HTML.
-- **performer**, on 2 events that name the act.
+- **isAccessibleForFree**, when `cost` is `free`. Paid and unknown events leave the property off.
+- **offers**, where there is a real ticket page. A `price` is set only when that page prints one number for this edition. The Celtic Tenors concert is $59.85 CAD on its Showpass page. The Worlds page prints 2027 prices but adds a transaction fee that is not a single per-ticket number, and an Eventbrite page that does not show a price in the visible HTML (including the ETS ceilidh) has no `price`.
+- **performer**, when a named act is billed for that event. The original competitions name two acts. Natalie MacMaster and Donnell Leahy, and The Celtic Tenors, are billed on their concert pages, so those pages name them too.
 
 Still missing, on purpose:
 

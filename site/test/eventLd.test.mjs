@@ -96,6 +96,21 @@ test('unknown availability is dropped, and a future on-sale date does not imply 
   assert.equal(ld.offers.validFrom, '2027-02-01');
 });
 
+test('a free event is marked accessible for free, and paid or unknown events are not', () => {
+  const free = eventJsonLd({ ...base, cost: 'free' });
+  assert.equal(free.isAccessibleForFree, true);
+  assert.match(free.description, /Free admission/);
+  const paid = eventJsonLd({ ...base, cost: 'paid' });
+  assert.equal('isAccessibleForFree' in paid, false);
+  const unknown = eventJsonLd({ ...base, cost: 'unknown' });
+  assert.equal('isAccessibleForFree' in unknown, false);
+  const omitted = eventJsonLd(base);
+  assert.equal('isAccessibleForFree' in omitted, false);
+  const pricedFree = eventJsonLd({ ...base, cost: 'free', offers: { url: 'https://example.test/tickets', price: 0, priceCurrency: 'CAD' } });
+  assert.equal(pricedFree.isAccessibleForFree, true);
+  assert.equal(pricedFree.offers.price, 0);
+});
+
 test('the record stays an Event with the required properties', () => {
   const ld = eventJsonLd(base);
   assert.equal(ld['@type'], 'Event');

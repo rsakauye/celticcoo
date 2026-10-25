@@ -4,7 +4,7 @@ import { u, CONTACT_EMAIL, SUBMIT_FORM_URL } from '../../lib/site.js';
 import { bookingConfig } from '../../lib/booking.js';
 // TODO: replace the mailto with a real form (Tally / Google Form / Cloudflare worker) once an inbox exists.
 const mail = (subject, body) => `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-const eventBody = 'Event name:\nStart date (YYYY-MM-DD):\nEnd date:\nCity and province:\nType (Highland Games, pipe band, dance, Gaelic, festival, other):\nOfficial website or page that shows the date:\nYour name and role (organizer, volunteer, fan):\n';
+const eventBody = 'Event name:\nStart date (YYYY-MM-DD):\nEnd date:\nCity and province:\nType (Highland Games, pipe band, dance, ceilidh, parade, performance or demo, cultural celebration, festival, other):\nIs admission free, paid, or not stated? Paste the line from the page that says so:\nOfficial website or page that shows the date:\nYour name and role (organizer, volunteer, fan):\n';
 const shopBody = 'Shop or maker name:\nCity and province:\nWhat you sell or make:\nWebsite:\nAre you at any Highland Games this year? Which ones?\nYour name and role:\n';
 ---
 <Base title="Add an event or list your shop" description="Tell The Celtic Coo about a Celtic event, Highland Games, or a Celtic shop or maker in Canada. Listings are free.">
@@ -14,7 +14,7 @@ const shopBody = 'Shop or maker name:\nCity and province:\nWhat you sell or make
   <div class="grid" style="margin-top:1rem">
     <div class="card">
       <h2 style="margin-top:0">📅 Submit an event</h2>
-      <p>Highland Games, pipe band contests, dance competitions, Gaelic classes, ceilidhs, Burns suppers, fundraisers and festivals are all welcome.</p>
+      <p>Highland Games, pipe band contests, dance competitions, ceilidhs, parades, concerts and demonstrations, cultural celebrations, Gaelic classes, Burns suppers, fundraisers and festivals are all welcome. If admission is free, say so and include the link that says it.</p>
       {SUBMIT_FORM_URL
         ? <a class="btn" href={SUBMIT_FORM_URL} rel="noopener" target="_blank">Open the submission form</a>
         : <a class="btn" href={mail('Event for The Celtic Coo', eventBody)}>Email us the details</a>}

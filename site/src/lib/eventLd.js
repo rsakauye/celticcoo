@@ -104,7 +104,7 @@ export function eventJsonLd(event) {
         ...(COUNTRY_CODE[event.country] ? { addressCountry: COUNTRY_CODE[event.country] } : {}),
       },
     },
-    description: [event.type, event.note].filter(Boolean).join('. '),
+    description: [event.type, event.cost === 'free' ? 'Free admission' : '', event.note].filter(Boolean).join('. '),
     url: `${ORIGIN}/events/${event.id}/`,
     sameAs: event.source_url,
     image: eventImages(event),
@@ -117,5 +117,6 @@ export function eventJsonLd(event) {
   else if (performers.length > 1) ld.performer = performers;
   const offer = eventOffer(event);
   if (offer) ld.offers = offer;
+  if (event.cost === 'free') ld.isAccessibleForFree = true;
   return ld;
 }

@@ -97,8 +97,14 @@ export const FEATURES = { 'clan-tents': ['🛡️', 'Clan tents'], 'vendor-villa
 export const COUNTRY_FLAG = { Canada: '🇨🇦', USA: '🇺🇸', UK: '🇬🇧', France: '🇫🇷' };
 
 // Friendly categories for filtering (raw research types are kept for display).
+// The cultural checks have to come first. "St. Patrick's Dinner & Dance" contains
+// "dance", and "Performance (concert)" would otherwise fall through to Festivals.
 export function category(type) {
   const t = String(type).toLowerCase();
+  if (t.includes('parade')) return 'Parades';
+  if (t.includes('ceilidh') || t.includes('ceili')) return 'Ceilidhs';
+  if (/performance|concert|demo/.test(t)) return 'Performances & demos';
+  if (/cultural|tartan day|kirkin|st\.?\s*patrick|heritage/.test(t)) return 'Cultural celebrations';
   if (t.includes('burns')) return 'Burns Night';
   if (t.includes('tattoo')) return 'Military tattoo';
   if (t.includes('market')) return 'Markets';
@@ -113,7 +119,39 @@ export function category(type) {
 export const CATEGORY_EMOJI = {
   'Highland Games': '🏋️', 'Pipes & drums': '🥁', 'Highland dance': '💃', 'Heavy events': '🪵',
   'Gaelic language': '🗣️', 'Celtic music': '🎻', 'Festivals': '🎉', 'Burns Night': '🥃', 'Military tattoo': '🎖️', 'Markets': '🎄',
+  'Parades': '🎺', 'Ceilidhs': '🪗', 'Performances & demos': '🎭', 'Cultural celebrations': '🎊',
 };
+
+// Tags are a fixed list. Every tag on a dated event needs a verbatim tag_quotes entry.
+export const TAG_LABEL = {
+  'highland-games': 'Highland Games', 'pipe-band': 'Pipe bands', 'highland-dance': 'Highland dance',
+  'scottish-country-dance': 'Scottish country dance', ceilidh: 'Ceilidh', burns: 'Burns',
+  'st-andrews': "St Andrew's", music: 'Music', 'heavy-events': 'Heavy events', 'ball-formal': 'Ball / formal',
+  'workshop-class': 'Workshops & classes', irish: 'Irish', 'family-friendly': 'Family-friendly',
+  parade: 'Parade', 'tartan-day': 'Tartan Day', 'st-patricks': "St. Patrick's", other: 'Other',
+};
+
+// cost is free or paid only when the organizer's page says so. Anything else is unknown.
+export function normCost(e) {
+  const stated = e && e.cost != null && String(e.cost).trim() !== '';
+  if (stated) {
+    const raw = String(e.cost).trim().toLowerCase();
+    if (raw === 'free' || raw === 'paid' || raw === 'unknown') return raw;
+    return 'unknown';
+  }
+  const price = e?.offers?.price;
+  if (price === 0) return 'free';
+  if (typeof price === 'number' && Number.isFinite(price) && price > 0) return 'paid';
+  return 'unknown';
+}
+
+function costQuote(e) {
+  return typeof e?.cost_quote === 'string' ? e.cost_quote : '';
+}
+
+function costSource(e) {
+  return typeof e?.cost_source === 'string' && e.cost_source.trim() ? e.cost_source.trim() : '';
+}
 
 // Research notes include internal sourcing remarks; only publish venue-style snippets.
 const INTERNAL = /(bcpa|lists|official site|search|faq|optimist|sanctioned|schedule|champions|also tourism|tickets)/i;
@@ -133,17 +171,25 @@ export const TODAY = new Date().toLocaleDateString('en-CA', { timeZone: 'America
 
 // ---------- events ----------
 // events_manual.json is merged here. Deploy and the weekly source check do not rewrite that file.
-export const events = mergeManualEvents(verified, manualRaw).map((e) => ({
-  ...e,
-  end_date: e.end_date || e.start_date,
-  id: slugify(`${e.name}-${e.start_date}`),
-  category: category(e.type),
-  region: e.province_or_region,
-  regionLabel: regionName(e.province_or_region),
-  note: publicNote(e.notes),
-  when: dateRange(e.start_date, e.end_date || e.start_date),
-  isCanada: e.country === 'Canada',
-})).sort((a, b) => a.start_date.localeCompare(b.start_date) || a.name.localeCompare(b.name));
+export function decorateEvent(e) {
+  return {
+    ...e,
+    end_date: e.end_date || e.start_date,
+    id: slugify(`${e.name}-${e.start_date}`),
+    category: category(e.type),
+    region: e.province_or_region,
+    regionLabel: regionName(e.province_or_region),
+    note: publicNote(e.notes),
+    when: dateRange(e.start_date, e.end_date || e.start_date),
+    isCanada: e.country === 'Canada',
+    cost: normCost(e),
+    cost_quote: costQuote(e),
+    cost_source: costSource(e),
+  };
+}
+
+export const events = mergeManualEvents(verified, manualRaw).map(decorateEvent)
+  .sort((a, b) => a.start_date.localeCompare(b.start_date) || a.name.localeCompare(b.name));
 
 export const upcoming = events.filter((e) => e.end_date >= TODAY);
 
@@ -162,6 +208,9 @@ export const tba = pendingRaw
     features: e.features || [],
     features_source: e.features_source || '',
     id: slugify(e.name),
+    cost: normCost(e),
+    cost_quote: costQuote(e),
+    cost_source: costSource(e),
   }))
   .sort((a, b) => (a.region === 'AB' ? -1 : 0) - (b.region === 'AB' ? -1 : 0) || a.region.localeCompare(b.region) || a.name.localeCompare(b.name));
 
@@ -190,6 +239,7 @@ export const counts = {
   provinces: new Set(events.filter((e) => e.isCanada).map((e) => e.region)).size,
   tba: tba.length,
   shops: shops.length,
+  free: events.filter((e) => e.cost === 'free').length,
 };
 
 // ---------- clubs, groups & lessons ----------

@@ -90,6 +90,7 @@ const ldJson = JSON.stringify(ld.length === 1 ? ld[0] : ld).replace(/</g, '\\u00
     .pill { display:inline-block; font-size:.78rem; padding:.08rem .55rem; border-radius:99px; background:var(--cream); color:#5a3a1e; margin:0 .25rem .25rem 0; white-space:nowrap; }
     .pill.green { background:#dcebe2; color:var(--green); }
     .pill.tba { background:#fde7d6; color:#8a3b0d; }
+    .pill.free { background:#1f7a3a; color:#fff; font-weight:700; }
     .btn { display:inline-block; background:var(--ginger); color:#fff; border:0; border-radius:10px; padding:.6rem 1rem; font:600 1rem system-ui,sans-serif; text-decoration:none; cursor:pointer; }
     .btn:hover { background:#8a4118; }
     .btn.ghost { background:transparent; color:var(--green); border:2px solid var(--green); }
@@ -125,6 +126,7 @@ const ldJson = JSON.stringify(ld.length === 1 ? ld[0] : ld).replace(/</g, '\\u00
     header.site :focus-visible, footer.site :focus-visible { outline-color:#fff; box-shadow:0 0 0 5px #000; }
     html[data-a11y-contrast=high] { --fg:#000; --muted:#1f1f1f; --bg:#fff; --card:#fff; --line:#000; --green:#0d2e22; --green2:#0b4a32; --ginger:#7a3510; }
     html[data-a11y-contrast=high] .card { border:2px solid #000; }
+    html[data-a11y-contrast=high] .pill.free { background:#0d2e22; color:#fff; }
     html[data-a11y-contrast=high] a { text-decoration:underline; }
     html[data-a11y-contrast=high] header.site nav a, html[data-a11y-contrast=high] details.more summary { opacity:1; }
     html[data-a11y-contrast=high] footer.site .muted { color:#fff; }

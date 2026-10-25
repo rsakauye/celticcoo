@@ -13,7 +13,7 @@ export function GET(context) {
       <guid isPermaLink="false">${esc(e.id)}</guid>
       <pubDate>${new Date((e.added_date || ADDED) + 'T12:00:00-06:00').toUTCString()}</pubDate>
       <category>${esc(e.category)}</category>
-      <description>${esc(`${e.type} in ${e.city}, ${e.regionLabel}, ${e.country}. ${e.when}.${e.note ? ' ' + e.note + '.' : ''} ${e.source_kind === 'organizer' ? 'Date from organizer' : 'Details'}: ${e.source_url}`)}</description>
+      <description>${esc(`${e.type} in ${e.city}, ${e.regionLabel}, ${e.country}. ${e.when}.${e.cost === 'free' ? ' Free admission.' : ''}${e.note ? ' ' + e.note + '.' : ''} ${e.source_kind === 'organizer' ? 'Date from organizer' : 'Details'}: ${e.source_url}`)}</description>
     </item>`).join('');
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0"><channel>

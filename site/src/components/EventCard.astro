@@ -4,11 +4,12 @@ import { CATEGORY_EMOJI, COUNTRY_FLAG, FEATURES, sourceLinkLabel } from '../lib/
 import { u } from '../lib/site.js';
 const { e } = Astro.props;
 ---
-<article class="card ev" id={e.id} data-end={e.end_date} data-region={e.region} data-country={e.country} data-cat={e.category} data-features={(e.features || []).join(' ')}>
+<article class="card ev" id={e.id} data-end={e.end_date} data-region={e.region} data-country={e.country} data-cat={e.category} data-cost={e.cost} data-features={(e.features || []).join(' ')}>
   <div class="ev-date">{e.when}</div>
   <h3 style="margin:.25rem 0 .35rem;font-size:1.15rem"><a href={u(`events/${e.id}/`)} style="color:inherit">{e.name}</a></h3>
   <div class="muted" style="margin-bottom:.45rem">{COUNTRY_FLAG[e.country] || ''} {e.city}, {e.regionLabel}{e.country !== 'Canada' && e.country !== e.regionLabel ? `, ${e.country}` : ''}</div>
   <span class="pill green">{CATEGORY_EMOJI[e.category]} {e.category}</span>
+  {e.cost === 'free' && <span class="pill free" title={e.cost_quote || undefined}>FREE</span>}
   {e.type !== e.category && <span class="pill">{e.type}</span>}
   {e.source_kind === 'organizer' && <span class="pill">Date from organizer</span>}
   {e.features && e.features.length > 0 && <div style="margin-top:.2rem">{e.features.map((f) => <a class="pill feat" href={e.features_source} rel="noopener" target="_blank" title="Listed on the organizer's site">{FEATURES[f][0]} {FEATURES[f][1]}</a>)}</div>}
