@@ -37,7 +37,7 @@ const PROVINCES = [
 ];
 
 const MONTHS = 'January|February|March|April|May|June|July|August|September|October|November|December';
-const DATE_RE = new RegExp(
+export const DATE_RE = new RegExp(
   `\\b(\\d{1,2}\\s+(?:${MONTHS})\\s+\\d{4}|(?:${MONTHS})\\s+\\d{1,2},?\\s+\\d{4}|\\d{4}-\\d{2}-\\d{2})\\b`,
   'i',
 );
@@ -65,16 +65,17 @@ export const SYSTEM_PROMPT = [
   'event fields are public facts only: title, host, date, city, province, venue, url. Use an empty string when a fact is missing.',
 ].join('\n');
 
+// additionalProperties is omitted. JSON mode on this model rejects some
+// schema keywords before inference, and that used to be swallowed with no log.
+// Unknown fields are still dropped in normalizeClassification.
 export const CLASSIFIER_SCHEMA = {
   type: 'object',
-  additionalProperties: false,
   properties: {
     category: { type: 'string', enum: CATEGORIES },
     confidence: { type: 'number' },
     summary: { type: 'string' },
     event: {
       type: 'object',
-      additionalProperties: false,
       properties: {
         title: { type: 'string' },
         host: { type: 'string' },
@@ -305,30 +306,116 @@ export function modelName(env) {
   return DEFAULT_MODEL;
 }
 
+export function safeReason(value) {
+  if (value == null || value === '') return '';
+  const text = String(value).toLowerCase();
+  return /^[a-z0-9_]{1,40}$/.test(text) ? text : 'ai_failed';
+}
+
+// There is no minimum body length. A short note still calls the model.
+// The old gate returned rules with no log when AI.run was not a function,
+// and the old catch returned rules with no log when the call threw or the
+// JSON did not match. Both look the same in Worker logs: classifier=rules
+// and no error. reason distinguishes them. The message text is never logged.
+export function resolveAiRunner(env, deps = {}) {
+  if (typeof deps.run === 'function') {
+    return { run: (model, payload) => deps.run(model, payload), binding: 'deps', runType: 'function' };
+  }
+  const ai = env && env.AI;
+  const binding = ai == null ? 'missing' : typeof ai;
+  const runType = ai == null ? 'missing' : typeof ai.run;
+  if (ai == null || ai.run == null) return { run: null, binding, runType };
+  const run = ai.run;
+  return {
+    run: (model, payload) => run.call(ai, model, payload),
+    binding,
+    runType,
+  };
+}
+
+export function failureReason(err) {
+  const message = String(err && err.message || '');
+  if (/is not a function/i.test(message)) return 'ai_unavailable';
+  if (/json.?mode|response_format|schema|temperature|max_tokens/i.test(message)) return 'ai_request';
+  const code = err && err.code;
+  if (typeof code === 'string' && /^[a-z0-9_.:-]{1,40}$/i.test(code)) {
+    const safe = code.toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+    if (safe && safe !== 'error') return safeReason(`ai_${safe}`);
+  }
+  return 'ai_failed';
+}
+
+function isAiError(result) {
+  if (!result || typeof result !== 'object') return false;
+  if (result.success === false) return true;
+  if (Array.isArray(result.errors) && result.errors.length > 0) return true;
+  if (Object.prototype.hasOwnProperty.call(result, 'error') && result.error) return true;
+  return false;
+}
+
+function reportClassify(deps, fields) {
+  const line = JSON.stringify({ message: 'inbound classify', ...fields });
+  if (typeof deps.log === 'function') deps.log(line);
+  else console.log(line);
+}
+
+function attemptPayload(prompt, mode) {
+  const messages = [
+    {
+      role: 'system',
+      content: mode === 'text'
+        ? `${prompt.system}\nReply with one JSON object only. Do not use markdown.`
+        : prompt.system,
+    },
+    { role: 'user', content: prompt.user },
+  ];
+  if (mode === 'text') return { messages };
+  return {
+    messages,
+    max_tokens: 512,
+    response_format: {
+      type: 'json_schema',
+      json_schema: CLASSIFIER_SCHEMA,
+    },
+  };
+}
+
 export async function classifyMessage(input, env, deps = {}) {
   const rules = classifyByRules(input);
-  const aiBinding = env && env.AI;
-  const canRun = typeof deps.run === 'function' || (aiBinding && typeof aiBinding.run === 'function');
-  if (!canRun) return rules;
-  try {
-    const prompt = buildClassifierPrompt(input);
-    const payload = {
-      messages: [
-        { role: 'system', content: prompt.system },
-        { role: 'user', content: prompt.user },
-      ],
-      response_format: {
-        type: 'json_schema',
-        json_schema: CLASSIFIER_SCHEMA,
-      },
-      max_tokens: 512,
-      temperature: 0,
-    };
-    const result = typeof deps.run === 'function'
-      ? await deps.run(modelName(env), payload)
-      : await aiBinding.run(modelName(env), payload);
-    return chooseClassification(rules, parseAiResult(result));
-  } catch {
-    return rules;
+  const runner = resolveAiRunner(env, deps);
+  if (!runner.run) {
+    reportClassify(deps, {
+      classifier: 'rules',
+      reason: 'ai_unavailable',
+      binding: runner.binding,
+      run: runner.runType,
+    });
+    return { ...rules, reason: 'ai_unavailable' };
   }
+  const model = modelName(env);
+  const prompt = buildClassifierPrompt(input);
+  let lastReason = 'ai_failed';
+  for (const mode of ['schema', 'text']) {
+    try {
+      const result = await runner.run(model, attemptPayload(prompt, mode));
+      if (isAiError(result)) {
+        lastReason = 'ai_failed';
+        continue;
+      }
+      const parsed = parseAiResult(result);
+      if (!parsed) {
+        lastReason = 'ai_unparsed';
+        continue;
+      }
+      const chosen = chooseClassification(rules, parsed);
+      const reason = chosen.classifier === 'rules' ? 'rules_override' : (mode === 'text' ? 'ai_text' : 'ai_ok');
+      reportClassify(deps, { classifier: chosen.classifier, reason });
+      return { ...chosen, reason };
+    } catch (err) {
+      lastReason = failureReason(err);
+      if (lastReason === 'ai_unavailable') break;
+    }
+  }
+  reportClassify(deps, { classifier: 'rules', reason: lastReason });
+  return { ...rules, reason: lastReason };
 }

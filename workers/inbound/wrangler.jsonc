@@ -5,7 +5,7 @@
   // There is no "addresses" list on purpose. Wrangler would otherwise create
   // or take over the Email Routing rule on deploy. The owner switches the
   // hello@ rule to this Worker in the dashboard after reviewing it.
-  // Omitting addresses leaves the current forward-to-Gmail rule alone.
+  // Omitting addresses leaves the current Email Routing rule alone.
   //
   // FORWARD_TO is not named here. A personal inbox must not be committed.
   // Every deploy passes --var FORWARD_TO:... from a GitHub secret. Wrangler
@@ -13,10 +13,23 @@
   //
   // GITHUB_TOKEN is a Worker secret (wrangler secret put), not a var.
   // ACK_REPLIES stays off until this file is changed to "on" and redeployed.
+  // CLARIFY_DRAFTS defaults to "drafts". That stores a clarifying reply and
+  // waits. It never sends the reply by itself. There is no auto-send value.
+  // Set it to "off" and redeploy to stop drafting.
+  //
+  // EMAIL is unrestricted in this file for the same reason as the mailer:
+  // the owner's inbox must not be committed, and an approved reply goes to
+  // whatever address wrote in. Code sends the review note only to FORWARD_TO
+  // and the approved reply only after a signed POST. From is hello@celticcoo.ca.
+  //
+  // REVIEW_SECRET is a Worker secret. REVIEW_BASE_URL is a deploy var, not a
+  // secret. Neither is named here. There is no routes list. Add the approval
+  // hostname in the dashboard so a later deploy does not replace it.
   //
   // INTAKE_DB is the existing celticcoo-intake database. database_id stays a
   // placeholder in git. Deploy copies the GitHub secret D1_DATABASE_ID over
-  // it for that run only. The migration is site/migrations/0002_inbound_emails.sql.
+  // it for that run only. Migrations: site/migrations/0002_inbound_emails.sql
+  // creates the table, and 0003_inbound_clarify.sql adds draft columns.
   "name": "celticcoo-inbound",
   "main": "src/index.js",
   "compatibility_date": "2026-10-25",
@@ -36,6 +49,11 @@
   "ai": {
     "binding": "AI"
   },
+  "send_email": [
+    {
+      "name": "EMAIL"
+    }
+  ],
   "d1_databases": [
     {
       "binding": "INTAKE_DB",
@@ -45,6 +63,7 @@
   ],
   "vars": {
     "ACK_REPLIES": "off",
+    "CLARIFY_DRAFTS": "drafts",
     "AI_MODEL": "@cf/meta/llama-3.1-8b-instruct"
   }
 }

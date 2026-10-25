@@ -9,14 +9,18 @@
 //
 // Email content is untrusted. It can only be logged, classified, and, for an
 // event listing or a correction, turned into a redacted GitHub issue.
-// No URL from the message is fetched. No reply is sent unless ACK_REPLIES is "on".
+// No URL from the message is fetched. ACK_REPLIES still defaults to off.
+// A clarifying draft is stored and shown for approval. This handler does not
+// send that draft to the original sender. Approval is a POST to /review.
 // There is no addresses field in wrangler.jsonc, so deploying this Worker does
 // not change the Email Routing rule. The owner switches that in the dashboard.
 
-import { maybeAcknowledge } from './ack.js';
-import { classifyMessage } from './classify.js';
+import { isAutomated, maybeAcknowledge } from './ack.js';
+import { classifyMessage, safeReason } from './classify.js';
+import { planDraft } from './clarify.js';
 import { buildIssue, fileGitHubIssue, shouldFile, workerToken } from './issue.js';
 import { dedupeKey, parseInbound } from './parse.js';
+import { handleReviewRequest, sendReviewNote } from './review.js';
 import { markIssue, upsertInbound } from './store.js';
 import { codeOf, envelopeAddress, isHelloRecipient, oneEmail, oneLine } from './text.js';
 
@@ -41,11 +45,13 @@ export async function forwardCopy(message, env) {
   }
 }
 
-function logOutcome(fields) {
-  console.log(JSON.stringify({ message: 'inbound email', ...fields }));
+function logOutcome(fields, deps) {
+  const line = JSON.stringify({ message: 'inbound email', ...fields });
+  if (deps && typeof deps.log === 'function') deps.log(line);
+  else console.log(line);
 }
 
-async function fileIfNeeded({ saved, classification, parsed, forward, env, deps }) {
+async function fileIfNeeded({ saved, classification, parsed, draft, forward, env, deps }) {
   const canFile = forward.status === 'sent' || forward.error === 'not_forwardable';
   if (!canFile || !shouldFile(classification.category) || saved.issueStatus === 'filed') {
     return { issueStatus: saved.issueStatus || 'skipped', issueUrl: saved.issueUrl || '', errorCode: '' };
@@ -59,6 +65,9 @@ async function fileIfNeeded({ saved, classification, parsed, forward, env, deps 
     event: classification.event,
     classifier: classification.classifier,
     attachmentCount: parsed.attachmentCount,
+    clarifyStatus: draft ? draft.status : '',
+    clarifyDraft: draft ? draft.draft : '',
+    clarifyReasons: draft ? draft.reasons : [],
   });
   if (!issue) return { issueStatus: 'skipped', issueUrl: '', errorCode: '' };
   if (!token) {
@@ -89,6 +98,15 @@ async function processHello(message, env, deps, forward) {
   const classification = typeof deps.classify === 'function'
     ? await deps.classify(parsed, env)
     : await classifyMessage({ subject: parsed.subject, text: parsed.text }, env, deps);
+  const draft = planDraft({
+    category: classification.category,
+    event: classification.event,
+    subject: parsed.subject,
+    text: parsed.text,
+    now,
+    env,
+    automated: isAutomated(message),
+  });
   const key = await dedupeKey(message, parsed.subject);
   const errorCode = [forward.error, parsed.parseError].filter(Boolean).join(',') || '';
   const row = {
@@ -109,13 +127,29 @@ async function processHello(message, env, deps, forward) {
     summary: classification.summary,
     extractedJson: JSON.stringify(classification.event || {}),
     classifier: classification.classifier === 'ai' ? 'ai' : 'rules',
+    classifierReason: safeReason(classification.reason),
+    clarifyStatus: draft ? draft.status : '',
+    clarifyDraft: draft ? draft.draft : '',
+    clarifyReasons: draft ? draft.reasons.join(',') : '',
     forwardStatus: forward.status,
     issueStatus: 'skipped',
     errorCode: oneLine(errorCode, 80),
     rawSize: Number(message.rawSize) || 0,
   };
   const saved = await upsertInbound(env && env.INTAKE_DB, row);
-  const issue = await fileIfNeeded({ saved, classification, parsed, forward, env, deps });
+  const issue = await fileIfNeeded({ saved, classification, parsed, draft, forward, env, deps });
+  let reviewStatus = '';
+  if (draft) {
+    const review = await sendReviewNote(env, {
+      id: saved.id,
+      category: classification.category,
+      reasons: draft.reasons,
+      draft: draft.draft,
+      recipient: oneEmail(parsed.replyTo) || oneEmail(envelopeAddress(message.from)),
+      forwardStatus: forward.status,
+    }, deps);
+    reviewStatus = review.status;
+  }
   if (forward.status === 'sent') {
     try {
       await maybeAcknowledge(message, env, deps);
@@ -131,6 +165,8 @@ async function processHello(message, env, deps, forward) {
     issueStatus: issue.issueStatus,
     issueUrl: issue.issueUrl,
     errorCode: issue.errorCode || row.errorCode,
+    reason: row.classifierReason,
+    reviewStatus,
   };
 }
 
@@ -154,7 +190,8 @@ export async function handleInboundEmail(message, env, deps = {}) {
     forward: forward.status,
     issue: outcome && outcome.issueStatus || '',
     code: (outcome && outcome.errorCode) || forward.error || '',
-  });
+    reason: (outcome && outcome.reason) || '',
+  }, deps);
   if (forward.status !== 'sent' && forward.error !== 'not_forwardable') {
     const error = new Error('inbound forward failed');
     error.code = forward.error || 'forward_failed';
@@ -163,14 +200,15 @@ export async function handleInboundEmail(message, env, deps = {}) {
   return { forward, outcome };
 }
 
+export function handleFetch(request, env, deps) {
+  return handleReviewRequest(request, env, deps);
+}
+
 export default {
   async email(message, env) {
     await handleInboundEmail(message, env);
   },
-  fetch() {
-    return new Response('Not found', {
-      status: 404,
-      headers: { 'cache-control': 'no-store' },
-    });
+  fetch(request, env) {
+    return handleFetch(request, env);
   },
 };
