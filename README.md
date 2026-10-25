@@ -23,10 +23,12 @@ GitHub Actions and deployed to Cloudflare Pages with wrangler.
 | `data/source_state.json` | Last snapshot from the weekly source check (written by the workflow). |
 | `site/` | Astro site: `/`, `/events/`, `/results/`, `/groups/`, `/burns-night/`, `/shops/`, `/fundraising/`, `/what-to-wear/`, `/tartans/`, `/roots/`, `/submit/`, `/about/`, `/newsletter/`, `/book/`, `/events.ics`, `/rss.xml`, `/sitemap.xml`, 404. `/results/` pulls headline + link only from the pipes\|drums and Piping Press RSS feeds at build time. |
 | `site/functions/api/book.js` | Booking form endpoint. Checks Turnstile, validates the fields, stores the request in private D1, then asks the mailer for a notice. |
-| `site/migrations/` | D1 schema for that private intake. Not applied until the setup below. |
+| `site/migrations/` | D1 schema for the private booking intake and the hello@ log. Not applied until the setup below. |
 | `scripts/check_sources.py` | Weekly re-check of source pages (standard library only). |
-| `.github/workflows/deploy.yml` | Build on push, daily at 7am MT, or manual. Deploys to Cloudflare Pages project `celticcoo` only if the secrets exist; otherwise it builds and skips. |
+| `.github/workflows/deploy.yml` | Build on push, daily at 7am MT, or manual. Deploys to Cloudflare Pages project `celticcoo` only if the secrets exist; otherwise it builds and skips. The inbound mail job skips on its own when its secrets are missing. |
 | `.github/workflows/source-check.yml` | Mondays 8am MT. Opens (or comments on) an issue labelled `source-check` when a source page's dates change, a page disappears, or one of our dates is no longer on its page. |
+| `workers/inbound/` | Email Worker for `hello@celticcoo.ca`. Forwards a copy, logs the message, and classifies it. See `docs/inbound-email.md`. |
+| `workers/mailer/` | Private Worker that sends booking notices. Pages calls it. It is not the hello@ inbox. |
 
 ### Adding or changing an event
 Edit `data/events_2027.json`. Only add it there once the date is on an official or association page.
@@ -130,6 +132,7 @@ Still missing, on purpose:
 cd site && npm ci && npm test && npm run build   # output in site/dist
 npm run dev                          # http://localhost:4321
 python3 scripts/check_sources.py --no-save   # dry-run source check
+cd workers/inbound && npm ci && npm test     # inbound mail worker
 ```
 
 ## Setup checklist (Russell)
@@ -143,8 +146,7 @@ python3 scripts/check_sources.py --no-save   # dry-run source check
    and redirect `thecelticcoo.ca` → `https://celticcoo.ca` with a Cloudflare redirect rule.
 4. **Optional repo variables** (*Variables* tab):
    - `KIT_FORM_ID`: numeric Kit form ID. Defaults to 10068901 (Coo's Letter signup); set to `off` to show "Sign-up opens soon".
-   - `CONTACT_EMAIL`: defaults to `hello@celticcoo.ca` (**TODO: that inbox doesn't exist yet**,
-     e.g. set up Cloudflare Email Routing).
+   - `CONTACT_EMAIL`: defaults to `hello@celticcoo.ca`. How that inbox is triaged is in `docs/inbound-email.md`.
    - `SUBMIT_FORM_URL`: link to a hosted submission form (**TODO**). Until set, /submit/ uses mailto links.
    - `SITE_URL`: defaults to `https://celticcoo.ca`.
 5. **Private booking intake.** Do this before you rely on the booking form. Until the Turnstile secret and the public site key are both set, the form rejects submissions (the mailto link on the page still works). Steps are in the next section. Nothing in that section creates resources for you if you only read it; each command is yours to run.
@@ -173,7 +175,7 @@ Do not commit the database id, the Turnstile secret, or a submission. The id in 
    unset D1_DATABASE_ID
    ```
 
-   That writes a gitignored `site/.wrangler-intake.jsonc`, runs `wrangler d1 migrations apply celticcoo-intake --remote`, and deletes the file. The schema is `site/migrations/0001_intake.sql` (`submissions` and `submission_failures`).
+   That writes a gitignored `site/.wrangler-intake.jsonc`, runs `wrangler d1 migrations apply celticcoo-intake --remote`, and deletes the file. It applies every file in `site/migrations/` that is not on the database yet. `0001_intake.sql` creates `submissions` and `submission_failures`. `0002_inbound_emails.sql` creates the hello@ log. Run the command again after that file is merged. Details for the mailbox are in `docs/inbound-email.md`.
 
 3. **Give deploys the database id.** GitHub → Settings → Secrets and variables → Actions → Secrets → `D1_DATABASE_ID` = that same UUID. The deploy workflow copies it into the checkout for that deploy only. If the secret is empty, the workflow removes the D1 binding and the site still deploys, but requests are not stored.
 
@@ -219,6 +221,10 @@ Do not commit the database id, the Turnstile secret, or a submission. The id in 
    ```
 
    Selecting the name, email, phone, or message prints personal data on your machine. Don't paste that output into chat, a commit, or a log. `npm test` in `site/` covers validation, Turnstile decisions, and flagging without a Cloudflare account. A local Pages session still rejects a token whose hostname is not `celticcoo.ca` or `www.celticcoo.ca`.
+
+## Inbound mail for hello@
+
+`workers/inbound/` can receive `hello@celticcoo.ca`, forward a copy to the same verified destination the mailbox uses today, and log the message in the private D1 database. Event listings and corrections become a GitHub issue that does not contain the sender's email or phone. Deploying the Worker does not change the Email Routing rule. The steps to apply the migration, set the secrets, deploy, switch the rule, and switch it back are in [docs/inbound-email.md](docs/inbound-email.md).
 
 ## Notes
 - Event dates change. The site tells visitors to confirm with organizers, and the weekly check

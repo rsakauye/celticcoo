@@ -8,3 +8,5 @@ source-check-report.md
 .env
 .env.*
 site/.wrangler-intake.jsonc
+workers/inbound/.wrangler-deploy.jsonc
+.wrangler/

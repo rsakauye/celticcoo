@@ -1,0 +1,50 @@
+{
+  // Inbound triage for hello@celticcoo.ca. This Worker is not on a public
+  // route. workers.dev and preview URLs are off.
+  //
+  // There is no "addresses" list on purpose. Wrangler would otherwise create
+  // or take over the Email Routing rule on deploy. The owner switches the
+  // hello@ rule to this Worker in the dashboard after reviewing it.
+  // Omitting addresses leaves the current forward-to-Gmail rule alone.
+  //
+  // FORWARD_TO is not named here. A personal inbox must not be committed.
+  // Every deploy passes --var FORWARD_TO:... from a GitHub secret. Wrangler
+  // drops that var on a later deploy that does not pass it again.
+  //
+  // GITHUB_TOKEN is a Worker secret (wrangler secret put), not a var.
+  // ACK_REPLIES stays off until this file is changed to "on" and redeployed.
+  //
+  // INTAKE_DB is the existing celticcoo-intake database. database_id stays a
+  // placeholder in git. Deploy copies the GitHub secret D1_DATABASE_ID over
+  // it for that run only. The migration is site/migrations/0002_inbound_emails.sql.
+  "name": "celticcoo-inbound",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-25",
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 1
+    }
+  },
+  "ai": {
+    "binding": "AI"
+  },
+  "d1_databases": [
+    {
+      "binding": "INTAKE_DB",
+      "database_name": "celticcoo-intake",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID"
+    }
+  ],
+  "vars": {
+    "ACK_REPLIES": "off",
+    "AI_MODEL": "@cf/meta/llama-3.1-8b-instruct"
+  }
+}
