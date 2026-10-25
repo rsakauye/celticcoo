@@ -4,7 +4,7 @@ import Base from '../../layouts/Base.astro';
 import BookLink from '../../components/BookLink.astro';
 import { bookingConfig } from '../../lib/booking.js';
 import EventCard from '../../components/EventCard.astro';
-import { events, CATEGORY_EMOJI, COUNTRY_FLAG, FEATURES, sourceLinkLabel, dateConfirmLine } from '../../lib/data.js';
+import { events, CATEGORY_EMOJI, COUNTRY_FLAG, FEATURES, sourceLinkLabel, dateConfirmLine, TAG_LABEL } from '../../lib/data.js';
 import { eventJsonLd } from '../../lib/eventLd.js';
 import { u } from '../../lib/site.js';
 export function getStaticPaths() {
@@ -24,7 +24,6 @@ const ticketIsSource = ticketUrl && ticketUrl === e.source_url;
 const saleWhen = (iso) => new Date(String(iso).slice(0, 10) + 'T12:00:00Z').toLocaleDateString('en-CA', { timeZone: 'UTC', month: 'long', day: 'numeric', year: 'numeric' });
 const sourceLabel = ticketIsSource ? 'Tickets' : sourceLinkLabel(e.source_kind);
 const summaryFrom = e.source_kind === 'organizer' ? 'host' : (e.source_kind === 'official' ? "organizer's page" : "association's page");
-const TAG_LABEL = { 'highland-games': 'Highland Games', 'pipe-band': 'Pipe bands', 'highland-dance': 'Highland dance', 'scottish-country-dance': 'Scottish country dance', ceilidh: 'Ceilidh', burns: 'Burns', 'st-andrews': "St Andrew's", music: 'Music', 'heavy-events': 'Heavy events', 'ball-formal': 'Ball / formal', 'workshop-class': 'Workshops & classes', irish: 'Irish', 'family-friendly': 'Family-friendly', other: 'Other' };
 const near = events.filter((x) => x.id !== e.id && x.region === e.region && x.country === e.country).slice(0, 6);
 const sameType = events.filter((x) => x.id !== e.id && x.category === e.category && !near.includes(x)).slice(0, 3);
 ---
@@ -33,7 +32,7 @@ const sameType = events.filter((x) => x.id !== e.id && x.category === e.category
   <h1>{e.name}</h1>
   <p class="when">{e.when}</p>
   <p>{COUNTRY_FLAG[e.country] || ''} {place}</p>
-  <p><span class="pill green">{CATEGORY_EMOJI[e.category]} {e.category}</span>{e.type !== e.category && <span class="pill">{e.type}</span>}{e.source_kind === 'organizer' && <span class="pill">Date from organizer</span>}</p>
+  <p><span class="pill green">{CATEGORY_EMOJI[e.category]} {e.category}</span>{e.cost === 'free' && <span class="pill free" title={e.cost_quote || undefined}>FREE</span>}{e.type !== e.category && <span class="pill">{e.type}</span>}{e.source_kind === 'organizer' && <span class="pill">Date from organizer</span>}</p>
   {e.summary && <p class="ev-sum">{e.summary} <span class="muted">(From the {summaryFrom}.)</span></p>}
   {e.tags && e.tags.length > 0 && <p>Tags: {e.tags.map((t) => <a class="pill tag" href={u(`events/?tags=${t}`)}>{TAG_LABEL[t] || t}<span class="sr-only">: see all events with this tag</span></a>)}</p>}
   {e.features && e.features.length > 0 && <p>At the games: {e.features.map((f) => <a class="pill" style="background:#e3ebf5;color:var(--navy);text-decoration:none" href={e.features_source} rel="noopener" target="_blank">{FEATURES[f][0]} {FEATURES[f][1]}</a>)} <span class="muted">(from the organizer's site)</span></p>}
@@ -53,7 +52,9 @@ const sameType = events.filter((x) => x.id !== e.id && x.category === e.category
   {e.offers?.availability === 'SoldOut' && <p class="muted">Tickets are sold out.</p>}
   {e.offers?.availability === 'PreOrder' && <p class="muted">Tickets are available to pre-order.</p>}
   {e.offers?.validFrom && e.offers.availability !== 'InStock' && <p class="muted">Tickets go on sale {saleWhen(e.offers.validFrom)}.</p>}
-  {e.offers && e.offers.price !== undefined && e.offers.priceCurrency && <p class="muted">{Number(e.offers.price) === 0 ? 'Admission is free.' : `Lowest published ticket price: ${e.offers.price} ${e.offers.priceCurrency}.`}</p>}
+  {e.cost === 'free' && <p class="muted">Free admission (per the organizer). <a href={e.cost_source || e.source_url} rel="noopener" target="_blank">Source ↗</a></p>}
+  {e.cost === 'paid' && !(e.offers && e.offers.price !== undefined && e.offers.priceCurrency) && <p class="muted">Ticketed. See organizer for prices.</p>}
+  {e.offers && e.offers.price !== undefined && e.offers.priceCurrency && !(e.cost === 'free' && Number(e.offers.price) === 0) && <p class="muted">{Number(e.offers.price) === 0 ? 'Admission is free.' : `Lowest published ticket price: ${e.offers.price} ${e.offers.priceCurrency}.`}</p>}
   <p class="muted">{dateConfirmLine(e.source_kind)} Dates and details can change, so check with the organizer before you travel. Add every confirmed event to your calendar with <a href={u('events.ics')}>events.ics</a>.</p>
   <p class="muted">Going? See <a href={u('what-to-wear/')}>what to wear</a>, find <a href={u('groups/')}>clubs &amp; lessons</a> or <a href={u('shops/')}>Celtic shops</a>{e.category === 'Burns Night' && <>, or read our <a href={u('burns-night/')}>Burns Night guide</a></>}.</p>
   {near.length > 0 && <section><h2>More in {e.regionLabel}</h2><div class="grid">{near.map((x) => <EventCard e={x} />)}</div></section>}

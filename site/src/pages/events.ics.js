@@ -24,7 +24,7 @@ export function GET(context) {
       `DTEND;VALUE=DATE:${d(nextDay(e.end_date))}`,
       `SUMMARY:${esc(e.name)}`,
       `LOCATION:${esc([e.city, e.regionLabel, e.country].filter((x, i, a) => x && a.indexOf(x) === i).join(', '))}`,
-      `DESCRIPTION:${esc(`${e.type}${e.note ? ` · ${e.note}` : ''}\n${e.source_kind === 'organizer' ? 'Date from organizer' : 'Details and tickets'}: ${e.source_url}\nListed on The Celtic Coo: ${site}events/#${e.id}`)}`,
+      `DESCRIPTION:${esc(`${e.type}${e.cost === 'free' ? ' · Free admission' : ''}${e.note ? ` · ${e.note}` : ''}\n${e.source_kind === 'organizer' ? 'Date from organizer' : 'Details and tickets'}: ${e.source_url}\nListed on The Celtic Coo: ${site}events/#${e.id}`)}`,
       `URL:${e.source_url}`,
       `CATEGORIES:${esc(e.category)}`,
       'TRANSP:TRANSPARENT',

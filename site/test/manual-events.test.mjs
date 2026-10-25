@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { events, burns, regionName, mergeManualEvents, manualBurnsRows, sourceLinkLabel, dateConfirmLine } from '../src/lib/data.js';
+import { events, burns, regionName, mergeManualEvents, manualBurnsRows, sourceLinkLabel, dateConfirmLine, normCost, decorateEvent } from '../src/lib/data.js';
 
 const NAME = 'Scottish Society of Ottawa Burns Supper';
 const manual = JSON.parse(fs.readFileSync(new URL('../../data/events_manual.json', import.meta.url), 'utf8'));
@@ -88,6 +88,46 @@ test('manual rows keep their province, and only Burns suppers join the Burns lis
   const [supper] = manualBurnsRows(manual);
   assert.equal(supper.province, 'ON');
   assert.equal(supper.status, 'confirmed (date from organizer)');
+});
+
+test('cost passes through, and an invalid value becomes unknown', () => {
+  const row = decorateEvent({
+    name: 'Sample parade',
+    start_date: '2027-03-14',
+    city: 'Toronto',
+    province_or_region: 'ON',
+    country: 'Canada',
+    type: 'Parade',
+    cost: 'free',
+    cost_quote: 'A free community celebration',
+    cost_source: 'https://example.test/parade',
+    notes: '',
+  });
+  assert.equal(row.cost, 'free');
+  assert.equal(row.cost_quote, 'A free community celebration');
+  assert.equal(row.cost_source, 'https://example.test/parade');
+  assert.equal(row.category, 'Parades');
+  assert.equal(normCost({ cost: 'paid' }), 'paid');
+  assert.equal(normCost({ cost: '  Unknown ' }), 'unknown');
+  assert.equal(normCost({ cost: 'complimentary' }), 'unknown');
+  assert.equal(normCost({ cost: 'nope', offers: { price: 0 } }), 'unknown');
+  assert.equal(normCost({}), 'unknown');
+  assert.equal(normCost({ cost: '' }), 'unknown');
+  assert.equal(normCost({ offers: { price: 0 } }), 'free');
+  assert.equal(normCost({ offers: { price: 12 } }), 'paid');
+  assert.equal(normCost({ cost: 'unknown', offers: { price: 0 } }), 'unknown');
+  const priced = decorateEvent({
+    name: 'Priced concert',
+    start_date: '2027-11-27',
+    city: 'Calgary',
+    province_or_region: 'AB',
+    country: 'Canada',
+    type: 'Performance (concert)',
+    offers: { url: 'https://example.test/tickets', price: 59.85, priceCurrency: 'CAD' },
+    notes: '',
+  });
+  assert.equal(priced.cost, 'paid');
+  assert.equal(priced.category, 'Performances & demos');
 });
 
 test('the public record has no personal contact details', () => {
