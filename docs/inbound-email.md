@@ -1,32 +1,86 @@
 # Inbound mail for hello@celticcoo.ca
 
-Mail to `hello@celticcoo.ca` is forwarded today by Cloudflare Email Routing to the owner's inbox. The Worker in `workers/inbound/` (`celticcoo-inbound`) can take that job: it forwards a copy first, then stores the message, classifies it, and opens a GitHub issue for an event listing or a correction.
+`hello@celticcoo.ca` is handled by the Worker in `workers/inbound/` (`celticcoo-inbound`) when the Email Routing rule for that address sends to the Worker. The Worker forwards a copy first, then stores the message, classifies it, and opens a GitHub issue for an event listing or a correction. A vague or incomplete inquiry can also get a clarifying draft. That draft is not sent to the person who wrote in unless you approve it.
 
-Nothing in this repository changes the live routing rule. Deploying the Worker does not point `hello@` at it. Switch the rule only after the steps below, and only when you want to.
-
-The Worker's Wrangler config has no `addresses` list. Wrangler would otherwise create or take over the Email Routing rule on deploy. Leaving it out keeps the current forward-to-Gmail rule in place.
+This repository does not change the live routing rule. The Wrangler config has no `addresses` list and no `routes` list. Wrangler would otherwise create or take over the Email Routing rule, or replace a hostname you attached in the dashboard. Leaving both out keeps those dashboard settings in place on deploy.
 
 ## What the Worker does
 
 1. Forwards the message to `FORWARD_TO` before it parses, stores, or classifies. That address is a verified Email Routing destination. It is not in the repo.
-2. If that forward does not happen, the handler throws after trying to store the row. The failure is in the Workers logs, and the sending server can retry the delivery. Do not point the routing rule here until `FORWARD_TO` is set. A message the platform marks as not forwardable is stored and the handler returns, because another attempt will not make it forwardable.
+2. If that forward does not happen, the handler throws after trying to store the row. The failure is in the Workers logs, and the sending server can retry the delivery. A message the platform marks as not forwardable is stored and the handler returns, because another attempt will not make it forwardable.
 3. Parses the sender, subject, date, and plain-text body. Attachment bytes are not stored. A note of the count and content types is. The raw message is capped at 256 KB before parsing.
 4. Stores a row in the existing D1 database `celticcoo-intake`, table `inbound_emails`.
-5. Classifies it as `event_listing_request`, `booking_inquiry`, `correction_or_update`, `partnership_or_press`, `spam`, or `other`. Workers AI (`@cf/meta/llama-3.1-8b-instruct`, JSON mode) does this when the binding works. Otherwise a rules fallback does. If the model and a clear rules match disagree about opening or suppressing an issue, the rules win.
-6. For `event_listing_request` and `correction_or_update`, opens an issue in `rsakauye/celticcoo` with the label `inbound:event-request` or `inbound:correction`. The issue has the D1 row id, a short summary, and public event fields (title, host, date, city, province, venue, URL). It does not include the sender's email, phone, or message body.
-7. Does not fetch any URL from the email, does not publish an event, and does not reply. `ACK_REPLIES` is `off` in `workers/inbound/wrangler.jsonc`. A reply is sent only if that value is changed to `on` and the Worker is redeployed.
+5. Classifies it as `event_listing_request`, `booking_inquiry`, `correction_or_update`, `partnership_or_press`, `spam`, or `other`. Workers AI (`@cf/meta/llama-3.1-8b-instruct`) does this when the binding works. Otherwise a rules fallback does. If the model and a clear rules match disagree about opening or suppressing an issue, the rules win. There is no minimum body length. A short note is still sent to the model.
+6. For `event_listing_request` and `correction_or_update`, opens an issue in `rsakauye/celticcoo` with the label `inbound:event-request` or `inbound:correction`. The issue has the D1 row id, a short summary, and public event fields (title, host, date, city, province, venue, URL). It does not include the sender's email, phone, or message body. If a clarifying draft exists, the draft text is included. The approval link is not.
+7. When `CLARIFY_DRAFTS` is `drafts` (the default), a vague, incomplete, or contradictory inquiry gets a short draft that asks only for what is missing. The draft is stored on the same row with status `pending_approval`. A private review note is sent to `FORWARD_TO` when the email binding is available. Nothing is sent to the original sender until you approve that draft.
+8. Does not fetch any URL from the email and does not publish an event. `ACK_REPLIES` is `off`. An automatic receipt is sent only if that value is changed to `on` and the Worker is redeployed. That receipt is separate from clarifying drafts.
 
 Only `hello@celticcoo.ca`, including plus-addresses such as `hello+events@celticcoo.ca`, is stored and classified. Any other recipient is forwarded and then ignored, in case a rule is pointed here by mistake.
 
-The email is untrusted. Instructions inside it are not followed. The model is asked for JSON only, and the result is checked against the category list. A field that is not in that schema is dropped.
+The email is untrusted. Instructions inside it are not followed. The model is asked for JSON only, and the result is checked against the category list. A field that is not in that schema is dropped. The clarifying draft is built from fixed questions, not from the model's free text, so the inbound message cannot write the reply.
+
+## Why one live row stayed on the rules classifier
+
+A message stored as row `b0e54ddb-eca8-4072-99f3-c1efb4d60824` had `classifier=rules`, category `other`, and confidence `0.35`. Worker logs showed no AI call and no error. That confidence is the rules score for `other` when no keyword matches. It is not a cutoff that skips the model.
+
+`classifier=rules` means the model result was not kept. The previous code could do that in three ways, and none of them wrote a log line:
+
+- `env.AI.run` was missing or was not a function, so the call was skipped.
+- The call threw, including a JSON-mode or schema rejection, and an empty `catch` returned the rules result.
+- The call returned text that was not the category schema, and that was treated as "no model result" with no log.
+
+The stored row does not say which of those happened. A direct Workers AI call on the account can succeed and this Worker can still fail, because the Worker was sending `response_format` JSON schema (and previously `temperature: 0`) and then hiding the failure. There is no separate short-body rule.
+
+The Worker now logs one line, `inbound classify`, with a short `reason` and no message body:
+
+| `reason` | Meaning |
+|---|---|
+| `ai_ok` | JSON mode returned a usable category. |
+| `ai_text` | JSON mode failed or was unusable, and a second call with messages only succeeded. |
+| `ai_unavailable` | The AI binding or `run` was missing, or the call failed because `run` was not a function. The log also has `binding` and `run` types (`function`, `object`, `missing`). |
+| `ai_request` | The call was rejected for JSON mode, schema, temperature, or `max_tokens`. |
+| `ai_unparsed` | The model replied, but not with a category in the allowed list. |
+| `ai_failed` | The call threw for another reason. The error text is not logged, because it can echo the email. |
+| `rules_override` | The model answered, and a clear rules match overrode it. |
+
+The same code is stored on the row as `classifier_reason`. JSON mode is still tried first. `additionalProperties` is no longer sent in the schema. If that attempt throws or does not parse, the Worker tries once more with only the messages, which is the shape of a plain Workers AI call, and logs which path worked.
+
+## Clarifying drafts
+
+`CLARIFY_DRAFTS` in `workers/inbound/wrangler.jsonc` is `drafts`. Any other value except `off` means the same thing. There is no setting that sends a reply by itself. Set it to `off` and redeploy to stop new drafts.
+
+A draft is created for an event listing, correction, or booking that is missing a date, a time, a place, or an event name; for a date that is already past; for two dates that disagree (a correction that states the old date and the new one is not treated as a contradiction); for a link that is not a normal http(s) URL; for an organizer name that does not appear in the link, unless the link is a known ticket or social host; and for a note classified as `other` or a very short partnership note. Spam is skipped. Mail from `noreply`, a list, or an auto-reply is skipped.
+
+The draft status on the row is:
+
+| Status | Meaning |
+|---|---|
+| `pending_approval` | Stored. Not sent to the sender. |
+| `approved` | You approved it, and the send has not finished or did not succeed. Approving again retries the send. |
+| `sent` | Sent once from `hello@celticcoo.ca`. Approving again does not send it again. |
+| `discarded` | Dropped. Nothing was sent. |
+
+The GitHub issue, when one is opened, includes the draft text and says that it has not been sent. It does not include the approval link. A booking or other note does not open an issue. The private review note covers those.
+
+### Why approval is a signed link, not a GitHub label
+
+A GitHub label or comment would only cover mail that opens an issue, so bookings would be left out. The issue can be read by anyone who can see the repo, so the thing that allows a send cannot be written there. GitHub also does not tell this Worker when a label changes unless a webhook is added, and this Worker has no public route in the repo for that webhook to call.
+
+A signed link in the review note works for every category. The note goes only to `FORWARD_TO`. The token is an HMAC of the row id, the action (`approve` or `discard`), and an expiry seven days out. The secret is `REVIEW_SECRET`. The link is a bearer token until it expires: someone who has that email can approve. The draft itself is only the clarifying questions.
+
+Opening the link does not send. Link scanners in mail gateways request the URL with GET. GET shows the draft and a button. The send happens only on POST when the form includes `confirm=yes` and a valid token. Discard is the same kind of POST and does not send.
+
+The original forward is left unchanged. Adding the draft to that copy would mean rewriting a message that Email Routing is authenticating. The separate review note is the copy you act on.
+
+The approved reply is sent with the Worker's `send_email` binding (`EMAIL`), from `hello@celticcoo.ca`, to the stored reply-to address or otherwise the envelope sender. The binding is unrestricted in Wrangler for the same reason as the booking mailer: the destination is not known at deploy time, and your inbox must not be committed. The code will only send the review note to `FORWARD_TO`, and the approved reply only to that one stored sender. A draft that still contains an email address or a phone number is refused.
 
 ## One-time setup
 
-Do these in order. Steps 1–4 can happen before you switch routing. Step 5 is the switch.
+Do these in order. Deploy does not switch Email Routing and does not apply D1 migrations.
 
 ### 1. Apply the D1 migration
 
-The database is the same `celticcoo-intake` database as the booking form. The new file is `site/migrations/0002_inbound_emails.sql`. From the repo root, with Wrangler logged in to this Cloudflare account:
+The database is the same `celticcoo-intake` database as the booking form. `site/migrations/0002_inbound_emails.sql` creates `inbound_emails`. `site/migrations/0003_inbound_clarify.sql` adds the draft columns and `classifier_reason`. From the repo root, with Wrangler logged in to this Cloudflare account:
 
 ```bash
 read -rsp 'D1 database id: ' D1_DATABASE_ID; echo
@@ -35,9 +89,9 @@ node scripts/apply-intake-migration.mjs
 unset D1_DATABASE_ID
 ```
 
-That applies every migration in `site/migrations/` that is not already on the database. If `0001_intake.sql` is already applied, this adds `inbound_emails` only. The command does not print the database id. Do not commit the id.
+That applies every migration in `site/migrations/` that is not already on the database. The command does not print the database id. Do not commit the id.
 
-This repo's GitHub Actions workflow does not apply migrations.
+This repo's GitHub Actions workflow does not apply migrations. Until `0003` is applied, new mail will fail to store and the forward will still have been attempted. Apply it before the deploy that contains this code, or immediately after, and accept that mail in that gap is retried by the sender only if the forward itself failed.
 
 ### 2. Set the secrets and the database id
 
@@ -47,15 +101,22 @@ GitHub → Settings → Secrets and variables → Actions → Secrets:
 
 | Secret | What it is |
 |---|---|
-| `CLOUDFLARE_API_TOKEN` | Already used by the site deploy. Needs Workers Scripts:Edit, which the mailer deploy already needs. |
+| `CLOUDFLARE_API_TOKEN` | Already used by the site deploy. Needs Workers Scripts:Edit. |
 | `CLOUDFLARE_ACCOUNT_ID` | Already used by the site deploy. |
 | `D1_DATABASE_ID` | Already used by the booking intake. The UUID from `wrangler d1 create celticcoo-intake`. |
-| `FORWARD_TO` | The verified Email Routing destination that should keep receiving a copy. This is the inbox `hello@` forwards to today. The same address may already be the `BOOKING_TO` secret. Set `FORWARD_TO` itself. Do not assume the workflow copies `BOOKING_TO`. |
+| `FORWARD_TO` | The verified Email Routing destination that should keep receiving a copy. This is the inbox `hello@` forwards to. The same address may already be the `BOOKING_TO` secret. Set `FORWARD_TO` itself. |
 | `INBOUND_GITHUB_TOKEN` | Optional. A fine-grained personal access token, copied into the Worker secret `GITHUB_TOKEN` on deploy. Without it the Worker still forwards and logs. It does not open issues. |
+| `REVIEW_SECRET` | Optional until you want approval links. A random string, 16 to 200 characters, no spaces. `openssl rand -hex 32` is enough. Copied into the Worker secret `REVIEW_SECRET`. It is not a var. |
 
-`GITHUB_TOKEN` is the name of the **Worker** secret. GitHub Actions already reserves that name, so the Actions secret is `INBOUND_GITHUB_TOKEN`.
+GitHub → Settings → Secrets and variables → Actions → Variables:
 
-Token permission, and nothing broader:
+| Variable | What it is |
+|---|---|
+| `REVIEW_BASE_URL` | Optional. The https origin of this Worker, with no path, such as `https://review.celticcoo.ca`. Every inbound deploy passes it when it matches that shape. If a later deploy omits it, Wrangler drops the var, the same way it drops `FORWARD_TO`. |
+
+`GITHUB_TOKEN` and `REVIEW_SECRET` are Worker secret names. GitHub Actions already reserves `GITHUB_TOKEN`, so the Actions secret for issues is `INBOUND_GITHUB_TOKEN`. A deploy uploads whichever of those two is set and leaves other Worker secrets in place.
+
+Token permission for `INBOUND_GITHUB_TOKEN`, and nothing broader:
 
 - Fine-grained token, not a classic `repo` token.
 - Resource owner: the account that owns the repo.
@@ -63,20 +124,36 @@ Token permission, and nothing broader:
 - Repository permissions: **Issues: Read and write**.
 - Do not grant Contents, Administration, Pull requests, or Workflows. GitHub adds read-only Metadata on its own.
 
-That permission lets the Worker create the labels `inbound:event-request` and `inbound:correction` and open issues. It cannot push code.
-
-You can set the Worker secret by hand instead of storing the token in Actions:
+You can set the Worker secrets by hand instead:
 
 ```bash
 cd workers/inbound
 npx wrangler secret put GITHUB_TOKEN
+npx wrangler secret put REVIEW_SECRET
 ```
 
-Paste the token when prompted. A later deploy keeps an existing Worker secret if `INBOUND_GITHUB_TOKEN` is empty.
+`FORWARD_TO` is a Worker var, not a Cloudflare secret, same as `BOOKING_TO` on the mailer. It is still a GitHub secret so the address stays out of the repo. Every deploy of this Worker must pass `--var FORWARD_TO:...`.
 
-`FORWARD_TO` is a Worker var, not a secret on Cloudflare, same as `BOOKING_TO` on the mailer. It is still a GitHub secret so the address stays out of the repo. Every deploy of this Worker must pass `--var FORWARD_TO:...`. Wrangler drops a var that the config does not name when a later deploy omits it.
+### 3. Give the Worker a hostname for approval links
 
-### 3. Deploy the Worker
+Do this in the dashboard. Do not add a `routes` key to `wrangler.jsonc`. A routes key in that file would replace dashboard routes on the next deploy.
+
+1. Workers & Pages → `celticcoo-inbound` → Settings → Domains & Routes.
+2. Add a custom domain or route on a hostname that is not the Pages site. `celticcoo.ca` and `www.celticcoo.ca` belong to Pages. `review.celticcoo.ca` does not.
+3. Set the Actions variable `REVIEW_BASE_URL` to that origin, for example `https://review.celticcoo.ca`.
+
+Until both `REVIEW_SECRET` and `REVIEW_BASE_URL` are set, drafts are still stored and, for listings and corrections, still written into the GitHub issue. The review note says the links are not configured. Nothing is sent to the original sender.
+
+### 4. Let hello@ send mail
+
+The Worker has a `send_email` binding named `EMAIL`.
+
+- The review note goes to `FORWARD_TO`. That address is already a verified destination, so this part works with Email Routing alone.
+- The approved reply goes to the person who wrote in. That needs Email Sending on the Workers Paid plan, with `celticcoo.ca` onboarded as a sending domain, so `hello@celticcoo.ca` can be the From address. Onboard the domain under **Compute → Email Service → Email Sending** if it is not already. The booking mailer already sends as `bookings@celticcoo.ca` once the domain is onboarded; this Worker sends as `hello@celticcoo.ca`.
+
+If sending the approved reply fails, the row stays `approved` and the approval page says it was not sent. The same link can be used again. The sender does not get a partial or automatic reply.
+
+### 5. Deploy the Worker
 
 Push to `main`, or run the "Build & deploy site" workflow by hand. The `inbound-email` job runs the tests, then deploys only when `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `FORWARD_TO`, and `D1_DATABASE_ID` are all set. If any of those is missing, the job logs `Skipping celticcoo-inbound deploy` and exits successfully. The Pages deploy is a separate job and is unchanged.
 
@@ -87,57 +164,45 @@ To deploy once from your own machine, without writing the database id into the c
 ```bash
 read -rsp 'D1 database id: ' D1_DATABASE_ID; echo
 read -rsp 'Forward to: ' FORWARD_TO; echo
-export D1_DATABASE_ID FORWARD_TO
+read -rsp 'Review origin (or leave empty): ' REVIEW_BASE_URL; echo
+export D1_DATABASE_ID FORWARD_TO REVIEW_BASE_URL
 node scripts/prepare-inbound-config.mjs workers/inbound/wrangler.jsonc workers/inbound/.wrangler-deploy.jsonc
 cd workers/inbound
+# Pass REVIEW_BASE_URL only when it is an https origin with no path.
 npx wrangler deploy --config .wrangler-deploy.jsonc --var "FORWARD_TO:${FORWARD_TO}"
 rm -f .wrangler-deploy.jsonc
-unset D1_DATABASE_ID FORWARD_TO
+unset D1_DATABASE_ID FORWARD_TO REVIEW_BASE_URL
 ```
 
-`.wrangler-deploy.jsonc` is gitignored. Confirm `celticcoo-inbound` exists in the Workers list. Do not switch routing yet. Send a test message only after step 5, or it will still follow the old rule.
+`.wrangler-deploy.jsonc` is gitignored. Add `--var "REVIEW_BASE_URL:https://review.celticcoo.ca"` on that deploy when the hostname exists. Set `REVIEW_SECRET` with `wrangler secret put` before relying on the links. Secrets are not deleted by a deploy that does not mention them.
 
-Workers AI is a binding. There is no AI token to paste. If the account cannot run the model, the Worker uses the rules fallback and still forwards. The model id is the `AI_MODEL` var. JSON mode for this model is documented by Cloudflare at [Workers AI JSON mode](https://developers.cloudflare.com/workers-ai/features/json-mode/).
+Workers AI is a binding. There is no AI token to paste. If the account cannot run the model, the Worker uses the rules fallback, logs the reason, and still forwards. The model id is the `AI_MODEL` var.
 
-### 4. Read a row without publishing it
+### 6. Read a row without publishing it
 
 ```bash
 read -rsp 'D1 database id: ' D1_DATABASE_ID; echo
 export D1_DATABASE_ID
-node scripts/intake-d1.mjs execute --command "SELECT id, category, confidence, classifier, forward_status, issue_status, issue_url, created_at FROM inbound_emails ORDER BY created_at DESC LIMIT 20;"
+node scripts/intake-d1.mjs execute --command "SELECT id, category, confidence, classifier, classifier_reason, clarify_status, forward_status, issue_status, issue_url, created_at FROM inbound_emails ORDER BY created_at DESC LIMIT 20;"
 unset D1_DATABASE_ID
 ```
 
-Selecting `envelope_from`, `from_header`, `reply_to`, `subject`, `text_body`, or `summary` can print personal data on your machine. Don't paste that output into chat, a commit, an issue, or a log.
+Selecting `envelope_from`, `from_header`, `reply_to`, `subject`, `text_body`, or `summary` can print personal data on your machine. Don't paste that output into chat, a commit, an issue, or a log. `clarify_draft` is the questions, not the inbound message. `classifier_reason` is one of the codes above.
 
-`forward_status` is `sent`, `failed`, or `skipped`. `issue_status` is `skipped`, `filed`, or `failed`. Actionable mail is the GitHub issue. The other categories stay in D1 only.
+`forward_status` is `sent`, `failed`, or `skipped`. `issue_status` is `skipped`, `filed`, or `failed`. `clarify_status` is empty, `pending_approval`, `approved`, `sent`, or `discarded`.
 
-### 5. Switch the routing rule
-
-Do this last, after a deploy with `FORWARD_TO` set. `FORWARD_TO` must already be a verified destination address. The inbox that receives `hello@` today is already verified.
-
-1. In the Cloudflare dashboard, go to **Compute → Email Service → Email Routing → Routing rules** for `celticcoo.ca`.
-2. Edit the rule whose address is `hello` (the address `hello@celticcoo.ca`).
-3. Change the action from **Send to an email** to **Send to a Worker**.
-4. Choose `celticcoo-inbound`.
-5. Save.
-
-There must be only one rule for that address. The dashboard uses the first matching rule.
-
-Send a message to `hello@celticcoo.ca` from a different account than the destination. Confirm the destination inbox still gets a copy, and that a row exists with the query in step 4. For a listing request, confirm the GitHub issue has no sender address and no phone number.
-
-Logs are Workers logs for `celticcoo-inbound`. They record the category and the row id, not the body or the sender.
+After the next real message, `classifier_reason` should be `ai_ok` or `ai_text` when the model ran, or a specific failure code when it did not. The Workers log line `inbound classify` has the same reason.
 
 ## Turn acknowledgement replies on
 
-Leave this off until you want a one-line receipt. The receipt does not quote the inbound message.
+Leave this off until you want a one-line receipt. The receipt does not quote the inbound message and is not the clarifying draft.
 
 1. In `workers/inbound/wrangler.jsonc`, set `ACK_REPLIES` to `"on"`.
 2. Deploy the Worker again.
 
-The next deploy from git uses the value in that file. A dashboard edit is overwritten by the next deploy. Replies use `message.reply` on the inbound message. The Worker has no `send_email` binding, so it cannot send to an arbitrary address.
+The next deploy from git uses the value in that file. A dashboard edit is overwritten by the next deploy. Receipts use `message.reply` on the inbound message. They do not use the approval link and they do not wait for `REVIEW_SECRET`.
 
-Automated mail (`Auto-Submitted`, list mail, `noreply`, `mailer-daemon`) is not answered, even when the flag is on.
+Automated mail (`Auto-Submitted`, list mail, `noreply`, `mailer-daemon`) is not answered, even when the flag is on. That mail also does not get a clarifying draft.
 
 ## Roll back
 
@@ -147,6 +212,8 @@ Automated mail (`Auto-Submitted`, list mail, `noreply`, `mailer-daemon`) is not 
 4. Save.
 
 New mail goes straight to that inbox again. The Worker can stay deployed; it receives nothing until a rule points at it. Rows already in `inbound_emails` stay. Do not delete the `celticcoo-intake` database to undo this. Booking requests live in that database too.
+
+To stop new drafts without moving the mailbox, set `CLARIFY_DRAFTS` to `off` and redeploy. Drafts already waiting can still be approved until you remove `REVIEW_SECRET` or the review hostname. To stop sends and keep drafts, remove the review hostname. A sent reply cannot be unsent from this Worker.
 
 To remove the Worker after the rule no longer points at it:
 
@@ -163,4 +230,4 @@ That does not delete D1, and it does not change DNS.
 cd workers/inbound && npm ci && npm test
 ```
 
-The tests cover MIME parsing, the rules fallback, issue-body redaction, and the forward-first behaviour. Cloudflare bindings are mocked. They do not call Workers AI, GitHub, or Email Routing.
+The tests cover MIME parsing, the rules fallback, the classifier failure reasons, drafting, approval, issue-body redaction, and the forward-first behaviour. Cloudflare bindings are mocked. They do not call Workers AI, GitHub, or Email Routing.

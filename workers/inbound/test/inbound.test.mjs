@@ -488,6 +488,8 @@ test('event mail is stored, redacted into one issue, and not sent anywhere else'
   assert.equal(hasPrivateContact(`${body.title}\n${body.body}`), false);
   assert.doesNotMatch(`${body.title}\n${body.body}`, /ada@example.com/);
   assert.doesNotMatch(`${body.title}\n${body.body}`, /403-555-0199/);
+  assert.doesNotMatch(`${body.title}\n${body.body}`, /\/review\?/);
+  assert.doesNotMatch(`${body.title}\n${body.body}`, /token=/);
   assert.doesNotMatch(issueCall.init.body, /JVBERi0/);
   const insert = db.calls.find((call) => /INSERT INTO inbound_emails/i.test(call.sql));
   assert.equal(insert.args.includes(SENDER), true);
@@ -543,7 +545,7 @@ test('acknowledgement stays off unless ACK_REPLIES is on, and the receipt quotes
 
 test('the worker source and config do not contain a destination inbox or a routing rule', () => {
   const root = join(here, '..');
-  const source = ['src/index.js', 'src/issue.js', 'src/classify.js', 'wrangler.jsonc']
+  const source = ['src/index.js', 'src/issue.js', 'src/classify.js', 'src/clarify.js', 'src/review.js', 'src/token.js', 'src/store.js', 'wrangler.jsonc']
     .map((file) => readFileSync(join(root, file), 'utf8'))
     .join('\n');
   assert.doesNotMatch(source, /gmail\.com/i);

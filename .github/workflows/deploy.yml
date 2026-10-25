@@ -147,6 +147,8 @@ jobs:
           FORWARD_TO: ${{ secrets.FORWARD_TO }}
           D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
           INBOUND_GITHUB_TOKEN: ${{ secrets.INBOUND_GITHUB_TOKEN }}
+          REVIEW_SECRET: ${{ secrets.REVIEW_SECRET }}
+          REVIEW_BASE_URL: ${{ vars.REVIEW_BASE_URL }}
         run: |
           if [ -z "${CLOUDFLARE_API_TOKEN}" ] || [ -z "${CLOUDFLARE_ACCOUNT_ID}" ] || [ -z "${FORWARD_TO}" ] || [ -z "${D1_DATABASE_ID}" ]; then
             echo "::notice::Skipping celticcoo-inbound deploy. Need CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, FORWARD_TO, and D1_DATABASE_ID. Email Routing is unchanged. See docs/inbound-email.md."
@@ -157,11 +159,26 @@ jobs:
           secret_file=""
           cleanup() { if [ -n "${secret_file}" ]; then rm -f "$secret_file"; fi; }
           trap cleanup EXIT
-          if [ -n "${INBOUND_GITHUB_TOKEN}" ]; then
-            secret_file="$(mktemp)"
-            node --input-type=module -e 'import { writeFileSync } from "node:fs"; writeFileSync(process.argv[1], JSON.stringify({ GITHUB_TOKEN: process.env.INBOUND_GITHUB_TOKEN }), { mode: 0o600 });' "$secret_file"
+          secret_file="$(mktemp)"
+          if node --input-type=module -e '
+            import { writeFileSync } from "node:fs";
+            const secrets = {};
+            const github = process.env.INBOUND_GITHUB_TOKEN || "";
+            if (github) secrets.GITHUB_TOKEN = github;
+            const review = process.env.REVIEW_SECRET || "";
+            if (review && review.length >= 16 && review.length <= 200 && !/\s/.test(review)) secrets.REVIEW_SECRET = review;
+            else if (review) console.error("REVIEW_SECRET is set but not usable. Approval links stay off.");
+            if (Object.keys(secrets).length === 0) process.exit(2);
+            writeFileSync(process.argv[1], JSON.stringify(secrets), { mode: 0o600 });
+          ' "$secret_file"; then
             secret_args=(--secrets-file "$secret_file")
           else
-            echo "::notice::INBOUND_GITHUB_TOKEN is not set. Mail will still be forwarded and logged. GitHub issues stay off until the Worker secret GITHUB_TOKEN is set."
+            echo "::notice::INBOUND_GITHUB_TOKEN and REVIEW_SECRET are not set. Mail will still be forwarded and logged. GitHub issues and approval links stay off."
           fi
-          npx --yes wrangler@4 deploy --var "FORWARD_TO:${FORWARD_TO}" "${secret_args[@]}"
+          var_args=(--var "FORWARD_TO:${FORWARD_TO}")
+          if [[ "${REVIEW_BASE_URL}" =~ ^https://[A-Za-z0-9.-]+(:[0-9]+)?$ ]]; then
+            var_args+=(--var "REVIEW_BASE_URL:${REVIEW_BASE_URL}")
+          elif [ -n "${REVIEW_BASE_URL}" ]; then
+            echo "::notice::REVIEW_BASE_URL must be an https origin with no path. Approval links stay off."
+          fi
+          npx --yes wrangler@4 deploy "${var_args[@]}" "${secret_args[@]}"

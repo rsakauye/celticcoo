@@ -81,6 +81,20 @@ export function buildIssue(input) {
   if (attachments > 0) {
     lines.push('', `Attachments on the private row: ${attachments}. Their contents are not included here.`);
   }
+  const draft = seal(String(source.clarifyDraft || ''));
+  if (draft && !hasPrivateContact(draft)) {
+    lines.push(
+      '',
+      '## Clarifying draft',
+      '',
+      'Status: pending_approval. This draft has not been sent.',
+      'Do not approve it from this issue. The approval link is only in the private review note.',
+      '',
+      draft,
+    );
+  } else if (source.clarifyDraft) {
+    lines.push('', 'A clarifying draft is stored on the private row. It was left off this issue because it contained contact details.');
+  }
   lines.push(
     '',
     'This issue does not publish an event and does not contact the sender.',
