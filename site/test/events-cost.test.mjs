@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { category, CATEGORY_EMOJI, TAG_LABEL, events, tba } from '../src/lib/data.js';
+import { eventJsonLd } from '../src/lib/eventLd.js';
 import { eventMatches, filtersFromSearch, searchFromFilters } from '../src/lib/eventFilters.js';
 
 const DATA = [
@@ -88,6 +89,67 @@ test('free and paid rows quote the organizer, and every researched tag has a quo
   assert.equal(TAG_LABEL.parade, 'Parade');
   assert.equal(TAG_LABEL['tartan-day'], 'Tartan Day');
   assert.equal(TAG_LABEL['st-patricks'], "St. Patrick's");
+});
+
+test('verified cultural listings use the cost and category the organizer supports', () => {
+  const dated = Object.fromEntries(events.map((e) => [e.name, e]));
+  const pending = Object.fromEntries(tba.map((e) => [e.name, e]));
+
+  const ets = dated['ETS Pipes and Drums Ceilidh Night'];
+  assert.equal(ets.start_date, '2026-11-07');
+  assert.equal(ets.category, 'Ceilidhs');
+  assert.equal(ets.cost, 'paid');
+  assert.match(ets.cost_quote, /Meal with an alcoholic beverage/);
+  assert.equal(ets.offers, undefined);
+
+  const christmas = dated['A Celtic Family Christmas with Natalie MacMaster & Donnell Leahy'];
+  assert.equal(christmas.start_date, '2026-11-26');
+  assert.equal(christmas.category, 'Performances & demos');
+  assert.equal(christmas.cost, 'unknown');
+  assert.equal((christmas.tags || []).includes('family-friendly'), false);
+
+  const tenors = dated['The Celtic Tenors: A Celtic Christmas'];
+  assert.equal(tenors.category, 'Performances & demos');
+  assert.equal(tenors.cost, 'paid');
+  assert.equal(tenors.offers.price, 59.85);
+  assert.equal(tenors.offers.priceCurrency, 'CAD');
+  assert.equal('isAccessibleForFree' in eventJsonLd(tenors), false);
+
+  const toronto = dated["Toronto St. Patrick's Parade"];
+  assert.equal(toronto.start_date, '2027-03-14');
+  assert.equal(toronto.category, 'Parades');
+  assert.equal(toronto.cost, 'free');
+  assert.match(toronto.cost_quote, /free community celebration/);
+  assert.equal(eventJsonLd(toronto).isAccessibleForFree, true);
+  assert.ok(toronto.tags.includes('parade'));
+  assert.ok(toronto.tags.includes('st-patricks'));
+
+  const tartan = dated['National Tartan Day on Parliament Hill'];
+  assert.equal(tartan.start_date, '2027-04-11');
+  assert.equal(tartan.category, 'Cultural celebrations');
+  assert.equal(tartan.cost, 'unknown');
+  assert.equal(tartan.cost_quote, '');
+
+  assert.equal(dated["Ottawa St. Patrick's Parade"], undefined);
+  const ottawa = pending["Ottawa St. Patrick's Parade"];
+  assert.equal(ottawa.category, 'Parades');
+  assert.equal(ottawa.cost, 'unknown');
+
+  const dinner = pending["St. Patrick's Dinner & Dance (Edmonton Irish Sports and Social Society)"];
+  assert.equal(dinner.category, 'Cultural celebrations');
+  assert.notEqual(dinner.category, 'Highland dance');
+
+  assert.equal(pending['Tartans and Tunes (Flagstaff Scottish Club)'].cost, 'free');
+  const festival = pending['National Bank Tattoo Festival (free pipe band and Highland dance shows)'];
+  assert.equal(festival.cost, 'free');
+  assert.equal(festival.category, 'Performances & demos');
+  assert.equal(pending["Montreal St. Patrick's Parade"].cost, 'unknown');
+  assert.equal(pending["St. Patrick's Day at the Irish Cultural Centre"].category, 'Cultural celebrations');
+
+  const names = [...events, ...tba].map((e) => e.name).join('\n');
+  assert.equal(/kirkin/i.test(names), false);
+  assert.equal(/heritage festival/i.test(names), false);
+  assert.equal(/canada day parade/i.test(names), false);
 });
 
 test('Free only keeps free events and writes ?free=1', () => {

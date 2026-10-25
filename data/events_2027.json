@@ -1536,5 +1536,183 @@
     "url": "https://sprucemeadows.com/"
    }
   ]
+ },
+ {
+  "name": "ETS Pipes and Drums Ceilidh Night",
+  "start_date": "2026-11-07",
+  "end_date": "2026-11-07",
+  "city": "Edmonton",
+  "province_or_region": "AB",
+  "country": "Canada",
+  "type": "Ceilidh",
+  "source_url": "https://www.eventbrite.com/e/ets-pipes-and-drums-ceilidh-night-sherlock-holmes-pub-north-location-tickets-1994629304945",
+  "source_kind": "official",
+  "notes": "The Sherlock Holmes Pub North, 13580 137 Ave NW; 6-11:30 pm; under 18 with a parent or guardian, minors out by 9 pm",
+  "cost": "paid",
+  "cost_quote": "What is included with your ticket: Meal with an alcoholic beverage",
+  "tags": [
+   "ceilidh",
+   "pipe-band",
+   "music"
+  ],
+  "tag_quotes": {
+   "ceilidh": "a fun Ceilidh night filled with live tunes",
+   "pipe-band": "Join us for a fun evening with the ETS Pipes and Drums",
+   "music": "8:00 PM – Midnight – Live Music"
+  },
+  "summary": "A ceilidh night with the ETS Pipes and Drums, with live music and a silent auction. The ticket includes a meal and a drink.",
+  "summary_quotes": [
+   "Join ETS Pipes and Drums for a fun Ceilidh night filled with live tunes",
+   "6:00 PM – 9:00 PM – Silent Auction Open"
+  ],
+  "organizer": [
+   {
+    "name": "ETS Pipes and Drums Band"
+   }
+  ],
+  "added_date": "2026-10-25"
+ },
+ {
+  "name": "A Celtic Family Christmas with Natalie MacMaster & Donnell Leahy",
+  "start_date": "2026-11-26",
+  "end_date": "2026-11-26",
+  "city": "Calgary",
+  "province_or_region": "AB",
+  "country": "Canada",
+  "type": "Performance (concert)",
+  "source_url": "https://www.jubileeauditorium.com/calgary/celtic-family-christmas",
+  "source_kind": "official",
+  "notes": "Southern Alberta Jubilee Auditorium, 1415 14 Ave NW; 7:30 pm",
+  "cost": "unknown",
+  "cost_quote": "",
+  "tags": [
+   "music"
+  ],
+  "tag_quotes": {
+   "music": "their world-class band as they guide you through an exhilarating exploration of the Christmas season"
+  },
+  "summary": "Natalie MacMaster and Donnell Leahy bring their Celtic Family Christmas show to Calgary with their band.",
+  "summary_quotes": [
+   "join Natalie MacMaster & Donnell Leahy, their growing family, and their world-class band"
+  ],
+  "performers": [
+   "Natalie MacMaster",
+   "Donnell Leahy"
+  ],
+  "organizer": [
+   {
+    "name": "Live Nation"
+   }
+  ],
+  "added_date": "2026-10-25"
+ },
+ {
+  "name": "The Celtic Tenors: A Celtic Christmas",
+  "start_date": "2026-11-27",
+  "end_date": "2026-11-27",
+  "city": "Calgary",
+  "province_or_region": "AB",
+  "country": "Canada",
+  "type": "Performance (concert)",
+  "source_url": "https://www.showpass.com/the-celtic-tenors-a-celtic-christmas-3/",
+  "source_kind": "official",
+  "notes": "Knox United Church, 506 4 St SW; doors 6:30 pm, show 7:30 pm; all ages",
+  "cost": "paid",
+  "cost_quote": "$59.85 CAD",
+  "offers": {
+   "url": "https://www.showpass.com/the-celtic-tenors-a-celtic-christmas-3/",
+   "price": 59.85,
+   "priceCurrency": "CAD"
+  },
+  "tags": [
+   "music",
+   "family-friendly"
+  ],
+  "tag_quotes": {
+   "music": "haunting Celtic ballads and exhilarating classics",
+   "family-friendly": "All Ages."
+  },
+  "summary": "The Celtic Tenors play a Christmas concert of Celtic ballads, classics and a cappella songs at Knox United Church.",
+  "summary_quotes": [
+   "from haunting Celtic ballads and exhilarating classics, to acappellas and contemporary favourites"
+  ],
+  "performers": [
+   "The Celtic Tenors"
+  ],
+  "organizer": [
+   {
+    "name": "Gateway Events"
+   }
+  ],
+  "added_date": "2026-10-25"
+ },
+ {
+  "name": "Toronto St. Patrick's Parade",
+  "start_date": "2027-03-14",
+  "end_date": "2027-03-14",
+  "city": "Toronto",
+  "province_or_region": "ON",
+  "country": "Canada",
+  "type": "Parade",
+  "source_url": "https://www.stpatrickstoronto.com/",
+  "source_kind": "official",
+  "notes": "Noon, downtown Toronto. Volunteer-run since 1988.",
+  "cost": "free",
+  "cost_quote": "A free community celebration growing into a festival of Irish culture",
+  "tags": [
+   "parade",
+   "st-patricks",
+   "irish",
+   "family-friendly"
+  ],
+  "tag_quotes": {
+   "parade": "Next Parade: Sunday, March 14, 2027 at 12 PM",
+   "st-patricks": "ST PATRICK'S PARADE TORONTO",
+   "irish": "a festival of Irish culture",
+   "family-friendly": "built by volunteers, families, artists, local groups"
+  },
+  "summary": "Toronto's St. Patrick's Parade on March 14, 2027 is a free community celebration of Irish culture.",
+  "summary_quotes": [
+   "A free community celebration growing into a festival of Irish culture",
+   "Next Parade: Sunday, March 14, 2027 at 12 PM"
+  ],
+  "organizer": [
+   {
+    "name": "St. Patrick's Parade Society",
+    "url": "https://www.stpatrickstoronto.com/"
+   }
+  ],
+  "added_date": "2026-10-25"
+ },
+ {
+  "name": "National Tartan Day on Parliament Hill",
+  "start_date": "2027-04-11",
+  "end_date": "2027-04-11",
+  "city": "Ottawa",
+  "province_or_region": "ON",
+  "country": "Canada",
+  "type": "Cultural celebration (Tartan Day)",
+  "source_url": "https://www.sospb.com/tartan-day-celebrations.html",
+  "source_kind": "official",
+  "notes": "The band's page names April 11, 2027 as the next show. It does not yet repeat the program or say whether 2027 admission is free.",
+  "cost": "unknown",
+  "cost_quote": "",
+  "tags": [
+   "tartan-day"
+  ],
+  "tag_quotes": {
+   "tartan-day": "April 11, 2027 is our next National Tartan Day show!"
+  },
+  "summary": "The Sons of Scotland Pipe Band's next National Tartan Day show is April 11, 2027.",
+  "summary_quotes": [
+   "April 11, 2027 is our next National Tartan Day show!"
+  ],
+  "organizer": [
+   {
+    "name": "Sons of Scotland Pipe Band",
+    "url": "https://www.sospb.com/"
+   }
+  ],
+  "added_date": "2026-10-25"
  }
 ]

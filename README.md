@@ -96,10 +96,8 @@ What the pages emit now:
   scotdance.ca/sdccs/schedule/. Victoria, Fergus, and Cowal blocked a direct fetch; their
   organizer names are from their own about or association pages as indexed that week.
 - **isAccessibleForFree**, when `cost` is `free`. Paid and unknown events leave the property off.
-- **offers**, on 5 events where there is a real ticket page. No event has a `price`: the one page
-  that prints 2027 prices (the Worlds) also adds a transaction fee that is not a single per-ticket
-  number, and the Eventbrite listings do not show a price in the page HTML.
-- **performer**, on 2 events that name the act.
+- **offers**, where there is a real ticket page. A `price` is set only when that page prints one number for this edition. The Celtic Tenors concert is $59.85 CAD on its Showpass page. The Worlds page prints 2027 prices but adds a transaction fee that is not a single per-ticket number, and an Eventbrite page that does not show a price in the visible HTML (including the ETS ceilidh) has no `price`.
+- **performer**, when a named act is billed for that event. The original competitions name two acts. Natalie MacMaster and Donnell Leahy, and The Celtic Tenors, are billed on their concert pages, so those pages name them too.
 
 Still missing, on purpose:
 
