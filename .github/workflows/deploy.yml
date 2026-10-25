@@ -112,3 +112,56 @@ jobs:
         if: success() && env.CF_DEPLOY == 'true'
         continue-on-error: true
         run: node scripts/indexnow.mjs
+
+  # Separate from the Pages deploy. A missing secret skips this job's deploy
+  # step and leaves Email Routing on its current rule. The daily site rebuild
+  # does not redeploy this Worker.
+  inbound-email:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.4"
+          cache: npm
+          cache-dependency-path: workers/inbound/package-lock.json
+
+      - name: Test inbound email worker
+        working-directory: workers/inbound
+        run: |
+          npm ci
+          npm test
+
+      # Does not apply D1 migrations and does not set an Email Routing address.
+      # FORWARD_TO is a verified destination. It is a GitHub secret and must
+      # never be committed. INBOUND_GITHUB_TOKEN is copied into the Worker
+      # secret GITHUB_TOKEN. The Actions secret cannot be named GITHUB_TOKEN.
+      - name: Deploy inbound email Worker (celticcoo-inbound)
+        working-directory: workers/inbound
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          FORWARD_TO: ${{ secrets.FORWARD_TO }}
+          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+          INBOUND_GITHUB_TOKEN: ${{ secrets.INBOUND_GITHUB_TOKEN }}
+        run: |
+          if [ -z "${CLOUDFLARE_API_TOKEN}" ] || [ -z "${CLOUDFLARE_ACCOUNT_ID}" ] || [ -z "${FORWARD_TO}" ] || [ -z "${D1_DATABASE_ID}" ]; then
+            echo "::notice::Skipping celticcoo-inbound deploy. Need CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, FORWARD_TO, and D1_DATABASE_ID. Email Routing is unchanged. See docs/inbound-email.md."
+            exit 0
+          fi
+          node ../../scripts/prepare-inbound-config.mjs wrangler.jsonc
+          secret_args=()
+          secret_file=""
+          cleanup() { if [ -n "${secret_file}" ]; then rm -f "$secret_file"; fi; }
+          trap cleanup EXIT
+          if [ -n "${INBOUND_GITHUB_TOKEN}" ]; then
+            secret_file="$(mktemp)"
+            node --input-type=module -e 'import { writeFileSync } from "node:fs"; writeFileSync(process.argv[1], JSON.stringify({ GITHUB_TOKEN: process.env.INBOUND_GITHUB_TOKEN }), { mode: 0o600 });' "$secret_file"
+            secret_args=(--secrets-file "$secret_file")
+          else
+            echo "::notice::INBOUND_GITHUB_TOKEN is not set. Mail will still be forwarded and logged. GitHub issues stay off until the Worker secret GITHUB_TOKEN is set."
+          fi
+          npx --yes wrangler@4 deploy --var "FORWARD_TO:${FORWARD_TO}" "${secret_args[@]}"
