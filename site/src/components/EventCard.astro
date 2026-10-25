@@ -1,6 +1,6 @@
 ---
 import BookLink from './BookLink.astro';
-import { CATEGORY_EMOJI, COUNTRY_FLAG, FEATURES } from '../lib/data.js';
+import { CATEGORY_EMOJI, COUNTRY_FLAG, FEATURES, sourceLinkLabel } from '../lib/data.js';
 import { u } from '../lib/site.js';
 const { e } = Astro.props;
 ---
@@ -10,10 +10,11 @@ const { e } = Astro.props;
   <div class="muted" style="margin-bottom:.45rem">{COUNTRY_FLAG[e.country] || ''} {e.city}, {e.regionLabel}{e.country !== 'Canada' && e.country !== e.regionLabel ? `, ${e.country}` : ''}</div>
   <span class="pill green">{CATEGORY_EMOJI[e.category]} {e.category}</span>
   {e.type !== e.category && <span class="pill">{e.type}</span>}
+  {e.source_kind === 'organizer' && <span class="pill">Date from organizer</span>}
   {e.features && e.features.length > 0 && <div style="margin-top:.2rem">{e.features.map((f) => <a class="pill feat" href={e.features_source} rel="noopener" target="_blank" title="Listed on the organizer's site">{FEATURES[f][0]} {FEATURES[f][1]}</a>)}</div>}
   {e.note && <p class="muted" style="margin:.4rem 0 0">{e.note}</p>}
   {e.celtic_vendors && <p style="margin:.4rem 0 0;font-size:.92rem">🏴 {e.celtic_vendors}</p>}
-  <p style="margin:.55rem 0 0;font-size:.92rem"><a href={e.source_url} rel="noopener" target="_blank">{e.source_kind === 'official' ? 'Official site' : 'Association listing'} ↗</a></p>
+  <p style="margin:.55rem 0 0;font-size:.92rem"><a href={e.source_url} rel="noopener" target="_blank">{sourceLinkLabel(e.source_kind)} ↗</a></p>
   <p class="need"><BookLink eventId={e.id} name={e.name} /></p>
 </article>
 <style>

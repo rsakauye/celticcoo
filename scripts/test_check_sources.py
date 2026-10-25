@@ -224,5 +224,14 @@ class ReportShape(unittest.TestCase):
         self.assertIn("`404`", checked["report"])
 
 
+class ManualEventsStayOutOfThePageCheck(unittest.TestCase):
+    def test_organizer_submitted_event_is_not_page_checked(self):
+        manual = (cs.DATA / "events_manual.json").read_text(encoding="utf-8")
+        self.assertIn("Scottish Society of Ottawa Burns Supper", manual)
+        names = [ev["name"] for meta in cs.load_targets().values() for ev in meta["events"]]
+        self.assertNotIn("Scottish Society of Ottawa Burns Supper", names)
+        self.assertNotIn("https://ottscot.ca/", [url for url in cs.load_targets() if "ottscot.ca" in url])
+
+
 if __name__ == "__main__":
     unittest.main()

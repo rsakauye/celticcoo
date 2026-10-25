@@ -1,5 +1,6 @@
 // Real "last changed" dates for the sitemap (and IndexNow), instead of stamping every URL with the build date.
 //  - Event pages: the date of the commit where that event's entry in data/events_2027.json last changed.
+//    Organizer-submitted events live in data/events_manual.json and use that file's last change.
 //  - Other pages: the last commit that touched the page's source or the data it shows.
 // Needs full git history (CI checks out with fetch-depth 0). On a shallow or missing history we return null
 // and the sitemap omits <lastmod> rather than guessing.
@@ -10,6 +11,7 @@ import { slugify } from './data.js';
 
 const ROOT = path.resolve(process.cwd(), '..');
 const EVENTS = 'data/events_2027.json';
+const MANUAL = 'data/events_manual.json';
 const ymd = (ms) => new Date(ms).toLocaleDateString('en-CA', { timeZone: 'America/Edmonton' });
 const TODAY = ymd(Date.now());
 const git = (args) => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 64e6 }).trim();
@@ -53,6 +55,16 @@ export function eventLastmod(id) {
       } catch { /* leave missing -> no lastmod */ }
     }
   }
-  return eventDates.get(id) || null;
+  return eventDates.get(id) || manualLastmod(id);
+}
+
+let manualCache = null;
+function manualLastmod(id) {
+  if (!manualCache) {
+    let ids = new Set();
+    try { ids = new Set(byId(JSON.parse(fs.readFileSync(path.join(ROOT, MANUAL), 'utf8'))).keys()); } catch { ids = new Set(); }
+    manualCache = { ids, date: ids.size ? gitDate([MANUAL]) : null };
+  }
+  return manualCache.ids.has(id) ? manualCache.date : null;
 }
 export const maxDate = (ds) => ds.filter(Boolean).sort().pop() || null;
