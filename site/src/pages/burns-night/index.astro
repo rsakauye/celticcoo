@@ -16,6 +16,7 @@ const VENUE = {
 const dated = burns.filter((b) => b.dated);
 const tba = burns.filter((b) => !b.dated);
 const link = (b) => b.ticket_info_url || b.source_url;
+const linkLabel = (b) => (b.confirmed ? (/organizer/i.test(b.status) ? "Host's site" : 'Details & tickets') : 'Where we saw it');
 ---
 <Base title="Burns Night 2027: Burns suppers in Canada" description="What happens at a Burns Supper, and where to find one in Calgary, Alberta and across Canada for Burns Night 2027 (January 25).">
   <div class="intro">
@@ -47,7 +48,7 @@ const link = (b) => b.ticket_info_url || b.source_url;
         <h3>{b.name.replace(/^51st/, "Burns Club of Calgary's 51st")}</h3>
         <div class="muted">{b.host} · {b.city}, {b.regionLabel}</div>
         {VENUE[b.id] && <p style="margin:.35rem 0 0;font-size:.93rem">{VENUE[b.id]}</p>}
-        <p style="margin:.5rem 0 0;font-size:.92rem"><a href={link(b)} rel="noopener" target="_blank">{b.confirmed ? 'Details & tickets' : 'Where we saw it'} ↗</a></p>
+        <p style="margin:.5rem 0 0;font-size:.92rem"><a href={link(b)} rel="noopener" target="_blank">{linkLabel(b)} ↗</a></p>
         <p style="margin:.35rem 0 0;font-size:.92rem"><BookLink name={b.name} date={b.dated ? b.date : ''} city={b.city} province={b.regionLabel} venue={VENUE[b.id] || ''} /></p>
       </article>
     ))}

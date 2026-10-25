@@ -1,14 +1,90 @@
-import verified from '../../../data/events_2027.json';
-import pendingRaw from '../../../data/events_2027_pending.json';
-import shopsRaw from '../../../data/shops_canada.json';
-import groupsRaw from '../../../data/groups_canada.json';
-import burnsRaw from '../../../data/burns_2027.json';
-import championsRaw from '../../../data/season_champions.json';
+import verified from '../../../data/events_2027.json' with { type: 'json' };
+import pendingRaw from '../../../data/events_2027_pending.json' with { type: 'json' };
+import manualRaw from '../../../data/events_manual.json' with { type: 'json' };
+import shopsRaw from '../../../data/shops_canada.json' with { type: 'json' };
+import groupsRaw from '../../../data/groups_canada.json' with { type: 'json' };
+import burnsRaw from '../../../data/burns_2027.json' with { type: 'json' };
+import championsRaw from '../../../data/season_champions.json' with { type: 'json' };
 
 // ---------- helpers ----------
 export const slugify = (s) => String(s).toLowerCase()
   .normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
   .replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+export function eventKey(e) {
+  return slugify(`${e.name}-${e.start_date}`);
+}
+
+// Organizer-submitted rows need a real date, place, and name before they join the calendar.
+export function manualEventRows(manual) {
+  return (Array.isArray(manual) ? manual : []).filter((e) => (
+    e && typeof e.name === 'string' && e.name.trim()
+    && ISO_DATE.test(e.start_date || '')
+    && typeof e.city === 'string' && e.city.trim()
+    && typeof e.province_or_region === 'string' && e.province_or_region.trim()
+    && typeof e.country === 'string' && e.country.trim()
+  ));
+}
+
+// The researched file wins when the same name and date are already listed there.
+export function mergeManualEvents(verifiedEvents, manual) {
+  const seen = new Set((verifiedEvents || []).map(eventKey));
+  const extra = [];
+  for (const e of manualEventRows(manual)) {
+    const key = eventKey(e);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    extra.push(e);
+  }
+  return [...(verifiedEvents || []), ...extra];
+}
+
+function hostName(e) {
+  const orgs = Array.isArray(e.organizer) ? e.organizer : e.organizer ? [e.organizer] : [];
+  const names = orgs.map((o) => (typeof o === 'string' ? o : o?.name)).filter((n) => typeof n === 'string' && n.trim());
+  return names.map((n) => n.trim()).join(' / ') || e.name;
+}
+
+// Burns suppers submitted by a host also join the Burns Night list. An existing host+city row is kept.
+export function manualBurnsRows(manual, existing = []) {
+  const ids = new Set((existing || []).map((r) => slugify(`${r.host}-${r.city}`)));
+  const rows = [];
+  for (const e of manualEventRows(manual)) {
+    if (!/burns/i.test(String(e.type || ''))) continue;
+    const host = hostName(e);
+    const row = {
+      name: e.name,
+      date: e.start_date,
+      city: e.city,
+      province: e.province_or_region,
+      host,
+      status: (typeof e.status === 'string' && e.status.trim())
+        || (e.source_kind === 'organizer' ? 'confirmed (date from organizer)' : 'listed (manual)'),
+      ticket_info_url: e.source_url,
+      source_url: e.source_url,
+      notes: e.notes || '',
+    };
+    const id = slugify(`${row.host}-${row.city}`);
+    if (ids.has(id)) continue;
+    ids.add(id);
+    rows.push(row);
+  }
+  return rows;
+}
+
+export function sourceLinkLabel(kind) {
+  if (kind === 'official') return 'Official site';
+  if (kind === 'organizer') return "Organizer's site";
+  return 'Association listing';
+}
+
+export function dateConfirmLine(kind) {
+  if (kind === 'organizer') return 'The host submitted this date directly. It is not on their website yet.';
+  if (kind === 'official') return "We confirmed this date on the organizer's own website.";
+  return "We confirmed this date on the association's own website.";
+}
 
 const PROVINCES = {
   AB: 'Alberta', BC: 'British Columbia', SK: 'Saskatchewan', MB: 'Manitoba', ON: 'Ontario', QC: 'Quebec',
@@ -56,7 +132,8 @@ export function dateRange(start, end) {
 export const TODAY = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Edmonton' });
 
 // ---------- events ----------
-export const events = verified.map((e) => ({
+// events_manual.json is merged here. Deploy and the weekly source check do not rewrite that file.
+export const events = mergeManualEvents(verified, manualRaw).map((e) => ({
   ...e,
   end_date: e.end_date || e.start_date,
   id: slugify(`${e.name}-${e.start_date}`),
@@ -152,8 +229,9 @@ export const groups = groupsRaw.map((g) => ({
 export const featuredGroup = groups.find((g) => g.featured);
 
 // ---------- Burns Night 2027 ----------
-// status: "confirmed (...)" = host/organizer/venue page; "listed (...)" = secondary source; "date TBA".
-export const burns = burnsRaw.map((r) => {
+// status: "confirmed (...)" = host, organizer, or venue page, or a date the host submitted directly.
+// "listed (...)" = secondary source; "date TBA".
+export const burns = [...burnsRaw, ...manualBurnsRows(manualRaw, burnsRaw)].map((r) => {
   const dated = /^\d{4}-\d\d-\d\d$/.test(r.date);
   return {
     ...r,

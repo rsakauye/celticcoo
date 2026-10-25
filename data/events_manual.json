@@ -1,0 +1,24 @@
+[
+ {
+  "name": "Scottish Society of Ottawa Burns Supper",
+  "start_date": "2027-01-30",
+  "end_date": "2027-01-30",
+  "city": "Ottawa",
+  "province_or_region": "ON",
+  "country": "Canada",
+  "type": "Burns Supper",
+  "source_url": "https://ottscot.ca/",
+  "source_kind": "organizer",
+  "notes": "Venue not announced.",
+  "added_date": "2026-10-25",
+  "tags": [
+   "burns"
+  ],
+  "organizer": [
+   {
+    "name": "The Scottish Society of Ottawa",
+    "url": "https://ottscot.ca/"
+   }
+  ]
+ }
+]

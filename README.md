@@ -14,9 +14,10 @@ GitHub Actions and deployed to Cloudflare Pages with wrangler.
 |---|---|
 | `data/events_2027.json` | **Confirmed** events. Each date was checked on the organizer's or association's site. Published, in the ICS and RSS feeds. |
 | `data/events_2027_pending.json` | Expected events without a confirmed date. Shown on /events/ **only as "Date TBA"** (Canada only, no tentative dates) and never in the feeds. |
+| `data/events_manual.json` | Organizer-submitted or hand-curated events. Merged into the calendar at build time. Burns Supper rows are also added to the Burns Night list. The daily deploy and the weekly source check do not rewrite this file. |
 | `data/shops_canada.json` | Shops and makers directory. |
 | `data/groups_canada.json` | Clubs, bands, dance schools, clan societies, Gaelic classes (/groups/). Organizations only, never members' names. |
-| `data/burns_2027.json` | Burns Night 2027 suppers (/burns-night/). Host-confirmed rows are also in `events_2027.json` (type "Burns Supper"). |
+| `data/burns_2027.json` | Burns Night 2027 suppers (/burns-night/). Host-confirmed rows are also in `events_2027.json` (type "Burns Supper"). A Burns Supper in `events_manual.json` is added here at build time. |
 | `data/season_champions.json` | Hand-entered band-level season winners by grade, each with its source link (/results/). No soloists. |
 | `data/sources_and_orgs.csv` | Calendars and associations re-checked weekly. |
 | `data/source_state.json` | Last snapshot from the weekly source check (written by the workflow). |
@@ -31,8 +32,18 @@ GitHub Actions and deployed to Cloudflare Pages with wrangler.
 Edit `data/events_2027.json`. Only add it there once the date is on an official or association page.
 Otherwise put it in `events_2027_pending.json`. Pushing to `main` redeploys.
 
+If the host sent the date directly and it is not on their site yet, add it to `data/events_manual.json`
+instead. Use the same fields. Set `source_kind` to `organizer`. The build merges that file into the
+event list (and, for a Burns Supper, into the Burns Night list with status `confirmed (date from organizer)`,
+which shows the existing "✓ Confirmed by host" badge). A row already in `events_2027.json` with the
+same name and date is kept, so the manual copy does not list it twice. `deploy.yml` only builds the
+site, and the weekly source check only writes `data/source_state.json` and does not read the manual
+file, so a later research update cannot drop a host-submitted date. Do not put a person's name,
+email, or phone number in this file. `province_or_region` is a code such as `AB` or `ON`; the site
+turns that into the province name.
+
 Core fields: name, start_date, end_date, city, province_or_region, country, type, source_url,
-source_kind, notes. Optional structured-data fields, used on each event page:
+source_kind (`official`, `association`, or `organizer`), notes. Optional structured-data fields, used on each event page:
 
 | Field | When to set it |
 |---|---|

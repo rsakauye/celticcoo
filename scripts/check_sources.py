@@ -2,7 +2,9 @@
 """Weekly source re-check for The Celtic Coo.
 
 Fetches every calendar/list URL in data/sources_and_orgs.csv plus every event source_url in
-data/events_2027*.json, and compares each page with the last snapshot in data/source_state.json:
+data/events_2027.json and data/events_2027_pending.json, and compares each page with the last
+snapshot in data/source_state.json. data/events_manual.json is not read or written: those dates
+were submitted by the host and may not be on the linked page yet.
 
   * HTTP status / reachability changes
   * dates on the page that could still matter for the current or upcoming season
@@ -265,6 +267,9 @@ def load_targets():
             url = (row.get("calendar_or_list_url") or "").strip()
             if url.startswith("http") and "COMPETITOR" not in row.get("type", ""):
                 targets.setdefault(url, {"labels": [], "events": []})["labels"].append(row["name"])
+    # Organizer-submitted dates live in events_manual.json. The host confirmed them
+    # directly, so they are often missing from the linked page. This checker does
+    # not read or rewrite that file: a weekly run must not flag or drop them.
     for fname, confirmed in (("events_2027.json", True), ("events_2027_pending.json", False)):
         for e in json.loads((DATA / fname).read_text(encoding="utf-8")):
             url = e.get("source_url", "").strip()
