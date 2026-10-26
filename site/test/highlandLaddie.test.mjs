@@ -91,21 +91,39 @@ test('the arrangement file points at no external audio', () => {
   assert.equal(/\.(mid|midi|wav|mp3|ogg|flac)\b/i.test(src), false);
 });
 
-test('the dancing coo is on the home page only, still for reduced motion, and quiet until pressed', () => {
+test('the dancing coo is on the home hero only, tucked until tapped, and quiet until then', () => {
   const widget = readFileSync(join(site, 'src/components/CeilidhCoo.astro'), 'utf8');
   const home = readFileSync(join(site, 'src/pages/index.astro'), 'utf8');
-  assert.match(widget, /steps\(10\)/);
-  assert.match(widget, /image-rendering:\s*pixelated/);
-  assert.match(widget, /prefers-reduced-motion:\s*reduce/);
-  assert.match(widget, /animation:\s*none/);
-  assert.match(widget, /aria-pressed/);
-  assert.match(widget, /Play Highland Laddie/);
-  assert.match(widget, /aria-label="Mute"|'Mute'/);
-  assert.match(widget, /AudioContext/);
-  assert.match(widget, /Ceilidh Coo dancing a Highland fling/);
+  const layout = readFileSync(join(site, 'src/layouts/Base.astro'), 'utf8');
+  const html = widget.split('<script>')[0];
+  const css = widget.split('<style>')[1] || '';
+
+  assert.match(html, /aria-pressed="false"/);
+  assert.match(html, /aria-label="Bring out Ceilidh to dance"/);
+  assert.doesNotMatch(html, /data-out/);
+  assert.match(html, /tap me/);
+  assert.match(widget, /Tuck Ceilidh away and stop the music/);
+  assert.match(widget, /webkitAudioContext/);
+  assert.match(widget, /ctx\.resume\(\)/);
+  assert.doesNotMatch(widget, /await ctx\.resume|addEventListener\('click', async/);
   assert.equal(/localStorage|sessionStorage/.test(widget), false);
-  assert.match(home, /CeilidhCoo/);
-  assert.match(home, /slot="mascot"/);
+  assert.equal(/https?:\/\//.test(widget), false);
+
+  // iOS paints a steps() background-position slide as one frozen frame.
+  // The dance has to be a transform with both endpoints written out.
+  assert.match(css, /steps\(10,\s*end\)/);
+  assert.match(css, /image-rendering:\s*pixelated/);
+  assert.match(css, /from \{ transform: translate3d\(0, 0, 0\); \}/);
+  assert.match(css, /to \{ transform: translate3d\(-1280px, 0, 0\); \}/);
+  assert.match(css, /to \{ transform: translate3d\(-1920px, 0, 0\); \}/);
+  assert.doesNotMatch(css, /background-position\s*:/);
+  assert.match(css, /prefers-reduced-motion:\s*reduce/);
+  assert.match(css, /animation:\s*none/);
+  assert.match(css, /\[data-out\][\s\S]*coo-fling-2x/);
+
+  assert.match(home, /<section class="hero">[\s\S]*<CeilidhCoo \/>[\s\S]*<\/section>/);
+  assert.doesNotMatch(home, /slot="mascot"/);
+  assert.doesNotMatch(layout, /name="mascot"/);
 
   const pages = walk(join(site, 'src/pages')).filter((path) => path.endsWith('.astro'));
   const users = pages.filter((path) => readFileSync(path, 'utf8').includes('CeilidhCoo'));
