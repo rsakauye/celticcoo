@@ -11,7 +11,7 @@
 // event listing or a correction, turned into a redacted GitHub issue.
 // No URL from the message is fetched. ACK_REPLIES still defaults to off.
 // A clarifying draft is stored and shown for approval. This handler does not
-// send that draft to the original sender. Approval is a POST to /review.
+// send that draft to the original sender. Approval is a POST to /r/<id>.
 // There is no addresses field in wrangler.jsonc, so deploying this Worker does
 // not change the Email Routing rule. The owner switches that in the dashboard.
 
@@ -147,6 +147,9 @@ async function processHello(message, env, deps, forward) {
       draft: draft.draft,
       recipient: oneEmail(parsed.replyTo) || oneEmail(envelopeAddress(message.from)),
       forwardStatus: forward.status,
+      subject: parsed.subject || '',
+      original: parsed.text || '',
+      senderLabel: parsed.fromHeader || envelopeAddress(message.from),
     }, deps);
     reviewStatus = review.status;
   }

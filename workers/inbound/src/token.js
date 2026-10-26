@@ -86,18 +86,62 @@ export async function verifyAction(secret, { action, id, exp, token, nowSec }) {
   return sameBytes(expected, actual);
 }
 
-export async function reviewLinks(env, id, now) {
-  const secret = reviewSecret(env);
-  const origin = reviewOrigin(env);
-  if (!secret || !origin || !validRowId(id)) return null;
-  const nowSec = Math.floor(now.getTime() / 1000);
-  const exp = nowSec + TOKEN_TTL_SECONDS;
-  const approve = await signAction(secret, { action: 'approve', id, exp });
-  const discard = await signAction(secret, { action: 'discard', id, exp });
-  const base = `${origin}/review`;
-  return {
-    exp,
-    approve: `${base}?id=${id}&action=approve&exp=${exp}&token=${approve}`,
-    discard: `${base}?id=${id}&action=discard&exp=${exp}&token=${discard}`,
-  };
+const TOKEN_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+
+export function validReviewTokenId(value) {
+  return /^[0-9A-Za-z]{8,10}$/.test(String(value || ''));
+}
+
+// 10 characters from a base62 alphabet. Bytes at or above 248 are skipped
+// so the modulo does not bias the first characters.
+export function reviewTokenIdFromBytes(bytes) {
+  let out = '';
+  for (const byte of bytes) {
+    if (byte >= 248) continue;
+    out += TOKEN_ALPHABET[byte % 62];
+    if (out.length === 10) return out;
+  }
+  return '';
+}
+
+export function newReviewTokenId() {
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    const id = reviewTokenIdFromBytes(crypto.getRandomValues(new Uint8Array(24)));
+    if (id) return id;
+  }
+  const err = new Error('review token entropy failed');
+  err.code = 'token_entropy';
+  throw err;
+}
+
+export async function issueCsrf(secret, tokenId) {
+  const nonce = bytesToB64Url(crypto.getRandomValues(new Uint8Array(18)));
+  const mac = bytesToB64Url(await hmac(secret, `csrf.v1.${tokenId}.${nonce}`));
+  return `${nonce}.${mac}`;
+}
+
+export async function csrfPairMatches(left, right) {
+  const a = String(left || '');
+  const b = String(right || '');
+  if (!a || a.length !== b.length || a.length > 300) return false;
+  const enc = new TextEncoder();
+  const [leftBuf, rightBuf] = await Promise.all([
+    crypto.subtle.digest('SHA-256', enc.encode(a)),
+    crypto.subtle.digest('SHA-256', enc.encode(b)),
+  ]);
+  return sameBytes(new Uint8Array(leftBuf), new Uint8Array(rightBuf));
+}
+
+export async function verifyCsrf(secret, tokenId, presented) {
+  if (!secret || !validReviewTokenId(tokenId)) return false;
+  const value = String(presented || '');
+  const dot = value.indexOf('.');
+  if (dot < 10 || dot > 80) return false;
+  const nonce = value.slice(0, dot);
+  const mac = value.slice(dot + 1);
+  if (!/^[A-Za-z0-9_-]{10,80}$/.test(nonce)) return false;
+  const actual = b64UrlToBytes(mac);
+  if (!actual) return false;
+  const expected = await hmac(secret, `csrf.v1.${tokenId}.${nonce}`);
+  return sameBytes(expected, actual);
 }

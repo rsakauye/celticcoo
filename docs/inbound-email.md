@@ -66,9 +66,9 @@ The GitHub issue, when one is opened, includes the draft text and says that it h
 
 A GitHub label or comment would only cover mail that opens an issue, so bookings would be left out. The issue can be read by anyone who can see the repo, so the thing that allows a send cannot be written there. GitHub also does not tell this Worker when a label changes unless a webhook is added, and this Worker has no public route in the repo for that webhook to call.
 
-A signed link in the review note works for every category. The note goes only to `FORWARD_TO`. The token is an HMAC of the row id, the action (`approve` or `discard`), and an expiry seven days out. The secret is `REVIEW_SECRET`. The link is a bearer token until it expires: someone who has that email can approve. The draft itself is only the clarifying questions.
+The review note works for every category. It goes only to `FORWARD_TO`. The link is a short random id, `https://review.celticcoo.ca/r/` plus 10 letters or digits, stored in `review_tokens` for seven days. `REVIEW_SECRET` signs the confirmation cookie on that page. It is not put in the URL. Someone who has the note can open the page. The draft itself is only the clarifying questions, shown next to the original message.
 
-Opening the link does not send. Link scanners in mail gateways request the URL with GET. GET shows the draft and a button. The send happens only on POST when the form includes `confirm=yes` and a valid token. Discard is the same kind of POST and does not send.
+Opening the link does not send. Link scanners in mail gateways request the URL with GET. GET shows the original message, an editable draft, and the buttons. Approve and Deny are POSTs. The POST must include the cookie that GET set, so another site cannot submit the form. A finished Approve or Deny marks the token used. A failed send leaves it unused so the same link can be tried again. An expired or already-used link shows that state and sends nothing. Notes that still have the old long `/review?…` links stop working after this deploy. Nothing is sent if one of those is opened.
 
 The original forward is left unchanged. Adding the draft to that copy would mean rewriting a message that Email Routing is authenticating. The separate review note is the copy you act on.
 
@@ -80,7 +80,7 @@ Do these in order. Deploy does not switch Email Routing and does not apply D1 mi
 
 ### 1. Apply the D1 migration
 
-The database is the same `celticcoo-intake` database as the booking form. `site/migrations/0002_inbound_emails.sql` creates `inbound_emails`. `site/migrations/0003_inbound_clarify.sql` adds the draft columns and `classifier_reason`. From the repo root, with Wrangler logged in to this Cloudflare account:
+The database is the same `celticcoo-intake` database as the booking form. `site/migrations/0002_inbound_emails.sql` creates `inbound_emails`. `site/migrations/0003_inbound_clarify.sql` adds the draft columns and `classifier_reason`. `site/migrations/0004_review_tokens.sql` adds the short review links. Apply it before deploying the Worker that serves `/r/`. From the repo root, with Wrangler logged in to this Cloudflare account:
 
 ```bash
 read -rsp 'D1 database id: ' D1_DATABASE_ID; echo
@@ -91,7 +91,7 @@ unset D1_DATABASE_ID
 
 That applies every migration in `site/migrations/` that is not already on the database. The command does not print the database id. Do not commit the id.
 
-This repo's GitHub Actions workflow does not apply migrations. Until `0003` is applied, new mail will fail to store and the forward will still have been attempted. Apply it before the deploy that contains this code, or immediately after, and accept that mail in that gap is retried by the sender only if the forward itself failed.
+This repo's GitHub Actions workflow does not apply migrations. Until `0003` is applied, new mail will fail to store and the forward will still have been attempted. Apply it before the deploy that contains this code, or immediately after, and accept that mail in that gap is retried by the sender only if the forward itself failed. Until `0004_review_tokens.sql` is applied, a review note is still emailed, but it has no short link. Apply that file before deploying the Worker that serves `/r/`.
 
 ### 2. Set the secrets and the database id
 
