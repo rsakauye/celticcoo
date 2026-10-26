@@ -26,12 +26,18 @@
   // secret. Neither is named here. There is no routes list. Add the approval
   // hostname in the dashboard so a later deploy does not replace it.
   //
+  // APPROVAL_API_TOKEN is a Worker secret for the chat approval API. It is
+  // not a var and it is not named here. Leave it unset until the owner
+  // creates it. The API stays off without it. The trust score never sends.
+  //
   // INTAKE_DB is the existing celticcoo-intake database. database_id stays a
   // placeholder in git. Deploy copies the GitHub secret D1_DATABASE_ID over
   // it for that run only. Migrations: site/migrations/0002_inbound_emails.sql
-  // creates the table, 0003_inbound_clarify.sql adds draft columns, and
-  // 0004_review_tokens.sql adds the short review links. Apply 0004 by hand
-  // before the new links will work.
+  // creates the table, 0003_inbound_clarify.sql adds draft columns,
+  // 0004_review_tokens.sql adds the short review links,
+  // 0005_inbound_trust.sql adds the trust score and the approval audit, and
+  // 0006_trust_details.sql adds missing-field and red-flag columns.
+  // Apply 0004, 0005, and 0006 by hand before deploying this worker.
   "name": "celticcoo-inbound",
   "main": "src/index.js",
   "compatibility_date": "2026-10-25",

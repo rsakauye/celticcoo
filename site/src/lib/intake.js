@@ -1,6 +1,10 @@
 // Private booking intake: Turnstile decisions, risk flags, and D1 writes.
 // Failure rows store a reason code and a short machine detail only.
 // Never put a name, email, phone, message, token, or secret in a failure row or a log line.
+// The trust columns are advisory codes. A Turnstile pass does not send mail by itself.
+
+import celticcooTrust from '../../../shared/trust/sites/celticcoo.js';
+import { detectRedFlags, formMissingFields, scoreTrust } from '../../../shared/trust/index.js';
 
 export const TURNSTILE_ACTION = 'book';
 
@@ -118,6 +122,43 @@ export async function logIntakeFailure(db, entry = {}) {
   }
 }
 
+export function submissionTrust(value, turnstile) {
+  const text = `${value && value.message || ''}\n${value && value.performerOther || ''}`.slice(0, 8000);
+  const redFlags = detectRedFlags(text, {
+    under18: Boolean(value && value.under18),
+    injectionPhrases: celticcooTrust.lexicon && celticcooTrust.lexicon.injection,
+  });
+  const missingFields = formMissingFields(value);
+  const verdict = turnstile === 'pass' || turnstile === 'fail' || turnstile === 'unavailable'
+    ? turnstile
+    : 'unavailable';
+  try {
+    const scored = scoreTrust({
+      channel: 'form',
+      missingFields,
+      redFlags,
+      turnstile: verdict,
+    }, celticcooTrust);
+    const reasons = (scored.reasons || []).filter((reason) => reason && /^[a-z0-9_]{1,40}$/.test(String(reason.code || '')))
+      .map((reason) => ({ code: reason.code, delta: Number.isFinite(Number(reason.delta)) ? Number(reason.delta) : 0 }));
+    return {
+      score: scored.score,
+      reasons: JSON.stringify(reasons),
+      missingFields: JSON.stringify(scored.missingFields),
+      redFlags: JSON.stringify(scored.redFlags),
+      autoSend: false,
+    };
+  } catch {
+    return {
+      score: celticcooTrust.failClosedScore,
+      reasons: JSON.stringify([{ code: 'trust_config', delta: 0 }]),
+      missingFields: JSON.stringify(missingFields),
+      redFlags: JSON.stringify(redFlags),
+      autoSend: false,
+    };
+  }
+}
+
 export async function saveSubmission(db, row) {
   if (!db || typeof db.prepare !== 'function') {
     const err = new Error('intake database is not configured');
@@ -133,13 +174,15 @@ export async function saveSubmission(db, row) {
     region: event.regionLabel || event.region || '',
     tba: Boolean(event.tba),
   }));
+  const trust = submissionTrust(value, row.turnstile);
   await db.prepare(
     `INSERT INTO submissions (
       id, created_at, updated_at, status, risk_flags,
       name, email, phone, requester_type, request_type,
       events_json, custom_event_json, performers_json, performer_other,
-      message, budget, under18, guardian_confirm, email_status, source
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`,
+      message, budget, under18, guardian_confirm, email_status, source,
+      trust_score, trust_reasons, missing_fields, red_flags
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?)`,
   ).bind(
     row.id,
     row.createdAt,
@@ -160,6 +203,10 @@ export async function saveSubmission(db, row) {
     value.under18 ? 1 : 0,
     value.guardianConfirm ? 1 : 0,
     row.source || 'book',
+    trust.score,
+    trust.reasons,
+    trust.missingFields,
+    trust.redFlags,
   ).run();
 }
 
