@@ -32,12 +32,20 @@ export function envelopeAddress(value) {
   return (angle ? angle[1] : raw).trim().toLowerCase();
 }
 
-export function isHelloRecipient(value) {
+function localPart(value, name) {
   const email = envelopeAddress(value);
   const at = email.lastIndexOf('@');
   if (at < 1) return false;
   const local = email.slice(0, at);
   const domain = email.slice(at + 1);
   if (domain !== 'celticcoo.ca') return false;
-  return local.split('+')[0] === 'hello';
+  return local.split('+')[0] === name;
+}
+
+export function isHelloRecipient(value) {
+  return localPart(value, 'hello');
+}
+
+export function isBookingsRecipient(value) {
+  return localPart(value, 'bookings');
 }

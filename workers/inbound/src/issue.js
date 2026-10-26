@@ -6,7 +6,15 @@ import { oneLine } from './text.js';
 import { PUBLIC_MAILBOX, hasPrivateContact, redactContact } from './redact.js';
 import { sanitizeEvent } from './classify.js';
 
-export const REPO = 'rsakauye/celticcoo';
+// Public product repo. Inbound issues are never filed here.
+export const PUBLIC_REPO = 'rsakauye/celticcoo';
+
+export function issuesRepo(env) {
+  const raw = String(env && env.INBOUND_ISSUES_REPO || '').trim();
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(raw)) return '';
+  if (raw.toLowerCase() === PUBLIC_REPO) return '';
+  return raw;
+}
 
 export const LABELS = {
   event_listing_request: 'inbound:event-request',
@@ -134,13 +142,30 @@ async function readQuiet(response) {
   try { return await response.text(); } catch { return ''; }
 }
 
-function issueUrl(value) {
+function issueUrl(repo, value) {
   const url = String(value || '');
-  return /^https:\/\/github\.com\/rsakauye\/celticcoo\/issues\/\d+$/.test(url) ? url : '';
+  const escaped = String(repo).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`^https://github\\.com/${escaped}/issues/\\d+$`).test(url) ? url : '';
 }
 
-async function postIssue(token, issue, labels, fetchImpl) {
-  const response = await fetchImpl(`https://api.github.com/repos/${REPO}/issues`, {
+async function repoIsPrivate(repo, token, fetchImpl) {
+  const response = await fetchImpl(`https://api.github.com/repos/${repo}`, {
+    method: 'GET',
+    headers: githubHeaders(token),
+    signal: AbortSignal.timeout(10_000),
+  });
+  const raw = await readQuiet(response);
+  if (!response || response.status !== 200) return false;
+  try {
+    const data = JSON.parse(raw);
+    return data.private === true;
+  } catch {
+    return false;
+  }
+}
+
+async function postIssue(token, repo, issue, labels, fetchImpl) {
+  const response = await fetchImpl(`https://api.github.com/repos/${repo}/issues`, {
     method: 'POST',
     headers: githubHeaders(token),
     body: JSON.stringify({
@@ -154,9 +179,9 @@ async function postIssue(token, issue, labels, fetchImpl) {
   return { status: response.status, raw };
 }
 
-export async function fileGitHubIssue({ token, issue, fetchImpl = fetch }) {
-  if (!token) {
-    const err = new Error('github token missing');
+export async function fileGitHubIssue({ token, repo, issue, fetchImpl = fetch }) {
+  if (!token || !repo || repo.toLowerCase() === PUBLIC_REPO) {
+    const err = new Error('github issue filing is off');
     err.code = 'issue_not_configured';
     throw err;
   }
@@ -165,7 +190,12 @@ export async function fileGitHubIssue({ token, issue, fetchImpl = fetch }) {
     err.code = 'issue_skipped';
     throw err;
   }
-  const labelResponse = await fetchImpl(`https://api.github.com/repos/${REPO}/labels`, {
+  if (!await repoIsPrivate(repo, token, fetchImpl)) {
+    const err = new Error('issues repo is not private');
+    err.code = 'issue_repo_not_private';
+    throw err;
+  }
+  const labelResponse = await fetchImpl(`https://api.github.com/repos/${repo}/labels`, {
     method: 'POST',
     headers: githubHeaders(token),
     body: JSON.stringify({
@@ -177,8 +207,8 @@ export async function fileGitHubIssue({ token, issue, fetchImpl = fetch }) {
   });
   await readQuiet(labelResponse);
 
-  let posted = await postIssue(token, issue, [issue.label], fetchImpl);
-  if (posted.status === 422) posted = await postIssue(token, issue, [], fetchImpl);
+  let posted = await postIssue(token, repo, issue, [issue.label], fetchImpl);
+  if (posted.status === 422) posted = await postIssue(token, repo, issue, [], fetchImpl);
   if (posted.status !== 201) {
     const err = new Error('github issue failed');
     err.code = 'issue_failed';
@@ -187,5 +217,5 @@ export async function fileGitHubIssue({ token, issue, fetchImpl = fetch }) {
   let data = {};
   try { data = JSON.parse(posted.raw); } catch { data = {}; }
   const number = Number.isInteger(data.number) ? data.number : null;
-  return { url: issueUrl(data.html_url), number };
+  return { url: issueUrl(repo, data.html_url), number };
 }
