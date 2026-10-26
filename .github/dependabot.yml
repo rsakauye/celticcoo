@@ -4,11 +4,26 @@ updates:
     directory: /site
     schedule:
       interval: weekly
+    ignore:
+      # Astro 7 depends on Vite 8. This repo overrides Vite to ^6.
+      # Leave these majors for a deliberate upgrade.
+      - dependency-name: "astro"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "zod"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "vite"
+        update-types: ["version-update:semver-major"]
+
   - package-ecosystem: npm
     directory: /workers/inbound
     schedule:
       interval: weekly
+
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    groups:
+      github-actions:
+        patterns:
+          - "*"
