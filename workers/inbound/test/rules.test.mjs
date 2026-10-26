@@ -3,21 +3,20 @@ import assert from 'node:assert/strict';
 import { chooseClassification, classifyByRules, normalizeClassification } from '../src/classify.js';
 import { assessGaps, planDraft } from '../src/clarify.js';
 
-const NOW = new Date('2026-10-26T04:55:00.000Z');
+const NOW = new Date('2026-10-26T12:00:00.000Z');
 
-const VAGUE_SUBJECT = 'TEST - Question';
-const VAGUE_BODY = 'Hi, are you available sometime? Thanks.';
+// Synthetic notes. They are not copies of mail received by the site.
+const VAGUE_SUBJECT = 'A short question';
+const VAGUE_BODY = 'Hello, could you help sometime? Thanks.';
 
-const BOOKING_SUBJECT = 'TEST - Booking inquiry: pipe band for Robbie Burns Supper';
+const BOOKING_SUBJECT = 'Booking inquiry: pipe band for a Burns Supper';
 const BOOKING_BODY = [
-  'Hi, could a pipe band or Highland dancers perform at a Burns Supper on Saturday, January 23, 2027',
-  'at the Okotoks Elks Lodge, Okotoks, AB?',
-  'Please arrive at 6 PM and start the set at 7 PM.',
-  'The budget is $400 to $600.',
-  'Contact Morgan Hale.',
+  'Sample Organizer (organizer@example.com) asks: could a pipe band or Highland dancers',
+  'perform at a Burns Supper on Saturday, March 14, 2027 at the Sample Legion Hall, Lethbridge, AB?',
+  'Please arrive at 5 PM and start the set at 8 PM.',
 ].join(' ');
 
-test('the vague production note stays other, low confidence, and drafts a clarification', () => {
+test('a vague synthetic note stays other, low confidence, and drafts a clarification', () => {
   const rules = classifyByRules({ subject: VAGUE_SUBJECT, text: VAGUE_BODY });
   assert.equal(rules.category, 'other');
   assert.ok(rules.confidence < 0.45, `confidence ${rules.confidence}`);
@@ -34,19 +33,20 @@ test('the vague production note stays other, low confidence, and drafts a clarif
   assert.equal(draft.status, 'pending_approval');
   assert.deepEqual(draft.reasons, ['unclear']);
   assert.match(draft.draft, /list an event/);
-  assert.doesNotMatch(draft.draft, /Morgan/);
-  assert.doesNotMatch(draft.draft, /available/);
+  assert.doesNotMatch(draft.draft, /Sample Organizer/);
+  assert.doesNotMatch(draft.draft, /organizer@example.com/);
 });
 
-test('the Burns booking production note is a high-confidence booking with the place and time filled in', () => {
+test('a synthetic Burns booking is a high-confidence booking with the place and time filled in', () => {
   const rules = classifyByRules({ subject: BOOKING_SUBJECT, text: BOOKING_BODY });
   assert.equal(rules.category, 'booking_inquiry');
   assert.ok(rules.confidence >= 0.8, `confidence ${rules.confidence}`);
   assert.match(rules.event.title, /Burns Supper/);
-  assert.equal(rules.event.date, 'January 23, 2027');
-  assert.equal(rules.event.venue, 'Okotoks Elks Lodge');
-  assert.equal(rules.event.city, 'Okotoks');
+  assert.equal(rules.event.date, 'March 14, 2027');
+  assert.equal(rules.event.venue, 'Sample Legion Hall');
+  assert.equal(rules.event.city, 'Lethbridge');
   assert.equal(rules.event.province, 'Alberta');
+  assert.doesNotMatch(rules.summary, /organizer@example.com/);
   assert.equal(rules.signals.performer, true);
   const draft = planDraft({
     category: rules.category,
@@ -147,11 +147,11 @@ test('a first name that only sounds like a ceilidh does not become an event', ()
 test('the word on is not the Ontario abbreviation', () => {
   const got = classifyByRules({
     subject: 'Burns Supper on Saturday',
-    text: 'A Burns Supper on Saturday, January 23, 2027.',
+    text: 'A Burns Supper on Saturday, March 6, 2027.',
   });
   assert.equal(got.category, 'event_listing_request');
   assert.equal(got.event.province, '');
-  assert.equal(got.event.date, 'January 23, 2027');
+  assert.equal(got.event.date, 'March 6, 2027');
 });
 
 test('a town with the province left off still fills Alberta', () => {
