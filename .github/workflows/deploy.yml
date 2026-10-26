@@ -28,13 +28,13 @@ jobs:
     env:
       CF_DEPLOY: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           # Full history (trees only, blobs on demand) so the sitemap can use real git last-modified dates.
           fetch-depth: 0
           filter: blob:none
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "22.23.4"
           cache: npm
@@ -54,7 +54,7 @@ jobs:
           npm run build
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: site-dist
           path: site/dist
@@ -73,8 +73,10 @@ jobs:
       # celticcoo-mailer. BOOKING_TO is the verified Email Routing destination.
       # It is a GitHub secret and must never be committed. Pages deploy runs
       # after the Worker exists, because the Pages project binds to it.
-      # Every mailer deploy must pass --var. Wrangler drops vars that are not
-      # in the config, and this config does not name the destination.
+      # Upload BOOKING_TO as a Worker secret in the same deploy. Do not pass
+      # it with --var. A plain var shows the address in the Cloudflare dashboard.
+      # Wrangler drops plain vars this deploy does not pass. The temp file is
+      # removed when the step ends.
       - name: Deploy mailer Worker (celticcoo-mailer)
         if: env.CF_DEPLOY == 'true'
         working-directory: workers/mailer
@@ -87,7 +89,17 @@ jobs:
             echo "::error::GitHub secret BOOKING_TO is empty. Set it to the verified Email Routing destination inbox. Do not put that address in the repo."
             exit 1
           fi
-          npx --yes wrangler@4 deploy --var "BOOKING_TO:${BOOKING_TO}"
+          secret_file=""
+          cleanup() { if [ -n "${secret_file}" ]; then rm -f "$secret_file"; fi; }
+          trap cleanup EXIT
+          secret_file="$(mktemp)"
+          node --input-type=module -e '
+            import { writeFileSync } from "node:fs";
+            const value = process.env.BOOKING_TO || "";
+            if (!value) process.exit(1);
+            writeFileSync(process.argv[1], JSON.stringify({ BOOKING_TO: value }), { mode: 0o600 });
+          ' "$secret_file"
+          npx --yes wrangler@4 deploy --secrets-file "$secret_file"
 
       # Substitutes the GitHub secret D1_DATABASE_ID into the checkout copy of
       # wrangler.jsonc, or removes the D1 binding when that secret is empty.
@@ -121,9 +133,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "22.23.4"
           cache: npm
@@ -137,7 +149,8 @@ jobs:
 
       # Does not apply D1 migrations and does not set an Email Routing address.
       # FORWARD_TO is a verified destination. It is a GitHub secret and must
-      # never be committed. INBOUND_GITHUB_TOKEN is copied into the Worker
+      # never be committed. This step uploads it as a Worker secret. Do not
+      # pass it with --var. INBOUND_GITHUB_TOKEN is copied into the Worker
       # secret GITHUB_TOKEN. The Actions secret cannot be named GITHUB_TOKEN.
       - name: Deploy inbound email Worker (celticcoo-inbound)
         working-directory: workers/inbound
@@ -155,30 +168,30 @@ jobs:
             exit 0
           fi
           node ../../scripts/prepare-inbound-config.mjs wrangler.jsonc
-          secret_args=()
+          if [ -z "${INBOUND_GITHUB_TOKEN}" ] && [ -z "${REVIEW_SECRET}" ]; then
+            echo "::notice::INBOUND_GITHUB_TOKEN and REVIEW_SECRET are not set. Mail will still be forwarded and logged. GitHub issues and approval links stay off."
+          fi
           secret_file=""
           cleanup() { if [ -n "${secret_file}" ]; then rm -f "$secret_file"; fi; }
           trap cleanup EXIT
           secret_file="$(mktemp)"
-          if node --input-type=module -e '
+          node --input-type=module -e '
             import { writeFileSync } from "node:fs";
             const secrets = {};
+            const forward = process.env.FORWARD_TO || "";
+            if (!forward) process.exit(1);
+            secrets.FORWARD_TO = forward;
             const github = process.env.INBOUND_GITHUB_TOKEN || "";
             if (github) secrets.GITHUB_TOKEN = github;
             const review = process.env.REVIEW_SECRET || "";
             if (review && review.length >= 16 && review.length <= 200 && !/\s/.test(review)) secrets.REVIEW_SECRET = review;
             else if (review) console.error("REVIEW_SECRET is set but not usable. Approval links stay off.");
-            if (Object.keys(secrets).length === 0) process.exit(2);
             writeFileSync(process.argv[1], JSON.stringify(secrets), { mode: 0o600 });
-          ' "$secret_file"; then
-            secret_args=(--secrets-file "$secret_file")
-          else
-            echo "::notice::INBOUND_GITHUB_TOKEN and REVIEW_SECRET are not set. Mail will still be forwarded and logged. GitHub issues and approval links stay off."
-          fi
-          var_args=(--var "FORWARD_TO:${FORWARD_TO}")
+          ' "$secret_file"
+          var_args=()
           if [[ "${REVIEW_BASE_URL}" =~ ^https://[A-Za-z0-9.-]+(:[0-9]+)?$ ]]; then
             var_args+=(--var "REVIEW_BASE_URL:${REVIEW_BASE_URL}")
           elif [ -n "${REVIEW_BASE_URL}" ]; then
             echo "::notice::REVIEW_BASE_URL must be an https origin with no path. Approval links stay off."
           fi
-          npx --yes wrangler@4 deploy "${var_args[@]}" "${secret_args[@]}"
+          npx --yes wrangler@4 deploy "${var_args[@]}" --secrets-file "$secret_file"

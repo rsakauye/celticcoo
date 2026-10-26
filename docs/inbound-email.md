@@ -144,7 +144,7 @@ GitHub → Settings → Secrets and variables → Actions → Variables:
 
 | Variable | What it is |
 |---|---|
-| `REVIEW_BASE_URL` | Optional. The https origin of this Worker, with no path, such as `https://review.celticcoo.ca`. Every inbound deploy passes it when it matches that shape. If a later deploy omits it, Wrangler drops the var, the same way it drops `FORWARD_TO`. |
+| `REVIEW_BASE_URL` | Optional. The https origin of this Worker, with no path, such as `https://review.celticcoo.ca`. Every inbound deploy passes it when it matches that shape. If a later deploy omits it, Wrangler drops that var. `FORWARD_TO` is a Worker secret, so a deploy that does not mention it leaves the secret in place. |
 
 `GITHUB_TOKEN` and `REVIEW_SECRET` are Worker secret names. GitHub Actions already reserves `GITHUB_TOKEN`, so the Actions secret for issues is `INBOUND_GITHUB_TOKEN`. A deploy uploads whichever of those two is set and leaves other Worker secrets in place.
 
@@ -164,7 +164,16 @@ npx wrangler secret put GITHUB_TOKEN
 npx wrangler secret put REVIEW_SECRET
 ```
 
-`FORWARD_TO` is a Worker var, not a Cloudflare secret, same as `BOOKING_TO` on the mailer. It is still a GitHub secret so the address stays out of the repo. Every deploy of this Worker must pass `--var FORWARD_TO:...`.
+`FORWARD_TO` is a Worker secret, same as `BOOKING_TO` on the mailer. Both values already live in GitHub Actions secrets. The deploy writes a temporary JSON file and passes `wrangler deploy --secrets-file`. Do not pass either name with `--var`. A plain var shows the address in the Cloudflare dashboard.
+
+One-time check after the first deploy that contains this change. No new GitHub secret is required.
+
+1. Run the "Build & deploy site" workflow, or wait for the next push to `main` that deploys these Workers. The mailer deploy runs when `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and `BOOKING_TO` are set. The inbound deploy runs when those Cloudflare secrets, `FORWARD_TO`, and `D1_DATABASE_ID` are set.
+2. Cloudflare dashboard → Workers & Pages → `celticcoo-mailer` → Settings → Variables and Secrets. `BOOKING_TO` should be a Secret, not a plain text variable.
+3. The same page for `celticcoo-inbound`. `FORWARD_TO` should be a Secret.
+4. Do not deploy either Worker by hand with `--var` for those names. That publishes the address as plain text again. Use the command below for `celticcoo-inbound`. For the mailer, from `workers/mailer`, write `{"BOOKING_TO":"..."}` to a temp file the same way and run `npx wrangler deploy --secrets-file` that file, then delete the file.
+
+Wrangler drops plain vars that a deploy does not pass, and this deploy passes the name as a secret in the same upload. If that deploy fails, the previous version stays in place. Secrets a later deploy does not mention are left alone. The workflow still uploads `FORWARD_TO` on every inbound deploy so a replaced value in GitHub reaches the Worker.
 
 ### 3. Give the Worker a hostname for approval links
 
@@ -200,13 +209,15 @@ read -rsp 'Review origin (or leave empty): ' REVIEW_BASE_URL; echo
 export D1_DATABASE_ID FORWARD_TO REVIEW_BASE_URL
 node scripts/prepare-inbound-config.mjs workers/inbound/wrangler.jsonc workers/inbound/.wrangler-deploy.jsonc
 cd workers/inbound
+secret_file="$(mktemp)"
+node --input-type=module -e 'import { writeFileSync } from "node:fs"; const value = process.env.FORWARD_TO || ""; if (!value) process.exit(1); writeFileSync(process.argv[1], JSON.stringify({ FORWARD_TO: value }), { mode: 0o600 });' "$secret_file"
 # Pass REVIEW_BASE_URL only when it is an https origin with no path.
-npx wrangler deploy --config .wrangler-deploy.jsonc --var "FORWARD_TO:${FORWARD_TO}"
-rm -f .wrangler-deploy.jsonc
+npx wrangler deploy --config .wrangler-deploy.jsonc --secrets-file "$secret_file"
+rm -f "$secret_file" .wrangler-deploy.jsonc
 unset D1_DATABASE_ID FORWARD_TO REVIEW_BASE_URL
 ```
 
-`.wrangler-deploy.jsonc` is gitignored. Add `--var "REVIEW_BASE_URL:https://review.celticcoo.ca"` on that deploy when the hostname exists. Set `REVIEW_SECRET` with `wrangler secret put` before relying on the links. Secrets are not deleted by a deploy that does not mention them.
+`.wrangler-deploy.jsonc` is gitignored. Add `--var "REVIEW_BASE_URL:https://review.celticcoo.ca"` on that deploy when the hostname exists. Do not add `FORWARD_TO` to that `--var` list. Set `REVIEW_SECRET` with `wrangler secret put` before relying on the links. Secrets are not deleted by a deploy that does not mention them.
 
 Workers AI is a binding. There is no AI token to paste. If the account cannot run the model, the Worker uses the rules fallback, logs the reason, and still forwards. The model id is the `AI_MODEL` var.
 

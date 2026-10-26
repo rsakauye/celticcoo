@@ -8,8 +8,10 @@
   // Omitting addresses leaves the current Email Routing rule alone.
   //
   // FORWARD_TO is not named here. A personal inbox must not be committed.
-  // Every deploy passes --var FORWARD_TO:... from a GitHub secret. Wrangler
-  // drops that var on a later deploy that does not pass it again.
+  // Deploy uploads it as a Worker secret from the GitHub secret of the same
+  // name. Do not pass it with --var. A plain var would show the address in
+  // the Cloudflare dashboard. Wrangler drops plain vars a deploy does not
+  // pass, and it keeps secrets that a deploy does not mention.
   //
   // GITHUB_TOKEN is a Worker secret (wrangler secret put), not a var.
   // ACK_REPLIES stays off until this file is changed to "on" and redeployed.
