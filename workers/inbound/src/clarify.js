@@ -3,6 +3,7 @@
 // Nothing here sends. CLARIFY_DRAFTS defaults to drafts. There is no auto-send mode.
 
 import { DATE_RE, publicUrl, textSignals } from './classify.js';
+import { caslFooterText } from '../../../shared/casl/notice.js';
 import { hasPrivateContact, PUBLIC_MAILBOX } from './redact.js';
 
 const TIME_RE = /\b(?:[01]?\d|2[0-3]):[0-5]\d\b|\b(?:1[0-2]|0?[1-9])\s*(?:a\.?m\.?|p\.?m\.?)\b/i;
@@ -206,6 +207,8 @@ export function buildDraft(reasons, category) {
     '',
     'The Celtic Coo',
     PUBLIC_MAILBOX,
+    '',
+    caslFooterText(),
     '',
   ].join('\n');
 }

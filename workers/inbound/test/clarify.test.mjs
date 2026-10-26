@@ -400,20 +400,24 @@ test('an event issue shows the draft and not the approval link or the sender', a
     FORWARD_TO: OWNER,
     INTAKE_DB: db,
     GITHUB_TOKEN: 'github_pat_test_token_value_123456',
+    INBOUND_ISSUES_REPO: 'example-org/intake-notes',
     ACK_REPLIES: 'off',
     REVIEW_SECRET: SECRET,
     REVIEW_BASE_URL: 'https://review.celticcoo.ca',
   }, {
     now: () => NOW,
     log() {},
-    fetch: async (url, init) => {
+    fetch: async (url, init = {}) => {
       github.calls.push({ url: String(url), init });
+      if (String(init.method || 'GET').toUpperCase() === 'GET') {
+        return { status: 200, text: async () => JSON.stringify({ private: true }) };
+      }
       if (String(url).endsWith('/labels')) return { status: 201, text: async () => '{}' };
       return {
         status: 201,
         text: async () => JSON.stringify({
           number: 7,
-          html_url: 'https://github.com/rsakauye/celticcoo/issues/7',
+          html_url: 'https://github.com/example-org/intake-notes/issues/7',
         }),
       };
     },

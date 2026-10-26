@@ -4,10 +4,12 @@
 // GET shows the draft and does not send. Mail scanners that prefetch links
 // therefore cannot approve a reply.
 //
-// The approve link stays out of GitHub issues. Those issues may be public.
+// The approve link stays out of GitHub issues. Issues are filed only in a
+// private repo, and only when that repo is configured.
 // The link is emailed only to FORWARD_TO.
 
 import { questionFor } from './clarify.js';
+import { caslFooterText } from '../../../shared/casl/notice.js';
 import { hasPrivateContact, PUBLIC_MAILBOX } from './redact.js';
 import { claimClarifySend, discardClarify, loadInbound, markClarifySent, releaseClarifySend } from './store.js';
 import { codeOf, envelopeAddress, oneEmail, oneLine } from './text.js';
@@ -136,6 +138,7 @@ export function buildReviewNote({ id, category, reasons, draft, recipient, links
   } else {
     lines.push('Approval links are not configured yet. Set REVIEW_SECRET and REVIEW_BASE_URL, and attach a route for that origin to this Worker. The draft is stored. It will not be sent on its own.');
   }
+  lines.push('', caslFooterText());
   return lines.join('\n');
 }
 

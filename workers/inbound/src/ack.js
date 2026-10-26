@@ -2,9 +2,10 @@
 // The receipt does not quote the inbound message and does not take a subject
 // from it, so a sender cannot inject headers or instructions into the reply.
 
+import { caslFooterText } from '../../../shared/casl/notice.js';
 import { oneLine } from './text.js';
 
-export const ACK_BODY = 'The Celtic Coo received your email. A person will read it. This is an automatic receipt, and this mailbox will not answer the substance of your message on its own.\n';
+export const ACK_BODY = `The Celtic Coo received your email. A person will read it. This is an automatic receipt, and this mailbox will not answer the substance of your message on its own.\n\n${caslFooterText()}\n`;
 
 export function acksEnabled(env) {
   return String(env && env.ACK_REPLIES || '').trim().toLowerCase() === 'on';

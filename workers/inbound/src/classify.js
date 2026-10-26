@@ -11,7 +11,7 @@ import { analyzeMessage, compileSite, DATE_RE } from '../../../shared/triage/eng
 import celticcoo from '../../../shared/triage/sites/celticcoo.js';
 import { fold } from '../../../shared/triage/text.js';
 import { oneLine } from './text.js';
-import { redactContact } from './redact.js';
+import { redactContact, redactNames } from './redact.js';
 
 export { DATE_RE };
 
@@ -299,7 +299,7 @@ export function describeAiError(err, input) {
     : 'Error';
   const rawCode = err && (err.code ?? err.errorCode);
   const code = rawCode == null || rawCode === '' ? '' : String(rawCode).replace(/[^A-Za-z0-9_.:-]/g, '').slice(0, 20);
-  let message = redactContact(String(err && err.message || ''));
+  let message = redactNames(redactContact(String(err && err.message || '')));
   message = message.replace(/https?:\/\/\S+/gi, '[url]');
   message = message.replace(/\b(?:bearer|token|secret|api[_-]?key)\b\s*[:=]?\s*\S+/gi, '[secret]');
   message = message.replace(/\b[a-f0-9]{24,}\b/gi, '[hex]');

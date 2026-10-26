@@ -11,10 +11,10 @@ import {
   classifyMessage,
   normalizeClassification,
 } from '../src/classify.js';
-import { buildIssue, fileGitHubIssue } from '../src/issue.js';
+import { buildIssue, fileGitHubIssue, issuesRepo } from '../src/issue.js';
 import handler, { forwardCopy, handleInboundEmail } from '../src/index.js';
 import { PARSE_LIMIT, parseInbound, readCapped } from '../src/parse.js';
-import { hasPrivateContact, redactContact } from '../src/redact.js';
+import { exportReason, hasPrivateContact, redactContact, redactOutsideD1 } from '../src/redact.js';
 import { prepareInboundConfig } from '../../../scripts/prepare-inbound-config.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -53,13 +53,18 @@ function memoryDb() {
   };
 }
 
-function githubFetch(store) {
-  return async (url, init) => {
+const PRIVATE_REPO = 'example-org/intake-notes';
+
+function githubFetch(store, { repo = PRIVATE_REPO, isPrivate = true } = {}) {
+  return async (url, init = {}) => {
     const target = String(url);
-    if (!target.startsWith('https://api.github.com/repos/rsakauye/celticcoo/')) {
-      throw new Error(`unexpected url ${target}`);
-    }
+    const prefix = `https://api.github.com/repos/${repo}`;
+    if (!target.startsWith(prefix)) throw new Error(`unexpected url ${target}`);
     store.calls.push({ url: target, init });
+    const method = String(init.method || 'GET').toUpperCase();
+    if (method === 'GET') {
+      return { status: 200, text: async () => JSON.stringify({ private: isPrivate }) };
+    }
     if (target.endsWith('/labels')) {
       return { status: 422, text: async () => '{"message":"already_exists"}' };
     }
@@ -67,7 +72,7 @@ function githubFetch(store) {
       status: 201,
       text: async () => JSON.stringify({
         number: 42,
-        html_url: 'https://github.com/rsakauye/celticcoo/issues/42',
+        html_url: `https://github.com/${repo}/issues/42`,
       }),
     };
   };
@@ -473,6 +478,7 @@ test('event mail is stored, redacted into one issue, and not sent anywhere else'
     FORWARD_TO: OWNER,
     INTAKE_DB: db,
     GITHUB_TOKEN: 'github_pat_test_token_value_123456',
+    INBOUND_ISSUES_REPO: PRIVATE_REPO,
     ACK_REPLIES: 'off',
   };
   const first = await handleInboundEmail(message, env, { fetch: githubFetch(github) });
@@ -480,7 +486,8 @@ test('event mail is stored, redacted into one issue, and not sent anywhere else'
   assert.equal(first.outcome.category, 'event_listing_request');
   assert.equal(first.outcome.issueStatus, 'filed');
   assert.equal(message.calls.reply.length, 0);
-  assert.equal(github.calls.length, 2);
+  assert.equal(github.calls.length, 3);
+  assert.equal(github.calls[0].init.method, 'GET');
   const issueCall = github.calls.find((call) => call.url.endsWith('/issues'));
   const body = JSON.parse(issueCall.init.body);
   assert.equal(body.labels[0], 'inbound:event-request');
@@ -498,6 +505,78 @@ test('event mail is stored, redacted into one issue, and not sent anywhere else'
   const second = await handleInboundEmail(message, env, { fetch: githubFetch(github) });
   assert.equal(second.outcome.issueStatus, 'filed');
   assert.equal(github.calls.filter((call) => call.url.endsWith('/issues')).length, 1);
+});
+
+test('a personal name in the summary is redacted on the issue and kept in D1', async () => {
+  const db = memoryDb();
+  const github = { calls: [] };
+  const subject = 'Please list a supper for Jordan Blake';
+  const text = `${burnsText}\nWrite Jordan Blake at jordan.blake@example.com or 403-555-0148.`;
+  const message = fake({
+    raw: mime({ subject, text, from: 'Jordan Blake <jordan.blake@example.com>' }),
+    from: 'jordan.blake@example.com',
+    subject,
+    messageId: '<jordan-blake@example.com>',
+  });
+  message.headers.set('message-id', '<jordan-blake@example.com>');
+  const result = await handleInboundEmail(message, {
+    FORWARD_TO: OWNER,
+    INTAKE_DB: db,
+    GITHUB_TOKEN: 'github_pat_test_token_value_123456',
+    INBOUND_ISSUES_REPO: PRIVATE_REPO,
+  }, { fetch: githubFetch(github) });
+  assert.equal(result.outcome.issueStatus, 'filed');
+  const issueCall = github.calls.find((call) => call.url.endsWith('/issues'));
+  const body = JSON.parse(issueCall.init.body);
+  assert.doesNotMatch(`${body.title}\n${body.body}`, /Jordan Blake/);
+  assert.doesNotMatch(`${body.title}\n${body.body}`, /jordan.blake@example.com/);
+  assert.doesNotMatch(`${body.title}\n${body.body}`, /403-555-0148/);
+  assert.match(`${body.title}\n${body.body}`, /\[redacted\]/);
+  const insert = db.calls.find((call) => /INSERT INTO inbound_emails/i.test(call.sql));
+  assert.match(insert.args.join('\n'), /Jordan Blake/);
+  assert.match(insert.args.join('\n'), /jordan.blake@example.com/);
+  const closed = await redactOutsideD1('Listing for Friday', {
+    namePass: async () => { throw new Error('name pass failed'); },
+  });
+  assert.equal(closed, '[redacted]');
+  assert.equal(exportReason('ai_ok'), 'ai_ok');
+  assert.equal(exportReason('Jordan Blake wrote in'), '[redacted]');
+});
+
+test('a token without a private issues repo does not call GitHub', async () => {
+  const db = memoryDb();
+  let called = false;
+  const message = fake({
+    raw: mime({ subject: 'Please list our Burns Supper', text: burnsText }),
+    messageId: '<no-issue@example.com>',
+  });
+  message.headers.set('message-id', '<no-issue@example.com>');
+  const result = await handleInboundEmail(message, {
+    FORWARD_TO: OWNER,
+    INTAKE_DB: db,
+    GITHUB_TOKEN: 'github_pat_test_token_value_123456',
+  }, {
+    fetch: async () => { called = true; throw new Error('github should not be called'); },
+  });
+  assert.equal(called, false);
+  assert.equal(result.outcome.issueStatus, 'failed');
+  assert.equal(result.outcome.errorCode, 'issue_not_configured');
+
+  const blocked = fake({
+    raw: mime({ subject: 'Please list our Burns Supper', text: burnsText }),
+    messageId: '<public-repo@example.com>',
+  });
+  blocked.headers.set('message-id', '<public-repo@example.com>');
+  const second = await handleInboundEmail(blocked, {
+    FORWARD_TO: OWNER,
+    INTAKE_DB: memoryDb(),
+    GITHUB_TOKEN: 'github_pat_test_token_value_123456',
+    INBOUND_ISSUES_REPO: 'rsakauye/celticcoo',
+  }, {
+    fetch: async () => { called = true; throw new Error('public repo should not be called'); },
+  });
+  assert.equal(called, false);
+  assert.equal(second.outcome.errorCode, 'issue_not_configured');
 });
 
 test('mail that is not for hello@ is forwarded and not stored', async () => {
@@ -528,6 +607,9 @@ test('acknowledgement stays off unless ACK_REPLIES is on, and the receipt quotes
   const receiptBody = mimeSent.split('\r\n\r\n').slice(1).join('\r\n\r\n');
   assert.match(mimeSent, /^To: ada@example.com/m);
   assert.match(receiptBody, /automatic receipt/);
+  assert.match(receiptBody, /TODO: CASL purpose/);
+  assert.match(receiptBody, /TODO: CASL mailing address/);
+  assert.doesNotMatch(receiptBody, /PO Box/);
   assert.doesNotMatch(receiptBody, /Burns Supper/);
   assert.doesNotMatch(receiptBody, /ada@example.com/);
   assert.doesNotMatch(receiptBody, /403-555-0199/);
@@ -556,6 +638,9 @@ test('the worker source and config do not contain a destination inbox or a routi
   const workflow = readFileSync(join(here, '../../../.github/workflows/deploy.yml'), 'utf8');
   assert.doesNotMatch(workflow, /migrations apply/);
   assert.match(workflow, /Skipping celticcoo-inbound/);
+  assert.match(workflow, /INBOUND_ISSUES_REPO is unset or is the public repo/);
+  assert.doesNotMatch(workflow, /--var "RETENTION_PURGE/);
+  assert.match(readFileSync(join(root, 'wrangler.jsonc'), 'utf8'), /"crons": \["15 8 \* \* \*"\]/);
   const sql = readFileSync(join(here, '../../../site/migrations/0002_inbound_emails.sql'), 'utf8');
   assert.match(sql, /CREATE TABLE inbound_emails/);
   assert.equal(hasPrivateContact(sql), false);
@@ -569,7 +654,7 @@ test('prepareInboundConfig substitutes a UUID and does not echo a bad value', ()
   assert.throws(() => prepareInboundConfig(source, {}), /must be a UUID/);
 });
 
-test('fileGitHubIssue only talks to this repo and returns the issue url', async () => {
+test('fileGitHubIssue only talks to the configured private repo', async () => {
   const store = { calls: [] };
   const issue = buildIssue({
     id: '11111111-2222-4333-8444-555555555555',
@@ -580,12 +665,25 @@ test('fileGitHubIssue only talks to this repo and returns the issue url', async 
   });
   const filed = await fileGitHubIssue({
     token: 'github_pat_test_token_value_123456',
+    repo: PRIVATE_REPO,
     issue,
     fetchImpl: githubFetch(store),
   });
-  assert.equal(filed.url, 'https://github.com/rsakauye/celticcoo/issues/42');
+  assert.equal(filed.url, `https://github.com/${PRIVATE_REPO}/issues/42`);
   assert.equal(filed.number, 42);
-  assert.equal(store.calls.every((call) => call.url.startsWith('https://api.github.com/repos/rsakauye/celticcoo/')), true);
+  assert.equal(store.calls.every((call) => call.url.startsWith(`https://api.github.com/repos/${PRIVATE_REPO}`)), true);
+  assert.equal(store.calls.some((call) => call.url.includes('rsakauye/celticcoo')), false);
+  assert.equal(issuesRepo({ INBOUND_ISSUES_REPO: 'rsakauye/celticcoo' }), '');
+  assert.equal(issuesRepo({ INBOUND_ISSUES_REPO: PRIVATE_REPO }), PRIVATE_REPO);
+  await assert.rejects(
+    () => fileGitHubIssue({
+      token: 'github_pat_test_token_value_123456',
+      repo: PRIVATE_REPO,
+      issue,
+      fetchImpl: githubFetch({ calls: [] }, { isPrivate: false }),
+    }),
+    (err) => err.code === 'issue_repo_not_private',
+  );
 });
 
 test('the http handler does not accept mail or triage work', async () => {

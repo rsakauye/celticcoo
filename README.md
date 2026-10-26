@@ -241,7 +241,7 @@ Do not commit the database id, the Turnstile secret, or a submission. The id in 
 
 ## Inbound mail for hello@
 
-`workers/inbound/` receives `hello@celticcoo.ca` when the Email Routing rule points at it, forwards a copy to the verified destination in `FORWARD_TO`, and logs the message in the private D1 database. Event listings and corrections become a GitHub issue that does not contain the sender's email or phone. A vague note can get a clarifying draft; that draft is not sent until it is approved. Deploying the Worker does not change the Email Routing rule. The steps are in [docs/inbound-email.md](docs/inbound-email.md).
+`workers/inbound/` receives `hello@celticcoo.ca` when the Email Routing rule points at it, forwards a copy to the verified destination in `FORWARD_TO`, and logs the message in the private D1 database. Event listings and corrections are not opened as GitHub issues unless `INBOUND_GITHUB_TOKEN` is set and `INBOUND_ISSUES_REPO` names a different private repository. Leave that variable unset. A vague note can get a clarifying draft; that draft is not sent until it is approved. A daily cron counts rows past the retention window and does not delete them unless `RETENTION_PURGE` is `on`. Deploying the Worker does not change the Email Routing rule. The steps are in [docs/inbound-email.md](docs/inbound-email.md) and [docs/retention.md](docs/retention.md).
 
 ## Notes
 - Event dates change. The site tells visitors to confirm with organizers, and the weekly check
