@@ -76,9 +76,13 @@ const calgary = tba.find((e) => e.city === 'Calgary');
   <HidePast />
 </Base>
 <style>
-  .hero { position:relative; display:flex; gap:2rem; align-items:center; justify-content:space-between; flex-wrap:wrap-reverse; padding:1rem 0 .5rem; }
-  .hero > div { flex:1; min-width:280px; max-width:640px; }
-  .hero > img { width:min(260px,60vw); height:auto; filter:drop-shadow(0 8px 14px rgba(60,30,10,.18)); }
+  .hero { position:relative; display:flex; flex-wrap:wrap; gap:2rem; align-items:center; justify-content:space-between; padding:1rem 0 .5rem; }
+  .hero > div { flex:1 1 280px; max-width:640px; }
+  .hero > img { order:-1; flex:none; width:min(260px,42vw); height:auto; filter:drop-shadow(0 8px 14px rgba(60,30,10,.18)); }
+  @media (max-width: 719px) {
+    .hero { flex-direction:column; align-items:flex-start; gap:1rem; }
+    .hero > img { width:min(180px,48vw); }
+  }
   .hero h1 { font-size:clamp(1.9rem,4vw,2.7rem); }
   .kicker { color:var(--ginger); font-weight:600; margin:0; font-style:italic; }
   .lede { font-size:1.12rem; color:#4a3a2e; }

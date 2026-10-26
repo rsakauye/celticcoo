@@ -3,8 +3,7 @@ import { u } from '../lib/site.js';
 const strip = u('ceilidh-coo-strip.png');
 ---
 <div class="coo-perch" data-ceilidh-coo>
-  <button type="button" class="coo-bring" data-coo-toggle aria-pressed="false" aria-label="Bring out Ceilidh to dance">
-    <span class="coo-cue" aria-hidden="true"><span class="coo-cue-in">tap me</span><span class="coo-cue-out">stop</span></span>
+  <button type="button" class="coo-bring" data-coo-toggle aria-pressed="false" aria-label="Bring out Ceilidh to dance to Highland Laddie">
     <span class="coo-window">
       <span class="coo-nudge">
         <span class="coo-shift">
@@ -14,21 +13,23 @@ const strip = u('ceilidh-coo-strip.png');
         </span>
       </span>
     </span>
+    <span class="coo-cue" aria-hidden="true"><span class="coo-cue-in" data-coo-tune>Highland Laddie</span><span class="coo-cue-out"><span class="coo-stop">stop</span> <span class="coo-tune-out" data-coo-tune>Highland Laddie</span></span></span>
   </button>
   <span class="sr-only" data-coo-status aria-live="polite"></span>
 </div>
 
 <script>
-  import { MASTER_GAIN, VOICES, cycleDurationSeconds, expandTune, midiToHz, stepSeconds } from '../lib/highlandLaddie.js';
+  import { MASTER_GAIN, VOICES, midiToHz } from '../lib/highlandLaddie.js';
+  import { DANCE_TUNES, nextTuneIndex, prepareTune } from '../lib/danceTunes.js';
 
   const root = document.querySelector('[data-ceilidh-coo]');
   const button = root && root.querySelector('[data-coo-toggle]');
   const status = root && root.querySelector('[data-coo-status]');
   if (button && root) {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    const tune = expandTune();
-    const step = stepSeconds();
-    const cycleSeconds = cycleDurationSeconds(tune);
+    // First play is Highland Laddie. The index is memory only, so a reload starts over.
+    let tuneIndex = 0;
+    let active = prepareTune(tuneIndex);
     let ctx = null;
     let master = null;
     let melodyBus = null;
@@ -38,13 +39,20 @@ const strip = u('ceilidh-coo-strip.png');
     let timer = 0;
     const live = new Set();
 
+    function title() {
+      const name = DANCE_TUNES[tuneIndex].title;
+      for (const el of root.querySelectorAll('[data-coo-tune]')) el.textContent = name;
+      return name;
+    }
+
     function setUi(on) {
+      const name = title();
       button.setAttribute('aria-pressed', on ? 'true' : 'false');
-      button.setAttribute('aria-label', on ? 'Tuck Ceilidh away and stop the music' : 'Bring out Ceilidh to dance');
+      button.setAttribute('aria-label', on ? `Tuck Ceilidh away and stop ${name}` : `Bring out Ceilidh to dance to ${name}`);
       if (status) {
         status.textContent = on
-          ? 'Ceilidh is out and dancing. Highland Laddie is playing.'
-          : 'Ceilidh is tucked away. Highland Laddie is muted.';
+          ? `Ceilidh is out and dancing. ${name} is playing.`
+          : `Ceilidh is tucked away. ${name} is next, and the music is muted.`;
       }
     }
 
@@ -69,6 +77,8 @@ const strip = u('ceilidh-coo-strip.png');
     }
 
     function scheduleCycle(when) {
+      const tune = active.expanded;
+      const step = active.step;
       for (const ev of tune.melody) {
         if (!ev.midi) continue;
         tone(melodyBus, VOICES.melody.type, ev.midi, when + ev.at * step, ev.steps * step, VOICES.melody.gain);
@@ -77,7 +87,7 @@ const strip = u('ceilidh-coo-strip.png');
         if (!ev.midi) continue;
         tone(bassBus, VOICES.bass.type, ev.midi, when + ev.at * step, ev.steps * step, VOICES.bass.gain);
       }
-      return when + cycleSeconds;
+      return when + active.cycleSeconds;
     }
 
     function pump() {
@@ -153,11 +163,12 @@ const strip = u('ceilidh-coo-strip.png');
       root.setAttribute('data-out', '');
       let heard = false;
       try { heard = startTune(); } catch (e) { silence(); }
+      const name = title();
       button.setAttribute('aria-pressed', 'true');
-      button.setAttribute('aria-label', 'Tuck Ceilidh away and stop the music');
+      button.setAttribute('aria-label', `Tuck Ceilidh away and stop ${name}`);
       if (status) {
         status.textContent = heard
-          ? 'Ceilidh is out and dancing. Highland Laddie is playing.'
+          ? `Ceilidh is out and dancing. ${name} is playing.`
           : 'Ceilidh is out and dancing. Sound is not available in this browser.';
       }
     }
@@ -165,6 +176,8 @@ const strip = u('ceilidh-coo-strip.png');
     function tuck() {
       silence();
       root.removeAttribute('data-out');
+      tuneIndex = nextTuneIndex(tuneIndex);
+      active = prepareTune(tuneIndex);
       setUi(false);
     }
 
@@ -178,14 +191,28 @@ const strip = u('ceilidh-coo-strip.png');
 <style>
   .coo-perch {
     --frame: 128px;
-    --peek-w: 86px;
-    --peek-h: 62px;
-    --peek-x: -22px;
+    --peek-w: 30px;
+    --peek-h: 44px;
+    --peek-x: -74px;
     --peek-y: -2px;
-    position: absolute;
-    z-index: 3;
-    top: .2rem;
-    right: 0;
+    position: fixed;
+    z-index: 25;
+    top: auto;
+    left: auto;
+    right: calc(0.35rem + env(safe-area-inset-right, 0px));
+    bottom: calc(0.35rem + env(safe-area-inset-bottom, 0px));
+    pointer-events: none;
+  }
+  .coo-perch :global(.sr-only) {
+    left: 0;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
   .coo-bring {
     display: flex;
@@ -200,6 +227,7 @@ const strip = u('ceilidh-coo-strip.png');
     font: inherit;
     cursor: pointer;
     touch-action: manipulation;
+    pointer-events: auto;
     -webkit-tap-highlight-color: transparent;
   }
   .coo-bring:focus { outline: none; }
@@ -210,13 +238,15 @@ const strip = u('ceilidh-coo-strip.png');
   }
   .coo-cue {
     flex: none;
+    max-width: 9.5rem;
     background: var(--card, #fffdf8);
     color: var(--green, #1f4d3a);
     border: 2px solid var(--green, #1f4d3a);
     border-radius: 999px;
-    font: 700 .72rem/1 system-ui, sans-serif;
+    font: 700 .72rem/1.2 system-ui, sans-serif;
     letter-spacing: .02em;
-    padding: .32rem .45rem;
+    text-align: right;
+    padding: .32rem .5rem;
     box-shadow: 0 1px 0 rgba(42, 29, 20, .12);
     user-select: none;
   }
@@ -242,7 +272,7 @@ const strip = u('ceilidh-coo-strip.png');
     image-rendering: crisp-edges;
     image-rendering: pixelated;
   }
-  /* Tucked: a small bob so the horn at the edge reads as alive. */
+  /* Tucked: a small bob so the horn at the corner reads as alive. */
   .coo-perch:not([data-out]) .coo-nudge {
     animation: coo-wiggle 1.8s ease-in-out infinite;
   }
@@ -261,7 +291,7 @@ const strip = u('ceilidh-coo-strip.png');
     min-height: 2.75rem;
     display: grid;
     place-items: center;
-    padding: 0 .4rem;
+    padding: .3rem .55rem;
     background: var(--green, #1f4d3a);
     color: var(--cream, #f4e6c8);
     border-color: var(--cream, #f4e6c8);
@@ -280,16 +310,32 @@ const strip = u('ceilidh-coo-strip.png');
     from { transform: translate3d(0, 0, 0); }
     to { transform: translate3d(-1920px, 0, 0); }
   }
+  /* Narrow screens: the tune name stays in the aria-label, and the peek sits in the side padding. */
+  @media (max-width: 719px) {
+    .coo-perch:not([data-out]) .coo-cue { display: none; }
+    :global(main.wrap:has([data-ceilidh-coo])),
+    :global(body:has([data-ceilidh-coo]) footer.site .wrap) {
+      padding-right: calc(2.85rem + env(safe-area-inset-right, 0px));
+    }
+  }
+  :global(body:has([data-ceilidh-coo])) {
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  }
+  :global(body:has([data-ceilidh-coo][data-out])) {
+    padding-bottom: calc(13rem + env(safe-area-inset-bottom, 0px));
+  }
   @media (min-width: 720px) {
     .coo-perch {
       --frame: 192px;
-      --peek-w: 129px;
-      --peek-h: 93px;
-      --peek-x: -33px;
-      --peek-y: -3px;
-      top: .35rem;
+      --peek-w: 70px;
+      --peek-h: 88px;
+      --peek-x: -84px;
+      --peek-y: 0px;
     }
     .coo-perch[data-out] .coo-strip { animation-name: coo-fling-3x; }
+    :global(body:has([data-ceilidh-coo][data-out])) {
+      padding-bottom: calc(17rem + env(safe-area-inset-bottom, 0px));
+    }
   }
   /* After the size query, so a wide screen still holds the standing frame. */
   @media (prefers-reduced-motion: reduce) {

@@ -78,14 +78,14 @@ function lay(notes, at, voice) {
   return { notes: out, steps: cursor };
 }
 
-/** Expand FORM into absolute step times. Both voices share one clock. */
-export function expandTune(form = FORM) {
+/** Expand a form into absolute step times. Both voices share one clock. */
+export function expandTune(form = FORM, parts = PARTS) {
   const melody = [];
   const bass = [];
   let at = 0;
   for (const name of form) {
-    const part = PARTS[name];
-    if (!part) throw new Error(`Unknown Highland Laddie part: ${name}`);
+    const part = parts[name];
+    if (!part) throw new Error(`Unknown tune part: ${name}`);
     const lead = lay(part.melody, at, 'melody');
     const low = lay(part.bass, at, 'bass');
     if (lead.steps !== low.steps) {
@@ -101,6 +101,6 @@ export function expandTune(form = FORM) {
   return { melody, bass, totalSteps: at };
 }
 
-export function cycleDurationSeconds(tune = expandTune()) {
-  return tune.totalSteps * stepSeconds();
+export function cycleDurationSeconds(tune = expandTune(), bpm = TEMPO_BPM) {
+  return tune.totalSteps * stepSeconds(bpm);
 }

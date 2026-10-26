@@ -99,10 +99,14 @@ test('the dancing coo is on the home hero only, tucked until tapped, and quiet u
   const css = widget.split('<style>')[1] || '';
 
   assert.match(html, /aria-pressed="false"/);
-  assert.match(html, /aria-label="Bring out Ceilidh to dance"/);
+  assert.match(html, /aria-label="Bring out Ceilidh to dance to Highland Laddie"/);
+  assert.match(html, /data-coo-tune>Highland Laddie</);
   assert.doesNotMatch(html, /data-out/);
-  assert.match(html, /tap me/);
-  assert.match(widget, /Tuck Ceilidh away and stop the music/);
+  assert.match(widget, /Tuck Ceilidh away and stop \$\{name\}/);
+  assert.match(widget, /let tuneIndex = 0/);
+  assert.match(widget, /tuneIndex = nextTuneIndex\(tuneIndex\)/);
+  const bring = widget.slice(widget.indexOf('function bringOut'), widget.indexOf('function tuck'));
+  assert.doesNotMatch(bring, /nextTuneIndex/);
   assert.match(widget, /webkitAudioContext/);
   assert.match(widget, /ctx\.resume\(\)/);
   assert.doesNotMatch(widget, /await ctx\.resume|addEventListener\('click', async/);
@@ -120,8 +124,17 @@ test('the dancing coo is on the home hero only, tucked until tapped, and quiet u
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
   assert.match(css, /animation:\s*none/);
   assert.match(css, /\[data-out\][\s\S]*coo-fling-2x/);
+  assert.match(css, /position:\s*fixed/);
+  assert.match(css, /safe-area-inset-right/);
+  assert.match(css, /safe-area-inset-bottom/);
+  assert.match(css, /pointer-events:\s*none/);
+  assert.match(css, /pointer-events:\s*auto/);
+  assert.match(css, /max-width:\s*719px/);
+  assert.match(css, /safe-area-inset-right/);
 
   assert.match(home, /<section class="hero">[\s\S]*<CeilidhCoo \/>[\s\S]*<\/section>/);
+  assert.match(home, /\.hero > img \{ order:-1/);
+  assert.doesNotMatch(home, /wrap-reverse/);
   assert.doesNotMatch(home, /slot="mascot"/);
   assert.doesNotMatch(layout, /name="mascot"/);
 
