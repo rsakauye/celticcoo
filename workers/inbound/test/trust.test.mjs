@@ -534,6 +534,10 @@ test('the trust migration, docs, and deploy secret stay out of the worker vars',
   assert.equal(hasPrivateContact(docs), false);
   const workflow = readFileSync(join(here, '../../../.github/workflows/deploy.yml'), 'utf8');
   assert.match(workflow, /APPROVAL_API_TOKEN/);
+  assert.match(workflow, /if \(approval && approval\.length >= 16/);
+  assert.match(workflow, /This deploy does not change that Worker secret/);
+  assert.doesNotMatch(workflow, /--secrets-file-mode/);
+  assert.doesNotMatch(workflow, /--var "FORWARD_TO:/);
   const config = readFileSync(join(here, '../wrangler.jsonc'), 'utf8').replace(/^\s*\/\/.*$/gm, '');
   assert.doesNotMatch(config, /APPROVAL_API_TOKEN/);
   const shared = readFileSync(join(here, '../../../shared/trust/index.js'), 'utf8');

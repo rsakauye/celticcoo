@@ -27,7 +27,9 @@ test('CASL hooks are placeholders and do not invent an address', () => {
   assert.equal(CASL_TODO.mailingAddress, 'TODO: CASL mailing address');
   assert.doesNotMatch(footer, /@|PO Box|Street|Avenue/i);
   const form = readFileSync(join(here, '../src/components/NewsletterForm.astro'), 'utf8');
-  assert.match(form, /caslFooterText\(\)/);
+  assert.match(form, /PO Box 1604, Okotoks, AB T1S 1B5, hello@celticcoo\.ca/);
+  assert.match(form, /You can unsubscribe at any time/);
+  assert.doesNotMatch(form, /caslFooterText|TODO: CASL/);
   const notice = readFileSync(join(root, 'shared/casl/notice.js'), 'utf8');
   assert.doesNotMatch(notice, /@[a-z0-9.-]+\.[a-z]{2,}/i);
   const text = bookingText({
