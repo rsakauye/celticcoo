@@ -10,7 +10,7 @@ This repository does not change the live routing rule. The Wrangler config has n
 2. If that forward does not happen, the handler throws after trying to store the row. The failure is in the Workers logs, and the sending server can retry the delivery. A message the platform marks as not forwardable is stored and the handler returns, because another attempt will not make it forwardable.
 3. Parses the sender, subject, date, and plain-text body. Attachment bytes are not stored. A note of the count and content types is. The raw message is capped at 256 KB before parsing.
 4. Stores a row in the existing D1 database `celticcoo-intake`, table `inbound_emails`.
-5. Classifies it as `event_listing_request`, `booking_inquiry`, `correction_or_update`, `partnership_or_press`, `spam`, or `other`. Workers AI (`@cf/meta/llama-3.1-8b-instruct`) does this when the binding works. Otherwise a weighted rules fallback does. The phrases, places, and seasons live in `shared/triage/sites/celticcoo.js`. The scorer in `shared/triage/engine.js` does not know the site. If the model and a clear rules match disagree about opening or suppressing an issue, the rules win. An auto-reply or a newsletter question that the rules call `other` also wins, so it does not open an issue. There is no minimum body length. A short note is still sent to the model.
+5. Classifies it as `event_listing_request`, `booking_inquiry`, `correction_or_update`, `partnership_or_press`, `spam`, or `other`. Workers AI (`@cf/meta/llama-3.1-8b-instruct-fp8`) does this when the binding works. Otherwise a weighted rules fallback does. The phrases, places, and seasons live in `shared/triage/sites/celticcoo.js`. The scorer in `shared/triage/engine.js` does not know the site. If the model and a clear rules match disagree about opening or suppressing an issue, the rules win. An auto-reply or a newsletter question that the rules call `other` also wins, so it does not open an issue. There is no minimum body length. A short note is still sent to the model.
 6. For `event_listing_request` and `correction_or_update`, opens an issue in `rsakauye/celticcoo` with the label `inbound:event-request` or `inbound:correction`. The issue has the D1 row id, a short summary, and public event fields (title, host, date, city, province, venue, URL). It does not include the sender's email, phone, or message body. If a clarifying draft exists, the draft text is included. The approval link is not.
 7. When `CLARIFY_DRAFTS` is `drafts` (the default), a vague, incomplete, or contradictory inquiry gets a short draft that asks only for what is missing. The draft is stored on the same row with status `pending_approval`. A private review note is sent to `FORWARD_TO` when the email binding is available. Nothing is sent to the original sender until you approve that draft.
 8. Does not fetch any URL from the email and does not publish an event. `ACK_REPLIES` is `off`. An automatic receipt is sent only if that value is changed to `on` and the Worker is redeployed. That receipt is separate from clarifying drafts.
@@ -41,29 +41,27 @@ The Worker now logs one line, `inbound classify`, with a short `reason`. On a fa
 | `ai_request` | The call was rejected for JSON mode, schema, temperature, or `max_tokens`. |
 | `ai_quota` | Neuron allocation or a paid-plan model refusal (codes 3036 and 5035, or that text). |
 | `ai_capacity` | Workers AI was out of capacity or rate limited (code 3040 or HTTP 429). |
-| `ai_timeout` | The call timed out or was aborted. |
-| `ai_model` | The model id was not found (code 6002 or that text). |
-| `ai_unparsed` | The model replied, but not with a category in the allowed list. |
-| `ai_failed` | The call threw for another reason. The sanitized message is still on the log line. |
+| `ai_failed:timeout` | The call timed out or was aborted. A timed-out attempt is not retried. |
+| `ai_model` | The model id was not found, was removed, or is deprecated (code 6002 or that text). |
+| `ai_failed:parse_error` | The model replied, but the text was not a JSON object. |
+| `ai_failed:invalid_category` | The model replied with JSON whose category is not in the allowed list. |
+| `ai_failed:run_error` | The call threw for another reason. The log also has a sanitized error name and message. |
+| `ai_prompt` | JSON mode and the messages call did not succeed, and a `prompt` call did. |
 | `rules_override` | The model answered, and a clear rules match overrode it. |
 
-The same code is stored on the row as `classifier_reason`. A failure appends a short slug, for example `ai_quota:3036_daily_free_allocation`. JSON mode is still tried first. `additionalProperties` is still not sent in the schema. If that attempt throws or does not parse, the Worker tries once more with only the messages, which is the shape of a plain Workers AI call, and logs which path worked.
+The same code is stored on the row as `classifier_reason`. A failure appends a short slug, for example `ai_quota:3036_daily_free_allocation`. JSON mode is still tried first. `additionalProperties` is still not sent in the schema. If that attempt throws or does not parse, the Worker tries once more with messages only. If the error says `prompt` is required, it tries once more with `prompt`. The log line names which path worked.
 
 ### What failed on 26 October 2026
 
-Two rows stored at 04:55 UTC that day have `classifier=rules` and `classifier_reason=ai_failed`. They are one second apart: one `booking_inquiry` at confidence `0.8`, and one `other` at confidence `0.35`. The Workers log for both is only `{ "message": "inbound classify", "classifier": "rules", "reason": "ai_failed" }`. The traces finished in about two seconds with outcome ok and no trace error. Both the JSON-schema attempt and the plain-messages attempt failed. The thrown text did not contain the words the old code used for `ai_request` (JSON mode, schema, `response_format`, temperature, `max_tokens`), and `run` was a function, or the reason would have been `ai_unavailable`.
+Two rows stored at 04:55 UTC that day (about 22:55 on 25 October, Mountain Time) have `classifier=rules` and `classifier_reason=ai_failed`. They are one second apart: one `booking_inquiry` at confidence `0.8`, and one `other` at confidence `0.35`. The Workers log for both is only `{ "message": "inbound classify", "classifier": "rules", "reason": "ai_failed" }`. The traces finished in about two seconds with outcome ok and no trace error. Both the JSON-schema attempt and the plain-messages attempt failed. The thrown text did not contain the words the old code used for `ai_request` (JSON mode, schema, `response_format`, temperature, `max_tokens`), and `run` was a function, or the reason would have been `ai_unavailable`. A parse miss would have been recorded as unparsed, not `ai_failed`. A timeout would have taken longer than those traces.
 
-The 25 October 14:35 UTC row is the earlier case. Its empty `classifier_reason` is the code from before this logging existed. The Worker script's `modified_on` is 16:49 UTC that day, after that row was written.
+The configured id `@cf/meta/llama-3.1-8b-instruct` is not in the Workers AI catalog. The model page says that id is deprecated, removed, or not found. It is on the 30 May 2026 deprecation list. A removed id fails before inference, for a JSON-schema body and for a messages-only body, which is why both messages that week failed the same way. The exact error string from those two calls was not kept. An unrecognized throw was stored as the bare reason `ai_failed`.
 
-Checks run on the same account after the Workers Paid upgrade (the upgrade was about 04:45 UTC, the failures at 04:55):
+The Worker now calls `@cf/meta/llama-3.1-8b-instruct-fp8`. That id is still hosted. The binding example is `env.AI.run(model, { messages })`. The published input schema also requires `prompt`, allows `response_format` of `json_object` or `json_schema`, and defaults `max_tokens` to 256 with no published maximum. The Worker sends `messages`, `max_tokens` 512, and `response_format` JSON schema first. The synchronous output types `response` as a string, so a fenced or prose-wrapped JSON string is parsed, and an object in `response` is still accepted. If the error says `prompt` is required, one more call sends `prompt` instead of `messages`. A category outside the allowed list is rejected and the rules result is kept. `modelName` rewrites the retired id to fp8 if an old value is still set.
 
-- The model catalog does not list `@cf/meta/llama-3.1-8b-instruct`. A nearby id is `@cf/meta/llama-3.1-8b-instruct-fp8`.
-- `GET /ai/models/schema` for the configured id returns HTTP 404, code 6002, "Model schema not found".
-- `POST /ai/run/@cf/meta/llama-3.1-8b-instruct` with the Worker's schema returns HTTP 200 and a valid category object. A plain messages call also returns HTTP 200.
+`postal-mime` 4.1.4 still returns `text` and `html` as optional strings. The parser still prefers plain text and uses HTML only when plain text is empty. That upgrade does not change the fields fed to the classifier.
 
-The model id and the schema are valid now. The exact 04:55 error text was discarded, so it cannot be quoted. The plausible cause is a Workers AI error whose message did not contain the schema keywords: the daily neuron allocation (code 3036) or a capacity response (3040 or 429), in the minutes after the paid-plan upgrade before the new entitlement applied. Both messages failed the same way, so it was not a one-off timeout. No Wrangler var change is required.
-
-If that legacy model id later returns model-not-found, set the `AI_MODEL` var to `@cf/meta/llama-3.1-8b-instruct-fp8` and keep the schema-then-text order. Do not switch today. A plain call to the fp8 id returned JSON inside a markdown fence, which is a worse default while the current id still runs.
+No D1 migration. No new binding. No new secret. The next deploy of this Worker updates the `AI_MODEL` var.
 
 ## Rules, lexicon, and the shared module
 
@@ -243,7 +241,7 @@ Selecting `envelope_from`, `from_header`, `reply_to`, `subject`, `text_body`, or
 
 `forward_status` is `sent`, `failed`, or `skipped`. `issue_status` is `skipped`, `filed`, or `failed`. `clarify_status` is empty, `pending_approval`, `approved`, `sent`, or `discarded`.
 
-After the next real message, `classifier_reason` should be `ai_ok` or `ai_text` when the model ran, or a specific failure code when it did not. The Workers log line `inbound classify` has the same reason.
+After the next real message, `classifier_reason` should be `ai_ok`, `ai_text`, or `ai_prompt` when the model ran, or a specific failure code such as `ai_failed:run_error` when it did not. The Workers log line `inbound classify` has the same reason.
 
 ## Turn acknowledgement replies on
 

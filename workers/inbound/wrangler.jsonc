@@ -86,6 +86,6 @@
   "vars": {
     "ACK_REPLIES": "off",
     "CLARIFY_DRAFTS": "drafts",
-    "AI_MODEL": "@cf/meta/llama-3.1-8b-instruct"
+    "AI_MODEL": "@cf/meta/llama-3.1-8b-instruct-fp8"
   }
 }
