@@ -113,14 +113,29 @@ test('verified cultural listings use the cost and category the organizer support
   assert.equal(tenors.cost, 'paid');
   assert.equal(tenors.offers.price, 59.85);
   assert.equal(tenors.offers.priceCurrency, 'CAD');
-  assert.equal('isAccessibleForFree' in eventJsonLd(tenors), false);
+  assert.equal(tenors.offers.availability, 'InStock');
+  assert.equal('validFrom' in tenors.offers, false);
+  assert.equal(tenors.organizer[0].url, 'https://gatewayyyc.com/');
+  const tenorsLd = eventJsonLd(tenors);
+  assert.equal('isAccessibleForFree' in tenorsLd, false);
+  assert.equal(tenorsLd.offers.availability, 'https://schema.org/InStock');
+  assert.equal(tenorsLd.offers.price, 59.85);
 
   const toronto = dated["Toronto St. Patrick's Parade"];
   assert.equal(toronto.start_date, '2027-03-14');
   assert.equal(toronto.category, 'Parades');
   assert.equal(toronto.cost, 'free');
   assert.match(toronto.cost_quote, /free community celebration/);
-  assert.equal(eventJsonLd(toronto).isAccessibleForFree, true);
+  assert.equal(toronto.offers, undefined);
+  const torontoLd = eventJsonLd(toronto);
+  assert.equal(torontoLd.isAccessibleForFree, true);
+  assert.deepEqual(torontoLd.offers, {
+    '@type': 'Offer',
+    url: 'https://www.stpatrickstoronto.com/',
+    price: 0,
+    priceCurrency: 'CAD',
+    availability: 'https://schema.org/InStock',
+  });
   assert.ok(toronto.tags.includes('parade'));
   assert.ok(toronto.tags.includes('st-patricks'));
 
@@ -150,6 +165,44 @@ test('verified cultural listings use the cost and category the organizer support
   assert.equal(/kirkin/i.test(names), false);
   assert.equal(/heritage festival/i.test(names), false);
   assert.equal(/canada day parade/i.test(names), false);
+});
+
+test('ticket offers keep only the price, stock, and on-sale date the listing published', () => {
+  const dated = Object.fromEntries(events.map((e) => [e.name, e]));
+  const blackthorn = dated['A Celebration of Robbie Burns with Blackthorn'];
+  assert.equal(blackthorn.cost, 'paid');
+  assert.equal(blackthorn.offers.price, 34.35);
+  assert.equal(blackthorn.offers.priceCurrency, 'CAD');
+  assert.equal(blackthorn.offers.availability, 'InStock');
+  assert.equal(blackthorn.offers.validFrom, '2026-06-20');
+  const corner = dated['Burns Night at Cornerstone Music Cafe'];
+  assert.equal(corner.offers.price, 91.86);
+  assert.equal(corner.offers.priceCurrency, 'CAD');
+  assert.equal('availability' in corner.offers, false);
+  assert.equal(corner.offers.validFrom, '2026-11-15');
+  const tattoo = dated['Royal Edinburgh Military Tattoo'];
+  assert.equal(tattoo.offers.availability, 'InStock');
+  assert.equal('price' in tattoo.offers, false);
+  const worlds = dated['World Pipe Band Championships'];
+  assert.equal(worlds.offers.availability, 'InStock');
+  assert.equal('price' in worlds.offers, false);
+  const braemar = dated['Braemar Gathering'];
+  assert.equal(braemar.offers.validFrom, '2027-02-01');
+  assert.equal('price' in braemar.offers, false);
+  assert.equal('availability' in braemar.offers, false);
+  const tea = dated['Burns Supper at Tea On West'];
+  assert.equal(tea.city, 'Port Colborne');
+  assert.equal(tea.organizer[0].url, 'https://teaonwest.ca/');
+  assert.equal(dated['Robert Burns Dinner, Barrie Legion'].organizer[0].url, 'https://barrielegion147.ca/');
+  const glengarry = dated['Glengarry Highland Games (North American Pipe Band Championships)'];
+  assert.equal(glengarry.organizer[1].name, 'Kenyon Agricultural Society');
+  assert.equal(glengarry.organizer[1].url, 'https://www.glengarryhighlandgames.com/');
+  const campbell = dated['Campbell River Highland Gathering'];
+  assert.equal(campbell.organizer[0].name, 'Campbell River Salmon Festival');
+  assert.equal(campbell.organizer[0].url, 'https://crsalmonfestival.com/');
+  assert.equal(campbell.offers, undefined);
+  assert.equal('url' in dated['ETS Pipes and Drums Ceilidh Night'].organizer[0], false);
+  assert.equal(dated['A Celtic Family Christmas with Natalie MacMaster & Donnell Leahy'].organizer[0].url, 'https://www.livenation.com/');
 });
 
 test('Free only keeps free events and writes ?free=1', () => {

@@ -19,9 +19,14 @@
 //   (never a previous year's price, never a guess). availability is only InStock,
 //   SoldOut, or PreOrder when we know which. If tickets are not on sale yet, leave
 //   availability off and set validFrom to the published on-sale date.
+//   A free event (cost === 'free') is the exception: admission is the offer. The URL is
+//   offers.url, or source_url when there is no ticket page. price is 0, priceCurrency
+//   comes from the country (never a guess), and availability is InStock. validFrom is
+//   set only when offers.validFrom or tickets_on_sale is already a date.
 
 const ORIGIN = 'https://celticcoo.ca';
 const COUNTRY_CODE = { Canada: 'CA', USA: 'US', UK: 'GB', France: 'FR' };
+const CURRENCY_BY_COUNTRY = { Canada: 'CAD', USA: 'USD', UK: 'GBP', France: 'EUR' };
 
 export const EVENT_IMAGE_FALLBACK = [
   `${ORIGIN}/images/celtic-coo-event-16x9.png`,
@@ -66,7 +71,43 @@ export function eventPerformers(event) {
   });
 }
 
+function dated(value) {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value) ? value : '';
+}
+
+function currencyFor(event) {
+  const fromCountry = CURRENCY_BY_COUNTRY[event?.country];
+  if (fromCountry) return fromCountry;
+  const raw = typeof event?.offers?.priceCurrency === 'string' ? event.offers.priceCurrency.trim() : '';
+  return /^[A-Z]{3}$/.test(raw) ? raw : '';
+}
+
+// Free admission is an offer even when nobody sells a ticket. Price stays 0; the
+// currency follows the country. A date already on the record can be validFrom.
+function freeOffer(event) {
+  const raw = event?.offers;
+  const ticketUrl = typeof raw?.url === 'string' ? raw.url.trim() : '';
+  const source = typeof event?.source_url === 'string' ? event.source_url.trim() : '';
+  const url = ticketUrl || source;
+  const currency = currencyFor(event);
+  if (!url || !currency) return null;
+  const offer = {
+    '@type': 'Offer',
+    url,
+    price: 0,
+    priceCurrency: currency,
+    availability: AVAILABILITY.InStock,
+  };
+  const validFrom = dated(raw?.validFrom) || dated(event?.tickets_on_sale);
+  if (validFrom) offer.validFrom = validFrom;
+  return offer;
+}
+
 export function eventOffer(event) {
+  if (event?.cost === 'free') {
+    const free = freeOffer(event);
+    if (free) return free;
+  }
   const raw = event?.offers;
   if (!raw || typeof raw.url !== 'string' || !raw.url.trim()) return null;
   const offer = { '@type': 'Offer', url: raw.url.trim() };
@@ -81,7 +122,7 @@ export function eventOffer(event) {
   }
   const availability = typeof raw.availability === 'string' ? raw.availability.replace(/^https:\/\/schema\.org\//, '') : '';
   if (AVAILABILITY[availability]) offer.availability = AVAILABILITY[availability];
-  if (typeof raw.validFrom === 'string' && /^\d{4}-\d{2}-\d{2}/.test(raw.validFrom)) offer.validFrom = raw.validFrom;
+  if (dated(raw.validFrom)) offer.validFrom = raw.validFrom;
   return offer;
 }
 

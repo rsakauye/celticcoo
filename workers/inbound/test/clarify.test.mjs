@@ -7,8 +7,8 @@ import { classifyMessage } from '../src/classify.js';
 import { assessGaps, buildDraft, clarifyMode, planDraft } from '../src/clarify.js';
 import { handleFetch, handleInboundEmail } from '../src/index.js';
 import { hasPrivateContact } from '../src/redact.js';
-import { buildReviewNote, sendApprovedReply } from '../src/review.js';
-import { reviewLinks, signAction, verifyAction } from '../src/token.js';
+import { buildReviewNote, reviewLinks, sendApprovedReply, sendReviewNote } from '../src/review.js';
+import { newReviewTokenId, verifyAction } from '../src/token.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const OWNER = 'owner@example.com';
@@ -55,17 +55,55 @@ function memoryDb() {
 
 function reviewDb(row) {
   const state = { clarify_lock: '', ...row };
+  const tokens = new Map();
   return {
     state,
+    tokens,
     prepare(sql) {
       return {
         bind(...args) {
           return {
             async first() {
+              if (/FROM review_tokens/i.test(sql)) return tokens.get(args[0]) || null;
               if (/WHERE id = \?/i.test(sql)) return state.id === args[0] ? { ...state } : null;
               return { ...state };
             },
             async run() {
+              if (/INSERT INTO review_tokens/i.test(sql)) {
+                const [id, inboundId, created, expires] = args;
+                if (tokens.has(id)) throw new Error('unique review token');
+                tokens.set(id, {
+                  id,
+                  inbound_email_id: inboundId,
+                  created_at: created,
+                  expires_at: expires,
+                  used_at: '',
+                });
+                return { meta: { changes: 1 } };
+              }
+              if (/UPDATE review_tokens SET used_at = ''/i.test(sql)) {
+                const [id, usedAt] = args;
+                const token = tokens.get(id);
+                if (token && token.used_at === usedAt) {
+                  token.used_at = '';
+                  return { meta: { changes: 1 } };
+                }
+                return { meta: { changes: 0 } };
+              }
+              if (/UPDATE review_tokens SET used_at = \?/i.test(sql)) {
+                const [usedAt, id, nowIso] = args;
+                const token = tokens.get(id);
+                if (token && token.used_at === '' && token.expires_at > nowIso) {
+                  token.used_at = usedAt;
+                  return { meta: { changes: 1 } };
+                }
+                return { meta: { changes: 0 } };
+              }
+              if (/SET clarify_draft = \?/i.test(sql)) {
+                const [draft, id] = args;
+                if (state.id === id) state.clarify_draft = draft;
+                return { meta: { changes: 1 } };
+              }
               if (/SET clarify_status = 'approved', clarify_lock = \?/i.test(sql)) {
                 const [lock, id, stale] = args;
                 const open = state.clarify_lock === '' || state.clarify_lock < stale;
@@ -111,6 +149,25 @@ function reviewDb(row) {
       };
     },
   };
+}
+
+function cookieHeader(response) {
+  return (response.headers.get('set-cookie') || '').split(';')[0];
+}
+
+function csrfValue(html) {
+  const match = /name="csrf" value="([^"]+)"/.exec(html);
+  return match ? match[1] : '';
+}
+
+async function postReview(env, url, { cookie, csrf, action, draft, deps }) {
+  const body = new URLSearchParams({ csrf, action, confirm: 'yes' });
+  if (draft != null) body.set('draft', draft);
+  return handleFetch(new Request(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded', cookie },
+    body,
+  }), env, deps);
 }
 
 function mime(subject, text) {
@@ -375,8 +432,9 @@ test('a review note goes to the owner and the sender is not mailed', async () =>
   assert.equal(sent[0].from.email, 'hello@celticcoo.ca');
   assert.match(sent[0].text, /What is the date/);
   assert.match(sent[0].text, /ada@example.com/);
-  assert.match(sent[0].text, /Approval links are not configured/);
+  assert.match(sent[0].text, /review link is not configured yet/);
   assert.doesNotMatch(sent[0].text, /\/review\?/);
+  assert.doesNotMatch(sent[0].text, /\/r\/[0-9A-Za-z]{8,10}/);
   const insert = db.calls.find((call) => /INSERT INTO inbound_emails/i.test(call.sql));
   assert.equal(insert.args.includes('pending_approval'), true);
   assert.equal(logs.some((line) => line.includes(SENDER) || line.includes('403')), false);
@@ -427,9 +485,48 @@ test('an event issue shows the draft and not the approval link or the sender', a
   assert.match(body.body, /What time does it start/);
   assert.match(body.body, /pending_approval/);
   assert.doesNotMatch(body.body, /\/review\?/);
+  assert.doesNotMatch(body.body, /\/r\/[0-9A-Za-z]{8,10}/);
   assert.doesNotMatch(body.body, /token=/);
   assert.doesNotMatch(body.body, /ada@example.com/);
   assert.equal(hasPrivateContact(`${body.title}\n${body.body}`), false);
+});
+
+test('a review note is a short HTML email with one review link', async () => {
+  const draft = buildDraft(['missing_when'], 'booking_inquiry');
+  const db = reviewDb({
+    id: ROW_ID,
+    subject: 'Piper for a community supper',
+    reply_to: SENDER,
+    envelope_from: SENDER,
+    clarify_status: 'pending_approval',
+    clarify_draft: draft,
+  });
+  const sent = [];
+  const result = await sendReviewNote({
+    FORWARD_TO: OWNER,
+    REVIEW_SECRET: SECRET,
+    REVIEW_BASE_URL: 'https://review.celticcoo.ca',
+    INTAKE_DB: db,
+  }, {
+    id: ROW_ID,
+    category: 'booking_inquiry',
+    reasons: ['missing_when'],
+    draft,
+    recipient: SENDER,
+    subject: 'Piper for a community supper',
+    original: 'Hello from Sample Organizer. Could you book a piper?',
+    senderLabel: `Sample Organizer <${SENDER}>`,
+  }, { now: () => NOW, send: async (mail) => sent.push(mail) });
+  assert.equal(result.status, 'sent');
+  assert.equal(sent.length, 1);
+  assert.match(sent[0].html, />Review</);
+  assert.doesNotMatch(sent[0].html, /\/review\?/);
+  assert.equal((sent[0].text.match(/https:\/\/review\.celticcoo\.ca\/r\//g) || []).length, 1);
+  assert.equal((sent[0].html.match(/\/r\/[0-9A-Za-z]{10}/g) || []).length, 1);
+  assert.match(sent[0].text, /Sample Organizer/);
+  assert.match(newReviewTokenId(), /^[0-9A-Za-z]{10}$/);
+  const again = newReviewTokenId();
+  assert.notEqual(newReviewTokenId(), again);
 });
 
 test('approval links require a POST and send the stored draft once', async () => {
@@ -439,6 +536,8 @@ test('approval links require a POST and send the stored draft once', async () =>
     subject: 'Piper for a wedding',
     reply_to: '',
     envelope_from: SENDER,
+    from_header: `Sample Organizer <${SENDER}>`,
+    text_body: 'Hello from Sample Organizer. We would like a piper.',
     category: 'booking_inquiry',
     clarify_status: 'pending_approval',
     clarify_draft: draft,
@@ -452,57 +551,56 @@ test('approval links require a POST and send the stored draft once', async () =>
     FORWARD_TO: OWNER,
   };
   const links = await reviewLinks(env, ROW_ID, NOW);
+  assert.match(links.url, /^https:\/\/review\.celticcoo\.ca\/r\/[0-9A-Za-z]{10}$/);
+  assert.equal(Date.parse(links.expiresAt) - NOW.getTime(), 7 * 24 * 60 * 60 * 1000);
   const sent = [];
   const send = async (mail) => sent.push(mail);
+  const deps = { now: () => NOW, send };
 
-  const peeked = await handleFetch(new Request(links.approve), env, { now: () => NOW, send });
+  const peeked = await handleFetch(new Request(links.url), env, deps);
   const peekHtml = await peeked.text();
   assert.equal(peeked.status, 200);
   assert.match(peekHtml, /What is the date/);
-  assert.match(peekHtml, /ada@example.com/);
+  assert.match(peekHtml, /Sample Organizer/);
+  assert.match(peekHtml, /Approve and send/);
   assert.equal(sent.length, 0);
   assert.equal(db.state.clarify_status, 'pending_approval');
+  const csrf = csrfValue(peekHtml);
+  const cookie = cookieHeader(peeked);
+  assert.ok(csrf);
+  assert.match(cookie, /^coo_csrf=/);
 
-  const unconfirmed = await handleFetch(new Request('https://review.celticcoo.ca/review', {
-    method: 'POST',
-    headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    body: new URL(links.approve).search.slice(1),
-  }), env, { now: () => NOW, send });
-  assert.equal(unconfirmed.status, 400);
+  const unconfirmed = await postReview(env, links.url, { cookie, csrf: 'not-the-cookie', action: 'approve', deps });
+  assert.equal(unconfirmed.status, 403);
   assert.equal(sent.length, 0);
 
-  const approved = await handleFetch(new Request('https://review.celticcoo.ca/review', {
-    method: 'POST',
-    headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    body: `${new URL(links.approve).search.slice(1)}&confirm=yes`,
-  }), env, { now: () => NOW, send });
+  const edited = `${draft}\nPlease reply with the date.`;
+  const approved = await postReview(env, links.url, { cookie, csrf, action: 'approve', draft: edited, deps });
   assert.equal(approved.status, 200);
   assert.match(await approved.text(), /was sent/);
   assert.equal(sent.length, 1);
   assert.equal(sent[0].to, SENDER);
   assert.equal(sent[0].from.email, 'hello@celticcoo.ca');
   assert.equal(sent[0].replyTo.email, 'hello@celticcoo.ca');
-  assert.equal(sent[0].text, draft);
-  assert.doesNotMatch(sent[0].text, /ada@example.com/);
+  assert.match(sent[0].text, /Please reply with the date/);
+  assert.doesNotMatch(sent[0].text, /ada@example\.com/);
   assert.equal(db.state.clarify_status, 'sent');
 
-  const again = await handleFetch(new Request('https://review.celticcoo.ca/review', {
-    method: 'POST',
-    headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    body: `${new URL(links.approve).search.slice(1)}&confirm=yes`,
-  }), env, { now: () => NOW, send });
+  const again = await postReview(env, links.url, { cookie, csrf, action: 'approve', draft: edited, deps });
   assert.equal(again.status, 200);
-  assert.match(await again.text(), /already sent/i);
+  assert.match(await again.text(), /already used/i);
   assert.equal(sent.length, 1);
 });
 
-test('a bad, expired, or discard link does not send', async () => {
+test('a bad, expired, or deny action does not send', async () => {
   const draft = buildDraft(['unclear'], 'other');
   const db = reviewDb({
     id: ROW_ID,
-    subject: 'Question',
+    subject: 'A short question',
     reply_to: SENDER,
     envelope_from: SENDER,
+    from_header: `Sample Organizer <${SENDER}>`,
+    text_body: 'Hello, could you help sometime? Thanks.',
     category: 'other',
     clarify_status: 'pending_approval',
     clarify_draft: draft,
@@ -510,31 +608,42 @@ test('a bad, expired, or discard link does not send', async () => {
   });
   const env = { INTAKE_DB: db, REVIEW_SECRET: SECRET, REVIEW_BASE_URL: 'https://review.celticcoo.ca' };
   const sent = [];
-  const send = async (mail) => sent.push(mail);
+  const deps = { now: () => NOW, send: async (mail) => sent.push(mail) };
   const links = await reviewLinks(env, ROW_ID, NOW);
-  const tamperedUrl = new URL(links.approve);
-  const token = tamperedUrl.searchParams.get('token');
-  tamperedUrl.searchParams.set('token', `${token.slice(0, -1)}${token.endsWith('a') ? 'b' : 'a'}`);
-  const tampered = tamperedUrl.toString();
-  const bad = await handleFetch(new Request(tampered), env, { now: () => NOW, send });
-  assert.equal(bad.status, 403);
+
+  const bad = await handleFetch(new Request('https://review.celticcoo.ca/r/not-a-token'), env, deps);
+  assert.equal(bad.status, 404);
   assert.doesNotMatch(await bad.text(), /Are you asking to list/);
 
-  const expiredToken = await signAction(SECRET, { action: 'approve', id: ROW_ID, exp: 1_700_000_000 });
-  const expired = await handleFetch(
-    new Request(`https://review.celticcoo.ca/review?id=${ROW_ID}&action=approve&exp=1700000000&token=${expiredToken}`),
-    env,
-    { now: () => NOW, send },
-  );
-  assert.equal(expired.status, 403);
+  const missing = await handleFetch(new Request('https://review.celticcoo.ca/r/missingtok'), env, deps);
+  assert.equal(missing.status, 404);
+  assert.equal(sent.length, 0);
 
-  const discarded = await handleFetch(new Request('https://review.celticcoo.ca/review', {
-    method: 'POST',
-    headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    body: `${new URL(links.discard).search.slice(1)}&confirm=yes`,
-  }), env, { now: () => NOW, send });
-  assert.equal(discarded.status, 200);
-  assert.match(await discarded.text(), /Discarded/);
+  const token = db.tokens.get(links.id);
+  token.expires_at = '2020-01-01T00:00:00.000Z';
+  const expired = await handleFetch(new Request(links.url), env, deps);
+  assert.equal(expired.status, 410);
+  assert.match(await expired.text(), /expired/i);
+  const expiredPost = await postReview(env, links.url, {
+    cookie: 'coo_csrf=abc',
+    csrf: 'abc',
+    action: 'approve',
+    deps,
+  });
+  assert.equal(expiredPost.status, 410);
+  assert.equal(sent.length, 0);
+  token.expires_at = new Date(NOW.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const opened = await handleFetch(new Request(links.url), env, deps);
+  const html = await opened.text();
+  const denied = await postReview(env, links.url, {
+    cookie: cookieHeader(opened),
+    csrf: csrfValue(html),
+    action: 'deny',
+    deps,
+  });
+  assert.equal(denied.status, 200);
+  assert.match(await denied.text(), /Denied/);
   assert.equal(sent.length, 0);
   assert.equal(db.state.clarify_status, 'discarded');
 
@@ -551,9 +660,10 @@ test('a locked or unsafe draft is not sent, and a failed send can be retried', a
   const draft = buildDraft(['missing_time'], 'event_listing_request');
   const locked = reviewDb({
     id: ROW_ID,
-    subject: 'Please list our Burns Supper',
+    subject: 'Please list our community supper',
     reply_to: SENDER,
     envelope_from: SENDER,
+    text_body: 'Please list our community supper in Lethbridge.',
     category: 'event_listing_request',
     clarify_status: 'pending_approval',
     clarify_draft: draft,
@@ -563,17 +673,20 @@ test('a locked or unsafe draft is not sent, and a failed send can be retried', a
   const env = { INTAKE_DB: locked, REVIEW_SECRET: SECRET, REVIEW_BASE_URL: 'https://review.celticcoo.ca' };
   const links = await reviewLinks(env, ROW_ID, NOW);
   const sent = [];
-  const busy = await handleFetch(new Request('https://review.celticcoo.ca/review', {
-    method: 'POST',
-    headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    body: `${new URL(links.approve).search.slice(1)}&confirm=yes`,
-  }), env, { now: () => NOW, send: async (mail) => sent.push(mail) });
+  const opened = await handleFetch(new Request(links.url), env, { now: () => NOW, send: async (mail) => sent.push(mail) });
+  const openedHtml = await opened.text();
+  const busy = await postReview(env, links.url, {
+    cookie: cookieHeader(opened),
+    csrf: csrfValue(openedHtml),
+    action: 'approve',
+    deps: { now: () => NOW, send: async (mail) => sent.push(mail) },
+  });
   assert.equal(busy.status, 409);
   assert.equal(sent.length, 0);
 
   const unsafe = reviewDb({
     id: ROW_ID,
-    subject: 'Please list our Burns Supper',
+    subject: 'Please list our community supper',
     reply_to: SENDER,
     envelope_from: SENDER,
     category: 'event_listing_request',
@@ -581,18 +694,21 @@ test('a locked or unsafe draft is not sent, and a failed send can be retried', a
     clarify_draft: `Hello\nEmail ${SENDER}\n`,
     clarify_reasons: 'missing_time',
   });
+  const unsafeEnv = { ...env, INTAKE_DB: unsafe };
+  const unsafeLinks = await reviewLinks(unsafeEnv, ROW_ID, NOW);
   let unsafeSends = 0;
-  const blocked = await handleFetch(new Request('https://review.celticcoo.ca/review', {
-    method: 'POST',
-    headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    body: `${new URL(links.approve).search.slice(1)}&confirm=yes`,
-  }), { ...env, INTAKE_DB: unsafe }, {
-    now: () => NOW,
-    send: async () => { unsafeSends += 1; },
+  const unsafeOpen = await handleFetch(new Request(unsafeLinks.url), unsafeEnv, { now: () => NOW });
+  const unsafeHtml = await unsafeOpen.text();
+  const blocked = await postReview(unsafeEnv, unsafeLinks.url, {
+    cookie: cookieHeader(unsafeOpen),
+    csrf: csrfValue(unsafeHtml),
+    action: 'approve',
+    deps: { now: () => NOW, send: async () => { unsafeSends += 1; } },
   });
-  assert.equal(blocked.status, 502);
+  assert.equal(blocked.status, 400);
   assert.equal(unsafeSends, 0);
-  assert.equal(unsafe.state.clarify_status, 'approved');
+  assert.equal(unsafe.state.clarify_status, 'pending_approval');
+  assert.equal(unsafe.tokens.get(unsafeLinks.id).used_at, '');
 
   const flaky = reviewDb({
     id: ROW_ID,
@@ -604,30 +720,39 @@ test('a locked or unsafe draft is not sent, and a failed send can be retried', a
     clarify_draft: draft,
     clarify_reasons: 'missing_time',
   });
+  const flakyEnv = { ...env, INTAKE_DB: flaky };
+  const flakyLinks = await reviewLinks(flakyEnv, ROW_ID, NOW);
   let attempts = 0;
-  const first = await handleFetch(new Request('https://review.celticcoo.ca/review', {
-    method: 'POST',
-    headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    body: `${new URL(links.approve).search.slice(1)}&confirm=yes`,
-  }), { ...env, INTAKE_DB: flaky }, {
-    now: () => NOW,
-    send: async () => {
-      attempts += 1;
-      const err = new Error(`mailbox rejected ${SENDER}`);
-      err.code = 'e_sender_not_verified';
-      throw err;
+  const flakyOpen = await handleFetch(new Request(flakyLinks.url), flakyEnv, { now: () => NOW });
+  const flakyHtml = await flakyOpen.text();
+  const flakyCookie = cookieHeader(flakyOpen);
+  const flakyCsrf = csrfValue(flakyHtml);
+  const first = await postReview(flakyEnv, flakyLinks.url, {
+    cookie: flakyCookie,
+    csrf: flakyCsrf,
+    action: 'approve',
+    deps: {
+      now: () => NOW,
+      send: async () => {
+        attempts += 1;
+        const err = new Error('mailbox rejected the recipient');
+        err.code = 'e_sender_not_verified';
+        throw err;
+      },
     },
   });
   assert.equal(first.status, 502);
   assert.equal(flaky.state.clarify_status, 'approved');
   assert.equal(flaky.state.clarify_lock, '');
-  const second = await handleFetch(new Request('https://review.celticcoo.ca/review', {
-    method: 'POST',
-    headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    body: `${new URL(links.approve).search.slice(1)}&confirm=yes`,
-  }), { ...env, INTAKE_DB: flaky }, {
-    now: () => new Date(NOW.getTime() + 1000),
-    send: async (mail) => { attempts += 1; assert.equal(mail.to, SENDER); },
+  assert.equal(flaky.tokens.get(flakyLinks.id).used_at, '');
+  const second = await postReview(flakyEnv, flakyLinks.url, {
+    cookie: flakyCookie,
+    csrf: flakyCsrf,
+    action: 'approve',
+    deps: {
+      now: () => new Date(NOW.getTime() + 1000),
+      send: async (mail) => { attempts += 1; assert.equal(mail.to, SENDER); },
+    },
   });
   assert.equal(second.status, 200);
   assert.equal(attempts, 2);
@@ -675,7 +800,7 @@ test('the review page escapes the stored draft and other routes stay closed', as
   });
   const env = { INTAKE_DB: db, REVIEW_SECRET: SECRET, REVIEW_BASE_URL: 'https://review.celticcoo.ca' };
   const links = await reviewLinks(env, ROW_ID, NOW);
-  const response = await handleFetch(new Request(links.approve), env, { now: () => NOW, send: async () => { throw new Error('no send'); } });
+  const response = await handleFetch(new Request(links.url), env, { now: () => NOW, send: async () => { throw new Error('no send'); } });
   const html = await response.text();
   assert.match(html, /&lt;script&gt;/);
   assert.doesNotMatch(html, /<script>alert/);

@@ -461,6 +461,7 @@ export async function handleBookingRequest(request, deps = {}) {
       paragraphs: responses.thanksSpam || [],
     });
   }
+  let turnstile = 'unavailable';
   if (typeof deps.verify === 'function') {
     const token = String(formData.get('cf-turnstile-response') ?? '');
     let verdict;
@@ -477,6 +478,7 @@ export async function handleBookingRequest(request, deps = {}) {
         paragraphs: [message],
       });
     }
+    turnstile = 'pass';
   }
   const result = validateBooking(input, catalog, config);
   if (!result.ok) {
@@ -508,6 +510,7 @@ export async function handleBookingRequest(request, deps = {}) {
         flags,
         value: result.value,
         source: 'book',
+        turnstile,
       });
       stored = true;
     } catch (err) {

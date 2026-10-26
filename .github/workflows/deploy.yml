@@ -162,6 +162,7 @@ jobs:
           INBOUND_GITHUB_TOKEN: ${{ secrets.INBOUND_GITHUB_TOKEN }}
           INBOUND_ISSUES_REPO: ${{ vars.INBOUND_ISSUES_REPO }}
           REVIEW_SECRET: ${{ secrets.REVIEW_SECRET }}
+          APPROVAL_API_TOKEN: ${{ secrets.APPROVAL_API_TOKEN }}
           REVIEW_BASE_URL: ${{ vars.REVIEW_BASE_URL }}
         run: |
           if [ -z "${CLOUDFLARE_API_TOKEN}" ] || [ -z "${CLOUDFLARE_ACCOUNT_ID}" ] || [ -z "${FORWARD_TO}" ] || [ -z "${D1_DATABASE_ID}" ]; then
@@ -171,6 +172,9 @@ jobs:
           node ../../scripts/prepare-inbound-config.mjs wrangler.jsonc
           if [ -z "${INBOUND_GITHUB_TOKEN}" ] && [ -z "${REVIEW_SECRET}" ]; then
             echo "::notice::INBOUND_GITHUB_TOKEN and REVIEW_SECRET are not set. Mail will still be forwarded and logged. GitHub issues and approval links stay off."
+          fi
+          if [ -z "${APPROVAL_API_TOKEN}" ]; then
+            echo "::notice::APPROVAL_API_TOKEN is not set. This deploy does not change that Worker secret."
           fi
           secret_file=""
           cleanup() { if [ -n "${secret_file}" ]; then rm -f "$secret_file"; fi; }
@@ -187,12 +191,17 @@ jobs:
             const review = process.env.REVIEW_SECRET || "";
             if (review && review.length >= 16 && review.length <= 200 && !/\s/.test(review)) secrets.REVIEW_SECRET = review;
             else if (review) console.error("REVIEW_SECRET is set but not usable. Approval links stay off.");
+            const approval = process.env.APPROVAL_API_TOKEN || "";
+            if (approval && approval.length >= 16 && approval.length <= 200 && !/\s/.test(approval)) secrets.APPROVAL_API_TOKEN = approval;
+            else if (approval) console.error("APPROVAL_API_TOKEN is set but not usable. The existing Worker secret is left in place.");
             writeFileSync(process.argv[1], JSON.stringify(secrets), { mode: 0o600 });
           ' "$secret_file"
           var_args=()
           # Issues stay off until this names a private repo that is not the public product repo.
           # RETENTION_PURGE is intentionally not passed, so the cron only logs counts.
           # FORWARD_TO is uploaded in the secrets file. Do not pass it with --var.
+          # APPROVAL_API_TOKEN is written only when the Actions secret is usable.
+          # Omitting the name leaves the existing Worker secret in place.
           if [[ "${INBOUND_ISSUES_REPO}" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] && [ "${INBOUND_ISSUES_REPO}" != "rsakauye/celticcoo" ]; then
             var_args+=(--var "INBOUND_ISSUES_REPO:${INBOUND_ISSUES_REPO}")
           else

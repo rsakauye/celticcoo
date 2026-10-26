@@ -2,6 +2,7 @@
 // A repeat delivery of the same Message-ID updates the row instead of inserting another.
 // A draft that is already approved, sent, or discarded is left alone on that update.
 
+import { newReviewTokenId } from './token.js';
 import { oneLine } from './text.js';
 
 const INSERT_SQL = `INSERT INTO inbound_emails (
@@ -11,14 +12,16 @@ const INSERT_SQL = `INSERT INTO inbound_emails (
   category, confidence, summary, extracted_json, classifier, classifier_reason,
   forward_status, issue_status, issue_url, issue_number,
   clarify_status, clarify_draft, clarify_reasons, clarify_lock,
+  trust_score, trust_reasons, missing_fields, red_flags,
   error_code, raw_size
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', NULL, ?, ?, ?, '', ?, ?)`;
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', NULL, ?, ?, ?, '', ?, ?, ?, ?, ?, ?)`;
 
 const UPDATE_SQL = `UPDATE inbound_emails SET
   received_at = ?, message_id = ?, envelope_from = ?, from_header = ?, reply_to = ?,
   subject = ?, text_body = ?, attachment_note = ?,
   category = ?, confidence = ?, summary = ?, extracted_json = ?, classifier = ?, classifier_reason = ?,
   forward_status = ?, error_code = ?, raw_size = ?,
+  trust_score = ?, trust_reasons = ?, missing_fields = ?, red_flags = ?,
   clarify_status = CASE WHEN clarify_status IN ('approved', 'sent', 'discarded') THEN clarify_status ELSE ? END,
   clarify_draft = CASE WHEN clarify_status IN ('approved', 'sent', 'discarded') THEN clarify_draft ELSE ? END,
   clarify_reasons = CASE WHEN clarify_status IN ('approved', 'sent', 'discarded') THEN clarify_reasons ELSE ? END
@@ -52,6 +55,10 @@ export async function upsertInbound(db, row) {
       row.forwardStatus,
       row.errorCode,
       row.rawSize,
+      row.trustScore,
+      row.trustReasons || '[]',
+      row.missingFields || '[]',
+      row.redFlags || '{}',
       row.clarifyStatus || '',
       row.clarifyDraft || '',
       row.clarifyReasons || '',
@@ -89,6 +96,10 @@ export async function upsertInbound(db, row) {
       row.clarifyStatus || '',
       row.clarifyDraft || '',
       row.clarifyReasons || '',
+      row.trustScore,
+      row.trustReasons || '[]',
+      row.missingFields || '[]',
+      row.redFlags || '{}',
       row.errorCode,
       row.rawSize,
     ).run();
@@ -118,9 +129,72 @@ export async function markIssue(db, id, issueStatus, issueUrl, issueNumber, erro
 export async function loadInbound(db, id) {
   if (!db || typeof db.prepare !== 'function') return null;
   return db.prepare(
-    `SELECT id, subject, reply_to, envelope_from, category, clarify_status, clarify_draft, clarify_reasons
+    `SELECT id, subject, reply_to, envelope_from, from_header, text_body, category,
+            clarify_status, clarify_draft, clarify_reasons
      FROM inbound_emails WHERE id = ?`,
   ).bind(id).first();
+}
+
+const TOKEN_INSERT = `INSERT INTO review_tokens (
+  id, inbound_email_id, created_at, expires_at, used_at
+) VALUES (?, ?, ?, ?, '')`;
+
+const TOKEN_READ = `SELECT id, inbound_email_id, created_at, expires_at, used_at
+FROM review_tokens WHERE id = ?`;
+
+export async function createReviewToken(db, inboundEmailId, now, ttlSeconds) {
+  if (!db || typeof db.prepare !== 'function') {
+    const err = new Error('intake database is not configured');
+    err.code = 'not_configured';
+    throw err;
+  }
+  const createdAt = now.toISOString();
+  const expiresAt = new Date(now.getTime() + ttlSeconds * 1000).toISOString();
+  let last = null;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const id = newReviewTokenId();
+    try {
+      await db.prepare(TOKEN_INSERT).bind(id, inboundEmailId, createdAt, expiresAt).run();
+      return { id, inboundEmailId, createdAt, expiresAt, usedAt: '' };
+    } catch (err) {
+      last = err;
+    }
+  }
+  const err = new Error('review token was not stored');
+  err.code = 'token_store_failed';
+  err.cause = last;
+  throw err;
+}
+
+export async function loadReviewToken(db, id) {
+  if (!db || typeof db.prepare !== 'function') return null;
+  try {
+    return await db.prepare(TOKEN_READ).bind(id).first();
+  } catch {
+    return null;
+  }
+}
+
+export async function claimReviewToken(db, id, usedAt, nowIso) {
+  const result = await db.prepare(
+    `UPDATE review_tokens SET used_at = ?
+     WHERE id = ? AND used_at = '' AND expires_at > ?`,
+  ).bind(usedAt, id, nowIso).run();
+  return changed(result);
+}
+
+export async function releaseReviewToken(db, id, usedAt) {
+  if (!db || typeof db.prepare !== 'function') return;
+  await db.prepare(
+    `UPDATE review_tokens SET used_at = '' WHERE id = ? AND used_at = ?`,
+  ).bind(id, usedAt).run();
+}
+
+export async function saveClarifyDraft(db, id, draft) {
+  await db.prepare(
+    `UPDATE inbound_emails SET clarify_draft = ?
+     WHERE id = ? AND clarify_status IN ('pending_approval', 'approved')`,
+  ).bind(draft, id).run();
 }
 
 function changed(result) {
