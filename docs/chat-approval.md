@@ -23,7 +23,7 @@ Until that secret is set, `GET /api/queue` and the approve and deny routes retur
 
 Deploy does not apply D1 migrations. Apply `site/migrations/0005_inbound_trust.sql` before the deploy that stores `trust_score`. The same command as the other intake migrations applies every file in `site/migrations/` that is not already on the database. See `docs/inbound-email.md`. It does not print the database id.
 
-`0005` adds `trust_score` and `trust_reasons` on `inbound_emails`, and the `approval_audit` table. Another open branch adds `site/migrations/0004_intake_guard.sql` for a different table. The filenames differ, so both can be applied.
+`0005` adds `trust_score` and `trust_reasons` on `inbound_emails`, and the `approval_audit` table. `0006_trust_details.sql` adds `missing_fields` and `red_flags` on `inbound_emails`, and the same trust columns on `submissions`. Apply `0006` before the deploy that writes those columns. Until it is applied, storing a new message fails after the forward, and a booking form that has already passed Turnstile fails to store. Another open branch adds `site/migrations/0004_intake_guard.sql` for a different table. The filenames differ, so both can be applied.
 
 ## Calls
 
@@ -31,7 +31,7 @@ All three routes are on the review hostname, for example `https://review.celticc
 
 There is no browser session. A missing or wrong token is 401. More than 60 calls in 60 seconds is 429. Each call writes one `approval_audit` row: the time, the action, the inbound id, and a short outcome code. The actor is `chat` when the token matched, and `rejected` when it did not. The row does not contain the message, the draft, or the token.
 
-`GET /api/queue` lists up to 20 drafts waiting for approval, oldest first. Each item has `id`, `category`, `trust_score`, `trust_reasons`, `sender_display`, `subject`, `excerpt`, and `draft`. This call does not send. `GET` on an approve or deny URL does not send either. It is 405.
+`GET /api/queue` lists up to 20 drafts waiting for approval, oldest first. Each item has `id`, `category`, `trust_score`, `trust_reasons`, `missing_fields`, `red_flags`, `sender_display`, `subject`, `excerpt`, and `draft`. `missing_fields` is an array of codes (`date`, `time`, `venue`, `booking`, `event`). `red_flags` is an object of booleans: `minor_mentioned`, `links_present`, `payment_request`, and `bot_instruction_attempt`. None of those fields copies the message. This call does not send. `GET` on an approve or deny URL does not send either. It is 405. Booking form rows are stored with the same trust columns, and they are not mixed into this queue. Approving a form row would try to send a clarifying draft.
 
 `POST /api/drafts/<id>/approve` sends the stored draft. A JSON body `{ "text": "..." }` sends that text instead, after the same checks as the review page: not empty, at most 8000 characters, and no email address or phone number left in the reply. The first successful approve sends once. A later approve for the same id returns `already_sent` and does not send again. A failed send leaves the draft retryable.
 
@@ -54,5 +54,8 @@ The module is `shared/trust/`. The Celtic Coo weights, seasons, and phrase group
 | Lexicon | Phrase groups in the site pack: legitimate event and booking words, spam words, and prompt-injection words. Each phrase counts once. |
 | Breaker | If the `intake_control` row is paused or latched, the score is capped at 10 and the reason is `guard_paused`. A missing table is `guard_unavailable` and does not by itself zero the score. |
 | Bulk and seasonal holds | Five or more earlier messages from the same sender in 24 hours records `bulk_hold`. A date inside Hogmanay, Burns Night, Highland Games season, or St Andrew's, in `America/Edmonton`, records `seasonal_window`. That volume during a season also records `seasonal_hold`. These are flags for the person reading the queue. They are not a kill switch. |
+| Missing fields | Codes only: `date`, `time`, `venue`, `booking` (what is being booked), and `event`. A mail gap such as a missing date or place becomes one of these codes. Each code lowers the score by a small amount, capped, and is stored on `missing_fields`. |
+| Red flags | `minor_mentioned`, `links_present`, `payment_request`, and `bot_instruction_attempt` (a prompt-injection phrase). Each true flag lowers the score by a small amount and is stored on `red_flags`. They are advisory. They do not auto-send, and they do not change whether a draft is created. |
+| Turnstile | Booking form submissions only. A saved submission has already passed Turnstile, so the reason code is `turnstile_pass`. If the form was stored without a verifier configured, the code is `turnstile_unavailable`. A rejected check is not stored as a submission. It stays a `submission_failures` reason code and is not listed in the approval queue. Mail omits Turnstile. |
 
-Reason codes are JSON on the row. They are codes and weights, not a copy of the message.
+Reason codes are JSON on the row. They are codes and weights, not a copy of the message. A high score, a clear Turnstile result, and an empty red-flag list still do not send. The worker sends a clarifying reply only after a person approves it.

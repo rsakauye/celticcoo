@@ -143,6 +143,8 @@ async function processHello(message, env, deps, forward) {
     clarifyReasons: draft ? draft.reasons.join(',') : '',
     trustScore: stored.score,
     trustReasons: stored.reasons,
+    missingFields: stored.missingFields,
+    redFlags: stored.redFlags,
     forwardStatus: forward.status,
     issueStatus: 'skipped',
     errorCode: oneLine(errorCode, 80),

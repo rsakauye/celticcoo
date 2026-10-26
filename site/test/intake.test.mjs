@@ -247,7 +247,17 @@ test('a verified request is stored, flagged, and still kept when the notice fail
   assert.equal(db.submissions.length, 1);
   assert.equal(db.submissions[0][3], 'flagged');
   const flags = JSON.parse(db.submissions[0][4]);
+  const trustReasons = JSON.parse(db.submissions[0][20]);
+  const redFlags = JSON.parse(db.submissions[0][22]);
   assert.ok(flags.includes('minor_no_guardian'));
+  assert.ok(trustReasons.some((reason) => reason.code === 'turnstile_pass'));
+  assert.equal(redFlags.minor_mentioned, true);
+  assert.equal(redFlags.payment_request, true);
+  assert.equal(redFlags.bot_instruction_attempt, false);
+  assert.equal(JSON.stringify(trustReasons).includes('cheque'), false);
+  assert.equal(JSON.stringify(trustReasons).includes('child'), false);
+  assert.equal(JSON.stringify(redFlags).includes('child'), false);
+  assert.equal(trustReasons.some((reason) => reason.code === 'turnstile_pass' && sent.length === 1), true);
   assert.ok(flags.includes('private_contact'));
   assert.ok(flags.includes('payment_oddity'));
   assert.match(sent[0].text, /Risk flags: .*minor_no_guardian/);

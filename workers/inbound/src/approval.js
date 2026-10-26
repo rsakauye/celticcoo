@@ -12,8 +12,8 @@ const BODY_LIMIT = 16000;
 const RATE_LIMIT = 60;
 const RATE_WINDOW_MS = 60 * 1000;
 
-const QUEUE_SQL = `SELECT id, category, trust_score, trust_reasons, from_header, reply_to,
-  envelope_from, subject, text_body, clarify_draft, created_at
+const QUEUE_SQL = `SELECT id, category, trust_score, trust_reasons, missing_fields, red_flags,
+  from_header, reply_to, envelope_from, subject, text_body, clarify_draft, created_at
 FROM inbound_emails
 WHERE clarify_status = 'pending_approval' AND clarify_draft != ''
 ORDER BY created_at ASC
@@ -88,10 +88,36 @@ function excerpt(value) {
 function reasonsOf(value) {
   try {
     const parsed = JSON.parse(String(value || '[]'));
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((reason) => reason && /^[a-z0-9_]{1,40}$/.test(String(reason.code || '')));
   } catch {
     return [];
   }
+}
+
+function missingOf(value) {
+  try {
+    const parsed = JSON.parse(String(value || '[]'));
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((field) => /^(date|time|venue|booking|event)$/.test(String(field)));
+  } catch {
+    return [];
+  }
+}
+
+function flagsOf(value) {
+  const flags = {
+    minor_mentioned: false,
+    links_present: false,
+    payment_request: false,
+    bot_instruction_attempt: false,
+  };
+  try {
+    const parsed = JSON.parse(String(value || '{}'));
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return flags;
+    for (const key of Object.keys(flags)) flags[key] = Boolean(parsed[key]);
+  } catch { /* a bad column is advisory and empty */ }
+  return flags;
 }
 
 function queueItem(row) {
@@ -101,6 +127,8 @@ function queueItem(row) {
     category: row.category || 'other',
     trust_score: Number.isInteger(score) ? score : 0,
     trust_reasons: reasonsOf(row.trust_reasons),
+    missing_fields: missingOf(row.missing_fields),
+    red_flags: flagsOf(row.red_flags),
     sender_display: senderDisplay(row),
     subject: oneLine(row.subject, 180),
     excerpt: excerpt(row.text_body),

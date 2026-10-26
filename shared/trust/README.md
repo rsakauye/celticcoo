@@ -16,6 +16,12 @@ The app gathers the signals and calls `scoreTrust(signals, pack)`:
 | `guard` | `action` is `allow`, `hold`, `pause`, or `unavailable`. Pause caps the score at `pack.pauseCap`. Hold applies `weights.guardHeld`. A missing guard table is `unavailable` and does not by itself zero the score. |
 | `season` | `{ id }` from `seasonFor`, or null. |
 | `holds` | Optional `{ bulk, seasonal }`. When a flag is omitted, the scorer derives it from recent volume and the season. Pass the intake breaker's own flags here when that breaker is wired, so the score and the breaker agree. |
+| `missingFields` | Optional codes: `date`, `time`, `venue`, `booking`, `event`. Each one lowers the score, with a cap. The codes are also returned on the result. |
+| `redFlags` | Optional booleans: `minor_mentioned`, `links_present`, `payment_request`, `bot_instruction_attempt`. A true flag lowers the score. The booleans are returned even when they are false. |
+| `turnstile` | Optional `pass`, `fail`, or `unavailable`. Omit it for email, where Turnstile does not apply. |
+| `channel` | `form` scores only the field gaps, red flags, and Turnstile result. Omit it, or pass `email`, for the full mail score. |
+
+`missingFields` and `redFlags` are advisory. `scoreTrust` still returns `autoSend: false`.
 
 `scoreTrust` always returns `autoSend: false`. Do not add a branch that sends when the score is above a threshold.
 

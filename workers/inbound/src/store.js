@@ -12,16 +12,16 @@ const INSERT_SQL = `INSERT INTO inbound_emails (
   category, confidence, summary, extracted_json, classifier, classifier_reason,
   forward_status, issue_status, issue_url, issue_number,
   clarify_status, clarify_draft, clarify_reasons, clarify_lock,
-  trust_score, trust_reasons,
+  trust_score, trust_reasons, missing_fields, red_flags,
   error_code, raw_size
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', NULL, ?, ?, ?, '', ?, ?, ?, ?)`;
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', NULL, ?, ?, ?, '', ?, ?, ?, ?, ?, ?)`;
 
 const UPDATE_SQL = `UPDATE inbound_emails SET
   received_at = ?, message_id = ?, envelope_from = ?, from_header = ?, reply_to = ?,
   subject = ?, text_body = ?, attachment_note = ?,
   category = ?, confidence = ?, summary = ?, extracted_json = ?, classifier = ?, classifier_reason = ?,
   forward_status = ?, error_code = ?, raw_size = ?,
-  trust_score = ?, trust_reasons = ?,
+  trust_score = ?, trust_reasons = ?, missing_fields = ?, red_flags = ?,
   clarify_status = CASE WHEN clarify_status IN ('approved', 'sent', 'discarded') THEN clarify_status ELSE ? END,
   clarify_draft = CASE WHEN clarify_status IN ('approved', 'sent', 'discarded') THEN clarify_draft ELSE ? END,
   clarify_reasons = CASE WHEN clarify_status IN ('approved', 'sent', 'discarded') THEN clarify_reasons ELSE ? END
@@ -57,6 +57,8 @@ export async function upsertInbound(db, row) {
       row.rawSize,
       row.trustScore,
       row.trustReasons || '[]',
+      row.missingFields || '[]',
+      row.redFlags || '{}',
       row.clarifyStatus || '',
       row.clarifyDraft || '',
       row.clarifyReasons || '',
@@ -96,6 +98,8 @@ export async function upsertInbound(db, row) {
       row.clarifyReasons || '',
       row.trustScore,
       row.trustReasons || '[]',
+      row.missingFields || '[]',
+      row.redFlags || '{}',
       row.errorCode,
       row.rawSize,
     ).run();

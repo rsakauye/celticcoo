@@ -44,6 +44,12 @@ const celticcooTrust = {
     guardHeld: -15,
     bulkHold: -8,
     seasonalHold: -5,
+    missingField: -3,
+    missingFieldCap: -12,
+    redFlag: -6,
+    turnstilePass: 4,
+    turnstileFail: -20,
+    turnstileUnavailable: -6,
   },
   seasons: [
     { id: 'hogmanay', multiplier: 3, start: [12, 27], end: [1, 4] },

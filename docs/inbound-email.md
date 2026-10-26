@@ -80,7 +80,7 @@ Do these in order. Deploy does not switch Email Routing and does not apply D1 mi
 
 ### 1. Apply the D1 migration
 
-The database is the same `celticcoo-intake` database as the booking form. `site/migrations/0002_inbound_emails.sql` creates `inbound_emails`. `site/migrations/0003_inbound_clarify.sql` adds the draft columns and `classifier_reason`. `site/migrations/0004_review_tokens.sql` adds the short review links. `site/migrations/0005_inbound_trust.sql` adds the trust score and the chat approval audit. Apply `0004` before deploying the Worker that serves `/r/`, and apply `0005` before deploying the Worker that stores a trust score or serves `/api/queue`. From the repo root, with Wrangler logged in to this Cloudflare account:
+The database is the same `celticcoo-intake` database as the booking form. `site/migrations/0002_inbound_emails.sql` creates `inbound_emails`. `site/migrations/0003_inbound_clarify.sql` adds the draft columns and `classifier_reason`. `site/migrations/0004_review_tokens.sql` adds the short review links. `site/migrations/0005_inbound_trust.sql` adds the trust score and the chat approval audit. `site/migrations/0006_trust_details.sql` adds missing-field and red-flag columns. Apply `0004` before deploying the Worker that serves `/r/`, and apply `0005` and `0006` before deploying the Worker that stores a trust score or serves `/api/queue`. From the repo root, with Wrangler logged in to this Cloudflare account:
 
 ```bash
 read -rsp 'D1 database id: ' D1_DATABASE_ID; echo
@@ -91,7 +91,7 @@ unset D1_DATABASE_ID
 
 That applies every migration in `site/migrations/` that is not already on the database. The command does not print the database id. Do not commit the id.
 
-This repo's GitHub Actions workflow does not apply migrations. Until `0003` is applied, new mail will fail to store and the forward will still have been attempted. Apply it before the deploy that contains this code, or immediately after, and accept that mail in that gap is retried by the sender only if the forward itself failed. Until `0004_review_tokens.sql` is applied, a review note is still emailed, but it has no short link. Apply that file before deploying the Worker that serves `/r/`. Until `0005_inbound_trust.sql` is applied, storing a new message fails after the forward. Apply that file before deploying the trust-score worker. Chat approval is described in `docs/chat-approval.md`.
+This repo's GitHub Actions workflow does not apply migrations. Until `0003` is applied, new mail will fail to store and the forward will still have been attempted. Apply it before the deploy that contains this code, or immediately after, and accept that mail in that gap is retried by the sender only if the forward itself failed. Until `0004_review_tokens.sql` is applied, a review note is still emailed, but it has no short link. Apply that file before deploying the Worker that serves `/r/`. Until `0005_inbound_trust.sql` is applied, storing a new message fails after the forward. Apply that file before deploying the trust-score worker. Until `0006_trust_details.sql` is applied, the same store fails once the worker writes the extra columns. Chat approval is described in `docs/chat-approval.md`.
 
 ### 2. Set the secrets and the database id
 

@@ -44,6 +44,31 @@ export function scoreTrust(signals, config) {
     score += delta || 0;
   };
 
+  const channel = input.channel === 'form' ? 'form' : 'email';
+  let action = 'unavailable';
+  let failClosed = false;
+  if (channel === 'form') note('channel_form', 0);
+  else {
+    const email = scoreEmail(input, config, weights, note);
+    action = email.action;
+    failClosed = email.failClosed;
+  }
+
+  const details = applyDetails(input, weights, note);
+  applyTurnstile(input.turnstile, weights, note);
+  if (failClosed) score = Math.min(score, config.failClosedScore);
+  if (channel === 'email' && action === 'pause') score = Math.min(score, config.pauseCap);
+
+  return {
+    score: clamp(score),
+    reasons,
+    missingFields: details.missingFields,
+    redFlags: details.redFlags,
+    autoSend: false,
+  };
+}
+
+function scoreEmail(input, config, weights, note) {
   const auth = input.auth || {};
   for (const method of ['spf', 'dkim', 'dmarc']) {
     const value = auth[method] || 'none';
@@ -110,9 +135,10 @@ export function scoreTrust(signals, config) {
   if (seasonalHold) note('seasonal_hold', weights.seasonalHold);
 
   const ai = input.aiCheck || {};
+  let failClosed = false;
   if (ai.status !== 'ok') {
     note('ai_check_failed', 0);
-    score = Math.min(score, config.failClosedScore);
+    failClosed = true;
   } else {
     if (ai.spam) note('ai_spam', weights.aiSpam);
     if (ai.phishing) note('ai_phishing', weights.aiPhishing);
@@ -120,11 +146,51 @@ export function scoreTrust(signals, config) {
     if (!ai.spam && !ai.phishing && !ai.promptInjection) note('ai_clear', weights.aiClean);
   }
 
-  if (action === 'pause') score = Math.min(score, config.pauseCap);
+  return { action, failClosed };
+}
 
+const FIELD_ORDER = ['date', 'time', 'venue', 'booking', 'event'];
+const FLAG_KEYS = ['minor_mentioned', 'links_present', 'payment_request', 'bot_instruction_attempt'];
+
+function listedFields(value) {
+  const present = Array.isArray(value) ? value : [];
+  return FIELD_ORDER.filter((field) => present.includes(field));
+}
+
+function listedFlags(value) {
+  const source = value && typeof value === 'object' ? value : {};
   return {
-    score: clamp(score),
-    reasons,
-    autoSend: false,
+    minor_mentioned: Boolean(source.minor_mentioned),
+    links_present: Boolean(source.links_present),
+    payment_request: Boolean(source.payment_request),
+    bot_instruction_attempt: Boolean(source.bot_instruction_attempt),
   };
 }
+
+function applyDetails(input, weights, note) {
+  const eachField = Number.isFinite(weights.missingField) ? weights.missingField : -3;
+  const fieldCap = Number.isFinite(weights.missingFieldCap) ? Math.abs(weights.missingFieldCap) : 12;
+  const missingFields = listedFields(input.missingFields);
+  let used = 0;
+  for (const field of missingFields) {
+    const room = Math.max(0, fieldCap - used);
+    const applied = eachField < 0 ? Math.max(eachField, -room) : Math.min(eachField, room);
+    note(`missing_${field}`, applied);
+    used += Math.abs(applied);
+  }
+  const eachFlag = Number.isFinite(weights.redFlag) ? weights.redFlag : -6;
+  const redFlags = listedFlags(input.redFlags);
+  for (const key of FLAG_KEYS) {
+    if (redFlags[key]) note(`red_${key}`, eachFlag);
+  }
+  return { missingFields, redFlags };
+}
+
+function applyTurnstile(value, weights, note) {
+  if (value === 'pass') note('turnstile_pass', Number.isFinite(weights.turnstilePass) ? weights.turnstilePass : 4);
+  else if (value === 'fail') note('turnstile_fail', Number.isFinite(weights.turnstileFail) ? weights.turnstileFail : -20);
+  else if (value === 'unavailable') {
+    note('turnstile_unavailable', Number.isFinite(weights.turnstileUnavailable) ? weights.turnstileUnavailable : -6);
+  }
+}
+

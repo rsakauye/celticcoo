@@ -2,12 +2,16 @@
 // A failed model check caps the score and records ai_check_failed.
 // Nothing in this file sends mail.
 
+import { assessGaps } from './clarify.js';
 import { fenceEmail, modelName, resolveAiRunner } from './classify.js';
 import { codeOf, envelopeAddress, oneEmail } from './text.js';
 import {
   TRUST_CHECK_SCHEMA,
   TRUST_CHECK_SYSTEM,
+  bookingSignal,
   countLexiconHits,
+  detectRedFlags,
+  emailMissingFields,
   parseAuthenticationResults,
   parseTrustCheck,
   scoreTrust,
@@ -160,6 +164,15 @@ export async function assessTrust({ message, parsed, classification, env, deps =
   }
   const text = `${parsed && parsed.subject || ''}\n${parsed && parsed.text || ''}`;
   const season = seasonFor(when, pack.seasons, pack.timeZone);
+  const category = classification && classification.category;
+  const lexicon = countLexiconHits(text, pack.lexicon);
+  const gaps = assessGaps({
+    category,
+    event: classification && classification.event,
+    subject: parsed && parsed.subject,
+    text: parsed && parsed.text,
+    now: when,
+  });
   try {
     return scoreTrust({
       auth: parseAuthenticationResults(headerValue(message, 'authentication-results')),
@@ -167,12 +180,18 @@ export async function assessTrust({ message, parsed, classification, env, deps =
       classifier: {
         source: classifierSource(classification),
         confidence: classification && classification.confidence,
-        category: classification && classification.category,
+        category,
       },
       aiCheck,
-      lexicon: countLexiconHits(text, pack.lexicon),
+      lexicon,
       guard,
       season: season ? { id: season.id } : null,
+      missingFields: emailMissingFields({
+        category,
+        gaps,
+        hasBooking: lexicon.legitimate > 0 || bookingSignal(text),
+      }),
+      redFlags: detectRedFlags(text, { injectionPhrases: pack.lexicon.injection }),
     }, pack);
   } catch (err) {
     console.error(JSON.stringify({ message: 'inbound trust score failed', code: codeOf(err) }));
@@ -180,9 +199,28 @@ export async function assessTrust({ message, parsed, classification, env, deps =
   }
 }
 
+function reasonCode(reason) {
+  const code = String(reason && reason.code || '');
+  const delta = Number(reason && reason.delta);
+  if (!/^[a-z0-9_]{1,40}$/.test(code)) return null;
+  return { code, delta: Number.isFinite(delta) ? delta : 0 };
+}
+
 export function storedTrust(score) {
   const n = Number(score && score.score);
   const safe = Number.isInteger(n) && n >= 0 && n <= 100 ? n : celticcooTrust.failClosedScore;
   const reasons = Array.isArray(score && score.reasons) ? score.reasons : [{ code: 'ai_check_failed', delta: 0 }];
-  return { score: safe, reasons: JSON.stringify(reasons) };
+  const flags = score && score.redFlags && typeof score.redFlags === 'object' ? score.redFlags : {};
+  const fields = Array.isArray(score && score.missingFields) ? score.missingFields : [];
+  return {
+    score: safe,
+    reasons: JSON.stringify(reasons.map(reasonCode).filter(Boolean)),
+    missingFields: JSON.stringify(fields.filter((field) => /^(date|time|venue|booking|event)$/.test(field))),
+    redFlags: JSON.stringify({
+      minor_mentioned: Boolean(flags.minor_mentioned),
+      links_present: Boolean(flags.links_present),
+      payment_request: Boolean(flags.payment_request),
+      bot_instruction_attempt: Boolean(flags.bot_instruction_attempt),
+    }),
+  };
 }

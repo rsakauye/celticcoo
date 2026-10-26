@@ -3,4 +3,11 @@
 
 export { countLexiconHits, localMonthDay, parseAuthenticationResults, seasonFor } from './signals.js';
 export { scoreTrust } from './score.js';
+export {
+  bookingSignal,
+  detectRedFlags,
+  emailMissingFields,
+  emptyRedFlags,
+  formMissingFields,
+} from './details.js';
 export { TRUST_CHECK_SCHEMA, TRUST_CHECK_SYSTEM, parseTrustCheck } from './check.js';
