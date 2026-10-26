@@ -13,7 +13,8 @@
 // it must not be the public product repo. Until that var is set, issues stay off.
 // No URL from the message is fetched. ACK_REPLIES still defaults to off.
 // A clarifying draft is stored and shown for approval. This handler does not
-// send that draft to the original sender. Approval is a POST to /review.
+// send that draft to the original sender. Approval is a POST to /r/<id>
+// or POST /api/drafts/<id>/approve. The trust score is advisory. No score sends.
 // A message that is only "stop" or "unsubscribe" is recorded as an opt-out.
 // Further non-transactional mail to that address is not sent.
 // There is no addresses field in wrangler.jsonc, so deploying this Worker does
@@ -25,10 +26,12 @@ import { planDraft } from './clarify.js';
 import { buildIssue, fileGitHubIssue, issuesRepo, shouldFile, workerToken } from './issue.js';
 import { isOptOutMessage, optOutStatus, recordOptOut } from './optout.js';
 import { dedupeKey, parseInbound } from './parse.js';
+import { handleApprovalApi } from './approval.js';
 import { aiNamePass, exportReason, redactOutsideD1Many } from './redact.js';
 import { runRetention } from './retention.js';
 import { handleReviewRequest, sendReviewNote } from './review.js';
 import { markIssue, upsertInbound } from './store.js';
+import { assessTrust, storedTrust } from './trust.js';
 import { codeOf, envelopeAddress, isBookingsRecipient, isHelloRecipient, oneEmail, oneLine } from './text.js';
 
 export function forwardDestination(env) {
@@ -147,6 +150,13 @@ async function processHello(message, env, deps, forward) {
   const classification = typeof deps.classify === 'function'
     ? await deps.classify(parsed, env)
     : await classifyMessage({ subject: parsed.subject, text: parsed.text }, env, deps);
+  let trust = { score: 20, reasons: [{ code: 'ai_check_failed', delta: 0 }], autoSend: false };
+  try {
+    trust = await assessTrust({ message, parsed, classification, env, deps, now });
+  } catch (err) {
+    console.error(JSON.stringify({ message: 'inbound trust failed', code: codeOf(err) }));
+  }
+  const stored = storedTrust(trust);
   const draft = stopStatus === 'opted_out' ? null : planDraft({
     category: classification.category,
     event: classification.event,
@@ -184,6 +194,10 @@ async function processHello(message, env, deps, forward) {
     clarifyStatus: draft ? draft.status : '',
     clarifyDraft: draft ? draft.draft : '',
     clarifyReasons: draft ? draft.reasons.join(',') : '',
+    trustScore: stored.score,
+    trustReasons: stored.reasons,
+    missingFields: stored.missingFields,
+    redFlags: stored.redFlags,
     forwardStatus: forward.status,
     issueStatus: 'skipped',
     errorCode: oneLine(errorCode, 80),
@@ -202,6 +216,9 @@ async function processHello(message, env, deps, forward) {
       draft: draft.draft,
       recipient: oneEmail(parsed.replyTo) || oneEmail(envelopeAddress(message.from)),
       forwardStatus: forward.status,
+      subject: parsed.subject || '',
+      original: parsed.text || '',
+      senderLabel: parsed.fromHeader || envelopeAddress(message.from),
     }, deps);
     reviewStatus = review.status;
   }
@@ -222,6 +239,7 @@ async function processHello(message, env, deps, forward) {
     errorCode: issue.errorCode || row.errorCode,
     reason: row.classifierReason,
     reviewStatus,
+    trustScore: stored.score,
   };
 }
 
@@ -268,6 +286,7 @@ export async function handleInboundEmail(message, env, deps = {}) {
     issue: outcome && outcome.issueStatus || '',
     code: (outcome && outcome.errorCode) || forward.error || '',
     reason: exportReason((outcome && outcome.reason) || ''),
+    trust: outcome && Number.isInteger(outcome.trustScore) ? outcome.trustScore : '',
   }, deps);
   if (forward.status !== 'sent' && forward.error !== 'not_forwardable') {
     const error = new Error('inbound forward failed');
@@ -278,6 +297,10 @@ export async function handleInboundEmail(message, env, deps = {}) {
 }
 
 export function handleFetch(request, env, deps) {
+  const url = new URL(request.url);
+  if (url.pathname === '/api/queue' || url.pathname.startsWith('/api/drafts/')) {
+    return handleApprovalApi(request, env, deps);
+  }
   return handleReviewRequest(request, env, deps);
 }
 

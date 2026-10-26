@@ -6,8 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { maybeAcknowledge } from '../src/ack.js';
 import { handleFetch, handleInboundEmail } from '../src/index.js';
 import { isOptOutMessage, recordOptOut } from '../src/optout.js';
-import { sendApprovedReply } from '../src/review.js';
-import { reviewLinks } from '../src/token.js';
+import { reviewLinks, sendApprovedReply } from '../src/review.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const OWNER = 'owner@example.com';
@@ -221,9 +220,11 @@ function approvalDb({ mode }) {
     clarify_lock: '',
     error_code: '',
   };
+  const tokens = new Map();
   let checks = 0;
   return {
     state,
+    tokens,
     prepare(sql) {
       return {
         bind(...args) {
@@ -236,10 +237,41 @@ function approvalDb({ mode }) {
                 if (mode === 'clear') return null;
                 return { email: SENDER };
               }
+              if (/FROM review_tokens/i.test(sql)) return tokens.get(args[0]) || null;
               if (/WHERE id = \?/i.test(sql)) return state.id === args[0] ? { ...state } : null;
               return null;
             },
             async run() {
+              if (/INSERT INTO review_tokens/i.test(sql)) {
+                const [id, inboundId, created, expires] = args;
+                if (tokens.has(id)) throw new Error('unique review token');
+                tokens.set(id, {
+                  id,
+                  inbound_email_id: inboundId,
+                  created_at: created,
+                  expires_at: expires,
+                  used_at: '',
+                });
+                return { meta: { changes: 1 } };
+              }
+              if (/UPDATE review_tokens SET used_at = ''/i.test(sql)) {
+                const [id, usedAt] = args;
+                const token = tokens.get(id);
+                if (token && token.used_at === usedAt) {
+                  token.used_at = '';
+                  return { meta: { changes: 1 } };
+                }
+                return { meta: { changes: 0 } };
+              }
+              if (/UPDATE review_tokens SET used_at = \?/i.test(sql)) {
+                const [usedAt, id, nowIso] = args;
+                const token = tokens.get(id);
+                if (token && token.used_at === '' && token.expires_at > nowIso) {
+                  token.used_at = usedAt;
+                  return { meta: { changes: 1 } };
+                }
+                return { meta: { changes: 0 } };
+              }
               if (/error_code = 'opt_out'/i.test(sql)) {
                 const [id, lock] = args;
                 if (state.id === id && state.clarify_lock === lock) {
@@ -285,14 +317,17 @@ async function postApproval(db) {
   };
   const links = await reviewLinks(env, ROW_ID, NOW);
   const sent = [];
-  const response = await handleFetch(new Request('https://review.celticcoo.ca/review', {
+  const deps = { now: () => NOW, send: async (mail) => sent.push(mail) };
+  const opened = await handleFetch(new Request(links.url), env, deps);
+  const openedHtml = await opened.text();
+  const csrf = (/name="csrf" value="([^"]+)"/.exec(openedHtml) || [])[1] || '';
+  const cookie = (opened.headers.get('set-cookie') || '').split(';')[0];
+  const body = new URLSearchParams({ csrf, action: 'approve', confirm: 'yes' });
+  const response = await handleFetch(new Request(links.url, {
     method: 'POST',
-    headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    body: `${new URL(links.approve).search.slice(1)}&confirm=yes`,
-  }), env, {
-    now: () => NOW,
-    send: async (mail) => sent.push(mail),
-  });
+    headers: { 'content-type': 'application/x-www-form-urlencoded', cookie },
+    body,
+  }), env, deps);
   return { response, html: await response.text(), sent, env };
 }
 
