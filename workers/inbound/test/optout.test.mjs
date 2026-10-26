@@ -323,12 +323,14 @@ test('an approved booking reply is not sent after a stop, and the page omits the
 test('the breach checklist stays generic and the owner booking notice is separate', () => {
   const checklist = readFileSync(join(here, '../../../docs/breach-checklist.md'), 'utf8');
   assert.match(checklist, /real risk of significant harm/);
-  assert.match(checklist, /34\.1/);
+  assert.match(checklist, /PIPA s\.34\.1, the same federal test/);
   assert.match(checklist, /Office of the Information and Privacy Commissioner/);
+  assert.match(checklist, /Where PIPEDA applies/);
+  assert.match(checklist, /direct notice to the affected people/);
   assert.match(checklist, /kill switch/);
   assert.match(checklist, /Decision log/);
   assert.match(checklist, /either way/);
-  assert.match(checklist, /24 months/);
+  assert.match(checklist, /every breach, even small ones, is kept for 24 months/);
   assert.doesNotMatch(checklist, /@[a-z0-9.-]+\.[a-z]{2,}/i);
   assert.doesNotMatch(checklist, /gmail\.com/i);
   assert.doesNotMatch(checklist, /\b\d{3}[-.)]\d{3}[-.]\d{4}\b/);

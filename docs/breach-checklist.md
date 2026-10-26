@@ -10,7 +10,7 @@ Internal note for a suspected breach of personal information. Keep this generic.
 
 ## 2. Assess the harm
 
-Decide whether there is a real risk of significant harm. That is the test in Alberta's Personal Information Protection Act, section 34.1. It is the same test used in the federal law. Consider how sensitive the information is, whether it could be misused, and how likely that harm is.
+Decide whether there is a real risk of significant harm (PIPA s.34.1, the same federal test). Consider how sensitive the information is, whether it could be misused, and how likely that harm is.
 
 ## 3. Decision log
 
@@ -18,10 +18,10 @@ Write a private decision log. Include what happened, what was contained, whether
 
 ## 4. Notify when the test is met
 
-When the harm test is met, notify Alberta's Office of the Information and Privacy Commissioner and the people affected, without unreasonable delay.
+When there is a real risk of significant harm, notify Alberta's Office of the Information and Privacy Commissioner and the people affected, without unreasonable delay.
 
-Where the federal law applies, report to the Office of the Privacy Commissioner of Canada as well, and notify the affected people directly. The harm test is the same.
+Where PIPEDA applies, report the breach to the federal Office of the Privacy Commissioner of Canada and give direct notice to the affected people. The harm test is the same.
 
 ## 5. Keep a record either way
 
-Keep a record when you notify and when you do not. A breach that does not meet the harm test is still recorded. Where the federal law applies, keep every breach record for at least 24 months.
+Keep a record when you notify and when you do not. A record of every breach, even small ones, is kept for 24 months.
