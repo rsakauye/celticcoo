@@ -17,7 +17,20 @@ export { DATE_RE };
 
 export const CATEGORIES = celticcoo.categories;
 
-export const DEFAULT_MODEL = '@cf/meta/llama-3.1-8b-instruct';
+// The unquantized id was removed from the Workers AI catalog (deprecated
+// 30 May 2026). fp8 is the hosted replacement of the same 8B model.
+// Its binding example takes messages. Its published schema also requires
+// prompt, allows response_format, and types response as a string.
+export const DEFAULT_MODEL = '@cf/meta/llama-3.1-8b-instruct-fp8';
+
+const RETIRED_MODELS = new Set([
+  '@cf/meta/llama-3.1-8b-instruct',
+  '@cf/meta/llama-3.1-8b-instruct-awq',
+  '@cf/meta/llama-3.1-8b-instruct-fast',
+]);
+
+export const AI_RUN_TIMEOUT_MS = 8_000;
+const MAX_TOKENS = 512;
 
 const SITE = compileSite(celticcoo);
 
@@ -184,10 +197,16 @@ function clampConfidence(value) {
   return Math.round(n * 1000) / 1000;
 }
 
+export function canonicalCategory(value) {
+  const text = String(value ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+  if (!text || !CATEGORIES.includes(text)) return '';
+  return text;
+}
+
 export function normalizeClassification(raw) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
-  const category = String(raw.category || '').trim();
-  if (!CATEGORIES.includes(category)) return null;
+  const category = canonicalCategory(raw.category);
+  if (!category) return null;
   return {
     category,
     confidence: clampConfidence(raw.confidence),
@@ -197,24 +216,112 @@ export function normalizeClassification(raw) {
   };
 }
 
-export function parseAiResult(result) {
-  if (!result) return null;
-  const payload = Object.prototype.hasOwnProperty.call(result, 'response') ? result.response : result;
-  if (payload && typeof payload === 'object') return normalizeClassification(payload);
-  if (typeof payload !== 'string') return null;
-  const trimmed = payload.trim().replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim();
+function parseJsonLoose(text) {
   try {
-    return normalizeClassification(JSON.parse(trimmed));
+    return JSON.parse(text);
   } catch {
-    const start = trimmed.indexOf('{');
-    const end = trimmed.lastIndexOf('}');
-    if (start < 0 || end <= start) return null;
+    const repaired = String(text).replace(/,\s*([}\]])/g, '$1');
+    if (repaired === text) return undefined;
     try {
-      return normalizeClassification(JSON.parse(trimmed.slice(start, end + 1)));
+      return JSON.parse(repaired);
     } catch {
-      return null;
+      return undefined;
     }
   }
+}
+
+function extractFromBraces(raw) {
+  const start = raw.indexOf('{');
+  const end = raw.lastIndexOf('}');
+  if (start < 0 || end <= start) return undefined;
+  const parsed = parseJsonLoose(raw.slice(start, end + 1));
+  if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
+  return undefined;
+}
+
+function extractJsonValue(text) {
+  let raw = String(text).replace(/^\uFEFF/, '').trim();
+  if (!raw) return undefined;
+  const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced) raw = fenced[1].trim();
+  else raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  let parsed = parseJsonLoose(raw);
+  if (typeof parsed === 'string') {
+    const inner = parsed.replace(/^\uFEFF/, '').trim();
+    parsed = parseJsonLoose(inner);
+    if (!parsed || typeof parsed !== 'object') parsed = extractFromBraces(inner);
+  }
+  if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
+  return extractFromBraces(raw);
+}
+
+function contentText(content) {
+  if (typeof content === 'string') return content;
+  if (!Array.isArray(content)) return '';
+  return content.map((part) => {
+    if (typeof part === 'string') return part;
+    if (part && typeof part.text === 'string') return part.text;
+    if (part && typeof part.content === 'string') return part.content;
+    return '';
+  }).join('');
+}
+
+function unwrapAiPayload(result) {
+  if (typeof result === 'string') return result;
+  if (!result || typeof result !== 'object' || Array.isArray(result)) return undefined;
+  const choice = Array.isArray(result.choices) ? result.choices[0] : null;
+  const message = choice && (choice.message || choice.delta);
+  if (message && typeof message === 'object') {
+    const text = contentText(message.content);
+    if (text.trim()) return text;
+  }
+  if (Object.prototype.hasOwnProperty.call(result, 'response')) {
+    const response = result.response;
+    if (typeof response === 'string' || (response && typeof response === 'object')) return response;
+  }
+  const nested = result.result;
+  if (nested && typeof nested === 'object' && Object.prototype.hasOwnProperty.call(nested, 'response')) {
+    return nested.response;
+  }
+  if (typeof result.output_text === 'string') return result.output_text;
+  return result;
+}
+
+function classificationSource(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  if (Object.prototype.hasOwnProperty.call(raw, 'category')) return raw;
+  for (const key of ['result', 'data', 'classification']) {
+    const inner = raw[key];
+    if (inner && typeof inner === 'object' && !Array.isArray(inner) && Object.prototype.hasOwnProperty.call(inner, 'category')) {
+      return inner;
+    }
+  }
+  return null;
+}
+
+function judgeClassification(raw) {
+  const source = classificationSource(raw);
+  if (!source) return { failure: 'parse_error' };
+  if (!canonicalCategory(source.category)) return { failure: 'invalid_category' };
+  const classification = normalizeClassification(source);
+  if (!classification) return { failure: 'invalid_category' };
+  return { classification };
+}
+
+// Workers AI returns { response: string } for this model. JSON mode may
+// return an object instead. A chat-shaped body and a fenced or prose-wrapped
+// string are accepted. The category still has to be one of CATEGORIES.
+export function inspectAiResult(result) {
+  if (result == null) return { failure: 'parse_error' };
+  const payload = unwrapAiPayload(result);
+  if (typeof payload === 'string') return judgeClassification(extractJsonValue(payload));
+  if (payload && typeof payload === 'object') return judgeClassification(payload);
+  return { failure: 'parse_error' };
+}
+
+export function parseAiResult(result) {
+  const inspected = inspectAiResult(result);
+  return inspected.classification || null;
 }
 
 function actionable(category) {
@@ -247,6 +354,7 @@ export function chooseClassification(rules, ai) {
 
 export function modelName(env) {
   const name = String(env && env.AI_MODEL || '').trim();
+  if (RETIRED_MODELS.has(name.toLowerCase())) return DEFAULT_MODEL;
   if (/^@cf\/[a-z0-9._/-]{1,120}$/i.test(name)) return name;
   return DEFAULT_MODEL;
 }
@@ -325,15 +433,51 @@ export function failureReason(err) {
   if (/is not a function/i.test(message)) return 'ai_unavailable';
   if (/\b(?:3036|5035)\b|neuron|free allocation|workers paid plan/i.test(blob)) return 'ai_quota';
   if (/\b3040\b|out of capacity|\b429\b|rate limit/i.test(blob)) return 'ai_capacity';
-  if (/timeout|timed out|\babort/i.test(blob)) return 'ai_timeout';
-  if (/\b6002\b|model (?:schema )?not found|no such model|unknown model/i.test(blob)) return 'ai_model';
+  if (/timeout|timed out|\babort/i.test(blob)) return 'ai_failed:timeout';
+  if (/\b6002\b|model (?:schema )?not found|no such model|unknown model|model (?:is )?not available|no longer available|\bdeprecated\b|model (?:has been |was )?removed|no route for that uri/i.test(blob)) return 'ai_model';
   if (/json.?mode|response_format|schema|temperature|max_tokens/i.test(message)) return 'ai_request';
   if (typeof err?.code === 'string' && /^[a-z0-9_.:-]{1,40}$/i.test(err.code)) {
     const safe = err.code.toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
     if (safe && safe !== 'error') return safeReason(`ai_${safe}`);
   }
   if (/^[0-9]{3,5}$/.test(code)) return safeReason(`ai_${code}`);
-  return 'ai_failed';
+  return 'ai_failed:run_error';
+}
+
+function needsPrompt(err) {
+  const message = String(err && err.message || '');
+  return /\bprompt\b/i.test(message) && /\b(?:required|missing|provide|expected|must)\b/i.test(message);
+}
+
+function asError(err) {
+  if (err instanceof Error) return err;
+  const wrapped = new Error(typeof err === 'string' && err.trim() ? err.slice(0, 200) : 'ai run failed');
+  wrapped.name = 'AiError';
+  return wrapped;
+}
+
+function runBounded(run, model, payload, ms) {
+  let timer;
+  const pending = Promise.resolve().then(() => run(model, payload));
+  pending.catch(() => {});
+  return new Promise((resolve, reject) => {
+    timer = setTimeout(() => {
+      const err = new Error('timeout');
+      err.name = 'TimeoutError';
+      err.code = 'timeout';
+      reject(err);
+    }, ms);
+    pending.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      },
+    );
+  });
 }
 
 function isAiError(result) {
@@ -364,19 +508,26 @@ function reportClassify(deps, fields) {
 }
 
 function attemptPayload(prompt, mode) {
+  const plain = mode === 'text' || mode === 'prompt';
   const messages = [
     {
       role: 'system',
-      content: mode === 'text'
+      content: plain
         ? `${prompt.system}\nReply with one JSON object only. Do not use markdown.`
         : prompt.system,
     },
     { role: 'user', content: prompt.user },
   ];
-  if (mode === 'text') return { messages };
+  if (mode === 'prompt') {
+    return {
+      prompt: `${messages[0].content}\n\n${messages[1].content}`,
+      max_tokens: MAX_TOKENS,
+    };
+  }
+  if (mode === 'text') return { messages, max_tokens: MAX_TOKENS };
   return {
     messages,
-    max_tokens: 512,
+    max_tokens: MAX_TOKENS,
     response_format: {
       type: 'json_schema',
       json_schema: CLASSIFIER_SCHEMA,
@@ -385,13 +536,16 @@ function attemptPayload(prompt, mode) {
 }
 
 const REASON_RANK = {
-  ai_unavailable: 6,
-  ai_quota: 5,
-  ai_model: 5,
-  ai_request: 4,
-  ai_capacity: 3,
-  ai_timeout: 3,
-  ai_unparsed: 1,
+  ai_unavailable: 60,
+  ai_quota: 50,
+  ai_model: 50,
+  ai_request: 40,
+  ai_capacity: 30,
+  'ai_failed:timeout': 30,
+  'ai_failed:invalid_category': 20,
+  'ai_failed:parse_error': 10,
+  ai_unparsed: 10,
+  'ai_failed:run_error': 5,
   ai_failed: 0,
 };
 
@@ -430,44 +584,63 @@ export async function classifyMessage(input, env, deps = {}) {
   }
   const model = modelName(env);
   const prompt = buildClassifierPrompt(input);
-  let lastReason = 'ai_failed';
+  const timeoutMs = Number(deps.timeoutMs) > 0 ? Number(deps.timeoutMs) : AI_RUN_TIMEOUT_MS;
+  let lastReason = '';
   let lastDiag = null;
+  let promptRetry = false;
   const attemptReasons = {};
-  for (const mode of ['schema', 'text']) {
+
+  function noteError(mode, err) {
+    const error = asError(err);
+    lastDiag = describeAiError(error, input);
+    const reason = failureReason(error);
+    attemptReasons[mode] = reason;
+    lastReason = preferReason(lastReason, reason);
+    if (needsPrompt(error)) promptRetry = true;
+    return reason === 'ai_unavailable' || reason === 'ai_failed:timeout';
+  }
+
+  async function oneAttempt(mode) {
     try {
-      const result = await runner.run(model, attemptPayload(prompt, mode));
-      if (isAiError(result)) {
-        const err = errorFromResult(result);
-        lastDiag = describeAiError(err, input);
-        const reason = failureReason(err);
+      const result = await runBounded(runner.run, model, attemptPayload(prompt, mode), timeoutMs);
+      if (isAiError(result)) return noteError(mode, errorFromResult(result)) ? 'stop' : 'next';
+      const inspected = inspectAiResult(result);
+      if (!inspected.classification) {
+        const reason = inspected.failure === 'invalid_category'
+          ? 'ai_failed:invalid_category'
+          : 'ai_failed:parse_error';
         attemptReasons[mode] = reason;
-        lastReason = preferReason(lastReason === 'ai_failed' ? '' : lastReason, reason);
-        continue;
+        lastReason = preferReason(lastReason, reason);
+        return 'next';
       }
-      const parsed = parseAiResult(result);
-      if (!parsed) {
-        attemptReasons[mode] = 'ai_unparsed';
-        lastReason = preferReason(lastReason === 'ai_failed' ? '' : lastReason, 'ai_unparsed');
-        continue;
-      }
-      const chosen = chooseClassification(rules, parsed);
-      const reason = chosen.classifier === 'rules' ? 'rules_override' : (mode === 'text' ? 'ai_text' : 'ai_ok');
+      const chosen = chooseClassification(rules, inspected.classification);
+      const reason = chosen.classifier === 'rules'
+        ? 'rules_override'
+        : (mode === 'schema' ? 'ai_ok' : mode === 'prompt' ? 'ai_prompt' : 'ai_text');
       reportClassify(deps, { classifier: chosen.classifier, reason });
-      return { ...chosen, reason, detailSlug: '' };
+      return { done: { ...chosen, reason, detailSlug: '' } };
     } catch (err) {
-      lastDiag = describeAiError(err, input);
-      const reason = failureReason(err);
-      attemptReasons[mode] = reason;
-      lastReason = preferReason(lastReason === 'ai_failed' ? '' : lastReason, reason);
-      if (reason === 'ai_unavailable') break;
+      return noteError(mode, err) ? 'stop' : 'next';
     }
   }
+
+  for (const mode of ['schema', 'text']) {
+    const outcome = await oneAttempt(mode);
+    if (outcome && outcome.done) return outcome.done;
+    if (outcome === 'stop') break;
+  }
+  if (promptRetry && !attemptReasons.prompt) {
+    const outcome = await oneAttempt('prompt');
+    if (outcome && outcome.done) return outcome.done;
+  }
+  if (!lastReason) lastReason = 'ai_failed:run_error';
   const fields = {
     classifier: 'rules',
     reason: lastReason,
     schema_reason: attemptReasons.schema || '',
     text_reason: attemptReasons.text || '',
   };
+  if (attemptReasons.prompt) fields.prompt_reason = attemptReasons.prompt;
   if (lastDiag) {
     fields.error_name = lastDiag.name;
     if (lastDiag.code) fields.error_code = String(lastDiag.code).slice(0, 20);
