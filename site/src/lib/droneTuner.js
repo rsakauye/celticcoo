@@ -84,6 +84,21 @@ export function formatHz(hz) {
   return `${hz.toFixed(1)} Hz`;
 }
 
+/** Slider position for demo and by-ear. Near the top, so a phone is audible. */
+export const DEFAULT_OUTPUT_LEVEL = 90;
+
+/**
+ * Master gain for the reference tones. The square makes the lower half of the
+ * slider quiet and the default (near max) loud. The page runs this into a
+ * compressor, so 1.0 is not required to avoid clipping.
+ */
+export function outputGain(levelPercent) {
+  const raw = Number(levelPercent);
+  if (!Number.isFinite(raw)) return 0;
+  const t = Math.min(1, Math.max(0, raw / 100));
+  return t * t * 0.95;
+}
+
 export function formatCents(cents) {
   if (!Number.isFinite(cents)) return 'No pitch yet';
   const abs = Math.abs(cents);
@@ -100,9 +115,9 @@ export function slideAdvice(cents) {
     return 'In tune. Leave the tuning slide where it is.';
   }
   if (cents > 0) {
-    return 'Too sharp. Slide the top section UP. Longer flattens the drone.';
+    return 'Too sharp. Slide the top section up. A longer drone sounds lower.';
   }
-  return 'Too flat. Slide the top section DOWN. Shorter sharpens the drone.';
+  return 'Too flat. Slide the top section down. A shorter drone sounds higher.';
 }
 
 export function beatAdvice(result) {
