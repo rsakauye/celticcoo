@@ -25,6 +25,10 @@ Handle a deletion request within 30 days of receiving it.
 
 `submission_failures` cannot be matched to a person. Those rows expire on the 90-day schedule.
 
+## Opt-out rows
+
+`mail_opt_outs` stores an address that asked to stop non-transactional mail. The daily cron does not count or delete that table. Keep each row for at least 60 days, and leave it after that so the stop continues. A deletion request should not remove the opt-out row if removing it would let mail resume. The row is the address and the date it was recorded. It does not include the message.
+
 Example statements, using a placeholder id. Replace `ROW_ID` in a private session. Do not commit the filled statement, and do not run these against production as part of this change.
 
 ```sql

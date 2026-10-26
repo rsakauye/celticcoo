@@ -18,6 +18,16 @@ export function purgeEnabled(env) {
   return String(env && env.RETENTION_PURGE || '').trim() === 'on';
 }
 
+// A stop reply is kept at least this long. The cron below never deletes
+// mail_opt_outs, so suppression continues after the minimum as well.
+export const OPT_OUT_MIN_DAYS = 60;
+
+export function optOutMustKeep(createdAt, now = new Date()) {
+  const created = new Date(createdAt);
+  if (!createdAt || Number.isNaN(created.getTime())) return true;
+  return created.getTime() > new Date(daysAgo(now, OPT_OUT_MIN_DAYS)).getTime();
+}
+
 async function countOf(db, sql, cutoff) {
   const row = await db.prepare(sql).bind(cutoff).first();
   const value = row && (row.n ?? row['COUNT(*)']);
@@ -47,6 +57,7 @@ export async function runRetention(db, env, now = new Date(), log = console.log)
   }
   if (mode === 'delete') {
     try {
+      // mail_opt_outs is not in this list. Deleting a stop would allow mail again.
       await db.prepare('DELETE FROM submissions WHERE updated_at < ?').bind(bookingCutoff).run();
       await db.prepare('DELETE FROM inbound_emails WHERE created_at < ?').bind(emailCutoff).run();
       await db.prepare('DELETE FROM submission_failures WHERE created_at < ?').bind(failureCutoff).run();

@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { handleScheduled } from '../src/index.js';
-import { daysAgo, monthsAgo, runRetention } from '../src/retention.js';
+import { daysAgo, monthsAgo, optOutMustKeep, runRetention } from '../src/retention.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const NOW = new Date('2026-10-26T12:00:00.000Z');
@@ -51,6 +51,15 @@ test('retention logs counts and does not delete unless the flag is on', async ()
   assert.equal(deleted.mode, 'delete');
   assert.equal(live.calls.filter((call) => call.op === 'run').length, 3);
   assert.match(live.calls.find((call) => call.op === 'run').sql, /DELETE FROM submissions/);
+  assert.equal(live.calls.some((call) => /mail_opt_outs/i.test(call.sql)), false);
+  const retentionSource = readFileSync(join(here, '../src/retention.js'), 'utf8');
+  assert.doesNotMatch(retentionSource, /DELETE FROM mail_opt_outs/i);
+  assert.equal(optOutMustKeep(daysAgo(NOW, 59), NOW), true);
+  assert.equal(optOutMustKeep(daysAgo(NOW, 61), NOW), false);
+  assert.equal(optOutMustKeep('not-a-date', NOW), true);
+  const kept = countDb();
+  await runRetention(kept, { RETENTION_PURGE: 'on' }, NOW, () => {});
+  assert.equal(kept.calls.some((call) => /DELETE FROM mail_opt_outs/i.test(call.sql)), false);
 
   const almost = countDb();
   const stillDry = await runRetention(almost, { RETENTION_PURGE: 'yes' }, NOW, () => {});
@@ -68,6 +77,8 @@ test('the scheduled handler stays in dry-run and the doc names the 30 day reques
   assert.match(doc, /within 30 days/);
   assert.match(doc, /RETENTION_PURGE/);
   assert.match(doc, /ROW_ID/);
+  assert.match(doc, /mail_opt_outs/);
+  assert.match(doc, /at least 60 days/);
   assert.doesNotMatch(doc, /gmail\.com/i);
   assert.doesNotMatch(doc, /@[a-z0-9.-]+\.[a-z]{2,}/i);
 });

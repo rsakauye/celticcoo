@@ -192,7 +192,7 @@ Do not commit the database id, the Turnstile secret, or a submission. The id in 
    unset D1_DATABASE_ID
    ```
 
-   That writes a gitignored `site/.wrangler-intake.jsonc`, runs `wrangler d1 migrations apply celticcoo-intake --remote`, and deletes the file. It applies every file in `site/migrations/` that is not on the database yet. `0001_intake.sql` creates `submissions` and `submission_failures`. `0002_inbound_emails.sql` creates the hello@ log. `0003_inbound_clarify.sql` adds clarifying-draft columns. Run the command again after a new migration is merged. Details for the mailbox are in `docs/inbound-email.md`.
+   That writes a gitignored `site/.wrangler-intake.jsonc`, runs `wrangler d1 migrations apply celticcoo-intake --remote`, and deletes the file. It applies every file in `site/migrations/` that is not on the database yet. `0001_intake.sql` creates `submissions` and `submission_failures`. `0002_inbound_emails.sql` creates the hello@ log. `0003_inbound_clarify.sql` adds clarifying-draft columns. `0004_mail_opt_outs.sql` creates the stop-mail list. Run the command again after a new migration is merged. Details for the mailbox are in `docs/inbound-email.md`.
 
 3. **Give deploys the database id.** GitHub → Settings → Secrets and variables → Actions → Secrets → `D1_DATABASE_ID` = that same UUID. The deploy workflow copies it into the checkout for that deploy only. If the secret is empty, the workflow removes the D1 binding and the site still deploys, but requests are not stored.
 
@@ -241,7 +241,7 @@ Do not commit the database id, the Turnstile secret, or a submission. The id in 
 
 ## Inbound mail for hello@
 
-`workers/inbound/` receives `hello@celticcoo.ca` when the Email Routing rule points at it, forwards a copy to the verified destination in `FORWARD_TO`, and logs the message in the private D1 database. Event listings and corrections are not opened as GitHub issues unless `INBOUND_GITHUB_TOKEN` is set and `INBOUND_ISSUES_REPO` names a different private repository. Leave that variable unset. A vague note can get a clarifying draft; that draft is not sent until it is approved. A daily cron counts rows past the retention window and does not delete them unless `RETENTION_PURGE` is `on`. Deploying the Worker does not change the Email Routing rule. The steps are in [docs/inbound-email.md](docs/inbound-email.md) and [docs/retention.md](docs/retention.md).
+`workers/inbound/` receives `hello@celticcoo.ca` when the Email Routing rule points at it, forwards a copy to the verified destination in `FORWARD_TO`, and logs the message in the private D1 database. Event listings and corrections are not opened as GitHub issues unless `INBOUND_GITHUB_TOKEN` is set and `INBOUND_ISSUES_REPO` names a different private repository. Leave that variable unset. A vague note can get a clarifying draft; that draft is not sent until it is approved. A daily cron counts rows past the retention window and does not delete them unless `RETENTION_PURGE` is `on`. A `stop` or `unsubscribe` reply is recorded and further non-transactional mail to that address is suppressed. The steps are in [docs/inbound-email.md](docs/inbound-email.md), [docs/retention.md](docs/retention.md), and [docs/breach-checklist.md](docs/breach-checklist.md). Deploying the Worker does not change the Email Routing rule.
 
 ## Notes
 - Event dates change. The site tells visitors to confirm with organizers, and the weekly check

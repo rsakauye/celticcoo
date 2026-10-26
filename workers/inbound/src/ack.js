@@ -3,7 +3,8 @@
 // from it, so a sender cannot inject headers or instructions into the reply.
 
 import { caslFooterText } from '../../../shared/casl/notice.js';
-import { oneLine } from './text.js';
+import { optOutStatus } from './optout.js';
+import { envelopeAddress, oneLine } from './text.js';
 
 export const ACK_BODY = `The Celtic Coo received your email. A person will read it. This is an automatic receipt, and this mailbox will not answer the substance of your message on its own.\n\n${caslFooterText()}\n`;
 
@@ -49,6 +50,10 @@ export async function maybeAcknowledge(message, env, deps = {}) {
   if (!acksEnabled(env)) return { status: 'skipped' };
   if (!message || typeof message.reply !== 'function') return { status: 'skipped' };
   if (isAutomated(message)) return { status: 'skipped' };
+  const stopped = await optOutStatus(env && env.INTAKE_DB, envelopeAddress(message && message.from));
+  if (stopped !== 'allowed') {
+    return { status: 'skipped', error: stopped === 'opted_out' ? 'opt_out' : 'opt_out_unknown' };
+  }
   const mime = buildAckMime(message);
   if (typeof deps.reply === 'function') {
     await deps.reply(message, mime);
