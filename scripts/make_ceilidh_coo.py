@@ -237,6 +237,50 @@ def draw_frame(pose):
     return c.img
 
 
+def draw_wince_frame(nudge):
+    """Standing coo with both hooves up over her ears. `nudge` 0 or 1 is the wiggle."""
+    dy = -1 if nudge else 0
+    hdx = 1 if nudge else 0
+    # Elbows out and up, then in onto the ears. draw_arm adds dy itself.
+    arm_l = [(25, 33), (8, 20), (20 + hdx, 16)]
+    arm_r = [(39, 33), (56, 20), (44 + hdx, 16)]
+    img = draw_frame((dy, arm_l, arm_r, STAND_L, STAND_R, 0, hdx))
+    c = Canvas()
+    c.img = img
+    c.px = img.load()
+    hx, hy = 32 + hdx, 18 + dy
+    # Shut the open eyes and turn the smile down. The dance frame drew both.
+    for ex in (hx - 5, hx + 4):
+        for xx in range(ex - 1, ex + 3):
+            for yy in (hy - 3, hy - 2, hy - 1, hy):
+                if 0 <= xx < W and c.px[xx, yy] in (OUT, WHT):
+                    c.px[xx, yy] = FUR
+        c.put(ex, hy - 4, OUT)
+        c.put(ex + 1, hy - 4, OUT)
+        for xx in (ex, ex + 1, ex + 2):
+            c.put(xx, hy - 1, OUT)
+    for y in (hy + 7, hy + 8, hy + 9, hy + 10):
+        for x in range(hx - 4, hx + 5):
+            if 0 <= x < W and c.px[x, y] == OUT:
+                c.px[x, y] = MUZ
+    for x, y in (
+        (hx - 2, hy + 10), (hx - 1, hy + 9), (hx, hy + 9),
+        (hx + 1, hy + 9), (hx + 2, hy + 10),
+    ):
+        c.put(x, y, OUT)
+    # Forearms on top of the head, then a wide cloven hoof over each ear.
+    for pts in (arm_l, arm_r):
+        forearm = sh(pts[-2:], 0, dy)
+        c.stamp(limb(forearm, 5), FUR)
+    for s in (-1, 1):
+        ex, ey = hx + s * 12, hy - 2
+        c.stamp(ellipse(ex - 2, ey, 3.6, 4.2), HOOF)
+        c.stamp(ellipse(ex + 2, ey, 3.6, 4.2), HOOF)
+        for yy in range(ey - 2, ey + 3):
+            c.put(ex, yy, OUT)
+    return img
+
+
 def palettize(img):
     flat = [v for rgb in PALETTE for v in rgb]
     img.putpalette(flat + [0] * (768 - len(flat)))

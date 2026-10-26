@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import {
   AMBER_CENTS,
   DEFAULT_LOW_A,
+  DEFAULT_OUTPUT_LEVEL,
   DEMO_START_CENTS,
   GREEN_CENTS,
   MIC_CONSTRAINTS,
@@ -24,6 +25,7 @@ import {
   formatCents,
   lockReference,
   meterZone,
+  outputGain,
   slideAdvice,
   steadyPitch,
 } from '../src/lib/droneTuner.js';
@@ -119,18 +121,20 @@ test('the meter is green within 3 cents, amber within 10, and red beyond', () =>
 });
 
 test('slide advice tells the piper which way the top section goes', () => {
-  const sharp = slideAdvice(12);
-  assert.match(sharp, /sharp/i);
-  assert.match(sharp, /UP/);
-  assert.match(sharp, /onger/);
-  assert.match(sharp, /flatten/i);
-  const flat = slideAdvice(-12);
-  assert.match(flat, /flat/i);
-  assert.match(flat, /DOWN/);
-  assert.match(flat, /horter/);
-  assert.match(flat, /sharpen/i);
+  assert.equal(slideAdvice(12), 'Too sharp. Slide the top section up. A longer drone sounds lower.');
+  assert.equal(slideAdvice(-12), 'Too flat. Slide the top section down. A shorter drone sounds higher.');
+  assert.doesNotMatch(`${slideAdvice(12)} ${slideAdvice(-12)}`, /UP|DOWN/);
   assert.match(slideAdvice(1), /leave the tuning slide/i);
   assert.match(slideAdvice(null), /tuning slide/i);
+});
+
+test('reference volume defaults near maximum and stays inside the limiter range', () => {
+  assert.equal(DEFAULT_OUTPUT_LEVEL, 90);
+  assert.ok(outputGain(90) > 0.7, `default gain ${outputGain(90)}`);
+  assert.ok(outputGain(90) > outputGain(40) * 4);
+  assert.ok(outputGain(100) <= 0.95);
+  assert.equal(outputGain(0), 0);
+  assert.equal(outputGain(Number.NaN), 0);
 });
 
 test('Ceilidh dances when a drone is locked and winces when it is far off or beating hard', () => {
@@ -272,10 +276,34 @@ test('the tuner page is hidden: noindex, unlinked, and off the sitemap', () => {
   assert.match(page, /ceilidh-coo-strip\.png/);
   assert.match(page, /ceilidh-coo-ears\.png/);
   assert.match(page, /steps\(10,\s*end\)/);
-  assert.match(page, /translate3d/);
+  assert.match(page, /steps\(2,\s*end\)/);
+  assert.match(page, /tune-wince-2x/);
+  assert.match(page, /translate3d\(-256px, 0, 0\)/);
+  assert.match(page, /translate3d\(-384px, 0, 0\)/);
+  assert.match(page, /from \{ transform: translate3d\(0, 0, 0\); \}/);
+  assert.match(page, /One tenor is already in tune/);
+  assert.match(page, /A longer drone sounds lower/);
+  assert.match(page, /A shorter drone sounds higher/);
+  assert.match(page, /Use one earbud for the reference drone/);
+  assert.match(page, /silent mode/);
+  assert.match(page, /audioSession/);
+  assert.match(page, /'playback'/);
+  assert.match(page, /createDynamicsCompressor/);
+  assert.match(page, /tabular-nums/);
+  assert.match(page, /position:\s*fixed/);
+  assert.match(page, /data-ceilidh-coo/);
+  assert.match(page, /hideCornerCoo/);
+  assert.match(layout, /data-hide-corner-coo/);
+  assert.match(page, /aria-live="polite"/);
+  assert.doesNotMatch(page, /One drone sits on the tenor/);
+  assert.doesNotMatch(page, /tune-ears/);
+  assert.doesNotMatch(page, /\p{Extended_Pictographic}/u);
   assert.match(page, /prefers-reduced-motion:\s*reduce/);
   assert.match(page, /data-a11y-motion=reduce/);
   assert.match(page, /image-rendering:\s*pixelated/);
+  const earsPng = readFileSync(join(site, 'public/ceilidh-coo-ears.png'));
+  assert.equal(earsPng.readUInt32BE(16), 128);
+  assert.equal(earsPng.readUInt32BE(20), 64);
   assert.match(page, /MIC_CONSTRAINTS/);
   assert.match(page, /ctx\.resume\(\)/);
   assert.match(page, /webkitAudioContext/);

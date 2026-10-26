@@ -2,7 +2,7 @@
 import NewsletterForm from '../components/NewsletterForm.astro';
 import { u, SITE_NAME } from '../lib/site.js';
 import { bookingConfig } from '../lib/booking.js';
-const { noindex = false, breadcrumbs = null, jsonld = null, ogType = 'website', crumb = null, title = SITE_NAME, description = 'Highland Games, pipe bands, Highland dance, Gaelic and Celtic festivals across Canada, plus the shops and makers who keep the culture going.' } = Astro.props;
+const { noindex = false, hideCornerCoo = false, breadcrumbs = null, jsonld = null, ogType = 'website', crumb = null, title = SITE_NAME, description = 'Highland Games, pipe bands, Highland dance, Gaelic and Celtic festivals across Canada, plus the shops and makers who keep the culture going.' } = Astro.props;
 const fullTitle = title === SITE_NAME ? 'The Celtic Coo: Highland Games & Celtic events in Canada' : `${title} · The Celtic Coo`;
 const path = Astro.url.pathname;
 const nav = [['', 'Home'], ['events/', 'Events'], ['results/', 'Results'], ['groups/', 'Clubs & lessons'], ['burns-night/', 'Burns Night'], ['shops/', 'Shops'], ['fundraising/', 'Fundraising']];
@@ -29,7 +29,7 @@ if (jsonld) ld.push(...(Array.isArray(jsonld) ? jsonld : [jsonld]));
 const ldJson = JSON.stringify(ld.length === 1 ? ld[0] : ld).replace(/</g, '\\u003c');
 ---
 <!doctype html>
-<html lang="en-CA">
+<html lang="en-CA" {...(hideCornerCoo ? { 'data-hide-corner-coo': 'true' } : {})}>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />

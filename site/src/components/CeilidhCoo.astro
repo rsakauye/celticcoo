@@ -23,9 +23,11 @@ const strip = u('ceilidh-coo-strip.png');
   import { DANCE_TUNES, nextTuneIndex, prepareTune } from '../lib/danceTunes.js';
 
   const root = document.querySelector('[data-ceilidh-coo]');
-  const button = root && root.querySelector('[data-coo-toggle]');
-  const status = root && root.querySelector('[data-coo-status]');
-  if (button && root) {
+  // /tune/ sets this so the fixed corner coo cannot cover that page's buttons.
+  if (root && document.documentElement.hasAttribute('data-hide-corner-coo')) root.remove();
+  const button = root && root.isConnected && root.querySelector('[data-coo-toggle]');
+  const status = root && root.isConnected && root.querySelector('[data-coo-status]');
+  if (button && root && root.isConnected) {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     // First play is Highland Laddie. The index is memory only, so a reload starts over.
     let tuneIndex = 0;
@@ -189,6 +191,8 @@ const strip = u('ceilidh-coo-strip.png');
 </script>
 
 <style>
+  :global(html[data-hide-corner-coo]) .coo-perch { display: none !important; }
+  :global(html[data-hide-corner-coo] body) { padding-bottom: 0 !important; }
   .coo-perch {
     --frame: 128px;
     --peek-w: 30px;

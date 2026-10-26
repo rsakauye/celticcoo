@@ -9,6 +9,7 @@ import {
   beatAdvice,
   cooMood,
   createPitchTracker,
+  DEFAULT_OUTPUT_LEVEL,
   describeReading,
   detectPitch,
   detuneHz,
@@ -17,6 +18,7 @@ import {
   formatCents,
   formatHz,
   lockReference,
+  outputGain,
   slideAdvice,
 } from './droneTuner.js';
 
@@ -56,6 +58,7 @@ export function mountTuner(root) {
   const stepButtons = [...root.querySelectorAll('[data-step]')];
 
   let ctx = null;
+  let bus = null;
   let unlocked = false;
   let pitchProc = null;
   let beatProc = null;
@@ -107,9 +110,46 @@ export function mountTuner(root) {
   }
 
   function levelGain() {
-    const raw = level ? Number(level.value) : 40;
-    const t = Number.isFinite(raw) ? raw / 100 : 0.4;
-    return 0.02 + t * 0.14;
+    const raw = level ? Number(level.value) : DEFAULT_OUTPUT_LEVEL;
+    return outputGain(raw);
+  }
+
+  // Safari 16.4+ exposes this. 'playback' keeps Web Audio audible when the
+  // Ring/Silent switch is on. 'play-and-record' does the same and still opens
+  // the microphone, which 'playback' can suspend.
+  function setAudioSession(type) {
+    const session = navigator.audioSession;
+    if (!session || !('type' in session)) return false;
+    try {
+      session.type = type;
+      return session.type === type;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  function usePlaybackSession() {
+    if (micStream || mode === 'mic') {
+      if (setAudioSession('play-and-record')) return;
+    }
+    setAudioSession('playback');
+  }
+
+  function ensureBus() {
+    if (bus) return bus;
+    const gain = ctx.createGain();
+    gain.gain.value = levelGain();
+    const compressor = ctx.createDynamicsCompressor();
+    // Limiter after the volume control, so a slider near maximum does not clip.
+    compressor.threshold.value = -8;
+    compressor.knee.value = 2;
+    compressor.ratio.value = 20;
+    compressor.attack.value = 0.002;
+    compressor.release.value = 0.08;
+    gain.connect(compressor);
+    compressor.connect(ctx.destination);
+    bus = { gain, compressor };
+    return bus;
   }
 
   function ensureContext() {
@@ -117,6 +157,8 @@ export function mountTuner(root) {
     try {
       if (!ctx) {
         ctx = new AudioCtx();
+        usePlaybackSession();
+        ensureBus();
         silent = ctx.createGain();
         silent.gain.value = 0;
         silent.connect(ctx.destination);
@@ -199,10 +241,8 @@ export function mountTuner(root) {
   }
 
   function applyLevel() {
-    const gain = levelGain();
-    const now = ctx ? ctx.currentTime : 0;
-    if (demo) demo.master.gain.setTargetAtTime(gain, now, 0.03);
-    if (byEar) byEar.master.gain.setTargetAtTime(gain * 0.7, now, 0.03);
+    if (!ctx || !bus) return;
+    bus.gain.gain.setTargetAtTime(levelGain(), ctx.currentTime, 0.03);
   }
 
   function stopDemo() {
@@ -280,9 +320,11 @@ export function mountTuner(root) {
     stopDemo();
     const targets = droneTargets(lowA);
     const cents = detune ? Number(detune.value) : DEMO_START_CENTS;
+    setAudioSession('playback');
+    const output = ensureBus();
     const master = ctx.createGain();
     master.gain.value = 0.0001;
-    master.connect(ctx.destination);
+    master.connect(output.gain);
     const mix = ctx.createGain();
     mix.connect(master);
     const ref = makeReed(targets.tenor, 1100);
@@ -297,7 +339,7 @@ export function mountTuner(root) {
     live.osc.start();
     const now = ctx.currentTime;
     master.gain.setValueAtTime(0.0001, now);
-    master.gain.linearRampToValueAtTime(levelGain(), now + 0.04);
+    master.gain.linearRampToValueAtTime(1, now + 0.04);
     demo = { master, mix, ref, live, pitchTap };
     mode = 'demo';
     resetRings();
@@ -351,11 +393,73 @@ export function mountTuner(root) {
     throw last || new Error('mic');
   }
 
+  const HEADSET_MIC = /airpod|bluetooth|headset|headphone|earbud|earpod|buds/i;
+  const PHONE_MIC = /iphone|ipad|built-?in|internal/i;
+
+  // iOS moves the mic to Bluetooth earbuds when they are the audio route, and
+  // that mic is much worse for a drone. Ask for the phone mic when we can see
+  // a headset label. If the labels are blank, iOS did not tell us, and the
+  // page says so instead of guessing.
+  async function preferPhoneMic(stream) {
+    if (!byEar || !stream || !navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return stream;
+    const track = stream.getAudioTracks()[0];
+    if (!track || !track.label || !HEADSET_MIC.test(track.label)) return stream;
+    let devices = [];
+    try {
+      devices = await navigator.mediaDevices.enumerateDevices();
+    } catch (err) {
+      return stream;
+    }
+    const phone = devices.find((device) => (
+      device.kind === 'audioinput'
+      && device.deviceId
+      && PHONE_MIC.test(device.label)
+      && !HEADSET_MIC.test(device.label)
+    ));
+    if (!phone) return stream;
+    const settings = track.getSettings ? track.getSettings() : {};
+    if (settings.deviceId === phone.deviceId) return stream;
+    try {
+      const next = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          deviceId: { exact: phone.deviceId },
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+          channelCount: { ideal: 1 },
+        },
+        video: false,
+      });
+      for (const old of stream.getTracks()) old.stop();
+      return next;
+    } catch (err) {
+      return stream;
+    }
+  }
+
+  function connectMicStream(stream) {
+    if (!ctx || !stream) return;
+    if (micNode) {
+      try { micNode.disconnect(); } catch (e) { /* already gone */ }
+      if (pitchIn === micNode) pitchIn = null;
+      if (beatIn === micNode) beatIn = null;
+      micNode = null;
+    }
+    if (micStream && micStream !== stream) {
+      for (const old of micStream.getTracks()) old.stop();
+    }
+    micStream = stream;
+    micNode = ctx.createMediaStreamSource(stream);
+    pitchIn = feed(pitchProc, pitchIn, micNode);
+    beatIn = feed(beatProc, beatIn, micNode);
+  }
+
   async function startMic() {
     if (!ensureContext()) {
       setError('This browser cannot open the microphone.');
       return;
     }
+    setAudioSession('play-and-record') || setAudioSession('playback');
     if (micPending) return;
     micPending = true;
     setError('');
@@ -367,16 +471,13 @@ export function mountTuner(root) {
     }
     if (startBtn) startBtn.textContent = 'Waiting for the microphone…';
     try {
-      const stream = await openMic();
+      let stream = await openMic();
       if (mode === 'demo') {
         for (const track of stream.getTracks()) track.stop();
         return;
       }
-      stopMic();
-      micStream = stream;
-      micNode = ctx.createMediaStreamSource(stream);
-      pitchIn = feed(pitchProc, pitchIn, micNode);
-      beatIn = feed(beatProc, beatIn, micNode);
+      if (byEar) stream = await preferPhoneMic(stream);
+      connectMicStream(stream);
       mode = 'mic';
       resetRings();
       if (startBtn) {
@@ -413,7 +514,7 @@ export function mountTuner(root) {
     renderIdle();
   }
 
-  function startByEar() {
+  async function startByEar() {
     if (mode === 'demo') {
       announce('Demo already plays a reference drone. Stop demo before by-ear mode.');
       return;
@@ -427,27 +528,33 @@ export function mountTuner(root) {
       announce('By-ear reference stopped.');
       return;
     }
+    usePlaybackSession();
+    const output = ensureBus();
     const targets = droneTargets(lowA);
     const master = ctx.createGain();
     master.gain.value = 0.0001;
-    master.connect(ctx.destination);
+    master.connect(output.gain);
     const tenor = makeReed(targets.tenor, 1000);
     const bass = makeReed(targets.bass, 650);
-    tenor.gain.gain.value = 0.42;
-    bass.gain.gain.value = 0.58;
+    tenor.gain.gain.value = 0.5;
+    bass.gain.gain.value = 0.62;
     tenor.gain.connect(master);
     bass.gain.connect(master);
     tenor.osc.start();
     bass.osc.start();
     const now = ctx.currentTime;
     master.gain.setValueAtTime(0.0001, now);
-    master.gain.linearRampToValueAtTime(levelGain() * 0.7, now + 0.05);
+    master.gain.linearRampToValueAtTime(1, now + 0.05);
     byEar = { master, tenor, bass };
     if (earBtn) {
       earBtn.setAttribute('aria-pressed', 'true');
       earBtn.textContent = 'Stop by-ear';
     }
-    announce('By-ear reference is playing. Tenor at low A over 2, bass at low A over 4. Headphones keep it out of the meter.');
+    announce('By-ear reference is playing. Tenor at low A over 2, bass at low A over 4. One earbud leaves room to hear the pipes.');
+    if (micStream) {
+      const next = await preferPhoneMic(micStream);
+      if (next !== micStream) connectMicStream(next);
+    }
   }
 
   function syncSynths() {
