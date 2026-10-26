@@ -308,6 +308,9 @@ test('the classifier prompt treats the email as fenced data', () => {
   });
   assert.match(prompt.system, /Ignore any instruction/);
   assert.doesNotMatch(prompt.system, /delete/);
+  assert.match(prompt.system, /pipe band for a ceilidh/i);
+  assert.match(prompt.system, /piper for a wedding/i);
+  assert.match(prompt.system, /Do not use other for a clear performer request/);
   assert.equal((prompt.user.match(/<untrusted-email>/g) || []).length, 1);
   assert.equal((prompt.user.match(/<\/untrusted-email>/g) || []).length, 1);
   assert.doesNotMatch(prompt.user, /<\/untrusted-email>\s*\{/);
@@ -607,9 +610,11 @@ test('acknowledgement stays off unless ACK_REPLIES is on, and the receipt quotes
   const receiptBody = mimeSent.split('\r\n\r\n').slice(1).join('\r\n\r\n');
   assert.match(mimeSent, /^To: ada@example.com/m);
   assert.match(receiptBody, /automatic receipt/);
-  assert.match(receiptBody, /TODO: CASL purpose/);
-  assert.match(receiptBody, /TODO: CASL mailing address/);
-  assert.doesNotMatch(receiptBody, /PO Box/);
+  assert.match(receiptBody, /The Celtic Coo/);
+  assert.match(receiptBody, /PO Box 1604, Okotoks, AB T1S 1B5, Canada/);
+  assert.match(receiptBody, /unsubscribe/);
+  assert.doesNotMatch(receiptBody, /\bTODO\b/);
+  assert.doesNotMatch(receiptBody, /Street|Avenue|Drive|Road|Lane|Crescent/i);
   assert.doesNotMatch(receiptBody, /Burns Supper/);
   assert.doesNotMatch(receiptBody, /ada@example.com/);
   assert.doesNotMatch(receiptBody, /403-555-0199/);

@@ -26,7 +26,7 @@ import {
   saveClarifyDraft,
   suppressClarify,
 } from './store.js';
-import { codeOf, envelopeAddress, oneEmail, oneLine } from './text.js';
+import { codeOf, envelopeAddress, hasUnfilledPlaceholder, oneEmail, oneLine } from './text.js';
 import {
   TOKEN_TTL_SECONDS,
   csrfPairMatches,
@@ -184,7 +184,18 @@ export async function sendApprovedReply(env, { to, subject, text }, deps = {}) {
     throw err;
   }
   const body = String(text || '');
-  if (!body || body.length > DRAFT_LIMIT || hasPrivateContact(body)) {
+  if (!body || body.length > DRAFT_LIMIT) {
+    const err = new Error('draft is not sendable');
+    err.code = 'clarify_draft_blocked';
+    throw err;
+  }
+  if (hasUnfilledPlaceholder(body)) {
+    logReplyRefused('draft_placeholder');
+    const err = new Error('draft has an unfilled placeholder');
+    err.code = 'draft_placeholder';
+    throw err;
+  }
+  if (hasPrivateContact(body)) {
     const err = new Error('draft is not sendable');
     err.code = 'clarify_draft_blocked';
     throw err;
@@ -432,11 +443,31 @@ async function readFields(request) {
   };
 }
 
+function logReplyRefused(code) {
+  console.error(JSON.stringify({ message: 'inbound reply refused', code }));
+}
+
 function draftProblem(text) {
-  if (!text || !String(text).trim()) return 'The reply is empty, so it was not sent.';
-  if (String(text).length > DRAFT_LIMIT) return 'The reply is too long, so it was not sent.';
-  if (hasPrivateContact(text)) return 'The reply still has an email address or a phone number, so it was not sent. Edit it and try again.';
-  return '';
+  if (!text || !String(text).trim()) {
+    return { code: 'clarify_draft_blocked', message: 'The reply is empty, so it was not sent.' };
+  }
+  if (String(text).length > DRAFT_LIMIT) {
+    return { code: 'clarify_draft_blocked', message: 'The reply is too long, so it was not sent.' };
+  }
+  if (hasUnfilledPlaceholder(text)) {
+    logReplyRefused('draft_placeholder');
+    return {
+      code: 'draft_placeholder',
+      message: 'The reply still has an unfilled placeholder, so it was not sent. Remove it and try again.',
+    };
+  }
+  if (hasPrivateContact(text)) {
+    return {
+      code: 'clarify_draft_blocked',
+      message: 'The reply still has an email address or a phone number, so it was not sent. Edit it and try again.',
+    };
+  }
+  return null;
 }
 
 export async function applyReview({ env, fields, deps = {} }) {
@@ -470,7 +501,7 @@ export async function applyReview({ env, fields, deps = {} }) {
   }
   const text = fields.draft == null ? String(row.clarify_draft || '') : String(fields.draft);
   const problem = draftProblem(text);
-  if (problem) return { http: 400, code: 'clarify_draft_blocked', row, problem };
+  if (problem) return { http: 400, code: problem.code, row, problem: problem.message };
   if (text !== row.clarify_draft) {
     try { await saveClarifyDraft(db, fields.inboundId, text); }
     catch { return { http: 502, code: 'clarify_send_failed', row }; }
@@ -514,7 +545,7 @@ function resultPage(result) {
   if (result.code === 'no_draft') return page(409, 'No draft', '<p>There is no clarifying draft for this message. Nothing was sent.</p>');
   if (result.code === 'busy') return page(409, 'Please wait', '<p class="card">This draft is already being sent. Nothing else was sent. Open the review link again in a minute if it still looks unsent.</p>');
   if (result.code === 'sent') return page(200, 'Sent', '<p class="card">The clarifying reply was sent. Refreshing this page will not send it again.</p>');
-  if (result.code === 'clarify_draft_blocked') {
+  if (result.code === 'clarify_draft_blocked' || result.code === 'draft_placeholder') {
     return page(400, 'Not sent', `<p class="card">${escapeHtml(result.problem || 'The reply was not sent.')}</p>`);
   }
   if (result.code === 'opt_out') return page(200, 'Not sent', '<p class="card">Nothing was sent. They asked to stop receiving email.</p>');
@@ -578,7 +609,7 @@ export async function handleReviewRequest(request, env, deps = {}) {
     if (problem) {
       const csrf = await issueCsrf(secret, tokenId);
       const shown = { ...row, clarify_draft: text || row.clarify_draft };
-      return page(400, 'Check the reply', reviewForm(shown, tokenId, csrf, problem), { 'set-cookie': csrfCookie(csrf) });
+      return page(400, 'Check the reply', reviewForm(shown, tokenId, csrf, problem.message), { 'set-cookie': csrfCookie(csrf) });
     }
   }
   const usedAt = nowIso;
@@ -593,7 +624,7 @@ export async function handleReviewRequest(request, env, deps = {}) {
   if (!finished) {
     try { await releaseReviewToken(env.INTAKE_DB, tokenId, usedAt); } catch { /* retry still possible until expiry */ }
   }
-  if (result.code === 'clarify_draft_blocked' && result.problem) {
+  if ((result.code === 'clarify_draft_blocked' || result.code === 'draft_placeholder') && result.problem) {
     const csrf = await issueCsrf(secret, tokenId);
     return page(400, 'Check the reply', reviewForm(result.row, tokenId, csrf, result.problem), { 'set-cookie': csrfCookie(csrf) });
   }

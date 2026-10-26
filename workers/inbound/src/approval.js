@@ -178,6 +178,7 @@ function outcomeOf(result) {
   if (result.code === 'already_sent') return 'already_sent';
   if (result.code === 'discarded') return 'denied';
   if (result.code === 'busy') return 'busy';
+  if (result.code === 'draft_placeholder') return 'draft_placeholder';
   if (result.code === 'clarify_draft_blocked') return 'blocked';
   if (result.code === 'not_found') return 'not_found';
   return 'error';
@@ -308,6 +309,7 @@ export async function handleApprovalApi(request, env, deps = {}) {
   if (outcome === 'denied') return json(200, { ok: true, status: 'denied', id: route.id });
   if (outcome === 'not_found') return json(404, { ok: false, error: 'not_found' });
   if (outcome === 'busy') return json(409, { ok: false, error: 'busy' });
+  if (outcome === 'draft_placeholder') return json(400, { ok: false, error: 'draft_placeholder' });
   if (outcome === 'blocked') return json(400, { ok: false, error: 'clarify_draft_blocked' });
   return json(result.http || 502, { ok: false, error: 'not_sent' });
 }

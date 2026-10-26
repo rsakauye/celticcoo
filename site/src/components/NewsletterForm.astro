@@ -1,5 +1,5 @@
 ---
-import { kitAction, u } from '../lib/site.js';
+import { CONTACT_EMAIL, kitAction, MAILING_ADDRESS, SITE_NAME, u } from '../lib/site.js';
 const { compact = false } = Astro.props;
 const id = compact ? 'nl-email-footer' : 'nl-email';
 ---
@@ -8,7 +8,7 @@ const id = compact ? 'nl-email-footer' : 'nl-email';
     <label for={id} class="sr-only">Email address</label>
     <input id={id} type="email" name="email_address" required placeholder="you@example.com" autocomplete="email" style="flex:1;min-width:200px" />
     <button class="btn" type="submit">{compact ? 'Subscribe' : 'Send me the Coo\'s Letter'}</button>
-    <p class="muted" style="flex-basis:100%;margin:.25rem 0 0">Sign up for The Coo's Letter, our free email about Celtic events in Canada, every two weeks. It's from The Celtic Coo, PO Box 1604, Okotoks, AB T1S 1B5, hello@celticcoo.ca. You can unsubscribe at any time.</p>
+    <p class="muted" style="flex-basis:100%;margin:.25rem 0 0">Sign up for The Coo's Letter, our free email about Celtic events in Canada, every two weeks. It's from {SITE_NAME}, {MAILING_ADDRESS}, {CONTACT_EMAIL}. You can unsubscribe at any time.</p>
   </form>
 ) : (
   compact

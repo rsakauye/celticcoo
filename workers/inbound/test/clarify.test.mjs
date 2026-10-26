@@ -8,6 +8,7 @@ import { assessGaps, buildDraft, clarifyMode, planDraft } from '../src/clarify.j
 import { handleFetch, handleInboundEmail } from '../src/index.js';
 import { hasPrivateContact } from '../src/redact.js';
 import { buildReviewNote, reviewLinks, sendApprovedReply, sendReviewNote } from '../src/review.js';
+import { hasUnfilledPlaceholder } from '../src/text.js';
 import { newReviewTokenId, verifyAction } from '../src/token.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -824,6 +825,87 @@ test('sendApprovedReply refuses a draft that still has a phone number', async ()
     () => sendApprovedReply({}, { to: SENDER, subject: 'Hello', text: 'Call 403-555-0199' }, { send: async () => { throw new Error('should not send'); } }),
     (err) => err.code === 'clarify_draft_blocked',
   );
+});
+
+test('sendApprovedReply refuses an unfilled placeholder and does not log the draft', async () => {
+  const errors = [];
+  const original = console.error;
+  console.error = (line) => errors.push(String(line));
+  const bodies = [
+    'Hello,\n\nTODO: CASL purpose\n',
+    'Hello,\n\nThe date is {{event_date}}.\n',
+    'Hello,\n\n[PLACEHOLDER]\n',
+  ];
+  try {
+    for (const text of bodies) {
+      let sent = false;
+      await assert.rejects(
+        () => sendApprovedReply({}, { to: SENDER, subject: 'Hello', text }, { send: async () => { sent = true; } }),
+        (err) => err.code === 'draft_placeholder',
+      );
+      assert.equal(sent, false);
+    }
+  } finally {
+    console.error = original;
+  }
+  const blob = errors.join('\n');
+  assert.match(blob, /"code":"draft_placeholder"/);
+  assert.match(blob, /inbound reply refused/);
+  assert.equal(blob.includes('TODO'), false);
+  assert.equal(blob.includes('event_date'), false);
+  assert.equal(blob.includes('PLACEHOLDER'), false);
+  assert.equal(blob.includes(SENDER), false);
+  const ready = buildDraft(['missing_when'], 'booking_inquiry');
+  assert.equal(hasUnfilledPlaceholder(ready), false);
+  assert.equal(hasUnfilledPlaceholder('See the to-do list today.'), false);
+  let sentReady = false;
+  await sendApprovedReply({ INTAKE_DB: { prepare: () => ({ bind: () => ({ first: async () => null }) }) } }, {
+    to: SENDER,
+    subject: 'Hello',
+    text: ready,
+  }, { send: async () => { sentReady = true; } });
+  assert.equal(sentReady, true);
+});
+
+test('the review page refuses a draft that still contains TODO', async () => {
+  const draft = `${buildDraft(['missing_when'], 'booking_inquiry')}\nTODO: fill this before sending`;
+  const db = reviewDb({
+    id: ROW_ID,
+    subject: 'Piper for a wedding',
+    reply_to: SENDER,
+    envelope_from: SENDER,
+    category: 'booking_inquiry',
+    clarify_status: 'pending_approval',
+    clarify_draft: draft,
+    clarify_reasons: 'missing_when',
+  });
+  const env = { INTAKE_DB: db, REVIEW_SECRET: SECRET, REVIEW_BASE_URL: 'https://review.celticcoo.ca' };
+  const links = await reviewLinks(env, ROW_ID, NOW);
+  const errors = [];
+  const original = console.error;
+  console.error = (line) => errors.push(String(line));
+  let sent = 0;
+  try {
+    const opened = await handleFetch(new Request(links.url), env, { now: () => NOW });
+    const html = await opened.text();
+    const refused = await postReview(env, links.url, {
+      cookie: cookieHeader(opened),
+      csrf: csrfValue(html),
+      action: 'approve',
+      deps: { now: () => NOW, send: async () => { sent += 1; } },
+    });
+    assert.equal(refused.status, 400);
+    assert.match(await refused.text(), /unfilled placeholder/);
+  } finally {
+    console.error = original;
+  }
+  assert.equal(sent, 0);
+  assert.equal(db.state.clarify_status, 'pending_approval');
+  assert.equal(db.tokens.get(links.id).used_at, '');
+  const blob = errors.join('\n');
+  assert.match(blob, /"code":"draft_placeholder"/);
+  assert.equal(blob.includes(SENDER), false);
+  assert.equal(blob.includes('fill this before sending'), false);
 });
 
 test('config keeps drafts-only, acknowledgements off, and the owner inbox out of git', () => {

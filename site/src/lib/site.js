@@ -15,6 +15,7 @@ export const kitAction = KIT_FORM_ID ? `https://app.kit.com/forms/${KIT_FORM_ID}
 // Override with repo variable CONTACT_EMAIL (PUBLIC_CONTACT_EMAIL).
 export const CONTACT_EMAIL = (import.meta.env.PUBLIC_CONTACT_EMAIL || '').trim() || 'hello@celticcoo.ca';
 // Business mailing address (CASL sender identification; also shown on privacy, terms and about).
-export const MAILING_ADDRESS = 'PO Box 1604, Okotoks, AB T1S 1B5, Canada';
+// The string lives in shared/casl/notice.js so outbound mail uses the same post-office box.
+export { MAILING_ADDRESS } from '../../../shared/casl/notice.js';
 // TODO: optional hosted form (Google Form, Tally, etc.). When set, the Submit page links to it instead of email.
 export const SUBMIT_FORM_URL = (import.meta.env.PUBLIC_SUBMIT_FORM_URL || '').trim();

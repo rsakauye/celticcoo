@@ -145,7 +145,8 @@ export function assessGaps({ category, event, subject, text, now }) {
   const source = `${subject || ''}\n${text || ''}`;
   const signals = textSignals(subject, source);
   if (signals.automated) return [];
-  if (category === 'other') {
+  const asBooking = bookingIntent(category, signals);
+  if (category === 'other' && !asBooking) {
     if (signals.newsletter) return [];
     return wordCount(source) >= 8 ? ['unclear'] : [];
   }
@@ -155,8 +156,8 @@ export function assessGaps({ category, event, subject, text, now }) {
   const today = localDay(now || new Date());
   const wantsEvent = category === 'event_listing_request' || category === 'correction_or_update';
   const directory = category === 'event_listing_request' && signals.directory;
-  const wantsWhen = (wantsEvent || category === 'booking_inquiry') && !directory;
-  const wantsPlace = category === 'event_listing_request' || category === 'booking_inquiry';
+  const wantsWhen = (wantsEvent || asBooking) && !directory;
+  const wantsPlace = category === 'event_listing_request' || asBooking;
   const reasons = [];
 
   if (wantsEvent && !hasTitle(event)) reasons.push('missing_event');
@@ -170,7 +171,7 @@ export function assessGaps({ category, event, subject, text, now }) {
     reasons.push('missing_time');
   }
   if (wantsPlace && !(event && (event.city || event.venue))) reasons.push('missing_place');
-  if (category === 'booking_inquiry' && !signals.performer) reasons.push('missing_act');
+  if (asBooking && !signals.performer) reasons.push('missing_act');
 
   const links = rawLinks(source).map((link) => link.replace(/[.,);]+$/, ''));
   if (links.some((link) => !publicUrl(link))) reasons.push('bad_link');
@@ -183,6 +184,15 @@ export function assessGaps({ category, event, subject, text, now }) {
 function unclearQuestion(category) {
   if (category === 'partnership_or_press') return 'What did you have in mind, and roughly when?';
   return 'Are you asking to list an event, correct a listing, or book a performer?';
+}
+
+// A performer or booking phrase is a clear hire even when the score stays
+// under the category cutoff and the label is still other.
+function bookingIntent(category, signals) {
+  if (category === 'booking_inquiry') return true;
+  if (category !== 'other' || !signals) return false;
+  if (signals.newsletter || signals.listing || signals.directory || signals.automated) return false;
+  return Boolean(signals.performer || signals.booking);
 }
 
 export function questionFor(reason, category) {

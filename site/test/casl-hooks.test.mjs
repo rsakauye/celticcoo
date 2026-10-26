@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CASL_TODO, caslFooterText } from '../../shared/casl/notice.js';
+import { CASL_NOTICE, MAILING_ADDRESS, caslFooterText } from '../../shared/casl/notice.js';
 import { bookingText } from '../src/lib/booking.js';
+import bookingConfig from '../../data/booking.json' with { type: 'json' };
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '../..');
@@ -19,19 +20,32 @@ function walk(dir, out = []) {
   return out;
 }
 
-test('CASL hooks are placeholders and do not invent an address', () => {
+test('CASL notice uses the published post-office box and has no placeholder', () => {
   const footer = caslFooterText();
-  assert.match(footer, /TODO: CASL purpose/);
-  assert.match(footer, /TODO: CASL sender identification/);
-  assert.match(footer, /TODO: CASL withdraw-consent line/);
-  assert.equal(CASL_TODO.mailingAddress, 'TODO: CASL mailing address');
-  assert.doesNotMatch(footer, /@|PO Box|Street|Avenue/i);
+  assert.equal(CASL_NOTICE.mailingAddress, MAILING_ADDRESS);
+  assert.equal(CASL_NOTICE.senderId.includes('The Celtic Coo'), true);
+  assert.match(footer, /You wrote to The Celtic Coo/);
+  assert.match(footer, /PO Box 1604, Okotoks, AB T1S 1B5, Canada/);
+  assert.match(footer, /only the word unsubscribe/);
+  assert.match(footer, /https:\/\/celticcoo\.ca\/privacy\//);
+  assert.doesNotMatch(footer, /\bTODO\b|\{\{|\[PLACEHOLDER\]/i);
+  assert.doesNotMatch(footer, /@/);
+  assert.doesNotMatch(footer, /Street|Avenue|Drive|Road|Lane|Crescent|Boulevard/i);
+  assert.equal(bookingConfig.senderAddress, MAILING_ADDRESS);
   const form = readFileSync(join(here, '../src/components/NewsletterForm.astro'), 'utf8');
-  assert.match(form, /PO Box 1604, Okotoks, AB T1S 1B5, hello@celticcoo\.ca/);
+  assert.match(form, /MAILING_ADDRESS/);
+  assert.match(form, /CONTACT_EMAIL/);
   assert.match(form, /You can unsubscribe at any time/);
-  assert.doesNotMatch(form, /caslFooterText|TODO: CASL/);
+  assert.doesNotMatch(form, /caslFooterText|\bTODO\b/);
+  const site = readFileSync(join(here, '../src/lib/site.js'), 'utf8');
+  assert.match(site, /shared\/casl\/notice\.js/);
+  assert.doesNotMatch(site, /PO Box/);
   const notice = readFileSync(join(root, 'shared/casl/notice.js'), 'utf8');
   assert.doesNotMatch(notice, /@[a-z0-9.-]+\.[a-z]{2,}/i);
+  assert.doesNotMatch(notice, /\bTODO\b/);
+  const layout = readFileSync(join(here, '../src/layouts/Base.astro'), 'utf8');
+  assert.match(layout, /postOfficeBoxNumber: '1604'/);
+  assert.match(layout, /T1S 1B5/);
   const text = bookingText({
     name: 'Sample Organizer',
     email: 'ada@example.com',
@@ -45,8 +59,9 @@ test('CASL hooks are placeholders and do not invent an address', () => {
     budget: '',
     under18: false,
   });
-  assert.match(text, /TODO: CASL purpose/);
-  assert.match(text, /TODO: CASL mailing address/);
+  assert.match(text, /The Celtic Coo \(https:\/\/celticcoo\.ca\)/);
+  assert.match(text, /PO Box 1604, Okotoks, AB T1S 1B5, Canada/);
+  assert.doesNotMatch(text, /\bTODO\b/);
 });
 
 test('the site source does not load an analytics beacon', () => {

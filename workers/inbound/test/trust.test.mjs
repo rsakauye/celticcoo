@@ -347,6 +347,45 @@ test('GET queue and GET approve never send', async () => {
   assert.equal(db.state.clarify_status, 'pending_approval');
 });
 
+test('chat approval refuses a draft that still contains a placeholder', async () => {
+  const db = apiDb({
+    id: ROW_ID,
+    category: 'booking_inquiry',
+    clarify_status: 'pending_approval',
+    clarify_draft: 'What date works?\n\n{{mailing_address}}',
+    from_header: `Sample Organizer <${SENDER}>`,
+    reply_to: SENDER,
+    envelope_from: SENDER,
+    subject: 'Booking inquiry',
+    text_body: 'Hello from Sample Organizer. We would like a piper.',
+  });
+  const sent = [];
+  const errors = [];
+  const original = console.error;
+  console.error = (line) => errors.push(String(line));
+  let response;
+  try {
+    response = await call(`https://review.celticcoo.ca/api/drafts/${ROW_ID}/approve`, {
+      method: 'POST',
+      body: {},
+      deps: { db, now: () => NOW, send: async (mail) => sent.push(mail) },
+    });
+  } finally {
+    console.error = original;
+  }
+  assert.equal(response.status, 400);
+  const body = await response.json();
+  assert.equal(body.ok, false);
+  assert.equal(body.error, 'draft_placeholder');
+  assert.equal(sent.length, 0);
+  assert.equal(db.state.clarify_status, 'pending_approval');
+  const blob = errors.join('\n');
+  assert.match(blob, /"code":"draft_placeholder"/);
+  assert.equal(blob.includes(SENDER), false);
+  assert.equal(blob.includes('mailing_address'), false);
+  assert.equal(db.audits.some((row) => row.outcome === 'draft_placeholder'), true);
+});
+
 test('approve sends once and a later approve does not send again', async () => {
   const db = apiDb({
     id: ROW_ID,
