@@ -75,7 +75,7 @@ Scoring sums every match. A subject match counts double. Spam wins a tie with a 
 
 The same folder holds `breaker.js`: a seasonal limit, a legit organizer burst versus abuse, and the allow / hold / pause decision. Burns Night (10–31 January, multiplier 4), St Andrew's (15–30 November), Highland Games (April through August), and Hogmanay (27 December through 4 January) raise a trailing baseline. The baseline is the same week last year when that history exists, otherwise a rolling daily average, then clamped between 8 and 80 messages a day. A burst from one consistent sender with distinct event details is `bulk_organizer` and decides `hold` (store it, do not send, do not trip the kill switch). Rotating senders, a repeated payload, gibberish, several links, failed SPF or DKIM, or failed Turnstile checks decide `pause`. The outbound cap (40 a day in the site pack) also decides `pause`. Volume by itself does not.
 
-This Worker does not call `decideGuard` yet. The emergency cutoff change wires it into the booking form and this Worker. The thresholds already live in the site pack so that change does not fork the scorer.
+The booking form and this Worker call that decision through `shared/triage/guard.js`. A legit organizer burst or a seasonal rush is held: stored, not sent, and the kill switch stays off. Abuse and the outbound cap pause delivery until someone clears the switch. The runbook is `docs/emergency-cutoff.md`. The thresholds stay in the site pack.
 
 ## Clarifying drafts
 

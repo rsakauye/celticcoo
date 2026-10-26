@@ -8,6 +8,7 @@
 // The link is emailed only to FORWARD_TO.
 
 import { questionFor } from './clarify.js';
+import { noteInboundOutbound } from './guard.js';
 import { hasPrivateContact, PUBLIC_MAILBOX } from './redact.js';
 import { claimClarifySend, discardClarify, loadInbound, markClarifySent, releaseClarifySend } from './store.js';
 import { codeOf, envelopeAddress, oneEmail, oneLine } from './text.js';
@@ -103,6 +104,7 @@ export async function sendApprovedReply(env, { to, subject, text }, deps = {}) {
     subject: replySubject(subject),
     text: body,
   });
+  try { await noteInboundOutbound(env); } catch { /* the reply was already sent */ }
 }
 
 export function buildReviewNote({ id, category, reasons, draft, recipient, links, forwardStatus }) {
@@ -162,6 +164,7 @@ export async function sendReviewNote(env, note, deps = {}) {
       subject: 'Approve a clarifying reply for hello@celticcoo.ca',
       text,
     });
+    try { await noteInboundOutbound(env, now); } catch { /* the note was already sent */ }
     return { status: 'sent', error: '' };
   } catch (err) {
     console.error(JSON.stringify({ message: 'inbound review note failed', code: codeOf(err) }));

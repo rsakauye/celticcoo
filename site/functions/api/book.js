@@ -18,6 +18,7 @@
 import { events, tba, TODAY } from '../../src/lib/data.js';
 import { bookableFromData, handleBookingRequest, BOOKING_FROM, BOOKING_TO_DEFAULT } from '../../src/lib/booking.js';
 import { intakeFromEnv, verifyFromEnv } from '../../src/lib/intake.js';
+import { bookingGuard, noteBookingOutbound } from '../../src/lib/intake-guard.js';
 import { mailerSend } from '../../src/lib/mailer.js';
 
 const catalog = bookableFromData(events, tba, TODAY);
@@ -38,5 +39,7 @@ export async function onRequest(context) {
     from: BOOKING_FROM,
     verify: verifyFromEnv(env),
     intake: intakeFromEnv(env),
+    guard: bookingGuard(env),
+    noteOutbound: () => noteBookingOutbound(env),
   });
 }

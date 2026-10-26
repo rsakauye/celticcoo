@@ -161,6 +161,11 @@ export async function saveSubmission(db, row) {
     value.guardianConfirm ? 1 : 0,
     row.source || 'book',
   ).run();
+  if (row.clientHash) {
+    try {
+      await db.prepare('UPDATE submissions SET client_hash = ? WHERE id = ?').bind(String(row.clientHash).slice(0, 64), row.id).run();
+    } catch { /* client_hash arrives with migration 0004 */ }
+  }
 }
 
 export async function markEmailStatus(db, id, emailStatus) {

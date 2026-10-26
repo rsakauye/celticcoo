@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { adaptiveLimit, assessBurst, decideGuard, looksGibberish, seasonFor } from '../breaker.js';
+import { adaptiveLimit, assessBurst, decideGuard, decideTraffic, hourlyLimit, looksGibberish, seasonFor } from '../breaker.js';
 import celticcoo from '../sites/celticcoo.js';
 
 const { seasons, timeZone, offSeasonMultiplier, floorPerDay, ceilingPerDay, outboundDailyCap, minBurst } = celticcoo.guard;
@@ -158,6 +158,24 @@ test('abuse signals pause, and a short or merely busy hour does not', () => {
   assert.equal(assessBurst(few, { minBurst }).kind, 'normal');
   assert.equal(decideGuard({ count: 8, limit: 8, burst: { kind: 'normal', reasons: [] } }).action, 'allow');
   assert.equal(decideGuard({ count: 9, limit: 8, burst: { kind: 'normal', reasons: [] } }).reason, 'over_seasonal');
+});
+
+test('traffic holds a seasonal or organizer burst and pauses only for abuse, cost, or the manual switch', () => {
+  assert.equal(hourlyLimit(8, { floor: 6, ceiling: 24 }), 6);
+  assert.equal(hourlyLimit(80, { floor: 6, ceiling: 24 }), 8);
+  const burst = assessBurst(organizerBurst(), { minBurst });
+  assert.equal(decideTraffic({ burst, todayCount: 100, dailyLimit: 8, hourCount: 20, hourLimit: 6 }).action, 'hold');
+  assert.equal(decideTraffic({ todayCount: 9, dailyLimit: 8 }).reason, 'over_seasonal');
+  assert.equal(decideTraffic({ hourCount: 7, hourLimit: 6, todayCount: 7, dailyLimit: 80 }).reason, 'over_hourly');
+  assert.equal(decideTraffic({ outboundToday: 40, outboundCap: 40, burst }).reason, 'outbound_cap');
+  assert.equal(decideTraffic({ manual: true, todayCount: 0, dailyLimit: 8 }).reason, 'manual');
+  assert.equal(decideTraffic({ latched: true }).latch, 'severe');
+  const abuse = assessBurst([1, 2, 3, 4].map(() => ({
+    sender: 'same@example.com',
+    text: 'bcdfghjklm qwrtyplkmn',
+    fields: { when: 'a', place: 'b', act: 'c' },
+  })), { minBurst });
+  assert.equal(decideTraffic({ burst: abuse, todayCount: 4, dailyLimit: 80 }).action, 'pause');
 });
 
 test('the outbound cost cap pauses even a legit organizer burst', () => {

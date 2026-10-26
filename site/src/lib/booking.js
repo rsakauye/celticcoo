@@ -419,6 +419,40 @@ function turnstileMessage(reason) {
   return MESSAGES.turnstile;
 }
 
+function guardCode(reason) {
+  const code = String(reason || '').toLowerCase().replace(/[^a-z0-9_]/g, '');
+  return code.slice(0, 40) || 'review';
+}
+
+async function guardDecision(guard, sample) {
+  if (typeof guard !== 'function') return null;
+  try { return await guard(sample); }
+  catch { return null; }
+}
+
+function bookingFields(value) {
+  const custom = (value && value.custom) || {};
+  const events = (value && value.events) || [];
+  return {
+    when: [custom.date, ...events.map((event) => event && event.when)].filter(Boolean).join(';'),
+    place: [custom.city || custom.venue, ...events.map((event) => event && (event.city || event.venue))].filter(Boolean).join(';'),
+    act: [...((value && value.performers) || []), value && value.performerOther].filter(Boolean).join(','),
+  };
+}
+
+function unavailableResponse(config, wants) {
+  const email = (config && config.destinationEmail) || BOOKING_TO_DEFAULT;
+  if (wants) return jsonResponse(503, { ok: false, code: 'paused' });
+  return htmlResponse(503, config, {
+    title: 'Temporarily unavailable',
+    heading: 'The booking form is temporarily unavailable.',
+    paragraphs: [
+      'The booking form is temporarily unavailable.',
+      `Please email ${email} and we will follow up. Nothing was sent from the form.`,
+    ],
+  });
+}
+
 export async function handleBookingRequest(request, deps = {}) {
   const config = useConfig(deps.config);
   const responses = config.responses || {};
@@ -435,6 +469,11 @@ export async function handleBookingRequest(request, deps = {}) {
       heading: 'That request did not come from this site.',
       paragraphs: [fillTemplate(responses.originParagraph, vars)],
     });
+  }
+  const early = await guardDecision(deps.guard, { phase: 'peek' });
+  if (early && early.action === 'pause') {
+    await noteFailure(intake, { reason: 'paused', detail: guardCode(early.reason) });
+    return unavailableResponse(config, wants);
   }
   const length = Number(request.headers.get('content-length') || 0);
   if (length > 200000) {
@@ -467,6 +506,7 @@ export async function handleBookingRequest(request, deps = {}) {
     if (!verdict || verdict.ok !== true) {
       const reason = (verdict && verdict.reason) || 'turnstile_rejected';
       await noteFailure(intake, { reason, detail: (verdict && verdict.detail) || '' });
+      await guardDecision(deps.guard, { phase: 'form', turnstile: 'fail', sender: '', text: '' });
       const message = turnstileMessage(reason);
       if (wants) return jsonResponse(403, { ok: false, code: reason, errors: { turnstile: message } });
       return htmlResponse(403, config, {
@@ -490,8 +530,27 @@ export async function handleBookingRequest(request, deps = {}) {
     });
   }
   const sentFrom = (() => { try { return new URL(request.url).origin; } catch { return config.siteUrl || ''; } })();
-  const flags = intake ? assessRisk(result.value) : null;
-  const status = flags ? intakeStatus(flags) : '';
+  let flags = intake ? assessRisk(result.value) : null;
+  let status = flags ? intakeStatus(flags) : '';
+  const decision = await guardDecision(deps.guard, {
+    phase: 'form',
+    sender: result.value.email,
+    text: result.value.message,
+    fields: bookingFields(result.value),
+    turnstile: 'pass',
+    ip: request.headers.get('cf-connecting-ip') || '',
+  });
+  if (decision && decision.action === 'pause') {
+    await noteFailure(intake, { reason: 'paused', detail: guardCode(decision.reason) });
+    return unavailableResponse(config, wants);
+  }
+  const held = Boolean(decision && decision.action === 'hold');
+  if (held) {
+    const code = guardCode(decision.reason);
+    flags = [...(flags || []), `held_${code}`];
+    status = 'flagged';
+    if (!intake) return unavailableResponse(config, wants);
+  }
   let intakeId = '';
   let stored = false;
   if (intake) {
@@ -506,6 +565,7 @@ export async function handleBookingRequest(request, deps = {}) {
         flags,
         value: result.value,
         source: 'book',
+        clientHash: decision && decision.ipHash || '',
       });
       stored = true;
     } catch (err) {
@@ -532,6 +592,9 @@ export async function handleBookingRequest(request, deps = {}) {
     if (typeof send !== 'function') return 'skipped';
     try {
       await send(payload);
+      if (typeof deps.noteOutbound === 'function') {
+        try { await deps.noteOutbound(); } catch { /* the notice was already sent */ }
+      }
       return 'sent';
     } catch (err) {
       const code = err && err.code ? String(err.code).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40) : 'email_failed';
@@ -560,7 +623,7 @@ export async function handleBookingRequest(request, deps = {}) {
   };
 
   if (intake) {
-    const emailStatus = await notify();
+    const emailStatus = held ? 'skipped' : await notify();
     if (stored) {
       try { await intake.markEmail(intakeId, emailStatus); }
       catch { await noteFailure(intake, { reason: 'email_status_update_failed', detail: emailStatus }); }

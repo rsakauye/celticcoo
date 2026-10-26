@@ -8,11 +8,12 @@ Pure helpers for classifying inbound mail and for deciding when a burst of form 
 |---|---|
 | `engine.js` | Weighted phrase scoring, quoted-reply and signature stripping, date and place extraction. |
 | `breaker.js` | Seasonal limit, legit bulk versus abuse, and the allow / hold / pause decision. |
+| `guard.js` | D1 adapter: the `intake_control` switch, rolling counts, one debounced alert flag, and the outbound counter. It does not import a site pack. |
 | `text.js` | Folding and clamping. |
 | `sites/celticcoo.js` | Categories, lexicon, Alberta towns, venue words, seasons, and default limits for The Celtic Coo. |
 | `index.js` | Re-exports. It does not import a site pack. |
 
-The engine does not know about Highland Games, Kit, or Alberta. Those words live in the site pack. The breaker does not know about Email Sending prices. The caller passes a count, a limit, and today's outbound total.
+The engine does not know about Highland Games, Kit, or Alberta. Those words live in the site pack. The breaker does not know about Email Sending prices. The caller passes a count, a limit, and today's outbound total. `guard.js` knows table names, not phrases. A site adapter passes the site pack's `guard` object and its own database binding.
 
 ## Classify a message
 
@@ -72,12 +73,16 @@ GROUP BY day;
 
 Count the form table the same way if that channel shares the guard. Cache the resulting limit. Do not recompute it on every request from raw rows.
 
+`guard.js` is the piece that runs those counts. `assessChannel` reads one `intake_control` row, counts the form table and the inbound table together, and calls `decideTraffic`. `hold` does not latch. `pause` from abuse or the outbound cap sets `latch` to `severe` and stays until `setPaused(db, false)`. A manual pause sets `latch` to `manual`. There is no cooldown timer. `paused_until` is reserved and left empty. A missing control table returns `allow`, so a deploy before the migration does not drop mail.
+
+The alert flag is `decision.alert`. The caller sends one fixed note and must not put the visitor's message in it. `alertBody` is that note. A second channel in the same debounce window gets `alert: false` because both share `alerted_at`.
+
 ## Porting to another site
 
 1. Copy `shared/triage/` (or, later, extract it into a private package). Leave `sites/celticcoo.js` as the example.
 2. Add `sites/<your-site>.js` with `categories`, `scoring`, `phrases`, `provinces` or whatever places you extract, `automatedForms`, `directoryForms`, and `guard.seasons`. Phrase `weight` is the body score. The subject multiplier is `scoring.subjectWeight`. `role` is a flag (`performer`, `event`, `listing`, `newsletter`, `spam`) and can be set with `weight: 0`.
 3. Call `analyzeMessage(input, yourSite)` from the mail worker. Keep the worker's own redaction, storage, and reply policy. Do not put secrets or inbox addresses in the site pack.
-4. Call `decideGuard` from the form handler and the mail worker when you wire the cutoff. Map `hold` to "store, do not send" and `pause` to the kill switch. One notification to the operator is the caller's job, so the alert cannot loop.
+4. Copy the `intake_control` table (see `site/migrations/0004_intake_guard.sql`) into that site's database and call `assessChannel` from a thin adapter. Map `hold` to "store, do not send" and `pause` to the kill switch. Send `alertBody` once when `decision.alert` is true. Do not post the message body to an issue tracker.
 5. Keep categories stable if mail is already stored with a check constraint. A new category needs a migration in that site, not in this folder.
 
 UsedGlass, or a later site, should need a new site pack and a thin adapter. It should not need a fork of `engine.js` or `breaker.js`.

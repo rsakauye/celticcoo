@@ -29,7 +29,17 @@
   // INTAKE_DB is the existing celticcoo-intake database. database_id stays a
   // placeholder in git. Deploy copies the GitHub secret D1_DATABASE_ID over
   // it for that run only. Migrations: site/migrations/0002_inbound_emails.sql
-  // creates the table, and 0003_inbound_clarify.sql adds draft columns.
+  // creates the table, 0003_inbound_clarify.sql adds draft columns, and
+  // 0004_intake_guard.sql adds the cutoff switch. Apply 0004 by hand before
+  // relying on the switch. There is no KV binding and no new secret.
+  //
+  // Optional guard overrides, unset here so the site pack defaults apply:
+  // GUARD_FLOOR_PER_DAY, GUARD_CEILING_PER_DAY, GUARD_OFF_SEASON_MULTIPLIER,
+  // OUTBOUND_DAILY_CAP, GUARD_MIN_BURST, GUARD_HOURLY_FLOOR,
+  // GUARD_HOURLY_CEILING, GUARD_SENDER_HOURLY, GUARD_IP_HOURLY,
+  // GUARD_ALERT_DEBOUNCE_MINUTES, GUARD_HISTORY_CACHE_MINUTES.
+  // Set one in the dashboard or as a deploy var if a default is wrong.
+  // Do not put a secret in any of them.
   "name": "celticcoo-inbound",
   "main": "src/index.js",
   "compatibility_date": "2026-10-25",
