@@ -87,7 +87,7 @@ What the pages emit now:
   (1440×1080), and `celtic-coo-event-1x1.png` (1080×1080) in `site/public/images/`. Original
   Ceilidh the Coo artwork, copied into the build as real PNG files. No event in the data has its
   own photo. Several organizer sites explicitly reserve their pictures, so those are not used.
-- **organizer**, on 44 of 45 events, from the host's own site (copyright line, about page, or
+- **organizer**, on every confirmed event, from the host's own site (copyright line, about page, or
   their own schema) or from a page that names them as the presenter. Checked October 2026.
   Greater Moncton Highland Games' own footer says "Greater Moncton Highland Games"; the
   incorporated host named on greatermonctonscots.org, including as host of the 2027 Masters, is
@@ -95,20 +95,28 @@ What the pages emit now:
   readable HTML on that check; the championship is still theirs because the date source is
   scotdance.ca/sdccs/schedule/. Victoria, Fergus, and Cowal blocked a direct fetch; their
   organizer names are from their own about or association pages as indexed that week.
+  Campbell River Highland Gathering's old domain redirects to the Campbell River Salmon Festival
+  gathering page, so that festival is the organizer. The page still shows 2026 dates and a $5
+  spectator price; neither was copied onto the 2027 record.
+  Tea On West's own site links to the same TableAgent event (id 289214) and gives the restaurant
+  as 192 West Street, Port Colborne. The Hamilton segment in that TableAgent URL is not the venue,
+  so the record's city is Port Colborne.
 - **isAccessibleForFree**, when `cost` is `free`. Paid and unknown events leave the property off.
-- **offers**, where there is a real ticket page. A `price` is set only when that page prints one number for this edition. The Celtic Tenors concert is $59.85 CAD on its Showpass page. The Worlds page prints 2027 prices but adds a transaction fee that is not a single per-ticket number, and an Eventbrite page that does not show a price in the visible HTML (including the ETS ceilidh) has no `price`.
+  A free event also gets an `Offer`: `url` is `offers.url` or else `source_url`, `price` is `0`,
+  `priceCurrency` follows the country (CAD, USD, GBP, or EUR), and `availability` is `InStock`.
+  `validFrom` is added only when the record already has `offers.validFrom` or `tickets_on_sale`.
+- **offers**, where there is a real ticket page, plus the free-admission offer above. A price
+  above zero is set only when that page publishes a figure for this edition. Fees are included
+  when the listing publishes one all-in total. The Celtic Tenors concert is $59.85 CAD on its
+  Showpass page and is in stock. The Worlds page prints 2027 prices but adds a per-order
+  transaction fee, so no single price is marked up. The ETS ceilidh page still publishes no price.
 - **performer**, when a named act is billed for that event. The original competitions name two acts. Natalie MacMaster and Donnell Leahy, and The Celtic Tenors, are billed on their concert pages, so those pages name them too.
 
 Still missing, on purpose:
 
-- **Organizer: Campbell River Highland Gathering.** Kelvern Celtic Society names itself organizer
-  on an old listing, and the Campbell River Salmon Festival currently hosts the gathering page
-  (campbellriverhighlandgathering.ca redirects there). The 2026 spectator price on that page is
-  $5. Neither the 2027 host nor a 2027 price is clear, so both are omitted.
-- **Organizer URL: Tea On West, and the Royal Canadian Legion (Barrie).** The names are on the
-  event pages we already trust. teaonwest.ca is a Port Colborne tea room, and this supper is
-  listed in Hamilton, so that domain is not used. The Legion branch has no URL in our sources.
-  Barrie Pipes & Drums, who share the host line and play the supper, do have a URL.
+- **Organizer URL: ETS Pipes and Drums Band.** The Eventbrite organizer profile lists no website.
+  etspipesanddrums.ca answers over plain HTTP, and its HTTPS certificate does not match that
+  hostname, so the domain is not used.
 - **Performer: the other 43 events.** Highland Games, pipe-band championships, dance
   championships, and festivals here are competitions or variety programmes, not a billed act.
   Unnamed "ceilidh performers" and a "special guest piper" are not filled in. Lineups still
@@ -132,17 +140,26 @@ Still missing, on purpose:
     checked, so no 2027 ticket URL was added. Seattle Scottish Highland Games Association's home
     page does say 24–25 July 2027, but its ticket links are still labelled 2026.
 - **Offers that are present, and what they do not include:**
-  - Royal Edinburgh Military Tattoo: `https://www.edintattoo.co.uk/tickets/tattoo-2027`, in stock.
-    The box office page does not print a price in the HTML.
+  - Royal Edinburgh Military Tattoo: `https://www.edintattoo.co.uk/tickets/tattoo-2027`, in stock
+    ("Book Tickets Now"; the booking app sets public sale). The page HTML does not print a price,
+    and the booking API does not return prices without a key, so there is no `price` and no `validFrom`.
   - World Pipe Band Championships: Glasgow Life's 2027 tickets page, in stock. Advertised advance
     prices include the booking fee (Friday general admission from £12.50 child / £16 adult) but
-    exclude a transaction fee, so no `price` is marked up. Grade 1 seated tickets in the first
-    allocation were sold out; general admission was still on sale. The page does not name the
-    RSPBA, so the organizer is Glasgow Life.
+    exclude a transaction fee (£1.50 online per order), so no `price` is marked up. Grade 1 seated
+    tickets in the first allocation were sold out; general admission was still on sale. The page
+    does not name the RSPBA, so the organizer is Glasgow Life.
   - Braemar Gathering: `https://www.braemargathering.org/tickets`, on sale 1 February 2027.
     The page says "not on sale yet" and does not list a price, so there is no availability and no price.
-  - Cornerstone Music Cafe and Place des Arts: the Eventbrite listing is the ticket page. No price
-    or stock status in the static HTML, so the offer is the URL only.
+  - The Celtic Tenors: Showpass shows $59.85 CAD and the general tickets are not sold out, so
+    availability is `InStock`. The visible copy says on sale September 11, while the ticket object
+    says `sale_starts_on` 2026-09-09, so `validFrom` is left off. The $59.85 figure is the displayed
+    total before GST; the same object totals $62.35 with GST, and that higher number is not used.
+  - Place des Arts (Blackthorn): Eventbrite ticket classes are Student/Senior CA$31.00 plus fee
+    CA$3.35 and Adult CA$36.00 plus fee CA$3.67, tax CA$0.00, both on sale since 2026-06-20.
+    The offer price is the lower all-in total, 34.35 CAD, with `InStock` and that `validFrom`.
+  - Cornerstone Music Cafe: one General Admission class at CA$85.00 plus fee CA$6.86 (tax zero),
+    so the offer price is 91.86 CAD and `validFrom` is 2026-11-15. Sales status is "Not Yet On Sale",
+    so availability is omitted even though Eventbrite's own JSON-LD says `InStock`.
 
 ## Run locally
 ```bash
