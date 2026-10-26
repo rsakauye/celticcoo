@@ -191,9 +191,9 @@ const strip = u('ceilidh-coo-strip.png');
 <style>
   .coo-perch {
     --frame: 128px;
-    --peek-w: 34px;
-    --peek-h: 52px;
-    --peek-x: -82px;
+    --peek-w: 30px;
+    --peek-h: 44px;
+    --peek-x: -74px;
     --peek-y: -2px;
     position: fixed;
     z-index: 25;
@@ -310,9 +310,13 @@ const strip = u('ceilidh-coo-strip.png');
     from { transform: translate3d(0, 0, 0); }
     to { transform: translate3d(-1920px, 0, 0); }
   }
-  /* Narrow screens: the tune name stays in the aria-label, and the peek is just a horn. */
+  /* Narrow screens: the tune name stays in the aria-label, and the peek sits in the side padding. */
   @media (max-width: 719px) {
     .coo-perch:not([data-out]) .coo-cue { display: none; }
+    :global(main.wrap:has([data-ceilidh-coo])),
+    :global(body:has([data-ceilidh-coo]) footer.site .wrap) {
+      padding-right: calc(2.85rem + env(safe-area-inset-right, 0px));
+    }
   }
   :global(body:has([data-ceilidh-coo])) {
     padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
@@ -323,10 +327,10 @@ const strip = u('ceilidh-coo-strip.png');
   @media (min-width: 720px) {
     .coo-perch {
       --frame: 192px;
-      --peek-w: 78px;
-      --peek-h: 86px;
-      --peek-x: -96px;
-      --peek-y: -4px;
+      --peek-w: 70px;
+      --peek-h: 88px;
+      --peek-x: -84px;
+      --peek-y: 0px;
     }
     .coo-perch[data-out] .coo-strip { animation-name: coo-fling-3x; }
     :global(body:has([data-ceilidh-coo][data-out])) {

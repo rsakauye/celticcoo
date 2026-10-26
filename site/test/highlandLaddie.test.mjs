@@ -129,6 +129,8 @@ test('the dancing coo is on the home hero only, tucked until tapped, and quiet u
   assert.match(css, /safe-area-inset-bottom/);
   assert.match(css, /pointer-events:\s*none/);
   assert.match(css, /pointer-events:\s*auto/);
+  assert.match(css, /max-width:\s*719px/);
+  assert.match(css, /safe-area-inset-right/);
 
   assert.match(home, /<section class="hero">[\s\S]*<CeilidhCoo \/>[\s\S]*<\/section>/);
   assert.match(home, /\.hero > img \{ order:-1/);
