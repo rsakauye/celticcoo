@@ -4,6 +4,7 @@ import EventCard from '../components/EventCard.astro';
 import ShopCard from '../components/ShopCard.astro';
 import NewsletterForm from '../components/NewsletterForm.astro';
 import HidePast from '../components/HidePast.astro';
+import CeilidhCoo from '../components/CeilidhCoo.astro';
 import { upcoming, featuredShops, tba, counts } from '../lib/data.js';
 import { u } from '../lib/site.js';
 const canada = upcoming.filter((e) => e.isCanada).slice(0, 6);
@@ -72,6 +73,7 @@ const calgary = tba.find((e) => e.city === 'Calgary');
     </div>
   </section>
   <HidePast />
+  <CeilidhCoo slot="mascot" />
 </Base>
 <style>
   .hero { display:flex; gap:2rem; align-items:center; justify-content:space-between; flex-wrap:wrap-reverse; padding:1rem 0 .5rem; }
