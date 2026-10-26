@@ -638,9 +638,16 @@ test('the worker source and config do not contain a destination inbox or a routi
   const workflow = readFileSync(join(here, '../../../.github/workflows/deploy.yml'), 'utf8');
   assert.doesNotMatch(workflow, /migrations apply/);
   assert.match(workflow, /Skipping celticcoo-inbound/);
+  assert.match(workflow, /secrets\.FORWARD_TO/);
+  assert.match(workflow, /--secrets-file/);
+  assert.doesNotMatch(workflow, /--var "FORWARD_TO:/);
   assert.match(workflow, /INBOUND_ISSUES_REPO is unset or is the public repo/);
   assert.doesNotMatch(workflow, /--var "RETENTION_PURGE/);
   assert.match(readFileSync(join(root, 'wrangler.jsonc'), 'utf8'), /"crons": \["15 8 \* \* \*"\]/);
+  const contributing = readFileSync(join(here, '../../../CONTRIBUTING.md'), 'utf8');
+  assert.match(contributing, /example\.com/);
+  assert.match(contributing, /inbound mail/);
+  assert.doesNotMatch(contributing, /gmail\.com/i);
   const sql = readFileSync(join(here, '../../../site/migrations/0002_inbound_emails.sql'), 'utf8');
   assert.match(sql, /CREATE TABLE inbound_emails/);
   assert.equal(hasPrivateContact(sql), false);

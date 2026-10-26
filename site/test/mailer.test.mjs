@@ -202,8 +202,29 @@ test('pages config binds MAILER and does not use send_email', () => {
   assert.match(workflow, /workers\/mailer/);
   assert.match(workflow, /Workers Scripts:Edit/);
   assert.match(workflow, /secrets\.BOOKING_TO/);
-  assert.match(workflow, /--var "BOOKING_TO:\$\{BOOKING_TO\}"/);
+  assert.match(workflow, /--secrets-file/);
+  assert.doesNotMatch(workflow, /--var "BOOKING_TO:/);
+  assert.doesNotMatch(workflow, /--var "FORWARD_TO:/);
   assert.match(workflow, /GitHub secret BOOKING_TO is empty/);
+  const sourceCheck = readFileSync(new URL('../../.github/workflows/source-check.yml', import.meta.url), 'utf8');
+  const dependabot = readFileSync(new URL('../../.github/dependabot.yml', import.meta.url), 'utf8');
+  const top = sourceCheck.split('\njobs:')[0];
+  const job = sourceCheck.split('\njobs:')[1];
+  assert.match(top, /permissions:\n  contents: read/);
+  assert.doesNotMatch(top, /contents: write/);
+  assert.doesNotMatch(top, /issues: write/);
+  assert.match(job, /contents: write/);
+  assert.match(job, /issues: write/);
+  for (const text of [workflow, sourceCheck]) {
+    const uses = [...text.matchAll(/^[\s-]*uses:\s*(\S+)/gm)].map((match) => match[1]);
+    assert.ok(uses.length > 0);
+    for (const use of uses) assert.match(use, /^[\w.-]+\/[\w.-]+@[0-9a-f]{40}$/);
+  }
+  assert.match(dependabot, /package-ecosystem: npm/);
+  assert.match(dependabot, /directory: \/site/);
+  assert.match(dependabot, /directory: \/workers\/inbound/);
+  assert.match(dependabot, /package-ecosystem: github-actions/);
+  assert.match(dependabot, /interval: weekly/);
   assert.match(workflow, /prepare-pages-config\.mjs/);
   assert.match(workflow, /secrets\.D1_DATABASE_ID/);
   assert.match(workflow, /PUBLIC_TURNSTILE_SITEKEY/);

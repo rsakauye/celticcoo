@@ -220,7 +220,7 @@ Do not commit the database id, the Turnstile secret, or a submission. The id in 
 
 6. **Set the public site key** as a GitHub **variable** (not a secret), because the static page has to embed it: Settings → Secrets and variables → Actions → Variables → `TURNSTILE_SITEKEY`. The next build passes it as `PUBLIC_TURNSTILE_SITEKEY`. An empty variable means the widget is not rendered and the function rejects the post.
 
-7. **Confirm the notice can send.** The GitHub secret `BOOKING_TO` must already be the verified Email Routing destination used by `celticcoo-mailer`. The mailer sends only to that destination, from `bookings@celticcoo.ca`. No new email binding is required. A failed notice does not delete the saved row.
+7. **Confirm the notice can send.** The GitHub secret `BOOKING_TO` must already be the verified Email Routing destination used by `celticcoo-mailer`. The mailer sends only to that destination, from `bookings@celticcoo.ca`. No new email binding is required. A failed notice does not delete the saved row. The deploy uploads `BOOKING_TO` as a Worker secret. Do not pass it with `--var`. After the first deploy that contains that change, open `celticcoo-mailer` → Settings → Variables and Secrets and confirm `BOOKING_TO` is a Secret, not plain text. No new GitHub secret is required. The same check for `FORWARD_TO` on `celticcoo-inbound` is in `docs/inbound-email.md`.
 
 8. **Read a request without publishing it.** Use the same unprinted id as step 2. This query leaves out the name, email, phone, and message:
 

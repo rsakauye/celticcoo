@@ -7,7 +7,7 @@
 //
 // Visitors always see destinationEmail from data/booking.json. That public
 // routing address is the mailto fallback. The Worker does not send to it.
-// The verified destination inbox is the Worker's BOOKING_TO variable, injected
+// The verified destination inbox is the Worker's BOOKING_TO secret, uploaded
 // at deploy from the GitHub secret BOOKING_TO. Do not put that inbox in
 // this repo. The notice is sent from bookings@celticcoo.ca.
 //
