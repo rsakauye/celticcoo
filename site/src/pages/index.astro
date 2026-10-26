@@ -27,6 +27,7 @@ const calgary = tba.find((e) => e.city === 'Calgary');
       <p class="meet">🐮 Meet <b>Ceilidh the Coo</b>, said "Kaylee". She's named after the <i>ceilidh</i>, a Gaelic get-together with music and dancing, and that's what this site is for. <a href={u('about/#ceilidh')}>More about her</a>.</p>
     </div>
     <img src={u('coo.svg')} alt="Ceilidh the Coo, our smiling ginger Highland coo mascot, wearing a Maple Leaf tartan bow" width="260" height="260" />
+    <CeilidhCoo />
   </section>
 
   {calgary && (
@@ -73,12 +74,11 @@ const calgary = tba.find((e) => e.city === 'Calgary');
     </div>
   </section>
   <HidePast />
-  <CeilidhCoo slot="mascot" />
 </Base>
 <style>
-  .hero { display:flex; gap:2rem; align-items:center; justify-content:space-between; flex-wrap:wrap-reverse; padding:1rem 0 .5rem; }
+  .hero { position:relative; display:flex; gap:2rem; align-items:center; justify-content:space-between; flex-wrap:wrap-reverse; padding:1rem 0 .5rem; }
   .hero > div { flex:1; min-width:280px; max-width:640px; }
-  .hero img { width:min(260px,60vw); height:auto; filter:drop-shadow(0 8px 14px rgba(60,30,10,.18)); }
+  .hero > img { width:min(260px,60vw); height:auto; filter:drop-shadow(0 8px 14px rgba(60,30,10,.18)); }
   .hero h1 { font-size:clamp(1.9rem,4vw,2.7rem); }
   .kicker { color:var(--ginger); font-weight:600; margin:0; font-style:italic; }
   .lede { font-size:1.12rem; color:#4a3a2e; }

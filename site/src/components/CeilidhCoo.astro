@@ -2,22 +2,20 @@
 import { u } from '../lib/site.js';
 const strip = u('ceilidh-coo-strip.png');
 ---
-<div class="coo-dance" data-ceilidh-coo>
-  <div class="ceilidh-coo" role="img" aria-label="Ceilidh Coo dancing a Highland fling" style={`--coo-strip:url('${strip}')`}></div>
-  <div class="coo-side">
-    <button type="button" class="coo-sound" data-coo-toggle aria-pressed="false" aria-label="Play Highland Laddie">
-      <svg class="ico ico-off" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-        <path d="M4 9.5h3.2L12 5v14l-4.8-4.5H4z" fill="currentColor" />
-        <path d="M16 9.5l5 5M21 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-      </svg>
-      <svg class="ico ico-on" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-        <path d="M4 9.5h3.2L12 5v14l-4.8-4.5H4z" fill="currentColor" />
-        <path d="M15.5 9.2a3.6 3.6 0 0 1 0 5.6M18.2 7a6.4 6.4 0 0 1 0 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-      </svg>
-    </button>
-    <span class="coo-caption" aria-hidden="true">Highland Laddie</span>
-    <span class="sr-only" data-coo-status aria-live="polite"></span>
-  </div>
+<div class="coo-perch" data-ceilidh-coo>
+  <button type="button" class="coo-bring" data-coo-toggle aria-pressed="false" aria-label="Bring out Ceilidh to dance">
+    <span class="coo-cue" aria-hidden="true"><span class="coo-cue-in">tap me</span><span class="coo-cue-out">stop</span></span>
+    <span class="coo-window">
+      <span class="coo-nudge">
+        <span class="coo-shift">
+          <span class="coo-strip">
+            <img src={strip} alt="" width="640" height="64" />
+          </span>
+        </span>
+      </span>
+    </span>
+  </button>
+  <span class="sr-only" data-coo-status aria-live="polite"></span>
 </div>
 
 <script>
@@ -26,7 +24,7 @@ const strip = u('ceilidh-coo-strip.png');
   const root = document.querySelector('[data-ceilidh-coo]');
   const button = root && root.querySelector('[data-coo-toggle]');
   const status = root && root.querySelector('[data-coo-status]');
-  if (button) {
+  if (button && root) {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     const tune = expandTune();
     const step = stepSeconds();
@@ -36,16 +34,18 @@ const strip = u('ceilidh-coo-strip.png');
     let melodyBus = null;
     let bassBus = null;
     let playing = false;
-    let arming = false;
     let cursor = 0;
     let timer = 0;
     const live = new Set();
-    if (!AudioCtx) button.disabled = true;
 
     function setUi(on) {
       button.setAttribute('aria-pressed', on ? 'true' : 'false');
-      button.setAttribute('aria-label', on ? 'Mute' : 'Play Highland Laddie');
-      if (status) status.textContent = on ? 'Playing Highland Laddie' : 'Highland Laddie muted';
+      button.setAttribute('aria-label', on ? 'Tuck Ceilidh away and stop the music' : 'Bring out Ceilidh to dance');
+      if (status) {
+        status.textContent = on
+          ? 'Ceilidh is out and dancing. Highland Laddie is playing.'
+          : 'Ceilidh is tucked away. Highland Laddie is muted.';
+      }
     }
 
     function tone(bus, type, midi, time, dur, peak) {
@@ -82,6 +82,7 @@ const strip = u('ceilidh-coo-strip.png');
 
     function pump() {
       if (!playing || !ctx) return;
+      if (ctx.state === 'suspended' || ctx.state === 'interrupted') ctx.resume();
       if (cursor < ctx.currentTime - 0.05) cursor = ctx.currentTime + 0.02;
       const horizon = ctx.currentTime + 0.45;
       while (cursor < horizon) cursor = scheduleCycle(cursor);
@@ -117,94 +118,183 @@ const strip = u('ceilidh-coo-strip.png');
       master.connect(ctx.destination);
     }
 
-    button.addEventListener('click', async () => {
-      if (playing) {
-        silence();
-        setUi(false);
-        return;
+    // A one-sample buffer started in the gesture unlocks older iOS audio sessions.
+    function unlock() {
+      const buffer = ctx.createBuffer(1, 1, ctx.sampleRate || 22050);
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      src.connect(ctx.destination);
+      src.start(0);
+    }
+
+    function startTune() {
+      if (!AudioCtx) return false;
+      // Created here, on the tap, never on load and never from storage.
+      if (!ctx) {
+        ctx = new AudioCtx();
+        buildGraph();
       }
-      if (!AudioCtx || arming) return;
-      arming = true;
-      try {
-        // Created on the click, never from storage, and never started on load.
-        if (!ctx) {
-          ctx = new AudioCtx();
-          buildGraph();
-        }
-        if (ctx.state === 'suspended') await ctx.resume();
-        if (ctx.state !== 'running') return;
-        const now = ctx.currentTime;
-        master.gain.cancelScheduledValues(now);
-        master.gain.setValueAtTime(0.0001, now);
-        master.gain.linearRampToValueAtTime(MASTER_GAIN, now + 0.03);
-        playing = true;
-        cursor = now + 0.05;
-        setUi(true);
-        pump();
-      } catch (e) {
-        silence();
-        setUi(false);
-      } finally {
-        arming = false;
+      // iOS leaves a new context suspended. resume() has to run in this turn,
+      // and the notes have to be scheduled here too. Waiting on the promise
+      // drops the gesture, and the phone stays silent.
+      ctx.resume();
+      unlock();
+      const now = ctx.currentTime;
+      master.gain.cancelScheduledValues(now);
+      master.gain.setValueAtTime(0.0001, now);
+      master.gain.linearRampToValueAtTime(MASTER_GAIN, now + 0.03);
+      playing = true;
+      cursor = now + 0.02;
+      pump();
+      return true;
+    }
+
+    function bringOut() {
+      root.setAttribute('data-out', '');
+      let heard = false;
+      try { heard = startTune(); } catch (e) { silence(); }
+      button.setAttribute('aria-pressed', 'true');
+      button.setAttribute('aria-label', 'Tuck Ceilidh away and stop the music');
+      if (status) {
+        status.textContent = heard
+          ? 'Ceilidh is out and dancing. Highland Laddie is playing.'
+          : 'Ceilidh is out and dancing. Sound is not available in this browser.';
       }
+    }
+
+    function tuck() {
+      silence();
+      root.removeAttribute('data-out');
+      setUi(false);
+    }
+
+    button.addEventListener('click', () => {
+      if (root.hasAttribute('data-out')) tuck();
+      else bringOut();
     });
   }
 </script>
 
 <style>
-  .coo-dance {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: .55rem 1.1rem 0;
-    display: flex;
-    justify-content: flex-end;
-    align-items: flex-end;
-    gap: .45rem;
+  .coo-perch {
+    --frame: 128px;
+    --peek-w: 86px;
+    --peek-h: 62px;
+    --peek-x: -22px;
+    --peek-y: -2px;
+    position: absolute;
+    z-index: 3;
+    top: .2rem;
+    right: 0;
   }
-  /* 2x on small screens, 3x from 720px. Integer scales keep the pixels square. */
-  .ceilidh-coo {
-    width: 128px;
-    height: 128px;
+  .coo-bring {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: .28rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .coo-bring:focus { outline: none; }
+  .coo-bring:focus-visible {
+    outline: 3px solid var(--focus, #1d3557);
+    outline-offset: 3px;
+    border-radius: 12px;
+  }
+  .coo-cue {
     flex: none;
-    background: var(--coo-strip) 0 0 / 1280px 128px no-repeat;
+    background: var(--card, #fffdf8);
+    color: var(--green, #1f4d3a);
+    border: 2px solid var(--green, #1f4d3a);
+    border-radius: 999px;
+    font: 700 .72rem/1 system-ui, sans-serif;
+    letter-spacing: .02em;
+    padding: .32rem .45rem;
+    box-shadow: 0 1px 0 rgba(42, 29, 20, .12);
+    user-select: none;
+  }
+  .coo-cue-out { display: none; }
+  .coo-window {
+    flex: none;
+    width: var(--peek-w);
+    height: var(--peek-h);
+    overflow: hidden;
+    transition: width .42s ease, height .42s ease;
+  }
+  .coo-nudge, .coo-shift, .coo-strip { display: block; }
+  .coo-shift {
+    transform: translate3d(var(--peek-x), var(--peek-y), 0);
+    transition: transform .42s ease;
+  }
+  .coo-strip { width: calc(var(--frame) * 10); height: var(--frame); }
+  .coo-strip img {
+    display: block;
+    width: 100%;
+    height: 100%;
     image-rendering: -moz-crisp-edges;
     image-rendering: crisp-edges;
     image-rendering: pixelated;
-    animation: coo-fling-2x 1s steps(10) infinite;
   }
-  @media (min-width: 720px) {
-    .ceilidh-coo {
-      width: 192px;
-      height: 192px;
-      background-size: 1920px 192px;
-      animation: coo-fling-3x 1s steps(10) infinite;
-    }
+  /* Tucked: a small bob so the horn at the edge reads as alive. */
+  .coo-perch:not([data-out]) .coo-nudge {
+    animation: coo-wiggle 1.8s ease-in-out infinite;
   }
-  @keyframes coo-fling-2x { to { background-position: -1280px 0; } }
-  @keyframes coo-fling-3x { to { background-position: -1920px 0; } }
-  /* After the size query, so a desktop viewport still stops on the first frame. */
-  @media (prefers-reduced-motion: reduce) {
-    .ceilidh-coo { animation: none; background-position: 0 0; }
-  }
-  .coo-side { display: flex; flex-direction: column; align-items: center; gap: .28rem; margin-bottom: .35rem; }
-  .coo-sound {
-    width: 44px;
-    height: 44px;
-    flex: none;
+  /*
+    The footer dance animated background-position with steps() and a `to`-only
+    keyframe, while background-size lived in the background shorthand. iOS
+    WebKit (mobile Brave) keeps painting the first frame for that combination.
+    Slide the strip with an explicit from and to instead. steps(10, end) holds
+    frames 0–9 and never the blank past the end of the strip.
+  */
+  .coo-perch[data-out] .coo-window { width: var(--frame); height: var(--frame); }
+  .coo-perch[data-out] .coo-shift { transform: translate3d(0, 0, 0); }
+  .coo-perch[data-out] .coo-strip { animation: coo-fling-2x 1s steps(10, end) infinite; }
+  .coo-perch[data-out] .coo-cue {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
     display: grid;
     place-items: center;
-    padding: 0;
-    border-radius: 50%;
-    border: 2px solid #f4e6c8;
-    background: #fbf6ec;
-    color: #1f4d3a;
-    cursor: pointer;
+    padding: 0 .4rem;
+    background: var(--green, #1f4d3a);
+    color: var(--cream, #f4e6c8);
+    border-color: var(--cream, #f4e6c8);
   }
-  .coo-sound:hover { background: #fff; }
-  .coo-sound[aria-pressed="true"] { background: #e0843f; border-color: #fff; color: #1f140c; }
-  .coo-sound .ico-on { display: none; }
-  .coo-sound[aria-pressed="true"] .ico-off { display: none; }
-  .coo-sound[aria-pressed="true"] .ico-on { display: block; }
-  .coo-caption { color: #d5e6dc; font-size: .72rem; letter-spacing: .03em; line-height: 1.1; text-align: center; }
-  :global(html[data-a11y-space=on]) .coo-sound { padding: 0; min-width: 48px; min-height: 48px; border-radius: 50%; }
+  .coo-perch[data-out] .coo-cue-in { display: none; }
+  .coo-perch[data-out] .coo-cue-out { display: block; }
+  @keyframes coo-wiggle {
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    50% { transform: translate3d(-4px, 0, 0); }
+  }
+  @keyframes coo-fling-2x {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(-1280px, 0, 0); }
+  }
+  @keyframes coo-fling-3x {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(-1920px, 0, 0); }
+  }
+  @media (min-width: 720px) {
+    .coo-perch {
+      --frame: 192px;
+      --peek-w: 129px;
+      --peek-h: 93px;
+      --peek-x: -33px;
+      --peek-y: -3px;
+      top: .35rem;
+    }
+    .coo-perch[data-out] .coo-strip { animation-name: coo-fling-3x; }
+  }
+  /* After the size query, so a wide screen still holds the standing frame. */
+  @media (prefers-reduced-motion: reduce) {
+    .coo-nudge, .coo-strip { animation: none !important; }
+    .coo-window, .coo-shift { transition: none !important; }
+  }
+  :global(html[data-a11y-space=on]) .coo-bring { padding: 0; }
 </style>
