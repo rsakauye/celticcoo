@@ -1,0 +1,302 @@
+---
+import Base from '../../layouts/Base.astro';
+import { u } from '../../lib/site.js';
+import { DEFAULT_LOW_A, PRESETS, STEPS } from '../../lib/droneTuner.js';
+const strip = u('ceilidh-coo-strip.png');
+const ears = u('ceilidh-coo-ears.png');
+---
+<Base title="Tune the drones" noindex={true} description="An on-device Highland bagpipe drone tuner. The microphone stays on your phone. Nothing is sent or saved.">
+  <div class="tune" data-tuner>
+    <p class="kicker">A wee tuner for the drones</p>
+    <h1>Artificial intelligence. Tuning the drones anyway.</h1>
+    <p class="lede">A robot on a wall once claimed the drones were beyond it. This page listens on your phone, counts the cents, and tells you which way to slide. The pipes stay in the room.</p>
+
+    <div class="stage">
+      <div class="tune-coo" data-tune-coo data-mood="wait">
+        <div class="tune-window">
+          <div class="tune-strip">
+            <img src={strip} alt="" width="640" height="64" />
+          </div>
+          <img class="tune-ears" src={ears} alt="" width="64" height="64" />
+        </div>
+        <p class="mood" data-mood-text>Ceilidh is waiting for a drone.</p>
+      </div>
+
+      <div class="readout" data-readout data-zone="none">
+        <div
+          class="tune-scale"
+          data-meter
+          data-zone="none"
+          data-dir="locked"
+          role="meter"
+          aria-valuemin={-50}
+          aria-valuemax={50}
+          aria-valuenow="0"
+          aria-valuetext="No pitch yet"
+          aria-label="Cents from the nearest drone"
+        >
+          <div class="zones" aria-hidden="true">
+            <span class="z off"></span>
+            <span class="z close"></span>
+            <span class="z good"></span>
+            <span class="z close"></span>
+            <span class="z off"></span>
+          </div>
+          <div class="strobe" aria-hidden="true"><div class="strobe-move" data-strobe></div></div>
+          <div class="needle" data-needle></div>
+        </div>
+        <p class="scale-labels" aria-hidden="true"><span>Flat</span><span>In tune</span><span>Sharp</span></p>
+        <p class="tune-cents" data-cents-text>No pitch yet</p>
+        <p class="tune-hz"><span data-hz>—</span> · <span data-target>Sound a tenor or the bass</span></p>
+        <p class="advice" data-advice>Sound a drone. The meter will say which way to move the tuning slide.</p>
+        <p class="beat" data-beat>When two drones sound together, their beats show up here.</p>
+      </div>
+    </div>
+
+    <div class="demo-panel card" data-demo-panel hidden>
+      <label class="slider" for="detune">Detune the second tenor
+        <input id="detune" data-detune type="range" min="-40" max="40" step="0.1" value="28" aria-describedby="detune-out" />
+      </label>
+      <output id="detune-out" data-detune-out for="detune">28 cents sharp</output>
+      <p class="muted">One drone sits on the tenor. The other follows this slider. Drag it to the middle and the meter, the beats, and Ceilidh should all settle.</p>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="btn" data-start aria-pressed="false">Start tuning</button>
+      <button type="button" class="btn ghost" data-demo aria-pressed="false">Try demo mode</button>
+      <button type="button" class="btn ghost" data-ear aria-pressed="false" aria-label="Play a reference drone to tune by ear">By-ear mode</button>
+    </div>
+    <p class="err" data-error role="alert" hidden></p>
+
+    <section class="card block" aria-labelledby="ref-title">
+      <h2 id="ref-title">Chanter low A</h2>
+      <p class="muted">Tenor drones tune to half of this. The bass tunes to a quarter. Default is 480 Hz.</p>
+      <div class="presets" role="group" aria-label="Low A presets">
+        {PRESETS.map((hz) => (
+          <button type="button" class="preset" data-preset={hz} aria-pressed={hz === DEFAULT_LOW_A ? 'true' : 'false'}>{hz}</button>
+        ))}
+      </div>
+      <div class="custom-row">
+        <label for="low-a">Custom hertz</label>
+        <input id="low-a" data-low-a type="number" inputmode="decimal" min="430" max="510" step="0.1" value={DEFAULT_LOW_A} />
+        <button type="button" class="btn ghost" data-capture>Set from chanter</button>
+      </div>
+      <p class="capture" data-capture-note>Play a steady low A for 2 seconds. The page locks whatever pitch it hears.</p>
+    </section>
+
+    <section class="block" aria-labelledby="steps-title">
+      <h2 id="steps-title">Order of tuning</h2>
+      <ol class="steps">
+        {STEPS.map((step, i) => (
+          <li>
+            <button type="button" data-step={i} aria-current={i === 0 ? 'step' : 'false'}>
+              <b>{i + 1}. {step.title}</b>
+              <span>{step.body}</span>
+            </button>
+          </li>
+        ))}
+      </ol>
+      <div class="actions">
+        <button type="button" class="btn ghost" data-step-prev>Back</button>
+        <button type="button" class="btn ghost" data-step-next>Next</button>
+      </div>
+    </section>
+
+    <section class="card block">
+      <h2>Which way to slide</h2>
+      <p>The top section is the tuning slide. <b>Slide it up</b> to make the drone longer. Longer flattens it. <b>Slide it down</b> to make the drone shorter. Shorter sharpens it.</p>
+      <p>Green is within 3 cents. Amber is within 10. Past that the meter is red. When two drones are sounding, beats slowing means getting closer. No wobble means locked.</p>
+    </section>
+
+    <section class="card block">
+      <h2>By-ear mode</h2>
+      <p>Off until you turn it on. It plays a quiet reed-like reference: a tenor at low A / 2 and a bass at low A / 4, made on this device when you tap the button. Match your drones to it by ear. Use headphones if you also want the meter to hear the pipes and not the speaker.</p>
+      <label class="slider" for="level">Volume
+        <input id="level" data-level type="range" min="0" max="100" value="40" />
+      </label>
+    </section>
+
+    <section class="card privacy">
+      <h2>Privacy</h2>
+      <p>Microphone audio is analyzed on your device only. Nothing is sent or saved. Echo cancellation, noise suppression, and automatic gain stay off, so the phone does not treat a drone like a voice.</p>
+    </section>
+    <p class="sr-only" data-live aria-live="polite"></p>
+  </div>
+</Base>
+
+<script>
+  import { mountTuner } from '../../lib/droneTunerPage.js';
+  mountTuner(document.querySelector('[data-tuner]'));
+</script>
+
+<style>
+  .tune { max-width: 760px; }
+  .tune h1 { font-size: clamp(1.6rem, 6.2vw, 2.15rem); margin: 0 0 .4rem; }
+  .kicker { color: var(--ginger); font-weight: 700; font-style: italic; margin: 0 0 .2rem; }
+  .lede { margin: 0 0 .9rem; color: #4a3a2e; }
+  .stage {
+    display: grid;
+    grid-template-columns: 8.5rem 1fr;
+    gap: .8rem 1rem;
+    align-items: center;
+  }
+  .tune-coo { --frame: 128px; text-align: center; }
+  .tune-window {
+    position: relative;
+    width: var(--frame);
+    height: var(--frame);
+    margin: 0 auto;
+    overflow: hidden;
+  }
+  .tune-strip { width: calc(var(--frame) * 10); height: var(--frame); }
+  .tune-strip img, .tune-ears {
+    display: block;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+  }
+  .tune-strip img { width: 100%; height: 100%; }
+  .tune-ears {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    pointer-events: none;
+  }
+  .tune-coo[data-mood="wince"] .tune-ears { display: block; }
+  /* Same iOS-safe dance as the home page: translate3d with both endpoints, not background-position. */
+  .tune-coo[data-mood="dance"] .tune-strip { animation: tune-fling-2x 1s steps(10, end) infinite; }
+  .mood { margin: .35rem 0 0; font-size: .82rem; color: var(--muted); }
+  .tune-scale {
+    --cents: 0;
+    position: relative;
+    height: 4.4rem;
+    border: 2px solid var(--green);
+    border-radius: 14px;
+    overflow: hidden;
+    background: #fff;
+  }
+  .zones { display: grid; grid-template-columns: 40fr 7fr 6fr 7fr 40fr; height: 100%; }
+  .z.off { background: repeating-linear-gradient(135deg, #e7b2aa, #e7b2aa 6px, #f6d4ce 6px, #f6d4ce 12px); }
+  .z.close { background: #f6ddb0; }
+  .z.good { background: #b7dfc8; }
+  .strobe { position: absolute; inset: 0; overflow: hidden; pointer-events: none; opacity: .28; }
+  .strobe-move {
+    height: 100%;
+    width: 200%;
+    background: repeating-linear-gradient(90deg, transparent 0 10px, rgba(29, 21, 14, .75) 10px 14px);
+    animation: tune-strobe 1s linear infinite;
+    animation-play-state: paused;
+  }
+  .tune-scale[data-dir="sharp"] .strobe-move,
+  .tune-scale[data-dir="flat"] .strobe-move { animation-play-state: running; }
+  .tune-scale[data-dir="flat"] .strobe-move { animation-direction: reverse; }
+  .needle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 4px;
+    margin-left: -2px;
+    background: #1a120c;
+    box-shadow: 0 0 0 1px #fff;
+  }
+  .needle::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 11px solid #1a120c;
+  }
+  .scale-labels { display: flex; justify-content: space-between; margin: .2rem .1rem .2rem; font-size: .78rem; font-weight: 700; color: var(--muted); }
+  .tune-cents { margin: .15rem 0 0; font: 800 clamp(1.7rem, 8vw, 2.7rem)/1.05 Georgia, serif; color: var(--green); }
+  .readout[data-zone="close"] .tune-cents { color: #7a4e0d; }
+  .readout[data-zone="off"] .tune-cents { color: #8d2a2a; }
+  .tune-hz { margin: .15rem 0; font-variant-numeric: tabular-nums; }
+  .advice { margin: .2rem 0; font-size: 1.05rem; }
+  .beat { margin: 0; color: var(--muted); }
+  .actions { display: flex; flex-wrap: wrap; gap: .5rem; margin: .9rem 0 .4rem; }
+  .actions .btn { min-height: 44px; }
+  .demo-panel { margin-top: .8rem; }
+  .demo-panel output { display: block; font-weight: 800; font-size: 1.15rem; margin: .2rem 0 .3rem; }
+  .slider { display: grid; gap: .25rem; font-weight: 700; }
+  .slider input { width: 100%; min-height: 44px; }
+  .block { margin-top: 1.1rem; }
+  .block h2 { margin-top: 0; }
+  .presets { display: flex; flex-wrap: wrap; gap: .4rem; margin: .4rem 0 .7rem; }
+  .preset {
+    min-width: 3.2rem;
+    min-height: 44px;
+    border: 2px solid var(--green);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--green);
+    font: 700 1rem system-ui, sans-serif;
+    cursor: pointer;
+  }
+  .preset[aria-pressed="true"] { background: var(--green); color: #fff; }
+  .custom-row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+  .custom-row input { width: 7rem; min-height: 44px; }
+  .capture { margin: .55rem 0 0; }
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: .45rem; }
+  .steps button {
+    width: 100%;
+    text-align: left;
+    border: 2px solid var(--line);
+    border-radius: 12px;
+    background: var(--card);
+    color: inherit;
+    font: inherit;
+    padding: .55rem .7rem;
+    cursor: pointer;
+    min-height: 44px;
+  }
+  .steps button b { display: block; color: var(--green); }
+  .steps button span { display: block; color: #4a3a2e; font-size: .95rem; }
+  .steps button.is-current, .steps button[aria-current="step"] { border-color: var(--green); background: #eef6f1; }
+  .privacy { background: #f3ecdf; }
+  .err { color: #8d2a2a; font-weight: 700; }
+  @keyframes tune-fling-2x {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(-1280px, 0, 0); }
+  }
+  @keyframes tune-fling-3x {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(-1920px, 0, 0); }
+  }
+  @keyframes tune-strobe {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(-24px, 0, 0); }
+  }
+  @media (min-width: 720px) {
+    .tune-coo { --frame: 192px; }
+    .stage { grid-template-columns: 13rem 1fr; }
+    .tune-coo[data-mood="dance"] .tune-strip { animation-name: tune-fling-3x; }
+  }
+  @media (max-width: 340px) {
+    .stage { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tune-coo[data-mood="dance"] .tune-strip {
+      animation: none !important;
+      transform: translate3d(calc(var(--frame) * -2), 0, 0);
+    }
+    .strobe-move, .needle { animation: none !important; transition: none !important; }
+  }
+  :global(html[data-a11y-motion=reduce]) .tune-coo[data-mood="dance"] .tune-strip {
+    animation: none !important;
+    transform: translate3d(calc(var(--frame) * -2), 0, 0);
+  }
+  :global(html[data-a11y-cb=on]) .z.good { background: #9ec9ef; }
+  :global(html[data-a11y-cb=on]) .z.off { background: repeating-linear-gradient(135deg, #f0c49a, #f0c49a 6px, #f8e2cc 6px, #f8e2cc 12px); }
+  :global(html[data-a11y-cb=on]) .readout[data-zone="off"] .tune-cents { color: #9a4a00; }
+  :global(html[data-a11y-cb=on]) .readout[data-zone="good"] .tune-cents { color: #005a9c; }
+  :global(html[data-a11y-cb=on]) .readout[data-zone="close"] .tune-cents { color: #9a4a00; }
+  :global(html[data-a11y-contrast=high]) .tune-scale { border-color: #000; }
+  :global(html[data-a11y-contrast=high]) .z.good { background: #b7dfc8; }
+  :global(html[data-a11y-contrast=high]) .advice { font-weight: 700; }
+</style>
