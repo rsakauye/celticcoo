@@ -241,11 +241,9 @@ def draw_wince_frame(nudge):
     """Standing coo with both hooves up over her ears. `nudge` 0 or 1 is the wiggle."""
     dy = -1 if nudge else 0
     hdx = 1 if nudge else 0
-    elbow_y = 24 if nudge else 26
-    # Shoulders stay put. Elbows lift out, and the hooves land on the ears
-    # (ear centres are hx ± 12, hy - 1; draw_arm adds dy itself).
-    arm_l = [(25, 33), (13, elbow_y), (20 + hdx, 17)]
-    arm_r = [(39, 33), (51, elbow_y), (44 + hdx, 17)]
+    # Elbows out and up, then in onto the ears. draw_arm adds dy itself.
+    arm_l = [(25, 33), (8, 20), (20 + hdx, 16)]
+    arm_r = [(39, 33), (56, 20), (44 + hdx, 16)]
     img = draw_frame((dy, arm_l, arm_r, STAND_L, STAND_R, 0, hdx))
     c = Canvas()
     c.img = img
@@ -270,14 +268,16 @@ def draw_wince_frame(nudge):
         (hx + 1, hy + 9), (hx + 2, hy + 10),
     ):
         c.put(x, y, OUT)
-    # Hooves last, so they sit on the ears instead of under the head.
+    # Forearms on top of the head, then a wide cloven hoof over each ear.
+    for pts in (arm_l, arm_r):
+        forearm = sh(pts[-2:], 0, dy)
+        c.stamp(limb(forearm, 5), FUR)
     for s in (-1, 1):
-        ex, ey = hx + s * 12, hy - 1
-        c.stamp(ellipse(ex, ey, 5.6, 4.4), HOOF)
-        # A dark cleft so the disc reads as a hoof, not as the ear underneath.
-        c.put(ex, ey - 1, OUT)
-        c.put(ex, ey, OUT)
-        c.put(ex, ey + 1, OUT)
+        ex, ey = hx + s * 12, hy - 2
+        c.stamp(ellipse(ex - 2, ey, 3.6, 4.2), HOOF)
+        c.stamp(ellipse(ex + 2, ey, 3.6, 4.2), HOOF)
+        for yy in range(ey - 2, ey + 3):
+            c.put(ex, yy, OUT)
     return img
 
 
