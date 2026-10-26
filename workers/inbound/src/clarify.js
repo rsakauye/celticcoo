@@ -2,7 +2,8 @@
 // The draft is a fixed set of questions. It does not quote the inbound mail.
 // Nothing here sends. CLARIFY_DRAFTS defaults to drafts. There is no auto-send mode.
 
-import { DATE_RE, publicUrl } from './classify.js';
+import { DATE_RE, publicUrl, textSignals } from './classify.js';
+import { caslFooterText } from '../../../shared/casl/notice.js';
 import { hasPrivateContact, PUBLIC_MAILBOX } from './redact.js';
 
 const TIME_RE = /\b(?:[01]?\d|2[0-3]):[0-5]\d\b|\b(?:1[0-2]|0?[1-9])\s*(?:a\.?m\.?|p\.?m\.?)\b/i;
@@ -29,17 +30,29 @@ const TICKET_HOSTS = [
 
 const MONTHS = {
   january: 1,
+  jan: 1,
   february: 2,
+  feb: 2,
   march: 3,
+  mar: 3,
   april: 4,
+  apr: 4,
   may: 5,
   june: 6,
+  jun: 6,
   july: 7,
+  jul: 7,
   august: 8,
+  aug: 8,
   september: 9,
+  sep: 9,
+  sept: 9,
   october: 10,
+  oct: 10,
   november: 11,
+  nov: 11,
   december: 12,
+  dec: 12,
 };
 
 const QUESTIONS = {
@@ -47,6 +60,7 @@ const QUESTIONS = {
   missing_when: 'What is the date, and is there a start time?',
   missing_time: 'What time does it start?',
   missing_place: 'Which city is it in, and which venue if there is one?',
+  missing_act: 'Who do you need: a piper, a drummer, dancers, a fiddler, or a band?',
   past_date: 'The date looks like it has already passed. What is the correct date?',
   contradiction: 'There is more than one date in the note. Which date should we use?',
   bad_link: 'The link in the note does not look usable. What is the correct page?',
@@ -63,7 +77,7 @@ export function clarifyMode(env) {
 }
 
 export function parseDateToken(token) {
-  const text = String(token || '').trim();
+  const text = String(token || '').trim().replace(/(\d)(?:st|nd|rd|th)\b/gi, '$1');
   let match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (match) return calendarIso(Number(match[1]), Number(match[2]), Number(match[3]));
   match = text.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/);
@@ -129,13 +143,19 @@ function linkMismatch(hostName, url) {
 export function assessGaps({ category, event, subject, text, now }) {
   if (!category || category === 'spam') return [];
   const source = `${subject || ''}\n${text || ''}`;
-  if (category === 'other') return wordCount(source) >= 8 ? ['unclear'] : [];
+  const signals = textSignals(subject, source);
+  if (signals.automated) return [];
+  if (category === 'other') {
+    if (signals.newsletter) return [];
+    return wordCount(source) >= 8 ? ['unclear'] : [];
+  }
   if (category === 'partnership_or_press') return wordCount(text) < 12 ? ['unclear'] : [];
 
   const unique = [...new Set(datesIn(source))];
   const today = localDay(now || new Date());
   const wantsEvent = category === 'event_listing_request' || category === 'correction_or_update';
-  const wantsWhen = wantsEvent || category === 'booking_inquiry';
+  const directory = category === 'event_listing_request' && signals.directory;
+  const wantsWhen = (wantsEvent || category === 'booking_inquiry') && !directory;
   const wantsPlace = category === 'event_listing_request' || category === 'booking_inquiry';
   const reasons = [];
 
@@ -150,6 +170,7 @@ export function assessGaps({ category, event, subject, text, now }) {
     reasons.push('missing_time');
   }
   if (wantsPlace && !(event && (event.city || event.venue))) reasons.push('missing_place');
+  if (category === 'booking_inquiry' && !signals.performer) reasons.push('missing_act');
 
   const links = rawLinks(source).map((link) => link.replace(/[.,);]+$/, ''));
   if (links.some((link) => !publicUrl(link))) reasons.push('bad_link');
@@ -186,6 +207,8 @@ export function buildDraft(reasons, category) {
     '',
     'The Celtic Coo',
     PUBLIC_MAILBOX,
+    '',
+    caslFooterText(),
     '',
   ].join('\n');
 }

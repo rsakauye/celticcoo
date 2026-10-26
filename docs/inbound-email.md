@@ -10,12 +10,12 @@ This repository does not change the live routing rule. The Wrangler config has n
 2. If that forward does not happen, the handler throws after trying to store the row. The failure is in the Workers logs, and the sending server can retry the delivery. A message the platform marks as not forwardable is stored and the handler returns, because another attempt will not make it forwardable.
 3. Parses the sender, subject, date, and plain-text body. Attachment bytes are not stored. A note of the count and content types is. The raw message is capped at 256 KB before parsing.
 4. Stores a row in the existing D1 database `celticcoo-intake`, table `inbound_emails`.
-5. Classifies it as `event_listing_request`, `booking_inquiry`, `correction_or_update`, `partnership_or_press`, `spam`, or `other`. Workers AI (`@cf/meta/llama-3.1-8b-instruct`) does this when the binding works. Otherwise a rules fallback does. If the model and a clear rules match disagree about opening or suppressing an issue, the rules win. There is no minimum body length. A short note is still sent to the model.
+5. Classifies it as `event_listing_request`, `booking_inquiry`, `correction_or_update`, `partnership_or_press`, `spam`, or `other`. Workers AI (`@cf/meta/llama-3.1-8b-instruct`) does this when the binding works. Otherwise a weighted rules fallback does. The phrases, places, and seasons live in `shared/triage/sites/celticcoo.js`. The scorer in `shared/triage/engine.js` does not know the site. If the model and a clear rules match disagree about opening or suppressing an issue, the rules win. An auto-reply or a newsletter question that the rules call `other` also wins, so it does not open an issue. There is no minimum body length. A short note is still sent to the model.
 6. For `event_listing_request` and `correction_or_update`, opens an issue in `rsakauye/celticcoo` with the label `inbound:event-request` or `inbound:correction`. The issue has the D1 row id, a short summary, and public event fields (title, host, date, city, province, venue, URL). It does not include the sender's email, phone, or message body. If a clarifying draft exists, the draft text is included. The approval link is not.
 7. When `CLARIFY_DRAFTS` is `drafts` (the default), a vague, incomplete, or contradictory inquiry gets a short draft that asks only for what is missing. The draft is stored on the same row with status `pending_approval`. A private review note is sent to `FORWARD_TO` when the email binding is available. Nothing is sent to the original sender until you approve that draft.
 8. Does not fetch any URL from the email and does not publish an event. `ACK_REPLIES` is `off`. An automatic receipt is sent only if that value is changed to `on` and the Worker is redeployed. That receipt is separate from clarifying drafts.
 
-Only `hello@celticcoo.ca`, including plus-addresses such as `hello+events@celticcoo.ca`, is stored and classified. Any other recipient is forwarded and then ignored, in case a rule is pointed here by mistake.
+Only `hello@celticcoo.ca`, including plus-addresses such as `hello+events@celticcoo.ca`, is stored and classified. Mail to `bookings@celticcoo.ca` is not classified. If Email Routing delivers that address to this Worker and the message is only a stop or unsubscribe, the sender address is added to `mail_opt_outs` and the message is not stored. Any other recipient is forwarded and then ignored, in case a rule is pointed here by mistake.
 
 The email is untrusted. Instructions inside it are not followed. The model is asked for JSON only, and the result is checked against the category list. A field that is not in that schema is dropped. The clarifying draft is built from fixed questions, not from the model's free text, so the inbound message cannot write the reply.
 
@@ -29,9 +29,9 @@ A message stored as row `b0e54ddb-eca8-4072-99f3-c1efb4d60824` had `classifier=r
 - The call threw, including a JSON-mode or schema rejection, and an empty `catch` returned the rules result.
 - The call returned text that was not the category schema, and that was treated as "no model result" with no log.
 
-The stored row does not say which of those happened. A direct Workers AI call on the account can succeed and this Worker can still fail, because the Worker was sending `response_format` JSON schema (and previously `temperature: 0`) and then hiding the failure. There is no separate short-body rule.
+The stored row does not say which of those happened. A direct Workers AI call on the account can succeed and this Worker can still fail, because the Worker was sending `response_format` JSON schema (and previously `temperature: 0`) and then hiding the failure. There is no separate short-body rule. The `0.35` on that row is the old fixed score for `other`. The current scorer uses `0.26` when nothing matches. Both are low on purpose.
 
-The Worker now logs one line, `inbound classify`, with a short `reason` and no message body:
+The Worker now logs one line, `inbound classify`, with a short `reason`. On a failure it also logs `error_name`, `error_code`, and `error_message`. The message is truncated. Addresses, phone numbers, URLs, secrets, and words copied from the inbound subject or body are removed before the log line is written.
 
 | `reason` | Meaning |
 |---|---|
@@ -39,17 +39,49 @@ The Worker now logs one line, `inbound classify`, with a short `reason` and no m
 | `ai_text` | JSON mode failed or was unusable, and a second call with messages only succeeded. |
 | `ai_unavailable` | The AI binding or `run` was missing, or the call failed because `run` was not a function. The log also has `binding` and `run` types (`function`, `object`, `missing`). |
 | `ai_request` | The call was rejected for JSON mode, schema, temperature, or `max_tokens`. |
+| `ai_quota` | Neuron allocation or a paid-plan model refusal (codes 3036 and 5035, or that text). |
+| `ai_capacity` | Workers AI was out of capacity or rate limited (code 3040 or HTTP 429). |
+| `ai_timeout` | The call timed out or was aborted. |
+| `ai_model` | The model id was not found (code 6002 or that text). |
 | `ai_unparsed` | The model replied, but not with a category in the allowed list. |
-| `ai_failed` | The call threw for another reason. The error text is not logged, because it can echo the email. |
+| `ai_failed` | The call threw for another reason. The sanitized message is still on the log line. |
 | `rules_override` | The model answered, and a clear rules match overrode it. |
 
-The same code is stored on the row as `classifier_reason`. JSON mode is still tried first. `additionalProperties` is no longer sent in the schema. If that attempt throws or does not parse, the Worker tries once more with only the messages, which is the shape of a plain Workers AI call, and logs which path worked.
+The same code is stored on the row as `classifier_reason`. A failure appends a short slug, for example `ai_quota:3036_daily_free_allocation`. JSON mode is still tried first. `additionalProperties` is still not sent in the schema. If that attempt throws or does not parse, the Worker tries once more with only the messages, which is the shape of a plain Workers AI call, and logs which path worked.
+
+### What failed on 26 October 2026
+
+Two rows stored at 04:55 UTC that day have `classifier=rules` and `classifier_reason=ai_failed`. They are one second apart: one `booking_inquiry` at confidence `0.8`, and one `other` at confidence `0.35`. The Workers log for both is only `{ "message": "inbound classify", "classifier": "rules", "reason": "ai_failed" }`. The traces finished in about two seconds with outcome ok and no trace error. Both the JSON-schema attempt and the plain-messages attempt failed. The thrown text did not contain the words the old code used for `ai_request` (JSON mode, schema, `response_format`, temperature, `max_tokens`), and `run` was a function, or the reason would have been `ai_unavailable`.
+
+The 25 October 14:35 UTC row is the earlier case. Its empty `classifier_reason` is the code from before this logging existed. The Worker script's `modified_on` is 16:49 UTC that day, after that row was written.
+
+Checks run on the same account after the Workers Paid upgrade (the upgrade was about 04:45 UTC, the failures at 04:55):
+
+- The model catalog does not list `@cf/meta/llama-3.1-8b-instruct`. A nearby id is `@cf/meta/llama-3.1-8b-instruct-fp8`.
+- `GET /ai/models/schema` for the configured id returns HTTP 404, code 6002, "Model schema not found".
+- `POST /ai/run/@cf/meta/llama-3.1-8b-instruct` with the Worker's schema returns HTTP 200 and a valid category object. A plain messages call also returns HTTP 200.
+
+The model id and the schema are valid now. The exact 04:55 error text was discarded, so it cannot be quoted. The plausible cause is a Workers AI error whose message did not contain the schema keywords: the daily neuron allocation (code 3036) or a capacity response (3040 or 429), in the minutes after the paid-plan upgrade before the new entitlement applied. Both messages failed the same way, so it was not a one-off timeout. No Wrangler var change is required.
+
+If that legacy model id later returns model-not-found, set the `AI_MODEL` var to `@cf/meta/llama-3.1-8b-instruct-fp8` and keep the schema-then-text order. Do not switch today. A plain call to the fp8 id returned JSON inside a markdown fence, which is a worse default while the current id still runs.
+
+## Rules, lexicon, and the shared module
+
+`shared/triage/` is the site-agnostic piece. `workers/inbound/src/classify.js` is the Celtic Coo adapter: it redacts, calls Workers AI, and maps error text to the reason codes above. Copying the folder to another site is described in `shared/triage/README.md`. There is no package and no extra repo.
+
+The lexicon is `shared/triage/sites/celticcoo.js`. It is static data: Burns Supper / Burns Night / Robbie Burns, ceilidh and céilidh and kaylee, céilí, Highland Games and Highland Gathering, pipe band and pipes and drums, Highland and Irish dance, St Andrew's, Hogmanay, Tartan Day, Gaelic, Canadian provinces and abbreviations, common Alberta towns, venue words (hall, legion, lodge, church, centre), and the common misspellings those phrases already include. Lookup is local. Nothing in that file calls the network.
+
+Scoring sums every match. A subject match counts double. Spam wins a tie with a real request. Quoted lines, a signature after `--`, and "Sent from my…" are dropped before scoring. A marketing footer is scored only as spam. Confidence follows the score and the margin, and a note with no signals stays under `0.4`.
+
+The same folder holds `breaker.js`: a seasonal limit, a legit organizer burst versus abuse, and the allow / hold / pause decision. Burns Night (10–31 January, multiplier 4), St Andrew's (15–30 November), Highland Games (April through August), and Hogmanay (27 December through 4 January) raise a trailing baseline. The baseline is the same week last year when that history exists, otherwise a rolling daily average, then clamped between 8 and 80 messages a day. A burst from one consistent sender with distinct event details is `bulk_organizer` and decides `hold` (store it, do not send, do not trip the kill switch). Rotating senders, a repeated payload, gibberish, several links, failed SPF or DKIM, or failed Turnstile checks decide `pause`. The outbound cap (40 a day in the site pack) also decides `pause`. Volume by itself does not.
+
+This Worker does not call `decideGuard` yet. The emergency cutoff change wires it into the booking form and this Worker. The thresholds already live in the site pack so that change does not fork the scorer.
 
 ## Clarifying drafts
 
 `CLARIFY_DRAFTS` in `workers/inbound/wrangler.jsonc` is `drafts`. Any other value except `off` means the same thing. There is no setting that sends a reply by itself. Set it to `off` and redeploy to stop new drafts.
 
-A draft is created for an event listing, correction, or booking that is missing a date, a time, a place, or an event name; for a date that is already past; for two dates that disagree (a correction that states the old date and the new one is not treated as a contradiction); for a link that is not a normal http(s) URL; for an organizer name that does not appear in the link, unless the link is a known ticket or social host; and for a note classified as `other` or a very short partnership note. Spam is skipped. Mail from `noreply`, a list, or an auto-reply is skipped.
+A draft is created for an event listing, correction, or booking that is missing a date, a time, a place, or an event name; for a booking that names no performer; for a date that is already past; for two dates that disagree (a correction that states the old date and the new one is not treated as a contradiction); for a link that is not a normal http(s) URL; for an organizer name that does not appear in the link, unless the link is a known ticket or social host; and for a note classified as `other` or a very short partnership note. A group or society directory listing does not need a date. A newsletter question does not get the generic "unclear" draft. Spam is skipped. Mail from `noreply`, a list, or an auto-reply is skipped, including an out-of-office line in the subject or the first part of the body. An out-of-office line buried under a real request does not hide that request.
 
 The draft status on the row is:
 
@@ -74,13 +106,15 @@ The original forward is left unchanged. Adding the draft to that copy would mean
 
 The approved reply is sent with the Worker's `send_email` binding (`EMAIL`), from `hello@celticcoo.ca`, to the stored reply-to address or otherwise the envelope sender. The binding is unrestricted in Wrangler for the same reason as the booking mailer: the destination is not known at deploy time, and your inbox must not be committed. The code will only send the review note to `FORWARD_TO`, and the approved reply only to that one stored sender. A draft that still contains an email address or a phone number is refused.
 
+A reply that is only `stop` or `unsubscribe` is recorded in `mail_opt_outs`. After that, this Worker does not send an acknowledgement or an approved clarifying reply to that address. The approval page says nothing was sent and does not repeat the address. The forward to `FORWARD_TO`, and the booking form notice to the owner, still go out: those are not mail to the person who opted out. The opt-out row is kept for at least 60 days. The retention cron does not delete it, so the stop continues after that. See `docs/breach-checklist.md` for what to do after a suspected breach.
+
 ## One-time setup
 
 Do these in order. Deploy does not switch Email Routing and does not apply D1 migrations.
 
 ### 1. Apply the D1 migration
 
-The database is the same `celticcoo-intake` database as the booking form. `site/migrations/0002_inbound_emails.sql` creates `inbound_emails`. `site/migrations/0003_inbound_clarify.sql` adds the draft columns and `classifier_reason`. `site/migrations/0004_review_tokens.sql` adds the short review links. `site/migrations/0005_inbound_trust.sql` adds the trust score and the chat approval audit. `site/migrations/0006_trust_details.sql` adds missing-field and red-flag columns. Apply `0004` before deploying the Worker that serves `/r/`, and apply `0005` and `0006` before deploying the Worker that stores a trust score or serves `/api/queue`. From the repo root, with Wrangler logged in to this Cloudflare account:
+The database is the same `celticcoo-intake` database as the booking form. `site/migrations/0002_inbound_emails.sql` creates `inbound_emails`. `site/migrations/0003_inbound_clarify.sql` adds the draft columns and `classifier_reason`. `site/migrations/0004_mail_opt_outs.sql` creates the stop-mail list. Short review links were also named `0004_review_tokens.sql`. That file is `site/migrations/0007_review_tokens.sql` so it does not share a number with the stop-mail list. `site/migrations/0005_inbound_trust.sql` adds the trust score and the chat approval audit. `site/migrations/0006_trust_details.sql` adds missing-field and red-flag columns. Apply `0007` before deploying the Worker that serves `/r/`, and apply `0005` and `0006` before deploying the Worker that stores a trust score or serves `/api/queue`. The live database already has `mail_opt_outs`, `review_tokens` and its index, `approval_audit`, and the trust, missing-field, and red-flag columns, applied by hand. `0007_review_tokens.sql` uses `IF NOT EXISTS`. `0004_mail_opt_outs.sql`, `0005_inbound_trust.sql`, and `0006_trust_details.sql` do not, so do not run those three again. From the repo root, with Wrangler logged in to this Cloudflare account:
 
 ```bash
 read -rsp 'D1 database id: ' D1_DATABASE_ID; echo
@@ -91,7 +125,7 @@ unset D1_DATABASE_ID
 
 That applies every migration in `site/migrations/` that is not already on the database. The command does not print the database id. Do not commit the id.
 
-This repo's GitHub Actions workflow does not apply migrations. Until `0003` is applied, new mail will fail to store and the forward will still have been attempted. Apply it before the deploy that contains this code, or immediately after, and accept that mail in that gap is retried by the sender only if the forward itself failed. Until `0004_review_tokens.sql` is applied, a review note is still emailed, but it has no short link. Apply that file before deploying the Worker that serves `/r/`. Until `0005_inbound_trust.sql` is applied, storing a new message fails after the forward. Apply that file before deploying the trust-score worker. Until `0006_trust_details.sql` is applied, the same store fails once the worker writes the extra columns. Chat approval is described in `docs/chat-approval.md`.
+This repo's GitHub Actions workflow does not apply migrations. Until `0003` is applied, new mail will fail to store and the forward will still have been attempted. Apply it before the deploy that contains this code, or immediately after, and accept that mail in that gap is retried by the sender only if the forward itself failed. Until `0007_review_tokens.sql` is applied, a review note is still emailed, but it has no short link. Apply that file before deploying the Worker that serves `/r/`. Until `0005_inbound_trust.sql` is applied, storing a new message fails after the forward. Apply that file before deploying the trust-score worker. Until `0006_trust_details.sql` is applied, the same store fails once the worker writes the extra columns. Those objects, and `mail_opt_outs`, are already on the live database. Chat approval is described in `docs/chat-approval.md`.
 
 ### 2. Set the secrets and the database id
 
@@ -114,6 +148,7 @@ GitHub → Settings → Secrets and variables → Actions → Variables:
 | Variable | What it is |
 |---|---|
 | `REVIEW_BASE_URL` | Optional. The https origin of this Worker, with no path, such as `https://review.celticcoo.ca`. Every inbound deploy passes it when it matches that shape. If a later deploy omits it, Wrangler drops the var, the same way it drops `FORWARD_TO`. |
+| `INBOUND_ISSUES_REPO` | Optional, and unset on purpose. `owner/repo` of a **private** repository that is not `rsakauye/celticcoo`. Inbound issues stay off until this is set and `INBOUND_GITHUB_TOKEN` is set. The Worker also refuses to file if GitHub says the repo is not private. Do not point it at the public product repo. |
 
 `GITHUB_TOKEN`, `REVIEW_SECRET`, and `APPROVAL_API_TOKEN` are Worker secret names. GitHub Actions already reserves `GITHUB_TOKEN`, so the Actions secret for issues is `INBOUND_GITHUB_TOKEN`. A deploy uploads whichever of those secrets is set and leaves other Worker secrets in place. Do not put `APPROVAL_API_TOKEN` in the repo. The owner creates it.
 
@@ -121,7 +156,7 @@ Token permission for `INBOUND_GITHUB_TOKEN`, and nothing broader:
 
 - Fine-grained token, not a classic `repo` token.
 - Resource owner: the account that owns the repo.
-- Repository access: only `rsakauye/celticcoo`.
+- Repository access: only the private repository named by `INBOUND_ISSUES_REPO`. Do not grant this token access to the public product repo.
 - Repository permissions: **Issues: Read and write**.
 - Do not grant Contents, Administration, Pull requests, or Workflows. GitHub adds read-only Metadata on its own.
 
@@ -144,7 +179,11 @@ Do this in the dashboard. Do not add a `routes` key to `wrangler.jsonc`. A route
 2. Add a custom domain or route on a hostname that is not the Pages site. `celticcoo.ca` and `www.celticcoo.ca` belong to Pages. `review.celticcoo.ca` does not.
 3. Set the Actions variable `REVIEW_BASE_URL` to that origin, for example `https://review.celticcoo.ca`.
 
-Until both `REVIEW_SECRET` and `REVIEW_BASE_URL` are set, drafts are still stored and, for listings and corrections, still written into the GitHub issue. The review note says the links are not configured. Nothing is sent to the original sender.
+Until both `REVIEW_SECRET` and `REVIEW_BASE_URL` are set, drafts are still stored. The review note says the links are not configured. Nothing is sent to the original sender.
+
+Listings and corrections are not filed as GitHub issues unless `INBOUND_GITHUB_TOKEN` and `INBOUND_ISSUES_REPO` are both set. The repo must be private. Leave `INBOUND_ISSUES_REPO` unset. Issues stay off.
+
+The daily cron counts old booking rows, inbound emails, and failed form attempts. It does not delete them. See `docs/retention.md`. Do not set `RETENTION_PURGE`.
 
 ### 4. Let hello@ send mail
 
@@ -232,4 +271,4 @@ That does not delete D1, and it does not change DNS.
 cd workers/inbound && npm ci && npm test
 ```
 
-The tests cover MIME parsing, the rules fallback, the classifier failure reasons, drafting, approval, issue-body redaction, and the forward-first behaviour. Cloudflare bindings are mocked. They do not call Workers AI, GitHub, or Email Routing.
+The tests cover MIME parsing, the rules fallback (a synthetic vague note and a synthetic Burns booking, not copies of received mail), the lexicon, the seasonal and bulk-organizer guard, the classifier failure reasons, drafting, approval, issue-body redaction, and the forward-first behaviour. `npm test` also runs `shared/triage/test/`. Cloudflare bindings are mocked. They do not call Workers AI, GitHub, or Email Routing. Fixtures use example.com addresses and made-up names.

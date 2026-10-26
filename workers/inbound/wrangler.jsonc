@@ -12,6 +12,12 @@
   // drops that var on a later deploy that does not pass it again.
   //
   // GITHUB_TOKEN is a Worker secret (wrangler secret put), not a var.
+  // Issues stay off unless that secret is set AND INBOUND_ISSUES_REPO names
+  // a different private repository. Do not set the var to the public repo.
+  // Leave INBOUND_ISSUES_REPO unset until that private repo exists.
+  //
+  // The cron counts rows past the retention window. RETENTION_PURGE is not
+  // set here, so the run only logs counts. Set it to "on" to delete.
   // ACK_REPLIES stays off until this file is changed to "on" and redeployed.
   // CLARIFY_DRAFTS defaults to "drafts". That stores a clarifying reply and
   // waits. It never sends the reply by itself. There is no auto-send value.
@@ -34,10 +40,13 @@
   // placeholder in git. Deploy copies the GitHub secret D1_DATABASE_ID over
   // it for that run only. Migrations: site/migrations/0002_inbound_emails.sql
   // creates the table, 0003_inbound_clarify.sql adds draft columns,
-  // 0004_review_tokens.sql adds the short review links,
-  // 0005_inbound_trust.sql adds the trust score and the approval audit, and
-  // 0006_trust_details.sql adds missing-field and red-flag columns.
-  // Apply 0004, 0005, and 0006 by hand before deploying this worker.
+  // 0004_mail_opt_outs.sql creates the stop-mail list,
+  // 0005_inbound_trust.sql adds the trust score and the approval audit,
+  // 0006_trust_details.sql adds missing-field and red-flag columns, and
+  // 0007_review_tokens.sql adds the short review links. That file was
+  // 0004_review_tokens.sql until 0004 was taken by the stop-mail list.
+  // The live database already has these objects. 0007 uses IF NOT EXISTS.
+  // Do not re-run 0004, 0005, or 0006. Their statements do not.
   "name": "celticcoo-inbound",
   "main": "src/index.js",
   "compatibility_date": "2026-10-25",
@@ -69,6 +78,9 @@
       "database_id": "REPLACE_WITH_D1_DATABASE_ID"
     }
   ],
+  "triggers": {
+    "crons": ["15 8 * * *"]
+  },
   "vars": {
     "ACK_REPLIES": "off",
     "CLARIFY_DRAFTS": "drafts",
