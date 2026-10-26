@@ -1,0 +1,63 @@
+name: Pull request checks
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  inbound:
+    name: Inbound tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22.23.4"
+          cache: npm
+          cache-dependency-path: workers/inbound/package-lock.json
+
+      - name: Test inbound email worker
+        working-directory: workers/inbound
+        run: |
+          npm ci
+          npm test
+
+  site:
+    name: Site tests and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # Sitemap lastmod reads git history. Blobs stay on demand.
+          fetch-depth: 0
+          filter: blob:none
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22.23.4"
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - name: Test and build site
+        working-directory: site
+        env:
+          SITE_URL: https://celticcoo.ca
+          BASE_PATH: /
+        run: |
+          npm ci
+          npm test
+          npm run build
