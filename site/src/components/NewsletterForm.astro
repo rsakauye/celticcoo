@@ -1,4 +1,5 @@
 ---
+import { caslFooterText } from '../../../shared/casl/notice.js';
 import { kitAction, u } from '../lib/site.js';
 const { compact = false } = Astro.props;
 const id = compact ? 'nl-email-footer' : 'nl-email';
@@ -9,6 +10,7 @@ const id = compact ? 'nl-email-footer' : 'nl-email';
     <input id={id} type="email" name="email_address" required placeholder="you@example.com" autocomplete="email" style="flex:1;min-width:200px" />
     <button class="btn" type="submit">{compact ? 'Subscribe' : 'Send me the Coo\'s Letter'}</button>
     {!compact && <p class="muted" style="flex-basis:100%;margin:.25rem 0 0">Free. One email every two weeks, on Tuesdays. Unsubscribe anytime.</p>}
+    <p class="muted" style="flex-basis:100%;margin:.25rem 0 0;white-space:pre-wrap">{caslFooterText()}</p>
   </form>
 ) : (
   compact

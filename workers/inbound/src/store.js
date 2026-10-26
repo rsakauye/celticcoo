@@ -155,6 +155,15 @@ export async function releaseClarifySend(db, id, lock) {
   ).bind(id, lock).run();
 }
 
+export async function suppressClarify(db, id, lock) {
+  const result = await db.prepare(
+    `UPDATE inbound_emails
+     SET clarify_status = 'discarded', clarify_lock = '', error_code = 'opt_out'
+     WHERE id = ? AND clarify_lock = ?`,
+  ).bind(id, lock).run();
+  return changed(result);
+}
+
 export async function discardClarify(db, id) {
   const result = await db.prepare(
     `UPDATE inbound_emails SET clarify_status = 'discarded', clarify_lock = ''

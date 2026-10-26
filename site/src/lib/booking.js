@@ -6,6 +6,7 @@
 // an intake, it only sends email.
 
 import bookingConfig from '../../../data/booking.json' with { type: 'json' };
+import { caslFooterText } from '../../../shared/casl/notice.js';
 import { assessRisk, intakeStatus } from './intake.js';
 
 export { bookingConfig };
@@ -324,6 +325,7 @@ export function bookingText(value, opts = {}) {
   lines.push('', 'Details', value.message);
   lines.push('', 'Consent', email.consent || '');
   lines.push(`Sent from: ${sentFrom}`);
+  lines.push('', caslFooterText());
   return lines.join('\n');
 }
 
