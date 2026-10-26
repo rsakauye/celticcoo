@@ -284,8 +284,11 @@ test('the model is called for a short note, and a failed call logs a reason with
   assert.equal(payloads[0].response_format.type, 'json_schema');
   assert.equal(Object.hasOwn(payloads[0], 'temperature'), false);
   assert.equal(payloads[1].response_format, undefined);
-  assert.equal(failedLogs.some((line) => line.includes(SENDER) || line.includes('JSON mode rejected')), false);
+  assert.equal(failedLogs.some((line) => line.includes(SENDER)), false);
   assert.match(failedLogs.at(-1), /"reason":"ai_request"/);
+  assert.match(failedLogs.at(-1), /JSON mode rejected/);
+  assert.match(failedLogs.at(-1), /\[redacted\]/);
+  assert.equal(String(failed.detailSlug).includes('ada'), false);
 
   const textLogs = [];
   let textCalls = 0;
@@ -314,6 +317,38 @@ test('the model is called for a short note, and a failed call logs a reason with
   assert.match(unavailable[0], /"binding":"object"/);
   assert.match(unavailable[0], /"run":"undefined"/);
   assert.equal(unavailable.some((line) => line.includes(SENDER)), false);
+});
+
+test('a quota or capacity failure keeps the code and drops words copied from the mail', async () => {
+  const planted = 'okotokslodgephrase';
+  const logs = [];
+  const quota = await classifyMessage(
+    { subject: 'Please list our Burns Supper', text: `Please list the ${planted} supper.` },
+    {},
+    {
+      log: (line) => logs.push(line),
+      run: async () => {
+        const err = new Error(`You have used up your daily free allocation of 10000 neurons. See ${planted}`);
+        err.code = 3036;
+        throw err;
+      },
+    },
+  );
+  assert.equal(quota.classifier, 'rules');
+  assert.equal(quota.reason, 'ai_quota');
+  assert.match(logs.at(-1), /"reason":"ai_quota"/);
+  assert.match(logs.at(-1), /3036/);
+  assert.equal(logs.some((line) => line.includes(planted)), false);
+
+  const shaped = await classifyMessage(
+    { subject: 'Hi', text: 'Hello there friend.' },
+    {},
+    {
+      run: async () => ({ success: false, errors: [{ code: 3040, message: 'out of capacity' }] }),
+    },
+  );
+  assert.equal(shaped.reason, 'ai_capacity');
+  assert.equal(shaped.classifier, 'rules');
 });
 
 test('a review note goes to the owner and the sender is not mailed', async () => {
