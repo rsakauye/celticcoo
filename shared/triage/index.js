@@ -11,7 +11,20 @@ export {
   matchProvince,
   stripBoilerplate,
 } from './engine.js';
-export { adaptiveLimit, assessBurst, decideGuard, looksGibberish, seasonFor } from './breaker.js';
+export { adaptiveLimit, assessBurst, decideGuard, decideTraffic, hourlyLimit, looksGibberish, seasonFor } from './breaker.js';
+export {
+  SQL as GUARD_SQL,
+  alertBody,
+  assessChannel,
+  baselineFromDays,
+  clientHash,
+  localDay,
+  noteOutbound,
+  orgFromEmail,
+  readControl,
+  resolveGuardConfig,
+  setPaused,
+} from './guard.js';
 
 // analyzeMessage is the entry the classifiers call.
 // decideGuard is the entry the cutoff calls.

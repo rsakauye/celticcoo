@@ -8,6 +8,11 @@
   // in git. The deploy workflow copies the GitHub secret D1_DATABASE_ID over
   // it for that deploy only. If the secret is missing, the workflow removes
   // this binding so the rest of the site can still deploy.
+  // Apply site/migrations/0004_intake_guard.sql before relying on the cutoff
+  // switch. The form still accepts bookings if that table is missing.
+  // The same optional GUARD_* and OUTBOUND_DAILY_CAP vars as the inbound
+  // Worker override the site-pack defaults. Leave them unset unless a
+  // default is wrong. Do not put a secret in a var.
   //
   // TURNSTILE_HOSTNAMES is the production allowlist checked against siteverify.
   // Do not add localhost or 127.0.0.1. TURNSTILE_SECRET is a Pages secret set

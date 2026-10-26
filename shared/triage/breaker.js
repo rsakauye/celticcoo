@@ -83,7 +83,10 @@ export function looksGibberish(text) {
 function fieldKey(item) {
   if (item && item.fields) {
     const fields = item.fields;
-    return [fields.when || '', fields.place || '', fields.act || ''].join('|').toLowerCase();
+    const key = [fields.when || '', fields.place || '', fields.act || ''].join('|').toLowerCase();
+    // Empty extracted fields fall through to the text, so a copied body
+    // still counts as one payload.
+    if (key.replace(/\|/g, '').length > 0) return key;
   }
   const text = String(item && item.text || '');
   const dates = text.match(/\d{1,2}\s+[a-z]+\s+\d{4}|[a-z]+\s+\d{1,2},?\s+\d{4}/gi) || [];
@@ -180,4 +183,57 @@ export function decideGuard({
     return { action: 'hold', reason: 'over_seasonal' };
   }
   return { action: 'allow', reason: 'ok' };
+}
+
+// Hourly ceiling tracks the daily limit, and it never drops below the floor.
+// A quiet day still allows a short burst. A seasonal day does not become
+// an unbounded hour.
+export function hourlyLimit(dailyLimit, { floor = 6, ceiling = 24 } = {}) {
+  const scaled = Math.ceil(Number(dailyLimit) / 10);
+  return clamp(Number.isFinite(scaled) ? scaled : floor, floor, ceiling);
+}
+
+// manual and severe stay paused until a person clears them.
+// outbound cost and abuse latch severe.
+// A bulk organizer, a seasonal day, or an hourly burst is hold.
+// Hold is not a kill switch. It stores the message and does not send.
+export function decideTraffic({
+  manual = false,
+  latched = false,
+  outboundToday = 0,
+  outboundCap = Infinity,
+  burst = null,
+  todayCount = 0,
+  dailyLimit = Infinity,
+  hourCount = 0,
+  hourLimit = Infinity,
+  senderCount = 0,
+  senderLimit = Infinity,
+  ipCount = 0,
+  ipLimit = Infinity,
+} = {}) {
+  if (manual) return { action: 'pause', reason: 'manual', latch: 'manual' };
+  if (latched) return { action: 'pause', reason: 'latched', latch: 'severe' };
+  if (Number.isFinite(outboundCap) && outboundToday >= outboundCap) {
+    return { action: 'pause', reason: 'outbound_cap', latch: 'severe' };
+  }
+  if (burst && burst.kind === 'abuse') {
+    return { action: 'pause', reason: 'abuse', latch: 'severe', abuse: burst.reasons || [] };
+  }
+  if (burst && burst.kind === 'bulk_organizer') {
+    return { action: 'hold', reason: 'bulk_organizer', latch: '' };
+  }
+  if (Number.isFinite(dailyLimit) && todayCount > dailyLimit) {
+    return { action: 'hold', reason: 'over_seasonal', latch: '' };
+  }
+  if (Number.isFinite(hourLimit) && hourCount > hourLimit) {
+    return { action: 'hold', reason: 'over_hourly', latch: '' };
+  }
+  if (Number.isFinite(senderLimit) && senderCount > senderLimit) {
+    return { action: 'hold', reason: 'sender_burst', latch: '' };
+  }
+  if (Number.isFinite(ipLimit) && ipCount > ipLimit) {
+    return { action: 'hold', reason: 'ip_burst', latch: '' };
+  }
+  return { action: 'allow', reason: 'ok', latch: '' };
 }

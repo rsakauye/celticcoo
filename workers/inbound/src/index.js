@@ -16,7 +16,9 @@
 // not change the Email Routing rule. The owner switches that in the dashboard.
 
 import { isAutomated, maybeAcknowledge } from './ack.js';
-import { classifyMessage, safeReason } from './classify.js';
+import { classifyByRules, classifyMessage, safeReason } from './classify.js';
+import { handleCutoff } from './cutoff.js';
+import { inboundGuard, noteInboundOutbound, rememberAuth } from './guard.js';
 import { planDraft } from './clarify.js';
 import { buildIssue, fileGitHubIssue, shouldFile, workerToken } from './issue.js';
 import { dedupeKey, parseInbound } from './parse.js';
@@ -95,10 +97,32 @@ async function processHello(message, env, deps, forward) {
   const parsed = typeof deps.parse === 'function'
     ? await deps.parse(message, now)
     : await parseInbound(message, now);
-  const classification = typeof deps.classify === 'function'
-    ? await deps.classify(parsed, env)
-    : await classifyMessage({ subject: parsed.subject, text: parsed.text }, env, deps);
-  const draft = planDraft({
+  let gate = { action: 'allow', reason: 'open' };
+  if (typeof deps.guard === 'function') {
+    try {
+      gate = await deps.guard({
+        phase: 'inbound',
+        message,
+        now,
+        sender: envelopeAddress(message.from),
+        text: `${parsed.subject || ''}\n${parsed.text || ''}`,
+      }) || gate;
+    } catch {
+      gate = { action: 'allow', reason: 'guard_unavailable' };
+    }
+  }
+  const held = gate.action === 'hold' || gate.action === 'pause';
+  const classification = held
+    ? {
+      ...classifyByRules({ subject: parsed.subject, text: parsed.text }),
+      classifier: 'rules',
+      reason: `${gate.action === 'pause' ? 'paused' : 'held'}:${gate.reason || 'review'}`,
+      detailSlug: '',
+    }
+    : (typeof deps.classify === 'function'
+      ? await deps.classify(parsed, env)
+      : await classifyMessage({ subject: parsed.subject, text: parsed.text }, env, deps));
+  const draft = held ? null : planDraft({
     category: classification.category,
     event: classification.event,
     subject: parsed.subject,
@@ -141,7 +165,10 @@ async function processHello(message, env, deps, forward) {
     rawSize: Number(message.rawSize) || 0,
   };
   const saved = await upsertInbound(env && env.INTAKE_DB, row);
-  const issue = await fileIfNeeded({ saved, classification, parsed, draft, forward, env, deps });
+  try { await rememberAuth(env && env.INTAKE_DB, saved.id, message); } catch { /* optional columns */ }
+  const issue = held
+    ? { issueStatus: 'skipped', issueUrl: '', errorCode: '' }
+    : await fileIfNeeded({ saved, classification, parsed, draft, forward, env, deps });
   let reviewStatus = '';
   if (draft) {
     const review = await sendReviewNote(env, {
@@ -153,10 +180,16 @@ async function processHello(message, env, deps, forward) {
       forwardStatus: forward.status,
     }, deps);
     reviewStatus = review.status;
+    if (review.status === 'sent') {
+      try { await noteInboundOutbound(env, now); } catch { /* accounting */ }
+    }
   }
-  if (forward.status === 'sent') {
+  if (!held && forward.status === 'sent') {
     try {
-      await maybeAcknowledge(message, env, deps);
+      const ack = await maybeAcknowledge(message, env, deps);
+      if (ack && ack.status === 'sent') {
+        try { await noteInboundOutbound(env, now); } catch { /* accounting */ }
+      }
     } catch (err) {
       console.error(JSON.stringify({ message: 'inbound ack failed', code: codeOf(err) }));
     }
@@ -175,7 +208,14 @@ async function processHello(message, env, deps, forward) {
 }
 
 export async function handleInboundEmail(message, env, deps = {}) {
-  const forward = await forwardCopy(message, env);
+  let pre = null;
+  if (typeof deps.guard === 'function') {
+    try { pre = await deps.guard({ phase: 'peek', message }); }
+    catch { pre = null; }
+  }
+  const forward = pre && pre.action === 'pause'
+    ? { status: 'skipped', error: 'paused' }
+    : await forwardCopy(message, env);
   let outcome = null;
   try {
     if (!isHelloRecipient(message && message.to)) {
@@ -196,7 +236,7 @@ export async function handleInboundEmail(message, env, deps = {}) {
     code: (outcome && outcome.errorCode) || forward.error || '',
     reason: (outcome && outcome.reason) || '',
   }, deps);
-  if (forward.status !== 'sent' && forward.error !== 'not_forwardable') {
+  if (forward.status !== 'sent' && forward.error !== 'not_forwardable' && forward.error !== 'paused') {
     const error = new Error('inbound forward failed');
     error.code = forward.error || 'forward_failed';
     throw error;
@@ -205,12 +245,15 @@ export async function handleInboundEmail(message, env, deps = {}) {
 }
 
 export function handleFetch(request, env, deps) {
+  let url = null;
+  try { url = new URL(request.url); } catch { url = null; }
+  if (url && url.pathname === '/cutoff') return handleCutoff(request, env, deps);
   return handleReviewRequest(request, env, deps);
 }
 
 export default {
   async email(message, env) {
-    await handleInboundEmail(message, env);
+    await handleInboundEmail(message, env, { guard: inboundGuard(env) });
   },
   fetch(request, env) {
     return handleFetch(request, env);
