@@ -49,3 +49,11 @@ export function isHelloRecipient(value) {
 export function isBookingsRecipient(value) {
   return localPart(value, 'bookings');
 }
+
+// Unfilled template markers. The approval path refuses to send these.
+// Word boundaries keep "today" and "to-do" from matching.
+const UNFILLED_PLACEHOLDER = /\bTODO\b|\{\{[^{}\r\n]{0,200}\}\}|\[(?:PLACEHOLDER|TBD|FIXME|XXX)\]|<(?:PLACEHOLDER|TODO|TBD|FIXME)>/i;
+
+export function hasUnfilledPlaceholder(value) {
+  return UNFILLED_PLACEHOLDER.test(String(value ?? ''));
+}

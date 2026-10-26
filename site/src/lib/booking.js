@@ -325,8 +325,28 @@ export function bookingText(value, opts = {}) {
   lines.push('', 'Details', value.message);
   lines.push('', 'Consent', email.consent || '');
   lines.push(`Sent from: ${sentFrom}`);
-  lines.push('', caslFooterText());
+  lines.push('', caslFooterText(caslSite(cfg)));
   return lines.join('\n');
+}
+
+function caslSite(cfg) {
+  const siteUrl = String(cfg.siteUrl || '').trim();
+  const privacyPath = String(cfg.privacyPath || '').trim();
+  let privacyUrl = '';
+  if (siteUrl && privacyPath) {
+    try {
+      const base = siteUrl.endsWith('/') ? siteUrl : `${siteUrl}/`;
+      privacyUrl = new URL(privacyPath, base).href;
+    } catch {
+      privacyUrl = '';
+    }
+  }
+  return {
+    name: cfg.siteName,
+    mailingAddress: cfg.senderAddress,
+    homeUrl: siteUrl,
+    privacyUrl,
+  };
 }
 
 export function escapeHtml(s) {

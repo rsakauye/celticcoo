@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { chooseClassification, classifyByRules, normalizeClassification } from '../src/classify.js';
+import { SYSTEM_PROMPT, chooseClassification, classifyByRules, normalizeClassification } from '../src/classify.js';
 import { assessGaps, planDraft } from '../src/clarify.js';
 
 const NOW = new Date('2026-10-26T12:00:00.000Z');
@@ -268,4 +268,177 @@ test('a society directory listing does not demand a date, and a booking with no 
     text: 'We would like to hire someone for a wedding.',
     now: NOW,
   }), ['missing_when', 'missing_place', 'missing_act']);
+});
+
+const GENERIC_WHICH = /list an event, correct a listing, or book a performer/;
+
+test('a performer for an occasion is a booking without the words book or hire', () => {
+  assert.match(SYSTEM_PROMPT, /pipe band for a ceilidh/i);
+  const rows = [
+    {
+      subject: 'Pipe band for a ceilidh, April 2027',
+      text: 'Hello, we would like a pipe band for our ceilidh on 18 April 2027 at the Sample Community Hall in Cochrane. The set starts at 7 PM.',
+      city: 'Cochrane',
+      venue: 'Sample Community Hall',
+      date: '18 April 2027',
+      reasons: null,
+    },
+    {
+      subject: 'Dancers for a wedding',
+      text: 'Could we have highland dancers for a wedding on 12 June 2027 at the Sample Hall in Canmore?',
+      city: 'Canmore',
+      reasons: ['missing_time'],
+    },
+    {
+      subject: 'Piper for a funeral',
+      text: 'We need a piper for a funeral in Red Deer.',
+      city: 'Red Deer',
+      reasons: ['missing_when'],
+    },
+    {
+      subject: 'Drummer for an event',
+      text: 'Looking for a drummer for a corporate event in Banff.',
+      city: 'Banff',
+      reasons: ['missing_when'],
+    },
+  ];
+  for (const row of rows) {
+    const rules = classifyByRules({ subject: row.subject, text: row.text });
+    assert.equal(rules.category, 'booking_inquiry', row.subject);
+    assert.ok(rules.confidence >= 0.6, `${row.subject} confidence ${rules.confidence}`);
+    assert.equal(rules.signals.performer, true, row.subject);
+    if (row.city) assert.equal(rules.event.city, row.city, row.subject);
+    if (row.venue) assert.equal(rules.event.venue, row.venue, row.subject);
+    if (row.date) assert.equal(rules.event.date, row.date, row.subject);
+    const draft = planDraft({
+      category: rules.category,
+      event: rules.event,
+      subject: row.subject,
+      text: row.text,
+      now: NOW,
+      env: {},
+    });
+    if (row.reasons == null) {
+      assert.equal(draft, null, row.subject);
+    } else {
+      assert.ok(draft, row.subject);
+      assert.deepEqual(draft.reasons, row.reasons, row.subject);
+      assert.doesNotMatch(draft.draft, GENERIC_WHICH, row.subject);
+      assert.match(draft.draft, /PO Box 1604, Okotoks, AB T1S 1B5, Canada/);
+      assert.doesNotMatch(draft.draft, /\bTODO\b/);
+    }
+    const overridden = chooseClassification(rules, normalizeClassification({
+      category: 'other',
+      confidence: 0.8,
+      summary: 'A general note.',
+    }));
+    assert.equal(overridden.category, 'booking_inquiry', row.subject);
+    assert.equal(overridden.classifier, 'rules', row.subject);
+  }
+});
+
+test('a rules booking still wins when the model says other below the usual cutoff', () => {
+  const chosen = chooseClassification({
+    category: 'booking_inquiry',
+    confidence: 0.58,
+    summary: 'Booking inquiry.',
+    event: { title: '', host: '', date: '', city: '', province: '', venue: '', url: '' },
+    signals: { performer: true, booking: true },
+    classifier: 'rules',
+  }, normalizeClassification({
+    category: 'other',
+    confidence: 0.8,
+    summary: 'A general note.',
+  }));
+  assert.equal(chosen.category, 'booking_inquiry');
+  assert.equal(chosen.classifier, 'rules');
+  assert.equal(chosen.confidence, 0.58);
+});
+
+test('a model listing is kept, and a real listing that mentions a band stays a listing', () => {
+  const band = classifyByRules({
+    subject: 'Pipe band for a ceilidh, April 2027',
+    text: 'Hello, we would like a pipe band for our ceilidh on 18 April 2027 at the Sample Community Hall in Cochrane. The set starts at 7 PM.',
+  });
+  const listedByModel = chooseClassification(band, normalizeClassification({
+    category: 'event_listing_request',
+    confidence: 0.9,
+    summary: 'Please list the ceilidh.',
+  }));
+  assert.equal(listedByModel.category, 'event_listing_request');
+  assert.equal(listedByModel.classifier, 'ai');
+
+  const listing = classifyByRules({
+    subject: 'Please list our ceilidh',
+    text: 'Please list our ceilidh on 2 May 2027 in Calgary, Alberta. A pipe band will play at the hall.',
+  });
+  assert.equal(listing.category, 'event_listing_request');
+  const kept = chooseClassification(listing, normalizeClassification({
+    category: 'other',
+    confidence: 0.8,
+    summary: 'A general note.',
+  }));
+  assert.equal(kept.category, 'event_listing_request');
+  assert.equal(kept.classifier, 'rules');
+});
+
+test('a piper mention that stays under the score cutoff still gets booking questions', () => {
+  const subject = 'A question';
+  const text = 'Could you recommend a piper?';
+  const rules = classifyByRules({ subject, text });
+  assert.equal(rules.category, 'other');
+  assert.equal(rules.signals.performer, true);
+  const draft = planDraft({
+    category: 'other',
+    event: rules.event,
+    subject,
+    text,
+    now: NOW,
+    env: {},
+  });
+  assert.ok(draft);
+  assert.deepEqual(draft.reasons, ['missing_when', 'missing_place']);
+  assert.doesNotMatch(draft.draft, GENERIC_WHICH);
+});
+
+test('a vague note still asks which kind of request, and other categories stay put', () => {
+  const vague = planDraft({
+    category: 'other',
+    event: { title: '', host: '', date: '', city: '', province: '', venue: '', url: '' },
+    subject: VAGUE_SUBJECT,
+    text: VAGUE_BODY,
+    now: NOW,
+    env: {},
+  });
+  assert.match(vague.draft, GENERIC_WHICH);
+
+  const press = classifyByRules({
+    subject: 'Sponsorship',
+    text: 'We would like to discuss a sponsorship for the coming season and can share a short brief.',
+  });
+  assert.equal(press.category, 'partnership_or_press');
+  const shortPress = planDraft({
+    category: press.category,
+    event: press.event,
+    subject: 'Sponsorship',
+    text: 'A short sponsorship note.',
+    now: NOW,
+    env: {},
+  });
+  assert.ok(shortPress);
+  assert.match(shortPress.draft, /What did you have in mind/);
+  assert.doesNotMatch(shortPress.draft, GENERIC_WHICH);
+
+  const correction = classifyByRules({
+    subject: 'Wrong date',
+    text: 'Please update the listing. The date is wrong for the Calgary event.',
+  });
+  assert.equal(correction.category, 'correction_or_update');
+  const correctionKept = chooseClassification(correction, normalizeClassification({
+    category: 'other',
+    confidence: 0.8,
+    summary: 'A general note.',
+  }));
+  assert.equal(correctionKept.category, 'correction_or_update');
+  assert.equal(correctionKept.classifier, 'rules');
 });
