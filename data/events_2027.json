@@ -809,7 +809,8 @@
     "url": "https://www.glengarryhighlandgames.com/"
    },
    {
-    "name": "Kenyon Agricultural Society"
+    "name": "Kenyon Agricultural Society",
+    "url": "https://www.glengarryhighlandgames.com/"
    }
   ]
  },
@@ -998,7 +999,13 @@
   ],
   "tag_quotes": {
    "highland-games": "type: Highland Games"
-  }
+  },
+  "organizer": [
+   {
+    "name": "Campbell River Salmon Festival",
+    "url": "https://crsalmonfestival.com/"
+   }
+  ]
  },
  {
   "name": "RSPBA European Pipe Band Championships",
@@ -1329,8 +1336,13 @@
     "url": "https://www.cornerstonemusic.ca/"
    }
   ],
+  "cost": "paid",
+  "cost_quote": "General Admission CA$85.00",
   "offers": {
-   "url": "https://www.eventbrite.ca/e/burns-night-tickets-1981961289570"
+   "url": "https://www.eventbrite.ca/e/burns-night-tickets-1981961289570",
+   "price": 91.86,
+   "priceCurrency": "CAD",
+   "validFrom": "2026-11-15"
   }
  },
  {
@@ -1376,8 +1388,14 @@
     "name": "Wee Drams"
    }
   ],
+  "cost": "paid",
+  "cost_quote": "Student/Senior CA$31.00",
   "offers": {
-   "url": "https://www.eventbrite.ca/e/a-celebration-of-robbie-burns-with-blackthorn-tickets-1984414108016"
+   "url": "https://www.eventbrite.ca/e/a-celebration-of-robbie-burns-with-blackthorn-tickets-1984414108016",
+   "price": 34.35,
+   "priceCurrency": "CAD",
+   "availability": "InStock",
+   "validFrom": "2026-06-20"
   }
  },
  {
@@ -1441,7 +1459,8 @@
   ],
   "organizer": [
    {
-    "name": "Royal Canadian Legion (Barrie)"
+    "name": "Royal Canadian Legion (Barrie)",
+    "url": "https://barrielegion147.ca/"
    },
    {
     "name": "Barrie Pipes & Drums",
@@ -1459,7 +1478,7 @@
   "name": "Burns Supper at Tea On West",
   "start_date": "2027-01-24",
   "end_date": "2027-01-24",
-  "city": "Hamilton",
+  "city": "Port Colborne",
   "province_or_region": "ON",
   "country": "Canada",
   "type": "Burns Supper",
@@ -1475,7 +1494,8 @@
   },
   "organizer": [
    {
-    "name": "Tea On West"
+    "name": "Tea On West",
+    "url": "https://teaonwest.ca/"
    }
   ]
  },
@@ -1601,7 +1621,8 @@
   ],
   "organizer": [
    {
-    "name": "Live Nation"
+    "name": "Live Nation",
+    "url": "https://www.livenation.com/"
    }
   ],
   "added_date": "2026-10-25"
@@ -1622,7 +1643,8 @@
   "offers": {
    "url": "https://www.showpass.com/the-celtic-tenors-a-celtic-christmas-3/",
    "price": 59.85,
-   "priceCurrency": "CAD"
+   "priceCurrency": "CAD",
+   "availability": "InStock"
   },
   "tags": [
    "music",
@@ -1641,7 +1663,8 @@
   ],
   "organizer": [
    {
-    "name": "Gateway Events"
+    "name": "Gateway Events",
+    "url": "https://gatewayyyc.com/"
    }
   ],
   "added_date": "2026-10-25"
