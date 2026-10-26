@@ -1,0 +1,210 @@
+---
+import { u } from '../lib/site.js';
+const strip = u('ceilidh-coo-strip.png');
+---
+<div class="coo-dance" data-ceilidh-coo>
+  <div class="ceilidh-coo" role="img" aria-label="Ceilidh Coo dancing a Highland fling" style={`--coo-strip:url('${strip}')`}></div>
+  <div class="coo-side">
+    <button type="button" class="coo-sound" data-coo-toggle aria-pressed="false" aria-label="Play Highland Laddie">
+      <svg class="ico ico-off" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+        <path d="M4 9.5h3.2L12 5v14l-4.8-4.5H4z" fill="currentColor" />
+        <path d="M16 9.5l5 5M21 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      </svg>
+      <svg class="ico ico-on" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+        <path d="M4 9.5h3.2L12 5v14l-4.8-4.5H4z" fill="currentColor" />
+        <path d="M15.5 9.2a3.6 3.6 0 0 1 0 5.6M18.2 7a6.4 6.4 0 0 1 0 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      </svg>
+    </button>
+    <span class="coo-caption" aria-hidden="true">Highland Laddie</span>
+    <span class="sr-only" data-coo-status aria-live="polite"></span>
+  </div>
+</div>
+
+<script>
+  import { MASTER_GAIN, VOICES, cycleDurationSeconds, expandTune, midiToHz, stepSeconds } from '../lib/highlandLaddie.js';
+
+  const root = document.querySelector('[data-ceilidh-coo]');
+  const button = root && root.querySelector('[data-coo-toggle]');
+  const status = root && root.querySelector('[data-coo-status]');
+  if (button) {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    const tune = expandTune();
+    const step = stepSeconds();
+    const cycleSeconds = cycleDurationSeconds(tune);
+    let ctx = null;
+    let master = null;
+    let melodyBus = null;
+    let bassBus = null;
+    let playing = false;
+    let arming = false;
+    let cursor = 0;
+    let timer = 0;
+    const live = new Set();
+    if (!AudioCtx) button.disabled = true;
+
+    function setUi(on) {
+      button.setAttribute('aria-pressed', on ? 'true' : 'false');
+      button.setAttribute('aria-label', on ? 'Mute' : 'Play Highland Laddie');
+      if (status) status.textContent = on ? 'Playing Highland Laddie' : 'Highland Laddie muted';
+    }
+
+    function tone(bus, type, midi, time, dur, peak) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const attack = Math.min(0.012, dur / 4);
+      const release = Math.min(0.045, dur / 3);
+      const sustainEnd = Math.max(attack, dur - release);
+      osc.type = type;
+      osc.frequency.setValueAtTime(midiToHz(midi), time);
+      gain.gain.setValueAtTime(0.0001, time);
+      gain.gain.linearRampToValueAtTime(peak, time + attack);
+      gain.gain.linearRampToValueAtTime(peak, time + sustainEnd);
+      gain.gain.linearRampToValueAtTime(0.0001, time + dur);
+      osc.connect(gain);
+      gain.connect(bus);
+      osc.start(time);
+      osc.stop(time + dur + 0.02);
+      live.add(osc);
+      osc.onended = () => live.delete(osc);
+    }
+
+    function scheduleCycle(when) {
+      for (const ev of tune.melody) {
+        if (!ev.midi) continue;
+        tone(melodyBus, VOICES.melody.type, ev.midi, when + ev.at * step, ev.steps * step, VOICES.melody.gain);
+      }
+      for (const ev of tune.bass) {
+        if (!ev.midi) continue;
+        tone(bassBus, VOICES.bass.type, ev.midi, when + ev.at * step, ev.steps * step, VOICES.bass.gain);
+      }
+      return when + cycleSeconds;
+    }
+
+    function pump() {
+      if (!playing || !ctx) return;
+      if (cursor < ctx.currentTime - 0.05) cursor = ctx.currentTime + 0.02;
+      const horizon = ctx.currentTime + 0.45;
+      while (cursor < horizon) cursor = scheduleCycle(cursor);
+      timer = window.setTimeout(pump, 120);
+    }
+
+    function silence() {
+      playing = false;
+      window.clearTimeout(timer);
+      if (!ctx || !master) return;
+      const now = ctx.currentTime;
+      master.gain.cancelScheduledValues(now);
+      master.gain.setValueAtTime(Math.max(master.gain.value, 0.0001), now);
+      master.gain.linearRampToValueAtTime(0.0001, now + 0.04);
+      for (const osc of live) {
+        try { osc.stop(now + 0.05); } catch (e) { /* already ended */ }
+      }
+      live.clear();
+    }
+
+    function buildGraph() {
+      master = ctx.createGain();
+      master.gain.value = 0.0001;
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 2800;
+      filter.Q.value = 0.6;
+      melodyBus = ctx.createGain();
+      melodyBus.connect(filter);
+      filter.connect(master);
+      bassBus = ctx.createGain();
+      bassBus.connect(master);
+      master.connect(ctx.destination);
+    }
+
+    button.addEventListener('click', async () => {
+      if (playing) {
+        silence();
+        setUi(false);
+        return;
+      }
+      if (!AudioCtx || arming) return;
+      arming = true;
+      try {
+        // Created on the click, never from storage, and never started on load.
+        if (!ctx) {
+          ctx = new AudioCtx();
+          buildGraph();
+        }
+        if (ctx.state === 'suspended') await ctx.resume();
+        if (ctx.state !== 'running') return;
+        const now = ctx.currentTime;
+        master.gain.cancelScheduledValues(now);
+        master.gain.setValueAtTime(0.0001, now);
+        master.gain.linearRampToValueAtTime(MASTER_GAIN, now + 0.03);
+        playing = true;
+        cursor = now + 0.05;
+        setUi(true);
+        pump();
+      } catch (e) {
+        silence();
+        setUi(false);
+      } finally {
+        arming = false;
+      }
+    });
+  }
+</script>
+
+<style>
+  .coo-dance {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: .55rem 1.1rem 0;
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-end;
+    gap: .45rem;
+  }
+  /* 2x on small screens, 3x from 720px. Integer scales keep the pixels square. */
+  .ceilidh-coo {
+    width: 128px;
+    height: 128px;
+    flex: none;
+    background: var(--coo-strip) 0 0 / 1280px 128px no-repeat;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+    animation: coo-fling-2x 1s steps(10) infinite;
+  }
+  @media (min-width: 720px) {
+    .ceilidh-coo {
+      width: 192px;
+      height: 192px;
+      background-size: 1920px 192px;
+      animation: coo-fling-3x 1s steps(10) infinite;
+    }
+  }
+  @keyframes coo-fling-2x { to { background-position: -1280px 0; } }
+  @keyframes coo-fling-3x { to { background-position: -1920px 0; } }
+  /* After the size query, so a desktop viewport still stops on the first frame. */
+  @media (prefers-reduced-motion: reduce) {
+    .ceilidh-coo { animation: none; background-position: 0 0; }
+  }
+  .coo-side { display: flex; flex-direction: column; align-items: center; gap: .28rem; margin-bottom: .35rem; }
+  .coo-sound {
+    width: 44px;
+    height: 44px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border-radius: 50%;
+    border: 2px solid #f4e6c8;
+    background: #fbf6ec;
+    color: #1f4d3a;
+    cursor: pointer;
+  }
+  .coo-sound:hover { background: #fff; }
+  .coo-sound[aria-pressed="true"] { background: #e0843f; border-color: #fff; color: #1f140c; }
+  .coo-sound .ico-on { display: none; }
+  .coo-sound[aria-pressed="true"] .ico-off { display: none; }
+  .coo-sound[aria-pressed="true"] .ico-on { display: block; }
+  .coo-caption { color: #d5e6dc; font-size: .72rem; letter-spacing: .03em; line-height: 1.1; text-align: center; }
+  :global(html[data-a11y-space=on]) .coo-sound { padding: 0; min-width: 48px; min-height: 48px; border-radius: 50%; }
+</style>

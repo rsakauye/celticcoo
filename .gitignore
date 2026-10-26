@@ -3,6 +3,8 @@ site/dist/
 site/.astro/
 source-check-report.md
 .DS_Store
+scripts/preview-4x.png
+scripts/ceilidh-coo-preview.gif
 .dev.vars
 .dev.vars.*
 .env

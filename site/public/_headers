@@ -20,6 +20,9 @@
 /coo.svg
   Cache-Control: public, max-age=604800
 
+/ceilidh-coo-strip.png
+  Cache-Control: public, max-age=604800
+
 /tartan-maple-leaf.svg
   Cache-Control: public, max-age=604800
 
