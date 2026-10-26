@@ -160,6 +160,7 @@ jobs:
           FORWARD_TO: ${{ secrets.FORWARD_TO }}
           D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
           INBOUND_GITHUB_TOKEN: ${{ secrets.INBOUND_GITHUB_TOKEN }}
+          INBOUND_ISSUES_REPO: ${{ vars.INBOUND_ISSUES_REPO }}
           REVIEW_SECRET: ${{ secrets.REVIEW_SECRET }}
           REVIEW_BASE_URL: ${{ vars.REVIEW_BASE_URL }}
         run: |
@@ -189,6 +190,14 @@ jobs:
             writeFileSync(process.argv[1], JSON.stringify(secrets), { mode: 0o600 });
           ' "$secret_file"
           var_args=()
+          # Issues stay off until this names a private repo that is not the public product repo.
+          # RETENTION_PURGE is intentionally not passed, so the cron only logs counts.
+          # FORWARD_TO is uploaded in the secrets file. Do not pass it with --var.
+          if [[ "${INBOUND_ISSUES_REPO}" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] && [ "${INBOUND_ISSUES_REPO}" != "rsakauye/celticcoo" ]; then
+            var_args+=(--var "INBOUND_ISSUES_REPO:${INBOUND_ISSUES_REPO}")
+          else
+            echo "::notice::INBOUND_ISSUES_REPO is unset or is the public repo. Inbound GitHub issues stay off."
+          fi
           if [[ "${REVIEW_BASE_URL}" =~ ^https://[A-Za-z0-9.-]+(:[0-9]+)?$ ]]; then
             var_args+=(--var "REVIEW_BASE_URL:${REVIEW_BASE_URL}")
           elif [ -n "${REVIEW_BASE_URL}" ]; then

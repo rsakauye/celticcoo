@@ -15,7 +15,7 @@ This repository does not change the live routing rule. The Wrangler config has n
 7. When `CLARIFY_DRAFTS` is `drafts` (the default), a vague, incomplete, or contradictory inquiry gets a short draft that asks only for what is missing. The draft is stored on the same row with status `pending_approval`. A private review note is sent to `FORWARD_TO` when the email binding is available. Nothing is sent to the original sender until you approve that draft.
 8. Does not fetch any URL from the email and does not publish an event. `ACK_REPLIES` is `off`. An automatic receipt is sent only if that value is changed to `on` and the Worker is redeployed. That receipt is separate from clarifying drafts.
 
-Only `hello@celticcoo.ca`, including plus-addresses such as `hello+events@celticcoo.ca`, is stored and classified. Any other recipient is forwarded and then ignored, in case a rule is pointed here by mistake.
+Only `hello@celticcoo.ca`, including plus-addresses such as `hello+events@celticcoo.ca`, is stored and classified. Mail to `bookings@celticcoo.ca` is not classified. If Email Routing delivers that address to this Worker and the message is only a stop or unsubscribe, the sender address is added to `mail_opt_outs` and the message is not stored. Any other recipient is forwarded and then ignored, in case a rule is pointed here by mistake.
 
 The email is untrusted. Instructions inside it are not followed. The model is asked for JSON only, and the result is checked against the category list. A field that is not in that schema is dropped. The clarifying draft is built from fixed questions, not from the model's free text, so the inbound message cannot write the reply.
 
@@ -106,13 +106,15 @@ The original forward is left unchanged. Adding the draft to that copy would mean
 
 The approved reply is sent with the Worker's `send_email` binding (`EMAIL`), from `hello@celticcoo.ca`, to the stored reply-to address or otherwise the envelope sender. The binding is unrestricted in Wrangler for the same reason as the booking mailer: the destination is not known at deploy time, and your inbox must not be committed. The code will only send the review note to `FORWARD_TO`, and the approved reply only to that one stored sender. A draft that still contains an email address or a phone number is refused.
 
+A reply that is only `stop` or `unsubscribe` is recorded in `mail_opt_outs`. After that, this Worker does not send an acknowledgement or an approved clarifying reply to that address. The approval page says nothing was sent and does not repeat the address. The forward to `FORWARD_TO`, and the booking form notice to the owner, still go out: those are not mail to the person who opted out. The opt-out row is kept for at least 60 days. The retention cron does not delete it, so the stop continues after that. See `docs/breach-checklist.md` for what to do after a suspected breach.
+
 ## One-time setup
 
 Do these in order. Deploy does not switch Email Routing and does not apply D1 migrations.
 
 ### 1. Apply the D1 migration
 
-The database is the same `celticcoo-intake` database as the booking form. `site/migrations/0002_inbound_emails.sql` creates `inbound_emails`. `site/migrations/0003_inbound_clarify.sql` adds the draft columns and `classifier_reason`. From the repo root, with Wrangler logged in to this Cloudflare account:
+The database is the same `celticcoo-intake` database as the booking form. `site/migrations/0002_inbound_emails.sql` creates `inbound_emails`. `site/migrations/0003_inbound_clarify.sql` adds the draft columns and `classifier_reason`. `site/migrations/0004_mail_opt_outs.sql` creates the stop-mail list. Other open branches also add a migration file numbered 0004. D1 records the whole filename, so this table is separate from those. From the repo root, with Wrangler logged in to this Cloudflare account:
 
 ```bash
 read -rsp 'D1 database id: ' D1_DATABASE_ID; echo
@@ -145,6 +147,7 @@ GitHub → Settings → Secrets and variables → Actions → Variables:
 | Variable | What it is |
 |---|---|
 | `REVIEW_BASE_URL` | Optional. The https origin of this Worker, with no path, such as `https://review.celticcoo.ca`. Every inbound deploy passes it when it matches that shape. If a later deploy omits it, Wrangler drops that var. `FORWARD_TO` is a Worker secret, so a deploy that does not mention it leaves the secret in place. |
+| `INBOUND_ISSUES_REPO` | Optional, and unset on purpose. `owner/repo` of a **private** repository that is not `rsakauye/celticcoo`. Inbound issues stay off until this is set and `INBOUND_GITHUB_TOKEN` is set. The Worker also refuses to file if GitHub says the repo is not private. Do not point it at the public product repo. |
 
 `GITHUB_TOKEN` and `REVIEW_SECRET` are Worker secret names. GitHub Actions already reserves `GITHUB_TOKEN`, so the Actions secret for issues is `INBOUND_GITHUB_TOKEN`. A deploy uploads whichever of those two is set and leaves other Worker secrets in place.
 
@@ -152,7 +155,7 @@ Token permission for `INBOUND_GITHUB_TOKEN`, and nothing broader:
 
 - Fine-grained token, not a classic `repo` token.
 - Resource owner: the account that owns the repo.
-- Repository access: only `rsakauye/celticcoo`.
+- Repository access: only the private repository named by `INBOUND_ISSUES_REPO`. Do not grant this token access to the public product repo.
 - Repository permissions: **Issues: Read and write**.
 - Do not grant Contents, Administration, Pull requests, or Workflows. GitHub adds read-only Metadata on its own.
 
@@ -183,7 +186,11 @@ Do this in the dashboard. Do not add a `routes` key to `wrangler.jsonc`. A route
 2. Add a custom domain or route on a hostname that is not the Pages site. `celticcoo.ca` and `www.celticcoo.ca` belong to Pages. `review.celticcoo.ca` does not.
 3. Set the Actions variable `REVIEW_BASE_URL` to that origin, for example `https://review.celticcoo.ca`.
 
-Until both `REVIEW_SECRET` and `REVIEW_BASE_URL` are set, drafts are still stored and, for listings and corrections, still written into the GitHub issue. The review note says the links are not configured. Nothing is sent to the original sender.
+Until both `REVIEW_SECRET` and `REVIEW_BASE_URL` are set, drafts are still stored. The review note says the links are not configured. Nothing is sent to the original sender.
+
+Listings and corrections are not filed as GitHub issues unless `INBOUND_GITHUB_TOKEN` and `INBOUND_ISSUES_REPO` are both set. The repo must be private. Leave `INBOUND_ISSUES_REPO` unset. Issues stay off.
+
+The daily cron counts old booking rows, inbound emails, and failed form attempts. It does not delete them. See `docs/retention.md`. Do not set `RETENTION_PURGE`.
 
 ### 4. Let hello@ send mail
 

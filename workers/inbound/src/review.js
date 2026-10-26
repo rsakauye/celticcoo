@@ -4,12 +4,15 @@
 // GET shows the draft and does not send. Mail scanners that prefetch links
 // therefore cannot approve a reply.
 //
-// The approve link stays out of GitHub issues. Those issues may be public.
+// The approve link stays out of GitHub issues. Issues are filed only in a
+// private repo, and only when that repo is configured.
 // The link is emailed only to FORWARD_TO.
 
 import { questionFor } from './clarify.js';
+import { caslFooterText } from '../../../shared/casl/notice.js';
+import { optOutStatus } from './optout.js';
 import { hasPrivateContact, PUBLIC_MAILBOX } from './redact.js';
-import { claimClarifySend, discardClarify, loadInbound, markClarifySent, releaseClarifySend } from './store.js';
+import { claimClarifySend, discardClarify, loadInbound, markClarifySent, releaseClarifySend, suppressClarify } from './store.js';
 import { codeOf, envelopeAddress, oneEmail, oneLine } from './text.js';
 import { reviewLinks, reviewSecret, validRowId, verifyAction } from './token.js';
 
@@ -88,6 +91,17 @@ export async function sendApprovedReply(env, { to, subject, text }, deps = {}) {
     err.code = 'clarify_draft_blocked';
     throw err;
   }
+  const stopped = await optOutStatus(env && env.INTAKE_DB, recipient);
+  if (stopped === 'opted_out') {
+    const err = new Error('recipient opted out');
+    err.code = 'opt_out';
+    throw err;
+  }
+  if (stopped !== 'allowed') {
+    const err = new Error('opt-out list unavailable');
+    err.code = 'opt_out_unknown';
+    throw err;
+  }
   const send = typeof deps.send === 'function'
     ? deps.send
     : (env && env.EMAIL && typeof env.EMAIL.send === 'function' ? env.EMAIL.send.bind(env.EMAIL) : null);
@@ -136,6 +150,7 @@ export function buildReviewNote({ id, category, reasons, draft, recipient, links
   } else {
     lines.push('Approval links are not configured yet. Set REVIEW_SECRET and REVIEW_BASE_URL, and attach a route for that origin to this Worker. The draft is stored. It will not be sent on its own.');
   }
+  lines.push('', caslFooterText());
   return lines.join('\n');
 }
 
@@ -244,6 +259,14 @@ export async function applyReview({ env, fields, deps = {} }) {
   if (row.clarify_status !== 'pending_approval' && row.clarify_status !== 'approved') {
     return { http: 409, code: 'no_draft', row };
   }
+  const stopped = await optOutStatus(db, replyAddress(row));
+  if (stopped === 'opted_out') {
+    try { await discardClarify(db, fields.id); } catch { /* still do not send */ }
+    return { http: 200, code: 'opt_out', row };
+  }
+  if (stopped !== 'allowed') {
+    return { http: 503, code: 'opt_out_unknown', row };
+  }
   const now = deps.now ? deps.now() : new Date();
   const lock = padTime(now.getTime());
   const stale = padTime(now.getTime() - LOCK_MS);
@@ -263,10 +286,15 @@ export async function applyReview({ env, fields, deps = {} }) {
     console.log(JSON.stringify({ message: 'inbound clarify sent', id: fields.id }));
     return { http: 200, code: 'sent', row: { ...row, clarify_status: 'sent' } };
   } catch (err) {
-    try { await releaseClarifySend(db, fields.id, lock); } catch { /* the lock expires */ }
     const code = codeOf(err) === 'error' ? 'clarify_send_failed' : codeOf(err);
+    if (code === 'opt_out') {
+      try { await suppressClarify(db, fields.id, lock); } catch { /* the lock expires */ }
+      console.log(JSON.stringify({ message: 'inbound clarify not sent', code: 'opt_out', id: fields.id }));
+      return { http: 200, code: 'opt_out', row };
+    }
+    try { await releaseClarifySend(db, fields.id, lock); } catch { /* the lock expires */ }
     console.error(JSON.stringify({ message: 'inbound clarify send failed', code }));
-    return { http: 502, code, row };
+    return { http: code === 'opt_out_unknown' ? 503 : 502, code, row };
   }
 }
 
@@ -278,6 +306,8 @@ function resultPage(result) {
   if (result.code === 'no_draft') return page(409, 'No draft', '<p>There is no clarifying draft for this message. Nothing was sent.</p>');
   if (result.code === 'busy') return page(409, 'Please wait', '<p>This draft is already being sent. Nothing else was sent. Refresh the approval link in a minute if it still looks unsent.</p>');
   if (result.code === 'sent') return page(200, 'Sent', '<p>The clarifying reply was sent. The recipient address is not repeated here.</p>');
+  if (result.code === 'opt_out') return page(200, 'Not sent', '<p>Nothing was sent. They asked to stop receiving email.</p>');
+  if (result.code === 'opt_out_unknown') return page(503, 'Not sent', '<p>The reply was not sent. The stop-mail list could not be checked. Nothing was sent.</p>');
   return page(result.http || 502, 'Not sent', `<p>The draft was not sent (${escapeHtml(result.code || 'clarify_send_failed')}). The approval link can be used again.</p>`);
 }
 
