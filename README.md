@@ -4,7 +4,7 @@ A Canada-first hub for Celtic and Gaelic culture: an events calendar (Highland G
 Highland dance, ceilidhs, concerts, parades, cultural celebrations, Gaelic, festivals), a directory of Celtic shops and makers, and a newsletter.
 Mascot: **Ceilidh the Coo** (said "Kaylee"), a friendly ginger Highland coo with a bow in Canada's national
 **Maple Leaf tartan** (original SVG in `site/public/coo.svg`; tartan rendered from its threadcount by `scripts/make_tartan.py`).
-On the home page she also peeks from the edge of the hero as an 8-bit sprite (`site/public/ceilidh-coo-strip.png`, drawn by `scripts/make_ceilidh_coo.py`). A tap brings her out to dance a Highland fling and, if you want it, plays a chiptune of the traditional tune Highland Laddie. She stays tucked away and quiet until that tap.
+On the home page an 8-bit sprite of her (`site/public/ceilidh-coo-strip.png`, drawn by `scripts/make_ceilidh_coo.py`) stays tucked in the bottom-right corner. A tap brings her out to dance a Highland fling and, if you want it, plays a chiptune. The first tune is Highland Laddie; each time you stop and start again it moves on to Gillie Callum, then Seann Triubhas, then back. A reload starts over, and she stays quiet until that first tap.
 
 Same pattern as [UsedGlass](https://github.com/rsakauye/usedglass): an Astro static site built by
 GitHub Actions and deployed to Cloudflare Pages with wrangler.
