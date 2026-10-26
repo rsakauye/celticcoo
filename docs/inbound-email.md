@@ -10,7 +10,7 @@ This repository does not change the live routing rule. The Wrangler config has n
 2. If that forward does not happen, the handler throws after trying to store the row. The failure is in the Workers logs, and the sending server can retry the delivery. A message the platform marks as not forwardable is stored and the handler returns, because another attempt will not make it forwardable.
 3. Parses the sender, subject, date, and plain-text body. Attachment bytes are not stored. A note of the count and content types is. The raw message is capped at 256 KB before parsing.
 4. Stores a row in the existing D1 database `celticcoo-intake`, table `inbound_emails`.
-5. Classifies it as `event_listing_request`, `booking_inquiry`, `correction_or_update`, `partnership_or_press`, `spam`, or `other`. Workers AI (`@cf/meta/llama-3.1-8b-instruct`) does this when the binding works. Otherwise a rules fallback does. If the model and a clear rules match disagree about opening or suppressing an issue, the rules win. There is no minimum body length. A short note is still sent to the model.
+5. Classifies it as `event_listing_request`, `booking_inquiry`, `correction_or_update`, `partnership_or_press`, `spam`, or `other`. Workers AI (`@cf/meta/llama-3.1-8b-instruct`) does this when the binding works. Otherwise a weighted rules fallback does. The phrases, places, and seasons live in `shared/triage/sites/celticcoo.js`. The scorer in `shared/triage/engine.js` does not know the site. If the model and a clear rules match disagree about opening or suppressing an issue, the rules win. An auto-reply or a newsletter question that the rules call `other` also wins, so it does not open an issue. There is no minimum body length. A short note is still sent to the model.
 6. For `event_listing_request` and `correction_or_update`, opens an issue in `rsakauye/celticcoo` with the label `inbound:event-request` or `inbound:correction`. The issue has the D1 row id, a short summary, and public event fields (title, host, date, city, province, venue, URL). It does not include the sender's email, phone, or message body. If a clarifying draft exists, the draft text is included. The approval link is not.
 7. When `CLARIFY_DRAFTS` is `drafts` (the default), a vague, incomplete, or contradictory inquiry gets a short draft that asks only for what is missing. The draft is stored on the same row with status `pending_approval`. A private review note is sent to `FORWARD_TO` when the email binding is available. Nothing is sent to the original sender until you approve that draft.
 8. Does not fetch any URL from the email and does not publish an event. `ACK_REPLIES` is `off`. An automatic receipt is sent only if that value is changed to `on` and the Worker is redeployed. That receipt is separate from clarifying drafts.
@@ -29,9 +29,9 @@ A message stored as row `b0e54ddb-eca8-4072-99f3-c1efb4d60824` had `classifier=r
 - The call threw, including a JSON-mode or schema rejection, and an empty `catch` returned the rules result.
 - The call returned text that was not the category schema, and that was treated as "no model result" with no log.
 
-The stored row does not say which of those happened. A direct Workers AI call on the account can succeed and this Worker can still fail, because the Worker was sending `response_format` JSON schema (and previously `temperature: 0`) and then hiding the failure. There is no separate short-body rule.
+The stored row does not say which of those happened. A direct Workers AI call on the account can succeed and this Worker can still fail, because the Worker was sending `response_format` JSON schema (and previously `temperature: 0`) and then hiding the failure. There is no separate short-body rule. The `0.35` on that row is the old fixed score for `other`. The current scorer uses `0.26` when nothing matches. Both are low on purpose.
 
-The Worker now logs one line, `inbound classify`, with a short `reason` and no message body:
+The Worker now logs one line, `inbound classify`, with a short `reason`. On a failure it also logs `error_name`, `error_code`, and `error_message`. The message is truncated. Addresses, phone numbers, URLs, secrets, and words copied from the inbound subject or body are removed before the log line is written.
 
 | `reason` | Meaning |
 |---|---|
@@ -39,17 +39,49 @@ The Worker now logs one line, `inbound classify`, with a short `reason` and no m
 | `ai_text` | JSON mode failed or was unusable, and a second call with messages only succeeded. |
 | `ai_unavailable` | The AI binding or `run` was missing, or the call failed because `run` was not a function. The log also has `binding` and `run` types (`function`, `object`, `missing`). |
 | `ai_request` | The call was rejected for JSON mode, schema, temperature, or `max_tokens`. |
+| `ai_quota` | Neuron allocation or a paid-plan model refusal (codes 3036 and 5035, or that text). |
+| `ai_capacity` | Workers AI was out of capacity or rate limited (code 3040 or HTTP 429). |
+| `ai_timeout` | The call timed out or was aborted. |
+| `ai_model` | The model id was not found (code 6002 or that text). |
 | `ai_unparsed` | The model replied, but not with a category in the allowed list. |
-| `ai_failed` | The call threw for another reason. The error text is not logged, because it can echo the email. |
+| `ai_failed` | The call threw for another reason. The sanitized message is still on the log line. |
 | `rules_override` | The model answered, and a clear rules match overrode it. |
 
-The same code is stored on the row as `classifier_reason`. JSON mode is still tried first. `additionalProperties` is no longer sent in the schema. If that attempt throws or does not parse, the Worker tries once more with only the messages, which is the shape of a plain Workers AI call, and logs which path worked.
+The same code is stored on the row as `classifier_reason`. A failure appends a short slug, for example `ai_quota:3036_daily_free_allocation`. JSON mode is still tried first. `additionalProperties` is still not sent in the schema. If that attempt throws or does not parse, the Worker tries once more with only the messages, which is the shape of a plain Workers AI call, and logs which path worked.
+
+### What failed on 26 October 2026
+
+Two rows stored at 04:55 UTC that day have `classifier=rules` and `classifier_reason=ai_failed`. They are one second apart: one `booking_inquiry` at confidence `0.8`, and one `other` at confidence `0.35`. The Workers log for both is only `{ "message": "inbound classify", "classifier": "rules", "reason": "ai_failed" }`. The traces finished in about two seconds with outcome ok and no trace error. Both the JSON-schema attempt and the plain-messages attempt failed. The thrown text did not contain the words the old code used for `ai_request` (JSON mode, schema, `response_format`, temperature, `max_tokens`), and `run` was a function, or the reason would have been `ai_unavailable`.
+
+The 25 October 14:35 UTC row is the earlier case. Its empty `classifier_reason` is the code from before this logging existed. The Worker script's `modified_on` is 16:49 UTC that day, after that row was written.
+
+Checks run on the same account after the Workers Paid upgrade (the upgrade was about 04:45 UTC, the failures at 04:55):
+
+- The model catalog does not list `@cf/meta/llama-3.1-8b-instruct`. A nearby id is `@cf/meta/llama-3.1-8b-instruct-fp8`.
+- `GET /ai/models/schema` for the configured id returns HTTP 404, code 6002, "Model schema not found".
+- `POST /ai/run/@cf/meta/llama-3.1-8b-instruct` with the Worker's schema returns HTTP 200 and a valid category object. A plain messages call also returns HTTP 200.
+
+The model id and the schema are valid now. The exact 04:55 error text was discarded, so it cannot be quoted. The plausible cause is a Workers AI error whose message did not contain the schema keywords: the daily neuron allocation (code 3036) or a capacity response (3040 or 429), in the minutes after the paid-plan upgrade before the new entitlement applied. Both messages failed the same way, so it was not a one-off timeout. No Wrangler var change is required.
+
+If that legacy model id later returns model-not-found, set the `AI_MODEL` var to `@cf/meta/llama-3.1-8b-instruct-fp8` and keep the schema-then-text order. Do not switch today. A plain call to the fp8 id returned JSON inside a markdown fence, which is a worse default while the current id still runs.
+
+## Rules, lexicon, and the shared module
+
+`shared/triage/` is the site-agnostic piece. `workers/inbound/src/classify.js` is the Celtic Coo adapter: it redacts, calls Workers AI, and maps error text to the reason codes above. Copying the folder to another site is described in `shared/triage/README.md`. There is no package and no extra repo.
+
+The lexicon is `shared/triage/sites/celticcoo.js`. It is static data: Burns Supper / Burns Night / Robbie Burns, ceilidh and céilidh and kaylee, céilí, Highland Games and Highland Gathering, pipe band and pipes and drums, Highland and Irish dance, St Andrew's, Hogmanay, Tartan Day, Gaelic, Canadian provinces and abbreviations, common Alberta towns, venue words (hall, legion, lodge, church, centre), and the common misspellings those phrases already include. Lookup is local. Nothing in that file calls the network.
+
+Scoring sums every match. A subject match counts double. Spam wins a tie with a real request. Quoted lines, a signature after `--`, and "Sent from my…" are dropped before scoring. A marketing footer is scored only as spam. Confidence follows the score and the margin, and a note with no signals stays under `0.4`.
+
+The same folder holds `breaker.js`: a seasonal limit, a legit organizer burst versus abuse, and the allow / hold / pause decision. Burns Night (10–31 January, multiplier 4), St Andrew's (15–30 November), Highland Games (April through August), and Hogmanay (27 December through 4 January) raise a trailing baseline. The baseline is the same week last year when that history exists, otherwise a rolling daily average, then clamped between 8 and 80 messages a day. A burst from one consistent sender with distinct event details is `bulk_organizer` and decides `hold` (store it, do not send, do not trip the kill switch). Rotating senders, a repeated payload, gibberish, several links, failed SPF or DKIM, or failed Turnstile checks decide `pause`. The outbound cap (40 a day in the site pack) also decides `pause`. Volume by itself does not.
+
+This Worker does not call `decideGuard` yet. The emergency cutoff change wires it into the booking form and this Worker. The thresholds already live in the site pack so that change does not fork the scorer.
 
 ## Clarifying drafts
 
 `CLARIFY_DRAFTS` in `workers/inbound/wrangler.jsonc` is `drafts`. Any other value except `off` means the same thing. There is no setting that sends a reply by itself. Set it to `off` and redeploy to stop new drafts.
 
-A draft is created for an event listing, correction, or booking that is missing a date, a time, a place, or an event name; for a date that is already past; for two dates that disagree (a correction that states the old date and the new one is not treated as a contradiction); for a link that is not a normal http(s) URL; for an organizer name that does not appear in the link, unless the link is a known ticket or social host; and for a note classified as `other` or a very short partnership note. Spam is skipped. Mail from `noreply`, a list, or an auto-reply is skipped.
+A draft is created for an event listing, correction, or booking that is missing a date, a time, a place, or an event name; for a booking that names no performer; for a date that is already past; for two dates that disagree (a correction that states the old date and the new one is not treated as a contradiction); for a link that is not a normal http(s) URL; for an organizer name that does not appear in the link, unless the link is a known ticket or social host; and for a note classified as `other` or a very short partnership note. A group or society directory listing does not need a date. A newsletter question does not get the generic "unclear" draft. Spam is skipped. Mail from `noreply`, a list, or an auto-reply is skipped, including an out-of-office line in the subject or the first part of the body. An out-of-office line buried under a real request does not hide that request.
 
 The draft status on the row is:
 
@@ -230,4 +262,4 @@ That does not delete D1, and it does not change DNS.
 cd workers/inbound && npm ci && npm test
 ```
 
-The tests cover MIME parsing, the rules fallback, the classifier failure reasons, drafting, approval, issue-body redaction, and the forward-first behaviour. Cloudflare bindings are mocked. They do not call Workers AI, GitHub, or Email Routing.
+The tests cover MIME parsing, the rules fallback (a synthetic vague note and a synthetic Burns booking, not copies of received mail), the lexicon, the seasonal and bulk-organizer guard, the classifier failure reasons, drafting, approval, issue-body redaction, and the forward-first behaviour. `npm test` also runs `shared/triage/test/`. Cloudflare bindings are mocked. They do not call Workers AI, GitHub, or Email Routing. Fixtures use example.com addresses and made-up names.

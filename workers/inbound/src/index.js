@@ -127,7 +127,11 @@ async function processHello(message, env, deps, forward) {
     summary: classification.summary,
     extractedJson: JSON.stringify(classification.event || {}),
     classifier: classification.classifier === 'ai' ? 'ai' : 'rules',
-    classifierReason: safeReason(classification.reason),
+    classifierReason: safeReason(
+      classification.detailSlug
+        ? `${classification.reason}:${classification.detailSlug}`
+        : classification.reason,
+    ),
     clarifyStatus: draft ? draft.status : '',
     clarifyDraft: draft ? draft.draft : '',
     clarifyReasons: draft ? draft.reasons.join(',') : '',
