@@ -157,11 +157,11 @@ test('the word on is not the Ontario abbreviation', () => {
 test('a town with the province left off still fills Alberta', () => {
   const got = classifyByRules({
     subject: 'Please list our Highland Games',
-    text: 'Please list our Highland Games in Okotoks on 1 June 2027 at the Elks Lodge.',
+    text: 'Please list our Highland Games in Okotoks on 1 June 2027 at the Community Hall.',
   });
   assert.equal(got.event.city, 'Okotoks');
   assert.equal(got.event.province, 'Alberta');
-  assert.equal(got.event.venue, 'Elks Lodge');
+  assert.equal(got.event.venue, 'Community Hall');
   assert.equal(got.event.date, '1 June 2027');
 });
 
