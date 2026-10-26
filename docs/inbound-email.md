@@ -80,7 +80,7 @@ Do these in order. Deploy does not switch Email Routing and does not apply D1 mi
 
 ### 1. Apply the D1 migration
 
-The database is the same `celticcoo-intake` database as the booking form. `site/migrations/0002_inbound_emails.sql` creates `inbound_emails`. `site/migrations/0003_inbound_clarify.sql` adds the draft columns and `classifier_reason`. `site/migrations/0004_review_tokens.sql` adds the short review links. Apply it before deploying the Worker that serves `/r/`. From the repo root, with Wrangler logged in to this Cloudflare account:
+The database is the same `celticcoo-intake` database as the booking form. `site/migrations/0002_inbound_emails.sql` creates `inbound_emails`. `site/migrations/0003_inbound_clarify.sql` adds the draft columns and `classifier_reason`. `site/migrations/0004_review_tokens.sql` adds the short review links. `site/migrations/0005_inbound_trust.sql` adds the trust score and the chat approval audit. Apply `0004` before deploying the Worker that serves `/r/`, and apply `0005` before deploying the Worker that stores a trust score or serves `/api/queue`. From the repo root, with Wrangler logged in to this Cloudflare account:
 
 ```bash
 read -rsp 'D1 database id: ' D1_DATABASE_ID; echo
@@ -91,7 +91,7 @@ unset D1_DATABASE_ID
 
 That applies every migration in `site/migrations/` that is not already on the database. The command does not print the database id. Do not commit the id.
 
-This repo's GitHub Actions workflow does not apply migrations. Until `0003` is applied, new mail will fail to store and the forward will still have been attempted. Apply it before the deploy that contains this code, or immediately after, and accept that mail in that gap is retried by the sender only if the forward itself failed. Until `0004_review_tokens.sql` is applied, a review note is still emailed, but it has no short link. Apply that file before deploying the Worker that serves `/r/`.
+This repo's GitHub Actions workflow does not apply migrations. Until `0003` is applied, new mail will fail to store and the forward will still have been attempted. Apply it before the deploy that contains this code, or immediately after, and accept that mail in that gap is retried by the sender only if the forward itself failed. Until `0004_review_tokens.sql` is applied, a review note is still emailed, but it has no short link. Apply that file before deploying the Worker that serves `/r/`. Until `0005_inbound_trust.sql` is applied, storing a new message fails after the forward. Apply that file before deploying the trust-score worker. Chat approval is described in `docs/chat-approval.md`.
 
 ### 2. Set the secrets and the database id
 
@@ -107,6 +107,7 @@ GitHub → Settings → Secrets and variables → Actions → Secrets:
 | `FORWARD_TO` | The verified Email Routing destination that should keep receiving a copy. This is the inbox `hello@` forwards to. The same address may already be the `BOOKING_TO` secret. Set `FORWARD_TO` itself. |
 | `INBOUND_GITHUB_TOKEN` | Optional. A fine-grained personal access token, copied into the Worker secret `GITHUB_TOKEN` on deploy. Without it the Worker still forwards and logs. It does not open issues. |
 | `REVIEW_SECRET` | Optional until you want approval links. A random string, 16 to 200 characters, no spaces. `openssl rand -hex 32` is enough. Copied into the Worker secret `REVIEW_SECRET`. It is not a var. |
+| `APPROVAL_API_TOKEN` | Optional until you want chat approval. A different random string, 16 to 200 characters, no spaces. You set this. It is copied into the Worker secret `APPROVAL_API_TOKEN`. It is not a var. See `docs/chat-approval.md`. |
 
 GitHub → Settings → Secrets and variables → Actions → Variables:
 
@@ -114,7 +115,7 @@ GitHub → Settings → Secrets and variables → Actions → Variables:
 |---|---|
 | `REVIEW_BASE_URL` | Optional. The https origin of this Worker, with no path, such as `https://review.celticcoo.ca`. Every inbound deploy passes it when it matches that shape. If a later deploy omits it, Wrangler drops the var, the same way it drops `FORWARD_TO`. |
 
-`GITHUB_TOKEN` and `REVIEW_SECRET` are Worker secret names. GitHub Actions already reserves `GITHUB_TOKEN`, so the Actions secret for issues is `INBOUND_GITHUB_TOKEN`. A deploy uploads whichever of those two is set and leaves other Worker secrets in place.
+`GITHUB_TOKEN`, `REVIEW_SECRET`, and `APPROVAL_API_TOKEN` are Worker secret names. GitHub Actions already reserves `GITHUB_TOKEN`, so the Actions secret for issues is `INBOUND_GITHUB_TOKEN`. A deploy uploads whichever of those secrets is set and leaves other Worker secrets in place. Do not put `APPROVAL_API_TOKEN` in the repo. The owner creates it.
 
 Token permission for `INBOUND_GITHUB_TOKEN`, and nothing broader:
 
@@ -130,6 +131,7 @@ You can set the Worker secrets by hand instead:
 cd workers/inbound
 npx wrangler secret put GITHUB_TOKEN
 npx wrangler secret put REVIEW_SECRET
+npx wrangler secret put APPROVAL_API_TOKEN
 ```
 
 `FORWARD_TO` is a Worker var, not a Cloudflare secret, same as `BOOKING_TO` on the mailer. It is still a GitHub secret so the address stays out of the repo. Every deploy of this Worker must pass `--var FORWARD_TO:...`.
