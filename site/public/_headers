@@ -34,6 +34,13 @@
 /og.png
   Cache-Control: public, max-age=604800
 
+# Documents revalidate. There is no service worker; a cached /groups/ page was the stale-script risk.
+/groups
+  Cache-Control: public, max-age=0, must-revalidate
+
+/groups/
+  Cache-Control: public, max-age=0, must-revalidate
+
 # Keep Cloudflare Pages preview hosts out of search (canonical is https://celticcoo.ca)
 https://:project.pages.dev/*
   X-Robots-Tag: noindex
