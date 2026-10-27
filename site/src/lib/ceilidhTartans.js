@@ -170,9 +170,10 @@ export function writeTartanId(id, storage, list = TARTANS) {
   return tartan;
 }
 
-// Three full setts, one CSS pixel per thread. The square stays small, and
-// the edges stay sharp on a normal screen and on a high-density screen.
-export const SWATCH_REPEATS = 3;
+// One sett in the circle. Each thread is two CSS pixels so the edges stay
+// sharp on a normal screen and on a high-density screen.
+export const SWATCH_REPEATS = 1;
+export const SWATCH_THREAD_PX = 2;
 
 export function weaveColor(threads, x, y, originX = 0, originY = 0) {
   const n = threads.length;
@@ -194,6 +195,7 @@ export function swatchMarkup(tartan, repeats = SWATCH_REPEATS) {
   const threads = tartan?.threads;
   if (!threads?.length) return '';
   const size = threads.length * repeats;
+  const px = size * SWATCH_THREAD_PX;
   const rects = [];
   for (let y = 0; y < size; y += 1) {
     let x = 0;
@@ -201,11 +203,13 @@ export function swatchMarkup(tartan, repeats = SWATCH_REPEATS) {
       const fill = weaveColor(threads, x, y);
       let end = x + 1;
       while (end < size && weaveColor(threads, end, y) === fill) end += 1;
-      rects.push(`<rect x="${x}" y="${y}" width="${end - x}" height="1" fill="${fill}"/>`);
+      const x0 = x * SWATCH_THREAD_PX;
+      const y0 = y * SWATCH_THREAD_PX;
+      rects.push(`<rect x="${x0}" y="${y0}" width="${(end - x) * SWATCH_THREAD_PX}" height="${SWATCH_THREAD_PX}" fill="${fill}"/>`);
       x = end;
     }
   }
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" shape-rendering="crispEdges">${rects.join('')}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${px} ${px}" width="${px}" height="${px}" shape-rendering="crispEdges">${rects.join('')}</svg>`;
 }
 
 export function tartanView(tartan) {

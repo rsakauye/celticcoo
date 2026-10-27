@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import {
   STORAGE_KEY,
   SWATCH_REPEATS,
+  SWATCH_THREAD_PX,
   TARTANS,
   applyTartan,
   defaultTartan,
@@ -160,14 +161,18 @@ test('the swatch on load follows the tartan saved in storage', () => {
 });
 
 test('each swatch is the woven sett, not one colour or a stripe', () => {
-  assert.ok(SWATCH_REPEATS >= 2);
+  assert.equal(SWATCH_REPEATS, 1);
+  assert.equal(SWATCH_THREAD_PX, 2);
   const swatches = enabledTartans().map((tartan) => swatchMarkup(tartan));
   assert.equal(new Set(swatches).size, swatches.length);
   for (const tartan of enabledTartans()) {
     const markup = swatchMarkup(tartan);
-    const size = tartan.threads.length * SWATCH_REPEATS;
+    const px = tartan.threads.length * SWATCH_REPEATS * SWATCH_THREAD_PX;
     assert.equal(markup, tartanView(tartan).swatch);
-    assert.match(markup, new RegExp(`viewBox="0 0 ${size} ${size}"`));
+    assert.match(markup, new RegExp(`viewBox="0 0 ${px} ${px}"`));
+    assert.match(markup, new RegExp(`width="${px}" height="${px}"`));
+    assert.ok(px <= 26, tartan.slug);
+    assert.ok(px >= tartan.threads.length, tartan.slug);
     assert.match(markup, /shape-rendering="crispEdges"/);
     assert.doesNotMatch(markup, /linear-gradient/);
     const fills = new Set(swatchFills(markup));
@@ -200,6 +205,74 @@ test('each swatch is the woven sett, not one colour or a stripe', () => {
   const boot = picker.slice(picker.lastIndexOf('paint('));
   assert.match(boot, /readTartan\(storage\)/);
   assert.doesNotMatch(boot, /peekKilt|showTartanName/);
+});
+
+function cssBlock(css, selector) {
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = css.match(new RegExp(`${escaped}\\s*\\{([^}]+)\\}`));
+  assert.ok(match, selector);
+  return match[1];
+}
+
+function cssDecl(block, prop) {
+  const match = block.match(new RegExp(`(?:^|;)\\s*${prop}\\s*:\\s*([^;]+)`));
+  assert.ok(match, prop);
+  return match[1].trim();
+}
+
+function swatchBox(button) {
+  const contentHeight = button.height - button.border * 2 - button.paddingTop - button.paddingBottom;
+  const top = button.border + button.paddingTop + (contentHeight - button.swatch) / 2;
+  const left = button.border + button.paddingLeft;
+  return {
+    left,
+    top,
+    right: left + button.swatch,
+    bottom: top + button.swatch,
+  };
+}
+
+test('the swatch sits inside the pill at desktop and mobile widths', () => {
+  const picker = readFileSync(join(site, 'src/components/TartanPicker.astro'), 'utf8');
+  const open = cssBlock(picker, '.tartan-open');
+  const swatch = cssBlock(picker, '.swatch');
+  const narrow = picker.slice(picker.indexOf('@media (max-width: 719px)'));
+  const mobile = cssBlock(narrow, '.tartan-pick.corner .tartan-open');
+
+  assert.equal(cssDecl(open, 'height'), '44px');
+  assert.equal(cssDecl(open, 'min-height'), '44px');
+  assert.equal(cssDecl(open, 'border'), '3px solid var(--green, #1f4d3a)');
+  assert.equal(cssDecl(open, 'gap'), '8px');
+  assert.equal(cssDecl(open, 'padding'), '5px 14px 5px 5px');
+  assert.equal(cssDecl(swatch, 'width'), '28px');
+  assert.equal(cssDecl(swatch, 'height'), '28px');
+  assert.equal(cssDecl(swatch, 'border-radius'), '50%');
+  assert.match(cssDecl(swatch, 'overflow'), /hidden/);
+  assert.match(cssDecl(swatch, 'border'), /1px solid/);
+  assert.match(picker, /image-rendering:\s*pixelated/);
+  assert.equal(cssDecl(mobile, 'width'), '44px');
+  assert.equal(cssDecl(mobile, 'padding'), '5px');
+  assert.doesNotMatch(mobile, /max-width:\s*3rem/);
+
+  const shared = { height: 44, border: 3, swatch: 28, paddingTop: 5, paddingBottom: 5, paddingLeft: 5 };
+  for (const [width, button] of [
+    ['desktop', { ...shared, width: 220, paddingRight: 14 }],
+    ['mobile', { ...shared, width: 44, paddingRight: 5 }],
+  ]) {
+    const box = swatchBox(button);
+    const inner = {
+      left: button.border,
+      top: button.border,
+      right: button.width - button.border,
+      bottom: button.height - button.border,
+    };
+    assert.ok(box.left >= inner.left, width);
+    assert.ok(box.top >= inner.top, width);
+    assert.ok(box.right <= inner.right, width);
+    assert.ok(box.bottom <= inner.bottom, width);
+    assert.equal(box.left - inner.left, 5, width);
+    assert.equal(box.top - inner.top, (inner.bottom - inner.top - 28) / 2, width);
+  }
 });
 
 function decodeIndexedPng(buf) {

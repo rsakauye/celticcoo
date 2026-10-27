@@ -182,25 +182,37 @@ const titleId = `tartan-title-${variant}`;
   .tartan-open {
     display: inline-flex;
     align-items: center;
-    gap: .35rem;
-    border: 2px solid var(--green, #1f4d3a);
+    gap: 8px;
+    box-sizing: border-box;
+    height: 44px;
+    min-height: 44px;
+    border: 3px solid var(--green, #1f4d3a);
     background: #fff;
     color: inherit;
     border-radius: 999px;
-    min-height: 32px;
-    max-width: 12rem;
-    padding: .12rem .5rem .12rem .15rem;
+    max-width: 16rem;
+    padding: 5px 14px 5px 5px;
     font: 700 .75rem/1.2 system-ui, sans-serif;
     cursor: pointer;
   }
-  .swatch {
-    width: max-content;
-    height: max-content;
-    border-radius: 6px;
+  .tartan-open [data-tartan-current] {
     overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  .swatch {
+    width: 28px;
+    height: 28px;
     flex: none;
+    box-sizing: border-box;
+    border: 1px solid color-mix(in srgb, var(--green, #1f4d3a) 40%, transparent);
+    border-radius: 50%;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
     line-height: 0;
-    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .25);
+    background: #fff;
   }
   .swatch :global(svg) {
     display: block;
@@ -231,8 +243,6 @@ const titleId = `tartan-title-${variant}`;
   }
   .tartan-pick.tune .tartan-open {
     width: 100%;
-    min-height: 2.6rem;
-    height: auto;
     max-width: 100%;
     justify-content: center;
   }
@@ -293,8 +303,10 @@ const titleId = `tartan-title-${variant}`;
   }
   @media (max-width: 719px) {
     .tartan-pick.corner .tartan-open {
-      max-width: 3rem;
-      padding: .12rem;
+      width: 44px;
+      max-width: 44px;
+      padding: 5px;
+      gap: 0;
     }
     .tartan-pick.corner .tartan-toast.show {
       width: max-content;
@@ -305,7 +317,7 @@ const titleId = `tartan-title-${variant}`;
       overflow: visible;
       clip: auto;
       white-space: nowrap;
-      right: 2.45rem;
+      right: calc(44px + 8px);
       bottom: calc(100% + 6px);
       z-index: 2;
       border: 2px solid var(--green, #1f4d3a);
