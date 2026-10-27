@@ -6,6 +6,15 @@ async function typeQuery(page, query) {
   await box.pressSequentially(query, { delay: 30 });
 }
 
+test('clicking a club card opens its profile', async ({ page }) => {
+  await page.goto('/groups/');
+  const card = page.locator('a.grp', { hasText: 'Sláinte Social Club' });
+  await expect(card).toHaveAttribute('href', /\/groups\/slainte\/$/);
+  await card.click();
+  await expect(page).toHaveURL(/\/groups\/slainte\/$/);
+  await expect(page.locator('h1')).toHaveText('Sláinte Social Club');
+});
+
 test('typing a query keeps matching clubs visible', async ({ page }) => {
   await page.goto('/groups/');
   await expect(page.locator('#g-count')).toContainText(/\d+ groups/);
