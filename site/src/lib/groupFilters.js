@@ -57,6 +57,17 @@ export function groupMatches(group, filters = {}) {
   return words.every((word) => hasWord(hay, word));
 }
 
+// Typing and ?q= on load both use groupMatches. If a card or a patched
+// browser API throws, keep every card visible instead of hiding the list.
+export function visibleMatches(groups, filters) {
+  const list = Array.isArray(groups) ? groups : [];
+  try {
+    return list.map((group) => groupMatches(group, filters));
+  } catch {
+    return list.map(() => true);
+  }
+}
+
 export function filtersFromSearch(search) {
   const raw = String(search || '');
   const params = new URLSearchParams(raw.startsWith('?') ? raw.slice(1) : raw);

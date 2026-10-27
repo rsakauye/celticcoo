@@ -54,7 +54,7 @@ const kinds = [...new Set(groups.map((g) => g.kind))].sort();
     <b>Run a band, dance school, society, session or class?</b> Listings are free. <a href={u('submit/')}>Add or update your group</a>. We list organizations only, never members' or students' names.
   </aside>
   <script>
-    import { groupMatches, filtersFromSearch, searchFromFilters } from '../../lib/groupFilters.js';
+    import { visibleMatches, filtersFromSearch, searchFromFilters } from '../../lib/groupFilters.js';
     const $ = (id) => document.getElementById(id);
     const prov = $('g-prov'), kind = $('g-kind'), les = $('g-lessons'), qInput = $('g-q');
     const clearBtn = $('g-clear'), emptyClear = $('g-empty-clear');
@@ -73,22 +73,35 @@ const kinds = [...new Set(groups.map((g) => g.kind))].sort();
     });
     let timer = 0;
     const syncClear = () => { clearBtn.hidden = qInput.value.length === 0; };
+    function revealAll() {
+      document.querySelectorAll('.grp').forEach((el) => { el.hidden = false; });
+      if (featured) featured.hidden = false;
+      const empty = $('g-empty');
+      if (empty) empty.hidden = true;
+    }
     function apply() {
-      const filters = { province: prov.value, kind: kind.value, lessons: les.checked, q: qInput.value };
-      let n = 0;
-      document.querySelectorAll('.grp').forEach((el) => {
-        const ok = groupMatches(cardOf(el), filters);
-        el.hidden = !ok;
-        if (ok) n += 1;
-      });
-      if (featured) featured.hidden = !groupMatches(cardOf(featured), filters);
-      $('g-count').textContent = n + (n === 1 ? ' group' : ' groups');
-      const q = filters.q.trim();
-      $('g-empty').hidden = n > 0;
-      $('g-empty-text').textContent = q ? `No groups match “${q}”.` : 'No groups match those filters yet.';
-      emptyClear.hidden = !q;
-      syncClear();
-      history.replaceState(null, '', location.pathname + searchFromFilters(filters) + location.hash);
+      // The input event and ?q= on load both end here. A throw shows every card.
+      try {
+        const filters = { province: prov.value, kind: kind.value, lessons: les.checked, q: qInput.value };
+        const cards = [...document.querySelectorAll('.grp')];
+        const show = visibleMatches(cards.map(cardOf), filters);
+        let n = 0;
+        cards.forEach((el, i) => {
+          const ok = show[i] !== false;
+          el.hidden = !ok;
+          if (ok) n += 1;
+        });
+        if (featured) featured.hidden = visibleMatches([cardOf(featured)], filters)[0] === false;
+        $('g-count').textContent = n + (n === 1 ? ' group' : ' groups');
+        const q = filters.q.trim();
+        $('g-empty').hidden = n > 0;
+        $('g-empty-text').textContent = q ? `No groups match “${q}”.` : 'No groups match those filters yet.';
+        emptyClear.hidden = !q;
+        syncClear();
+        try { history.replaceState(null, '', location.pathname + searchFromFilters(filters) + location.hash); } catch (e) {}
+      } catch (e) {
+        revealAll();
+      }
     }
     const runNow = () => { clearTimeout(timer); apply(); };
     [prov, kind, les].forEach((el) => el.addEventListener('change', runNow));

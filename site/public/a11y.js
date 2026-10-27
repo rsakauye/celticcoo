@@ -1,6 +1,7 @@
 /* Accessibility settings menu. No tracking, no third parties: choices stay in this browser (localStorage 'a11y').
    Skin it with CSS variables (--a11y-*) on the page. Open with any element that has [data-a11y-open]. */
 (function () {
+  try {
   var d = document.documentElement, me = document.currentScript, KEY = 'a11y';
   var FONT = (me && me.getAttribute('data-font')) || '/fonts/atkinson.css';
   var T = (me && me.getAttribute('data-title')) || 'Accessibility';
@@ -93,4 +94,5 @@
   document.addEventListener('click', function (e) { var t = e.target.closest && e.target.closest('[data-a11y-open]'); if (t) open(e); });
   window.a11yOpen = open;
   if (location.hash === '#accessibility') open();
+  } catch (e) {}
 })();
