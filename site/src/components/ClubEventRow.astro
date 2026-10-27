@@ -1,0 +1,28 @@
+---
+import { eventDateParts, eventPlace } from '../lib/groupProfiles.js';
+import { u } from '../lib/site.js';
+const { e, muted = false } = Astro.props;
+const when = eventDateParts(e.start_date);
+const place = eventPlace(e);
+---
+<li>
+  <a class:list={['ev-row', { muted }]} href={u(`events/${e.id}/`)}>
+    <span class="ev-when" aria-hidden="true"><span class="ev-mon">{when.month}</span><span class="ev-day">{when.day}</span></span>
+    <span class="ev-main">
+      <span class="ev-title">{e.name}</span>
+      {place && <span class="ev-where">{place}</span>}
+      <span class="sr-only">{e.when}{place ? `. ${place}` : ''}</span>
+    </span>
+  </a>
+</li>
+<style>
+  .ev-row { display:flex; gap:.85rem; align-items:center; padding:.65rem 0; border-bottom:1px solid var(--line); text-decoration:none; color:inherit; }
+  .ev-row:hover .ev-title, .ev-row:focus-visible .ev-title { text-decoration:underline; text-underline-offset:2px; }
+  .ev-when { width:3.1rem; flex:none; text-align:center; color:var(--ginger); }
+  .ev-mon { display:block; font:700 .72rem/1.2 system-ui,sans-serif; letter-spacing:.04em; text-transform:uppercase; }
+  .ev-day { display:block; font:700 1.65rem/1 Georgia, "Iowan Old Style", serif; }
+  .ev-main { display:flex; flex-direction:column; min-width:0; }
+  .ev-title { font-weight:700; color:var(--green); }
+  .ev-where { color:var(--muted); font-size:.92rem; }
+  .ev-row.muted, .ev-row.muted .ev-when, .ev-row.muted .ev-title { color:var(--muted); }
+</style>

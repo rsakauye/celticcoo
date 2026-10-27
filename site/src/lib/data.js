@@ -7,6 +7,7 @@ import linkStatusRaw from '../../../data/groups_link_status.json' with { type: '
 import { offersLessons, buildClubIntro } from './groupIntro.js';
 import burnsRaw from '../../../data/burns_2027.json' with { type: 'json' };
 import championsRaw from '../../../data/season_champions.json' with { type: 'json' };
+import { assignClubSlugs } from './groupProfiles.js';
 
 // ---------- helpers ----------
 export const slugify = (s) => String(s).toLowerCase()
@@ -269,9 +270,11 @@ export const GROUP_EMOJI = {
 };
 const FEATURED_GROUP = '78th Fraser Highlanders Fort Calgary Garrison Youth Squad';
 const pName = (p) => (p === 'National' ? 'National / multi-province' : regionName(p));
-export const groups = groupsRaw.map((g) => ({
+// `slug` on each club is the published profile URL. assignClubSlugs keeps it.
+const groupIds = assignClubSlugs(groupsRaw);
+export const groups = groupsRaw.map((g, i) => ({
   ...g,
-  id: slugify(g.name),
+  id: groupIds[i],
   kind: groupKind(g.type),
   regionLabel: pName(g.province),
   lessons: offersLessons(g.offers_lessons),
