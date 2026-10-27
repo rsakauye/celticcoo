@@ -142,7 +142,7 @@ test('the dancing coo is on the home hero only, tucked until tapped, and quiet u
   const users = pages.filter((path) => readFileSync(path, 'utf8').includes('CeilidhCoo'));
   assert.deepEqual(users.map((path) => path.slice(site.length)), ['/src/pages/index.astro']);
 
-  const png = readFileSync(join(site, 'public/ceilidh-coo-strip.png'));
+  const png = readFileSync(join(site, 'public/tartans/fraser-of-lovat/ceilidh-coo-strip.png'));
   assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
   assert.equal(png.readUInt32BE(16), 640);
   assert.equal(png.readUInt32BE(20), 64);

@@ -1,0 +1,253 @@
+---
+import { u } from '../lib/site.js';
+import { defaultTartan, enabledTartans } from '../lib/ceilidhTartans.js';
+
+const { variant = 'corner' } = Astro.props;
+const choices = enabledTartans();
+const current = defaultTartan();
+const sheetId = `tartan-sheet-${variant}`;
+const titleId = `tartan-title-${variant}`;
+---
+<div class:list={['tartan-pick', variant]} data-tartan-picker={variant}>
+  <button
+    type="button"
+    class="tartan-open"
+    data-tartan-open
+    aria-haspopup="dialog"
+    aria-expanded="false"
+    aria-controls={sheetId}
+    aria-label={`Kilt tartan, ${current.name}. Choose a tartan.`}
+  >
+    <span class="swatch" aria-hidden="true"></span>
+    <span data-tartan-current>{current.name}</span>
+  </button>
+  <div
+    id={sheetId}
+    class="tartan-sheet"
+    data-tartan-sheet
+    data-owner={variant}
+    hidden
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby={titleId}
+  >
+    <div class="tartan-card" data-tartan-card>
+      <h2 id={titleId}>Kilt tartan</h2>
+      <p class="tartan-note">These are simplified pixel versions of each tartan.</p>
+      <ul>
+        {choices.map((tartan) => (
+          <li>
+            <button
+              type="button"
+              class="choice"
+              data-tartan-choice={tartan.slug}
+              data-fling={u(tartan.fling)}
+              data-ears={u(tartan.ears)}
+              aria-pressed={tartan.slug === current.slug ? 'true' : 'false'}
+            >
+              <b>{tartan.name}</b>
+              <span>{tartan.meaning}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <p class="tartan-note">Saved in this browser only. Nothing is sent.</p>
+      <button type="button" class="tartan-close" data-tartan-close>Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { readTartan, writeTartanId } from '../lib/ceilidhTartans.js';
+
+  const storage = {
+    getItem(key) {
+      try { return localStorage.getItem(key); } catch { return null; }
+    },
+    setItem(key, value) {
+      try { localStorage.setItem(key, value); } catch { /* this browser blocked storage */ }
+    },
+  };
+
+  function paint(tartan) {
+    const button = document.querySelector(`[data-tartan-choice="${tartan.slug}"]`);
+    const dance = button?.getAttribute('data-fling');
+    const ears = button?.getAttribute('data-ears');
+    if (dance) document.querySelectorAll('[data-ceilidh-dance]').forEach((img) => { img.src = dance; });
+    if (ears) document.querySelectorAll('[data-ceilidh-ears]').forEach((img) => { img.src = ears; });
+    document.querySelectorAll('[data-tartan-current]').forEach((el) => { el.textContent = tartan.name; });
+    document.querySelectorAll('[data-tartan-choice]').forEach((el) => {
+      el.setAttribute('aria-pressed', el.getAttribute('data-tartan-choice') === tartan.slug ? 'true' : 'false');
+    });
+    document.querySelectorAll('[data-tartan-open]').forEach((el) => {
+      el.setAttribute('aria-label', `Kilt tartan, ${tartan.name}. Choose a tartan.`);
+    });
+  }
+
+  let opener = null;
+
+  function closeSheet(sheet) {
+    if (!sheet || sheet.hasAttribute('hidden')) return;
+    sheet.hidden = true;
+    const picker = document.querySelector(`[data-tartan-picker="${sheet.getAttribute('data-owner')}"]`);
+    if (picker) picker.appendChild(sheet);
+    const button = opener || picker?.querySelector('[data-tartan-open]');
+    button?.setAttribute('aria-expanded', 'false');
+    button?.focus();
+    opener = null;
+  }
+
+  function openSheet(picker) {
+    const sheet = picker.querySelector('[data-tartan-sheet]');
+    document.querySelectorAll('[data-tartan-sheet]').forEach((other) => {
+      if (other !== sheet) closeSheet(other);
+    });
+    opener = picker.querySelector('[data-tartan-open]');
+    sheet.hidden = false;
+    opener?.setAttribute('aria-expanded', 'true');
+    document.body.appendChild(sheet);
+    const current = sheet.querySelector('[aria-pressed="true"]') || sheet.querySelector('[data-tartan-close]');
+    current?.focus();
+  }
+
+  document.querySelectorAll('[data-tartan-picker]').forEach((picker) => {
+    const sheet = picker.querySelector('[data-tartan-sheet]');
+    picker.querySelector('[data-tartan-open]')?.addEventListener('click', (event) => {
+      event.stopPropagation();
+      if (sheet.hidden) openSheet(picker);
+      else closeSheet(sheet);
+    });
+    sheet.querySelector('[data-tartan-close]')?.addEventListener('click', () => closeSheet(sheet));
+    sheet.addEventListener('click', (event) => {
+      if (event.target === sheet) closeSheet(sheet);
+    });
+    sheet.querySelectorAll('[data-tartan-choice]').forEach((choice) => {
+      choice.addEventListener('click', () => {
+        const tartan = writeTartanId(choice.getAttribute('data-tartan-choice'), storage);
+        paint(tartan);
+        closeSheet(sheet);
+      });
+    });
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    document.querySelectorAll('[data-tartan-sheet]').forEach((sheet) => closeSheet(sheet));
+  });
+
+  paint(readTartan(storage));
+</script>
+
+<style>
+  .tartan-pick { pointer-events: none; }
+  .tartan-open, .tartan-sheet, .tartan-card, .tartan-card button { pointer-events: auto; }
+  .tartan-open {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    border: 2px solid var(--green, #1f4d3a);
+    background: #fff;
+    color: inherit;
+    border-radius: 999px;
+    min-height: 32px;
+    max-width: 12rem;
+    padding: .12rem .5rem .12rem .15rem;
+    font: 700 .75rem/1.2 system-ui, sans-serif;
+    cursor: pointer;
+  }
+  .swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    flex: none;
+    background: repeating-linear-gradient(90deg, #B82E26 0 3px, #fff 3px 4px, #B82E26 4px 7px, #1F4D3A 7px 8px, #20284E 8px 9px, #1F4D3A 9px 10px);
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .25);
+  }
+  .tartan-pick.corner .tartan-open {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 4px);
+    z-index: 1;
+  }
+  .tartan-pick.tune {
+    margin: .4rem 0 0;
+  }
+  .tartan-pick.tune .tartan-open {
+    width: 100%;
+    height: 2.6rem;
+    max-width: 100%;
+    justify-content: center;
+  }
+  .tartan-pick.tune [data-tartan-current] {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  .tartan-sheet[hidden] { display: none !important; }
+  .tartan-sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: .75rem;
+    padding-bottom: calc(.75rem + env(safe-area-inset-bottom, 0px));
+    background: rgba(42, 29, 20, .45);
+  }
+  .tartan-card {
+    width: min(28rem, 100%);
+    max-height: min(70vh, 34rem);
+    overflow: auto;
+    background: var(--card, #fff);
+    color: inherit;
+    border-radius: 16px;
+    padding: .9rem 1rem 1rem;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, .2);
+  }
+  .tartan-card h2 { margin: 0 0 .3rem; font-size: 1.15rem; }
+  .tartan-note { margin: 0 0 .7rem; font-size: .85rem; color: var(--muted, #5c4a3a); }
+  .tartan-card ul { list-style: none; margin: 0 0 .7rem; padding: 0; display: grid; gap: .4rem; }
+  .choice {
+    width: 100%;
+    text-align: left;
+    border: 2px solid var(--line, #e6d7c8);
+    border-radius: 12px;
+    background: #fff;
+    padding: .45rem .6rem;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+  }
+  .choice[aria-pressed="true"] { border-color: var(--green, #1f4d3a); }
+  .choice b { display: block; }
+  .choice span { display: block; font-size: .85rem; font-weight: 400; color: var(--muted, #5c4a3a); }
+  .tartan-close {
+    min-height: 44px;
+    border: 2px solid var(--green, #1f4d3a);
+    border-radius: 999px;
+    background: #fff;
+    color: inherit;
+    font: 700 1rem system-ui, sans-serif;
+    padding: .3rem 1rem;
+    cursor: pointer;
+  }
+  @media (max-width: 719px) {
+    .tartan-pick.corner .tartan-open {
+      max-width: 2.15rem;
+      padding: .12rem;
+    }
+    .tartan-pick.corner [data-tartan-current] {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+  }
+</style>
