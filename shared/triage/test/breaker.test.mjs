@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { adaptiveLimit, assessBurst, decideGuard, looksGibberish, seasonFor } from '../breaker.js';
+import { adaptiveLimit, assessBurst, decideGuard, decidePerformerVolume, looksGibberish, seasonFor } from '../breaker.js';
 import celticcoo from '../sites/celticcoo.js';
 
 const { seasons, timeZone, offSeasonMultiplier, floorPerDay, ceilingPerDay, outboundDailyCap, minBurst } = celticcoo.guard;
@@ -158,6 +158,34 @@ test('abuse signals pause, and a short or merely busy hour does not', () => {
   assert.equal(assessBurst(few, { minBurst }).kind, 'normal');
   assert.equal(decideGuard({ count: 8, limit: 8, burst: { kind: 'normal', reasons: [] } }).action, 'allow');
   assert.equal(decideGuard({ count: 9, limit: 8, burst: { kind: 'normal', reasons: [] } }).reason, 'over_seasonal');
+});
+
+test('a head count at the burst floor is held and is not paused', () => {
+  const small = decidePerformerVolume({ pipers: 2, drummers: 1 }, {
+    minBurst,
+    sender: 'organizer@example.com',
+    when: '2027-07-04',
+    place: 'Lethbridge',
+  });
+  assert.equal(small.action, 'allow');
+  assert.equal(small.total, 3);
+
+  const lineup = decidePerformerVolume({
+    pipers: 20,
+    drummers: 10,
+    dancers: 8,
+    other: 2,
+    otherNote: 'storytellers',
+  }, {
+    minBurst,
+    sender: 'organizer@example.com',
+    when: '2027-07-04',
+    place: 'Lethbridge',
+  });
+  assert.equal(lineup.action, 'hold');
+  assert.equal(lineup.reason, 'bulk_organizer');
+  assert.equal(lineup.total, 40);
+  assert.notEqual(lineup.action, 'pause');
 });
 
 test('the outbound cost cap pauses even a legit organizer burst', () => {

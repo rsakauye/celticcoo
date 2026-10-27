@@ -28,6 +28,7 @@ function fields(extra = {}) {
     events: ['calgary-games-2027-09-01'],
     performers: ['piper', 'drummer'],
     message: 'We need a piper and a drummer for the opening massed bands.',
+    adult_confirm: 'yes',
     casl: 'yes',
     ...extra,
   };
@@ -83,21 +84,24 @@ test('a complete request is accepted and the email names the event, not the hone
   assert.match(text, /Piper/);
   assert.match(text, /Drummer/);
   assert.match(text, /CASL/);
-  assert.match(text, /Under 18: No/);
+  assert.match(text, /Adult: Yes/);
+  assert.match(text, /18 or older/);
   assert.doesNotMatch(text, /coo_hp|honeypot/i);
   assert.equal(bookingSubject(result.value), 'Performer request: Piper, Drummer for Calgary Highland Games');
 });
 
-test('missing consent, a minor without a guardian, and an empty request are rejected', () => {
+test('missing consent, a missing adult confirmation, and an empty request are rejected', () => {
   const noConsent = validateBooking(readBookingForm(formData(fields({ casl: '' }))), catalog);
   assert.equal(noConsent.ok, false);
   assert.equal(noConsent.errors.casl, MESSAGES.casl);
 
-  const minor = validateBooking(readBookingForm(formData(fields({ under18: 'yes' }))), catalog);
-  assert.equal(minor.errors.guardian_confirm, MESSAGES.guardian_confirm);
+  const adult = validateBooking(readBookingForm(formData(fields({ adult_confirm: '' }))), catalog);
+  assert.equal(adult.ok, false);
+  assert.equal(adult.errors.adult_confirm, MESSAGES.adult_confirm);
 
-  const guardian = validateBooking(readBookingForm(formData(fields({ under18: 'yes', guardian_confirm: 'yes', requester_type: 'guardian' }))), catalog);
+  const guardian = validateBooking(readBookingForm(formData(fields({ requester_type: 'guardian' }))), catalog);
   assert.equal(guardian.ok, true);
+  assert.equal(guardian.value.adultConfirm, true);
   assert.match(bookingText(guardian.value), /parent or guardian/);
 
   const empty = validateBooking(readBookingForm(formData(fields({ events: [], message: 'short' }))), catalog);
@@ -309,6 +313,106 @@ test('niche words stay in the config file', () => {
   assert.deepEqual(bookingConfig.checklist.items.map((item) => item.label), [
     'Date', 'Set times', 'Fee', 'Deposit', 'Cancellation', 'Travel', 'Sound or equipment', 'Dress',
   ]);
+});
+
+test('optional head counts are stored on the request, and a bad number is rejected', () => {
+  const counted = validateBooking(readBookingForm(formData(fields({
+    count_pipers: '2',
+    count_drummers: '1',
+    count_other: '3',
+    count_other_note: 'Storytellers',
+  }))), catalog);
+  assert.equal(counted.ok, true);
+  assert.deepEqual(counted.value.performerCounts, {
+    pipers: 2,
+    drummers: 1,
+    other: 3,
+    otherNote: 'Storytellers',
+  });
+  const text = bookingText(counted.value);
+  assert.match(text, /Pipers: 2/);
+  assert.match(text, /Drummers: 1/);
+  assert.match(text, /Other: 3 \(Storytellers\)/);
+
+  const blank = validateBooking(readBookingForm(formData(fields())), catalog);
+  assert.equal(blank.ok, true);
+  assert.deepEqual(blank.value.performerCounts, {});
+
+  const bad = validateBooking(readBookingForm(formData(fields({ count_pipers: 'lots' }))), catalog);
+  assert.equal(bad.errors.count_pipers, MESSAGES.counts);
+
+  const huge = validateBooking(readBookingForm(formData(fields({ count_dancers: '501' }))), catalog);
+  assert.equal(huge.errors.count_dancers, MESSAGES.counts);
+
+  const kept = validateBooking(readBookingForm(formData(fields({ count_pipers: '500' }))), catalog);
+  assert.equal(kept.ok, true);
+  assert.equal(kept.value.performerCounts.pipers, 500);
+
+  const note = validateBooking(readBookingForm(formData(fields({ count_other: '2' }))), catalog);
+  assert.equal(note.errors.count_other_note, MESSAGES.count_other_note);
+});
+
+test('a large head count is stored for review and is not rejected', async () => {
+  const saved = [];
+  let sent = 0;
+  const res = await handleBookingRequest(post(fields({
+    requester_type: 'band',
+    count_pipers: '12',
+    count_drummers: '4',
+    count_dancers: '6',
+    count_other: '2',
+    count_other_note: 'Storytellers',
+  })), {
+    catalog,
+    to: 'hello@celticcoo.ca',
+    send: async () => { sent += 1; },
+    intake: {
+      async save(row) { saved.push(row); },
+      async log() {},
+      async markEmail() {},
+    },
+  });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.ok, true);
+  assert.equal(body.stored, true);
+  assert.equal(body.email, 'skipped');
+  assert.equal(sent, 0);
+  assert.equal(saved.length, 1);
+  assert.equal(saved[0].status, 'flagged');
+  assert.ok(saved[0].flags.includes('held_bulk_organizer'));
+  assert.equal(saved[0].value.performerCounts.pipers, 12);
+  assert.equal(saved[0].value.adultConfirm, true);
+  assert.equal(JSON.stringify(body).includes('aileen@example.com'), false);
+
+  let fallbackSent = 0;
+  const missed = await handleBookingRequest(post(fields({ count_pipers: '20' })), {
+    catalog,
+    to: 'hello@celticcoo.ca',
+    send: async () => { fallbackSent += 1; },
+    intake: {
+      async save() { const err = new Error('database unavailable'); err.code = 'insert_failed'; throw err; },
+      async log() {},
+      async markEmail() {},
+    },
+  });
+  assert.equal(missed.status, 200);
+  const missedBody = await missed.json();
+  assert.equal(missedBody.ok, true);
+  assert.equal(missedBody.stored, false);
+  assert.equal(fallbackSent, 1);
+});
+
+test('the form asks adults only and does not ask for a child contact', () => {
+  const src = bookPageSource();
+  assert.match(src, /name="adult_confirm"/);
+  assert.match(src, /data-count=/);
+  assert.doesNotMatch(src, /name="under18"|name="guardian_confirm"/);
+  assert.doesNotMatch(src, /child_name|minor_name|minor_email|minor_phone/);
+  const privacy = readFileSync(new URL('../src/pages/privacy/index.astro', import.meta.url), 'utf8');
+  assert.match(privacy, /The form is for adults\. We don't collect children's contact details\./);
+  assert.equal(bookingConfig.countMax, 500);
+  assert.match(MESSAGES.counts, /500/);
 });
 
 test('mailto helper keeps a usable subject', () => {

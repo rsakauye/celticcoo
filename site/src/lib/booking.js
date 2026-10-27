@@ -7,6 +7,7 @@
 
 import bookingConfig from '../../../data/booking.json' with { type: 'json' };
 import { caslFooterText } from '../../../shared/casl/notice.js';
+import { decidePerformerVolume } from '../../../shared/triage/breaker.js';
 import { assessRisk, intakeStatus } from './intake.js';
 
 export { bookingConfig };
@@ -45,10 +46,12 @@ export const MESSAGES = {
   custom_venue: 'Please keep the venue under 200 characters.',
   performers: 'Pick at least one kind of performer.',
   performer_other: 'Tell us what the other performer is.',
+  counts: 'Enter a whole number up to 500, or leave the line blank.',
+  count_other_note: 'Add a short description for the other performers, or clear the number.',
   message: 'Add a few details so we know what you need.',
   message_long: 'Please keep the details under 4,000 characters.',
   budget: 'Choose a budget range from the list, or leave it blank.',
-  guardian_confirm: 'Tick the box to confirm you are the parent or guardian. Requests for anyone under 18 have to come from them.',
+  adult_confirm: 'Tick the box to confirm you are 18 or older, and that you are the performer, a parent or guardian, or a band representative.',
   casl: 'Tick the box if we may email you about this request.',
   turnstile: 'Confirm you are a person, then send the request again.',
   turnstile_unavailable: 'We could not verify this request just now. Please try again in a moment, or email us.',
@@ -136,6 +139,17 @@ export function bookableFromData(events, tba, today) {
   return list;
 }
 
+function readCounts(formData) {
+  const counts = {};
+  for (const key of formData.keys()) {
+    if (!key.startsWith('count_') || key === 'count_other_note') continue;
+    const id = key.slice('count_'.length);
+    if (!/^[a-z0-9-]{1,40}$/.test(id)) continue;
+    counts[id] = String(formData.get(key) ?? '').trim();
+  }
+  return counts;
+}
+
 export function readBookingForm(formData) {
   const get = (k) => String(formData.get(k) ?? '');
   const all = (k) => formData.getAll(k).map((v) => String(v).trim()).filter(Boolean);
@@ -157,8 +171,9 @@ export function readBookingForm(formData) {
     performerOther: get('performer_other').trim(),
     message,
     budget: get('budget').trim(),
-    under18: get('under18').trim() === 'yes',
-    guardianConfirm: get('guardian_confirm').trim() === 'yes',
+    counts: readCounts(formData),
+    countOtherNote: get('count_other_note').trim(),
+    adultConfirm: get('adult_confirm').trim() === 'yes',
     casl: get('casl').trim() === 'yes',
     honeypot: get('booking_hp').trim(),
   };
@@ -224,10 +239,32 @@ export function validateBooking(input, catalog, config = bookingConfig) {
     if (input.performerOther.length < 2 || input.performerOther.length > LIMITS.performerOther || /[\r\n]/.test(input.performerOther)) errors.performer_other = MESSAGES.performer_other;
     else performerOther = input.performerOther;
   }
+  const countMax = Number.isInteger(cfg.countMax) && cfg.countMax > 0 ? cfg.countMax : 500;
+  const countLines = Array.isArray(cfg.countLines) ? cfg.countLines : [];
+  const performerCounts = {};
+  const describeIds = new Set(countLines.filter((line) => line && line[2] === 'describe').map((line) => line[0]));
+  for (const line of countLines) {
+    const id = line && line[0];
+    if (!id || !/^[a-z0-9-]{1,40}$/.test(id)) continue;
+    const raw = String((input.counts && input.counts[id]) || '').trim();
+    if (!raw) continue;
+    if (!/^\d{1,4}$/.test(raw) || Number(raw) > countMax) {
+      errors[`count_${id}`] = MESSAGES.counts;
+      continue;
+    }
+    const n = Number(raw);
+    if (n > 0) performerCounts[id] = n;
+  }
+  const noteRaw = input.countOtherNote || '';
+  const needsNote = [...describeIds].some((id) => performerCounts[id]);
+  if (needsNote) {
+    if (noteRaw.length < 2 || noteRaw.length > LIMITS.performerOther || /[\r\n]/.test(noteRaw)) errors.count_other_note = MESSAGES.count_other_note;
+    else performerCounts.otherNote = oneLine(noteRaw);
+  }
   if (!input.message || input.message.length < 10) errors.message = MESSAGES.message;
   else if (input.message.length > LIMITS.message) errors.message = MESSAGES.message_long;
   if (input.budget && !budgetLabel[input.budget]) errors.budget = MESSAGES.budget;
-  if (input.under18 && !input.guardianConfirm) errors.guardian_confirm = MESSAGES.guardian_confirm;
+  if (!input.adultConfirm) errors.adult_confirm = MESSAGES.adult_confirm;
   if (!input.casl) errors.casl = MESSAGES.casl;
 
   if (Object.keys(errors).length) return { ok: false, errors };
@@ -246,10 +283,56 @@ export function validateBooking(input, catalog, config = bookingConfig) {
       performerOther,
       message: input.message,
       budget: input.budget,
-      under18: input.under18,
-      guardianConfirm: input.guardianConfirm,
+      performerCounts,
+      under18: false,
+      guardianConfirm: false,
+      adultConfirm: true,
     },
   };
+}
+
+function countLabels(cfg) {
+  const map = {};
+  const describe = new Set();
+  for (const line of (cfg && cfg.countLines) || []) {
+    if (!line || !line[0]) continue;
+    map[line[0]] = line[1] || line[0];
+    if (line[2] === 'describe') describe.add(line[0]);
+  }
+  return { map, describe };
+}
+
+function formatCounts(value, cfg) {
+  const counts = (value && value.performerCounts) || {};
+  const { map, describe } = countLabels(cfg);
+  const ordered = Object.keys(map).filter((id) => counts[id]);
+  const extra = Object.keys(counts).filter((id) => id !== 'otherNote' && !map[id] && counts[id]);
+  const lines = [];
+  for (const id of [...ordered, ...extra]) {
+    const label = map[id] || id;
+    if (describe.has(id) && counts.otherNote) lines.push(`- ${label}: ${counts[id]} (${counts.otherNote})`);
+    else lines.push(`- ${label}: ${counts[id]}`);
+  }
+  return lines;
+}
+
+function volumeWhen(value) {
+  const custom = value && value.custom && value.custom.date;
+  if (custom) return String(custom);
+  const found = ((value && value.events) || []).map((event) => event && event.when).find(Boolean);
+  return found ? String(found) : '';
+}
+
+function volumePlace(value) {
+  const custom = value && value.custom;
+  if (custom && (custom.city || custom.venue)) return String(custom.city || custom.venue);
+  const found = ((value && value.events) || []).map((event) => event && (event.city || event.venue)).find(Boolean);
+  return found ? String(found) : '';
+}
+
+function flagCode(reason) {
+  const code = String(reason || '').toLowerCase().replace(/[^a-z0-9_]/g, '');
+  return code.slice(0, 40) || 'review';
 }
 
 function eventLine(e) {
@@ -302,7 +385,7 @@ export function bookingText(value, opts = {}) {
     '',
     'Request',
     `Type: ${requestLabel[value.requestType] || value.requestType}`,
-    `Under 18: ${value.under18 ? 'Yes. The requester confirmed they are the parent or guardian.' : 'No'}`,
+    `Adult: ${value.adultConfirm ? 'Yes. The contact details belong to someone 18 or older who is the performer, a parent or guardian, or a band representative.' : 'No'}`,
     '',
     email.eventsHeading || 'Events on the calendar',
   );
@@ -321,6 +404,11 @@ export function bookingText(value, opts = {}) {
   value.performers.forEach((id) => {
     lines.push(id === 'other' ? `- Other: ${value.performerOther}` : `- ${performerLabel[id] || id}`);
   });
+  const countText = formatCounts(value, cfg);
+  if (countText.length) {
+    lines.push('', email.countsHeading || 'How many');
+    lines.push(...countText);
+  }
   lines.push('', `Budget: ${value.budget ? budgetLabel[value.budget] : 'not given'}`);
   lines.push('', 'Details', value.message);
   lines.push('', 'Consent', email.consent || '');
@@ -503,7 +591,7 @@ export async function handleBookingRequest(request, deps = {}) {
   const result = validateBooking(input, catalog, config);
   if (!result.ok) {
     const fields = Object.keys(result.errors).sort().join(',');
-    const reason = result.errors.guardian_confirm ? 'minor_no_guardian' : 'validation';
+    const reason = result.errors.adult_confirm ? 'adult_confirm' : 'validation';
     await noteFailure(intake, { reason, detail: fields });
     if (wants) return jsonResponse(400, { ok: false, errors: result.errors });
     return htmlResponse(400, config, {
@@ -514,8 +602,20 @@ export async function handleBookingRequest(request, deps = {}) {
     });
   }
   const sentFrom = (() => { try { return new URL(request.url).origin; } catch { return config.siteUrl || ''; } })();
-  const flags = intake ? assessRisk(result.value) : null;
-  const status = flags ? intakeStatus(flags) : '';
+  const volume = decidePerformerVolume(result.value.performerCounts, {
+    minBurst: deps.countHold,
+    sender: result.value.email,
+    when: volumeWhen(result.value),
+    place: volumePlace(result.value),
+  });
+  const held = volume.action === 'hold';
+  let flags = intake ? assessRisk(result.value) : null;
+  let status = flags ? intakeStatus(flags) : '';
+  if (held && flags) {
+    const code = `held_${flagCode(volume.reason)}`;
+    if (!flags.includes(code)) flags = [...flags, code];
+    status = 'flagged';
+  }
   let intakeId = '';
   let stored = false;
   if (intake) {
@@ -585,7 +685,7 @@ export async function handleBookingRequest(request, deps = {}) {
   };
 
   if (intake) {
-    const emailStatus = await notify();
+    const emailStatus = held && stored ? 'skipped' : await notify();
     if (stored) {
       try { await intake.markEmail(intakeId, emailStatus); }
       catch { await noteFailure(intake, { reason: 'email_status_update_failed', detail: emailStatus }); }

@@ -23,14 +23,21 @@ function eventHasPlace(event) {
   return Boolean(String((event && (event.city || event.venue)) || '').trim());
 }
 
+function extraText(value) {
+  const note = value && value.performerCounts && value.performerCounts.otherNote;
+  return [value && value.performerOther, note].filter(Boolean).join('\n');
+}
+
 export function assessRisk(value) {
   const message = String((value && value.message) || '');
-  const other = String((value && value.performerOther) || '');
+  const other = extraText(value);
+  const combined = `${message}\n${other}`;
   const flags = [];
-  const minorMentioned = Boolean(value && value.under18) || MINOR_RE.test(message);
-  if (minorMentioned && !(value && value.guardianConfirm)) flags.push('minor_no_guardian');
-  if (PRIVATE_CONTACT_RE.test(message) || PRIVATE_CONTACT_RE.test(other)) flags.push('private_contact');
-  if (PAYMENT_RE.test(message)) flags.push('payment_oddity');
+  const minorMentioned = Boolean(value && value.under18) || MINOR_RE.test(combined);
+  const adult = Boolean(value && (value.adultConfirm || value.guardianConfirm));
+  if (minorMentioned && !adult) flags.push('minor_no_guardian');
+  if (PRIVATE_CONTACT_RE.test(combined)) flags.push('private_contact');
+  if (PAYMENT_RE.test(combined)) flags.push('payment_oddity');
   const dated = Boolean(value && value.custom && value.custom.date) || ((value && value.events) || []).some(eventHasDate);
   if (!dated) flags.push('missing_date');
   const venue = value && value.custom
@@ -122,8 +129,25 @@ export async function logIntakeFailure(db, entry = {}) {
   }
 }
 
+function countsJson(value) {
+  const counts = value && value.performerCounts;
+  if (!counts || typeof counts !== 'object') return '{}';
+  const out = {};
+  for (const [id, n] of Object.entries(counts)) {
+    if (id === 'otherNote') {
+      const note = String(n || '').replace(/[\r\n]+/g, ' ').trim().slice(0, 160);
+      if (note) out.otherNote = note;
+      continue;
+    }
+    if (!/^[a-z0-9-]{1,40}$/.test(id)) continue;
+    if (!Number.isInteger(n) || n <= 0 || n > 10000) continue;
+    out[id] = n;
+  }
+  return JSON.stringify(out);
+}
+
 export function submissionTrust(value, turnstile) {
-  const text = `${value && value.message || ''}\n${value && value.performerOther || ''}`.slice(0, 8000);
+  const text = `${value && value.message || ''}\n${extraText(value)}`.slice(0, 8000);
   const redFlags = detectRedFlags(text, {
     under18: Boolean(value && value.under18),
     injectionPhrases: celticcooTrust.lexicon && celticcooTrust.lexicon.injection,
@@ -181,8 +205,9 @@ export async function saveSubmission(db, row) {
       name, email, phone, requester_type, request_type,
       events_json, custom_event_json, performers_json, performer_other,
       message, budget, under18, guardian_confirm, email_status, source,
-      trust_score, trust_reasons, missing_fields, red_flags
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?)`,
+      trust_score, trust_reasons, missing_fields, red_flags,
+      adult_confirm, performer_counts_json
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?)`,
   ).bind(
     row.id,
     row.createdAt,
@@ -207,6 +232,8 @@ export async function saveSubmission(db, row) {
     trust.reasons,
     trust.missingFields,
     trust.redFlags,
+    value.adultConfirm ? 1 : 0,
+    countsJson(value),
   ).run();
 }
 

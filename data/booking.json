@@ -25,11 +25,21 @@
   "regionPlaceholder": "Alberta",
   "performersLegend": "Performers needed",
   "performersHint": "Pick every kind of performer you need.",
-  "messageHint": "Please don't include a minor's full name. We never publish one.",
+  "contactHint": "Your name, email, and phone are the adult contact for this request.",
+  "countsLegend": "How many?",
+  "countsHint": "Optional. A band representative can say how many of each. Leave a line blank if you are not sure.",
+  "countMax": 500,
+  "countLines": [
+    ["pipers", "Pipers"],
+    ["drummers", "Drummers"],
+    ["dancers", "Dancers"],
+    ["other", "Other", "describe"]
+  ],
+  "countOtherLabel": "Short description",
+  "messageHint": "Say when, where, and what a player or dancer would need to know. Please don't include a child's name or contact details.",
   "budgetHint": "A rough range helps. It is not a quote, and nothing is booked until you and the performer agree.",
-  "under18Label": "Is the performer or competitor under 18?",
-  "under18Note": "Requests for anyone under 18 have to come from a parent or guardian. We never publish a minor's name, and this form does not ask for one.",
-  "guardianLabel": "I confirm that I am the parent or guardian making this request.",
+  "adultLabel": "I confirm that I am 18 or older, and that I am the performer, a parent or guardian, or a band representative.",
+  "adultHint": "The name, email, and phone on this form are adult contact details. Do not add a child's name or contact details.",
   "caslLabel": "I agree that The Celtic Coo may email me about this request. I can ask you to stop at any time.",
   "turnstileLabel": "Confirm you are a person",
   "storageHint": "Required fields are marked with an asterisk. We keep your request in a private database so we can reply, and we email {email}. It is not published on the website. If the form cannot send it, you can email that address yourself.",
@@ -38,6 +48,7 @@
   "requesterTypes": [
     ["individual", "Individual"],
     ["organizer", "Event organizer or Games committee"],
+    ["band", "Band representative"],
     ["guardian", "Parent or guardian (for an under-18 performer or competitor)"],
     ["other", "Other"]
   ],
@@ -82,6 +93,7 @@
     "disclosure": "The Celtic Coo is not the performer or an agency. Share contact details only once both sides agree. Never publish a minor's name.",
     "consent": "The requester agreed that The Celtic Coo may email them about this request (CASL).",
     "performersHeading": "Performers needed",
+    "countsHeading": "How many",
     "eventsHeading": "Events on the calendar",
     "ownEventHeading": "Their own event"
   },

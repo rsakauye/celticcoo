@@ -61,6 +61,12 @@ const decision = decideGuard({
 
 Abuse signals, any one of which is enough when it covers the burst: rotating senders, the same payload repeated, gibberish, several links in most messages, failed SPF or DKIM, or failed Turnstile checks. A template that changes the date, place, or act is a distinct request, not a repeated payload. Items should look like `{ sender, org, text, fields: { when, place, act }, links, spf, dkim, turnstile }`. `spf` and `dkim` are `'pass'`, `'fail'`, or `'unknown'`. Unknown is not a failure. Turnstile is the same, and mail that never saw Turnstile stays `'unknown'`.
 
+## One form with a head count
+
+`decidePerformerVolume(counts, { minBurst, sender, when, place })` is the same hold for a single request that names how many performers it needs. `counts` is an object of line id to a whole number. `otherNote` is ignored. The total is compared with `minBurst` (the site pack's guard value; the default is 4).
+
+Below that, the action is `allow`. At or above it, a short sample of distinct parts is passed to `assessBurst` and `decideGuard`, and the action is `hold` with reason `bulk_organizer`. This function does not return `pause`. The caller stores the request and skips the automatic notice. A lineup from one requester is not rejected.
+
 The limit is `baseline * multiplier`, then clamped to `floorPerDay` and `ceilingPerDay`. In season (Burns Night in the second half of January, St Andrew's in the second half of November, Highland Games from April through August, Hogmanay across New Year) the site pack's multiplier is used. Outside those weeks the off-season multiplier is used. `sameWeekLastYear` replaces the rolling average once a caller has it. This module does not query D1. A cheap query the caller can run once a day:
 
 ```sql

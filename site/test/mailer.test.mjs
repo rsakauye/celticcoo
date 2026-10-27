@@ -30,6 +30,7 @@ function post(input) {
       events: ['calgary-games-2027-09-01'],
       performers: ['piper'],
       message: 'We need a piper for the opening massed bands.',
+      adult_confirm: 'yes',
       casl: 'yes',
       ...input,
     }),

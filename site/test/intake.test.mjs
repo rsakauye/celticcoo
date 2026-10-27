@@ -30,6 +30,7 @@ function fields(extra = {}) {
     events: ['calgary-games-2027-09-01'],
     performers: ['piper'],
     message: 'We need a player for the opening massed bands on the listed date.',
+    adult_confirm: 'yes',
     casl: 'yes',
     'cf-turnstile-response': 'token-ok',
     ...extra,
@@ -115,6 +116,12 @@ test('risk flags catch a minor, a private contact ask, a cheque, and a missing d
     message: 'My child is 12 years old and needs an accompanist.',
   }));
   assert.equal(guarded.includes('minor_no_guardian'), false);
+
+  const adult = assessRisk(baseValue({
+    adultConfirm: true,
+    message: 'My child is 12 years old and needs an accompanist.',
+  }));
+  assert.equal(adult.includes('minor_no_guardian'), false);
 
   assert.ok(assessRisk(baseValue({ message: 'Please send the performer\'s private phone number.' })).includes('private_contact'));
   assert.ok(assessRisk(baseValue({ message: 'Can you pass along their email?' })).includes('private_contact'));
@@ -249,7 +256,9 @@ test('a verified request is stored, flagged, and still kept when the notice fail
   const flags = JSON.parse(db.submissions[0][4]);
   const trustReasons = JSON.parse(db.submissions[0][20]);
   const redFlags = JSON.parse(db.submissions[0][22]);
-  assert.ok(flags.includes('minor_no_guardian'));
+  assert.equal(flags.includes('minor_no_guardian'), false);
+  assert.equal(db.submissions[0][23], 1);
+  assert.equal(db.submissions[0][24], '{}');
   assert.ok(trustReasons.some((reason) => reason.code === 'turnstile_pass'));
   assert.equal(redFlags.minor_mentioned, true);
   assert.equal(redFlags.payment_request, true);
@@ -260,7 +269,8 @@ test('a verified request is stored, flagged, and still kept when the notice fail
   assert.equal(trustReasons.some((reason) => reason.code === 'turnstile_pass' && sent.length === 1), true);
   assert.ok(flags.includes('private_contact'));
   assert.ok(flags.includes('payment_oddity'));
-  assert.match(sent[0].text, /Risk flags: .*minor_no_guardian/);
+  assert.match(sent[0].text, /Risk flags: .*private_contact/);
+  assert.match(sent[0].text, /Adult: Yes/);
   assert.match(sent[0].text, /Status: flagged/);
   assert.equal(db.updates[0][0], 'sent');
   assert.equal(JSON.stringify(db.failures).includes('aileen@example.com'), false);
@@ -305,15 +315,15 @@ test('rejected attempts are logged without the payload and are not stored', asyn
   assert.equal(db.failures[1][3], '');
   assert.equal(JSON.stringify(db.failures).includes('spam.example'), false);
 
-  const minor = await handleBookingRequest(post(fields({ under18: 'yes' })), {
+  const minor = await handleBookingRequest(post(fields({ adult_confirm: '' })), {
     catalog,
     verify: async () => ({ ok: true }),
     intake,
   });
   assert.equal(minor.status, 400);
   assert.equal(db.submissions.length, 0);
-  assert.equal(db.failures[2][2], 'minor_no_guardian');
-  assert.match(db.failures[2][3], /guardian_confirm/);
+  assert.equal(db.failures[2][2], 'adult_confirm');
+  assert.match(db.failures[2][3], /adult_confirm/);
   assert.equal(db.failures[2][3].includes('aileen@example.com'), false);
 
   const invalid = await handleBookingRequest(post(fields({ email: 'not-an-email', message: 'x'.repeat(50) })), {
@@ -349,9 +359,51 @@ test('a database miss still sends the notice and does not drop the error reason'
   assert.equal(JSON.stringify(db.failures).includes('aileen@example.com'), false);
 });
 
+test('a large head count is saved, flagged, and not emailed', async () => {
+  const db = fakeDb();
+  let sent = 0;
+  const res = await handleBookingRequest(post(fields({
+    requester_type: 'band',
+    count_pipers: '8',
+    count_drummers: '4',
+    count_other: '1',
+    count_other_note: 'A storyteller',
+  })), {
+    catalog,
+    to: 'hello@celticcoo.ca',
+    send: async () => { sent += 1; },
+    verify: async () => ({ ok: true }),
+    intake: intakeFromEnv({ INTAKE_DB: db }),
+    countHold: 4,
+  });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.stored, true);
+  assert.equal(body.email, 'skipped');
+  assert.equal(sent, 0);
+  assert.equal(db.submissions.length, 1);
+  assert.equal(db.submissions[0][3], 'flagged');
+  const flags = JSON.parse(db.submissions[0][4]);
+  assert.ok(flags.includes('held_bulk_organizer'));
+  assert.equal(db.submissions[0][23], 1);
+  assert.deepEqual(JSON.parse(db.submissions[0][24]), {
+    pipers: 8,
+    drummers: 4,
+    other: 1,
+    otherNote: 'A storyteller',
+  });
+  assert.equal(db.updates[0][0], 'skipped');
+  assert.equal(JSON.stringify(db.failures).includes('aileen@example.com'), false);
+  assert.equal(JSON.stringify(db.submissions[0][24]).includes('aileen@example.com'), false);
+});
+
 test('the pages config keeps a placeholder id and the deploy helper does not print a real one', () => {
   const pages = readFileSync(new URL('../wrangler.jsonc', import.meta.url), 'utf8');
   const migration = readFileSync(new URL('../migrations/0001_intake.sql', import.meta.url), 'utf8');
+  const countsMigration = readFileSync(new URL('../migrations/0008_performer_counts.sql', import.meta.url), 'utf8');
+  assert.match(countsMigration, /adult_confirm/);
+  assert.match(countsMigration, /performer_counts_json/);
+  assert.match(countsMigration, /ALTER TABLE submissions ADD COLUMN adult_confirm/);
   const form = readFileSync(new URL('../src/pages/book/index.astro', import.meta.url), 'utf8');
   assert.match(migration, /CREATE TABLE submissions/);
   assert.match(migration, /CREATE TABLE submission_failures/);
