@@ -140,6 +140,12 @@ export function enabledTartans(list = TARTANS) {
   return list.filter((tartan) => tartan.enabled && tartan.fling && tartan.ears);
 }
 
+// Fraser of Lovat first, then the rest in the catalog order.
+export function pickerOrder(list = TARTANS) {
+  const enabled = enabledTartans(list);
+  return [...enabled.filter((tartan) => tartan.default), ...enabled.filter((tartan) => !tartan.default)];
+}
+
 export function defaultTartan(list = TARTANS) {
   const enabled = enabledTartans(list);
   return enabled.find((tartan) => tartan.default) || enabled[0];
@@ -170,8 +176,7 @@ export function writeTartanId(id, storage, list = TARTANS) {
   return tartan;
 }
 
-// One sett in the circle. Each thread is two CSS pixels so the edges stay
-// sharp on a normal screen and on a high-density screen.
+// One sett. The tile repeats it, two across, at two CSS pixels per thread.
 export const SWATCH_REPEATS = 1;
 export const SWATCH_THREAD_PX = 2;
 
@@ -212,30 +217,28 @@ export function swatchMarkup(tartan, repeats = SWATCH_REPEATS) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${px} ${px}" width="${px}" height="${px}" shape-rendering="crispEdges">${rects.join('')}</svg>`;
 }
 
+export function settTileImage(tartan) {
+  const svg = swatchMarkup(tartan);
+  if (!svg) return 'none';
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+
 export function tartanView(tartan) {
   return {
     slug: tartan.slug,
     name: tartan.name,
     swatch: swatchMarkup(tartan),
-    label: `Kilt tartan, ${tartan.name}. Choose a tartan.`,
+    tile: settTileImage(tartan),
+    label: tartan.name,
   };
 }
 
-// Updates the open button, its swatch, and the pressed choice. Callers pass
-// the tartan from readTartan (page load) or writeTartanId (a new pick).
+// Marks the pressed tile. Callers pass the tartan from readTartan (page load)
+// or writeTartanId (a new pick). The stage size does not change.
 export function applyTartan(tartan, nodes = {}) {
   const view = tartanView(tartan);
-  for (const el of nodes.swatches || []) el.innerHTML = view.swatch;
-  for (const el of nodes.names || []) el.textContent = view.name;
-  for (const el of nodes.openers || []) el.setAttribute('aria-label', view.label);
   for (const el of nodes.choices || []) {
     el.setAttribute('aria-pressed', el.getAttribute('data-tartan-choice') === view.slug ? 'true' : 'false');
   }
   return view;
-}
-
-// A tucked Coo only shows her head. Peek at the kilt after a pick, unless the
-// visitor asked for less motion.
-export function kiltPeekWanted({ tucked, reduceMotion }) {
-  return Boolean(tucked) && !reduceMotion;
 }

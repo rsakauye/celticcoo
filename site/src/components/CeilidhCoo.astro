@@ -5,9 +5,8 @@ import { defaultTartan } from '../lib/ceilidhTartans.js';
 const strip = u(defaultTartan().fling);
 ---
 <div class="coo-perch" data-ceilidh-coo>
-  <TartanPicker variant="corner" />
   <button type="button" class="coo-bring" data-coo-toggle aria-pressed="false" aria-label="Bring out Ceilidh to dance to Highland Laddie">
-    <span class="coo-window">
+    <span class="coo-window" data-coo-stage>
       <span class="coo-nudge">
         <span class="coo-shift">
           <span class="coo-strip">
@@ -19,6 +18,7 @@ const strip = u(defaultTartan().fling);
     <span class="coo-cue" aria-hidden="true"><span class="coo-cue-in" data-coo-tune>Highland Laddie</span><span class="coo-cue-out"><span class="coo-stop">stop</span> <span class="coo-tune-out" data-coo-tune>Highland Laddie</span></span></span>
   </button>
   <span class="sr-only" data-coo-status aria-live="polite"></span>
+  <TartanPicker variant="corner" />
 </div>
 
 <script>
@@ -206,8 +206,14 @@ const strip = u(defaultTartan().fling);
     z-index: 25;
     top: auto;
     left: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    width: max-content;
+    max-width: 100%;
+    padding-top: 8px;
     right: calc(0.35rem + env(safe-area-inset-right, 0px));
-    bottom: calc(0.35rem + env(safe-area-inset-bottom, 0px));
+    bottom: env(safe-area-inset-bottom, 0px);
     pointer-events: none;
   }
   .coo-perch :global(.sr-only) {
@@ -223,7 +229,7 @@ const strip = u(defaultTartan().fling);
   }
   .coo-bring {
     display: flex;
-    flex-direction: column;
+    flex-direction: row-reverse;
     align-items: flex-end;
     gap: .28rem;
     margin: 0;
@@ -319,24 +325,26 @@ const strip = u(defaultTartan().fling);
   }
   /* Narrow screens: the tune name stays in the aria-label, and the peek sits in the side padding. */
   @media (max-width: 719px) {
+    .coo-perch {
+      left: 0;
+      right: 0;
+      width: auto;
+      max-width: none;
+      align-items: stretch;
+    }
+    .coo-bring { align-self: flex-end; }
     .coo-perch:not([data-out]) .coo-cue { display: none; }
     :global(main.wrap:has([data-ceilidh-coo])),
     :global(body:has([data-ceilidh-coo]) footer.site .wrap) {
       padding-right: calc(2.85rem + env(safe-area-inset-right, 0px));
     }
   }
+  /* The window size is fixed, so swapping the kilt image does not move the picker. */
   :global(body:has([data-ceilidh-coo])) {
-    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(16rem + env(safe-area-inset-bottom, 0px));
   }
   :global(body:has([data-ceilidh-coo][data-out])) {
-    padding-bottom: calc(13rem + env(safe-area-inset-bottom, 0px));
-  }
-  /* A new tartan while she is tucked: slide the window down to the kilt, then back. */
-  .coo-perch[data-kilt-peek]:not([data-out]) {
-    --peek-w: 64px;
-    --peek-h: 52px;
-    --peek-x: -32px;
-    --peek-y: -60px;
+    padding-bottom: calc(22rem + env(safe-area-inset-bottom, 0px));
   }
   @media (min-width: 720px) {
     .coo-perch {
@@ -347,14 +355,11 @@ const strip = u(defaultTartan().fling);
       --peek-y: 0px;
     }
     .coo-perch[data-out] .coo-strip { animation-name: coo-fling-3x; }
-    :global(body:has([data-ceilidh-coo][data-out])) {
-      padding-bottom: calc(17rem + env(safe-area-inset-bottom, 0px));
+    :global(body:has([data-ceilidh-coo])) {
+      padding-bottom: calc(22rem + env(safe-area-inset-bottom, 0px));
     }
-    .coo-perch[data-kilt-peek]:not([data-out]) {
-      --peek-w: 96px;
-      --peek-h: 78px;
-      --peek-x: -48px;
-      --peek-y: -90px;
+    :global(body:has([data-ceilidh-coo][data-out])) {
+      padding-bottom: calc(30rem + env(safe-area-inset-bottom, 0px));
     }
   }
   /* After the size query, so a wide screen still holds the standing frame. */

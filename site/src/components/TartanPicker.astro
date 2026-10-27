@@ -1,66 +1,33 @@
 ---
 import { u } from '../lib/site.js';
-import { defaultTartan, enabledTartans, tartanView } from '../lib/ceilidhTartans.js';
+import { defaultTartan, pickerOrder, settTileImage } from '../lib/ceilidhTartans.js';
 
 const { variant = 'corner' } = Astro.props;
-const choices = enabledTartans();
+const choices = pickerOrder();
 const current = defaultTartan();
-const view = tartanView(current);
-const sheetId = `tartan-sheet-${variant}`;
-const titleId = `tartan-title-${variant}`;
+const headingId = `tartan-heading-${variant}`;
 ---
 <div class:list={['tartan-pick', variant]} data-tartan-picker={variant}>
-  <button
-    type="button"
-    class="tartan-open"
-    data-tartan-open
-    aria-haspopup="dialog"
-    aria-expanded="false"
-    aria-controls={sheetId}
-    aria-label={`Kilt tartan, ${current.name}. Choose a tartan.`}
-  >
-    <span class="swatch" data-tartan-swatch aria-hidden="true" set:html={view.swatch}></span>
-    <span data-tartan-current>{current.name}</span>
-  </button>
-  <span class="tartan-toast" data-tartan-toast role="status" aria-live="polite"></span>
-  <div
-    id={sheetId}
-    class="tartan-sheet"
-    data-tartan-sheet
-    data-owner={variant}
-    hidden
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby={titleId}
-  >
-    <div class="tartan-card" data-tartan-card>
-      <h2 id={titleId}>Kilt tartan</h2>
-      <p class="tartan-note">These are simplified pixel versions of each tartan.</p>
-      <ul>
-        {choices.map((tartan) => (
-          <li>
-            <button
-              type="button"
-              class="choice"
-              data-tartan-choice={tartan.slug}
-              data-fling={u(tartan.fling)}
-              data-ears={u(tartan.ears)}
-              aria-pressed={tartan.slug === current.slug ? 'true' : 'false'}
-            >
-              <b>{tartan.name}</b>
-              <span>{tartan.meaning}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
-      <p class="tartan-note">Saved in this browser only. Nothing is sent.</p>
-      <button type="button" class="tartan-close" data-tartan-close>Close</button>
-    </div>
+  <h2 class="tartan-heading" id={headingId}>Pick Ceilidh's tartan</h2>
+  <div class="tartan-row" data-tartan-row role="group" aria-labelledby={headingId}>
+    {choices.map((tartan) => (
+      <button
+        type="button"
+        class="tartan-tile"
+        data-tartan-choice={tartan.slug}
+        data-fling={u(tartan.fling)}
+        data-ears={u(tartan.ears)}
+        aria-pressed={tartan.slug === current.slug ? 'true' : 'false'}
+      >
+        <span class="tile" data-tartan-tile style={`background-image:${settTileImage(tartan)}`}></span>
+        <span class="tartan-label">{tartan.name}</span>
+      </button>
+    ))}
   </div>
 </div>
 
 <script>
-  import { applyTartan, kiltPeekWanted, readTartan, writeTartanId } from '../lib/ceilidhTartans.js';
+  import { applyTartan, readTartan, writeTartanId } from '../lib/ceilidhTartans.js';
 
   const storage = {
     getItem(key) {
@@ -71,272 +38,143 @@ const titleId = `tartan-title-${variant}`;
     },
   };
 
-  function matches(query) {
-    try { return window.matchMedia(query).matches; } catch { return false; }
-  }
-
   function paint(tartan) {
     const button = document.querySelector(`[data-tartan-choice="${tartan.slug}"]`);
     const dance = button?.getAttribute('data-fling');
     const ears = button?.getAttribute('data-ears');
     if (dance) document.querySelectorAll('[data-ceilidh-dance]').forEach((img) => { img.src = dance; });
     if (ears) document.querySelectorAll('[data-ceilidh-ears]').forEach((img) => { img.src = ears; });
-    applyTartan(tartan, {
-      swatches: document.querySelectorAll('[data-tartan-swatch]'),
-      names: document.querySelectorAll('[data-tartan-current]'),
-      openers: document.querySelectorAll('[data-tartan-open]'),
-      choices: document.querySelectorAll('[data-tartan-choice]'),
-    });
+    applyTartan(tartan, { choices: document.querySelectorAll('[data-tartan-choice]') });
   }
 
-  const peekTimers = new WeakMap();
-  const toastTimers = new WeakMap();
-
-  function peekKilt() {
-    document.querySelectorAll('[data-ceilidh-coo]').forEach((coo) => {
-      const tucked = coo.isConnected && !coo.hasAttribute('data-out');
-      if (!kiltPeekWanted({ tucked, reduceMotion: matches('(prefers-reduced-motion: reduce)') })) return;
-      coo.setAttribute('data-kilt-peek', '');
-      const prev = peekTimers.get(coo);
-      if (prev) window.clearTimeout(prev);
-      peekTimers.set(coo, window.setTimeout(() => {
-        coo.removeAttribute('data-kilt-peek');
-        peekTimers.delete(coo);
-      }, 1700));
-    });
-  }
-
-  function showTartanName(name) {
-    if (!matches('(max-width: 719px)')) return;
-    document.querySelectorAll('[data-tartan-toast]').forEach((el) => {
-      el.textContent = name;
-      el.classList.add('show');
-      const prev = toastTimers.get(el);
-      if (prev) window.clearTimeout(prev);
-      toastTimers.set(el, window.setTimeout(() => {
-        el.classList.remove('show');
-        toastTimers.delete(el);
-      }, 2400));
-    });
-  }
-
-  let opener = null;
-
-  function closeSheet(sheet) {
-    if (!sheet || sheet.hasAttribute('hidden')) return;
-    sheet.hidden = true;
-    const picker = document.querySelector(`[data-tartan-picker="${sheet.getAttribute('data-owner')}"]`);
-    if (picker) picker.appendChild(sheet);
-    const button = opener || picker?.querySelector('[data-tartan-open]');
-    button?.setAttribute('aria-expanded', 'false');
-    button?.focus();
-    opener = null;
-  }
-
-  function openSheet(picker) {
-    const sheet = picker.querySelector('[data-tartan-sheet]');
-    document.querySelectorAll('[data-tartan-sheet]').forEach((other) => {
-      if (other !== sheet) closeSheet(other);
-    });
-    opener = picker.querySelector('[data-tartan-open]');
-    sheet.hidden = false;
-    opener?.setAttribute('aria-expanded', 'true');
-    document.body.appendChild(sheet);
-    const current = sheet.querySelector('[aria-pressed="true"]') || sheet.querySelector('[data-tartan-close]');
-    current?.focus();
+  // Move the selected tile into the strip. Do not scroll the page.
+  function revealSelected(picker) {
+    const row = picker.querySelector('[data-tartan-row]');
+    const selected = row?.querySelector('[aria-pressed="true"]');
+    if (!row || !selected) return;
+    const x = window.scrollX;
+    const y = window.scrollY;
+    try { selected.scrollIntoView({ inline: 'nearest', block: 'nearest' }); } catch { /* keep the page put */ }
+    if (window.scrollX !== x || window.scrollY !== y) window.scrollTo(x, y);
   }
 
   document.querySelectorAll('[data-tartan-picker]').forEach((picker) => {
-    const sheet = picker.querySelector('[data-tartan-sheet]');
-    picker.querySelector('[data-tartan-open]')?.addEventListener('click', (event) => {
-      event.stopPropagation();
-      if (sheet.hidden) openSheet(picker);
-      else closeSheet(sheet);
-    });
-    sheet.querySelector('[data-tartan-close]')?.addEventListener('click', () => closeSheet(sheet));
-    sheet.addEventListener('click', (event) => {
-      if (event.target === sheet) closeSheet(sheet);
-    });
-    sheet.querySelectorAll('[data-tartan-choice]').forEach((choice) => {
+    picker.querySelectorAll('[data-tartan-choice]').forEach((choice) => {
       choice.addEventListener('click', () => {
         const tartan = writeTartanId(choice.getAttribute('data-tartan-choice'), storage);
         paint(tartan);
-        peekKilt();
-        showTartanName(tartan.name);
-        closeSheet(sheet);
       });
     });
   });
 
-  document.addEventListener('keydown', (event) => {
-    if (event.key !== 'Escape') return;
-    document.querySelectorAll('[data-tartan-sheet]').forEach((sheet) => closeSheet(sheet));
-  });
-
   paint(readTartan(storage));
+  document.querySelectorAll('[data-tartan-picker]').forEach(revealSelected);
 </script>
 
 <style>
-  .tartan-pick { pointer-events: none; }
-  .tartan-open, .tartan-sheet, .tartan-card, .tartan-card button { pointer-events: auto; }
-  .tartan-open {
-    display: inline-flex;
+  .tartan-pick {
+    pointer-events: auto;
+    color: #2B1D14;
+  }
+  .tartan-heading {
+    margin: 0 0 8px;
+    font-family: system-ui, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #2B1D14;
+    text-align: center;
+  }
+  .tartan-row {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 12px;
+  }
+  .tartan-tile {
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 8px;
-    box-sizing: border-box;
-    height: 44px;
-    min-height: 44px;
-    border: 3px solid var(--green, #1f4d3a);
-    background: #fff;
-    color: inherit;
-    border-radius: 999px;
-    max-width: 16rem;
-    padding: 5px 14px 5px 5px;
-    font: 700 .75rem/1.2 system-ui, sans-serif;
+    gap: 6px;
+    width: 56px;
+    min-width: 48px;
+    min-height: 70px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #2B1D14;
+    font: inherit;
     cursor: pointer;
-  }
-  .tartan-open [data-tartan-current] {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    min-width: 0;
-  }
-  .swatch {
-    width: 28px;
-    height: 28px;
+    scroll-snap-align: start;
     flex: none;
-    box-sizing: border-box;
-    border: 1px solid color-mix(in srgb, var(--green, #1f4d3a) 40%, transparent);
-    border-radius: 50%;
-    overflow: hidden;
-    display: grid;
-    place-items: center;
-    line-height: 0;
-    background: #fff;
   }
-  .swatch :global(svg) {
+  .tartan-tile:hover { transform: translateY(-2px); }
+  .tile {
     display: block;
-    image-rendering: -moz-crisp-edges;
+    width: 56px;
+    height: 56px;
+    border-radius: 4px;
+    border: 1px solid rgba(31, 77, 58, .45);
+    background-repeat: repeat;
+    background-size: 50% 50%;
     image-rendering: crisp-edges;
     image-rendering: pixelated;
   }
-  .tartan-toast {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    padding: 0;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-    pointer-events: none;
+  .tartan-tile[aria-pressed="true"] .tile,
+  .tartan-tile:focus-visible .tile {
+    outline: 3px solid #1F4D3A;
+    outline-offset: 2px;
   }
-  .tartan-pick.corner .tartan-open {
-    position: absolute;
-    right: 0;
-    bottom: calc(100% + 4px);
-    z-index: 1;
+  .tartan-tile:focus { outline: none; }
+  .tartan-label {
+    width: calc(100% + 12px);
+    max-width: calc(56px + 12px);
+    text-align: center;
+    font: 600 13px/16px system-ui, sans-serif;
+    color: #2B1D14;
+    white-space: normal;
+    overflow: visible;
+  }
+  .tartan-tile[aria-pressed="true"] .tartan-label { font-weight: 700; }
+  .tartan-pick.corner {
+    margin-top: 24px;
+    padding-bottom: 32px;
   }
   .tartan-pick.tune {
-    margin: .4rem 0 0;
-  }
-  .tartan-pick.tune .tartan-open {
+    margin-top: 16px;
     width: 100%;
-    max-width: 100%;
-    justify-content: center;
   }
-  .tartan-pick.tune [data-tartan-current] {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    min-width: 0;
+  .tartan-pick.tune .tartan-row {
+    justify-content: flex-start;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
   }
-  .tartan-sheet[hidden] { display: none !important; }
-  .tartan-sheet {
-    position: fixed;
-    inset: 0;
-    z-index: 80;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    padding: .75rem;
-    padding-bottom: calc(.75rem + env(safe-area-inset-bottom, 0px));
-    background: rgba(42, 29, 20, .45);
-  }
-  .tartan-card {
-    width: min(28rem, 100%);
-    max-height: min(70vh, 34rem);
-    overflow: auto;
-    background: var(--card, #fff);
-    color: inherit;
-    border-radius: 16px;
-    padding: .9rem 1rem 1rem;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, .2);
-  }
-  .tartan-card h2 { margin: 0 0 .3rem; font-size: 1.15rem; }
-  .tartan-note { margin: 0 0 .7rem; font-size: .85rem; color: var(--muted, #5c4a3a); }
-  .tartan-card ul { list-style: none; margin: 0 0 .7rem; padding: 0; display: grid; gap: .4rem; }
-  .choice {
-    width: 100%;
-    text-align: left;
-    border: 2px solid var(--line, #e6d7c8);
-    border-radius: 12px;
-    background: #fff;
-    padding: .45rem .6rem;
-    cursor: pointer;
-    font: inherit;
-    color: inherit;
-  }
-  .choice[aria-pressed="true"] { border-color: var(--green, #1f4d3a); }
-  .choice b { display: block; }
-  .choice span { display: block; font-size: .85rem; font-weight: 400; color: var(--muted, #5c4a3a); }
-  .tartan-close {
-    min-height: 44px;
-    border: 2px solid var(--green, #1f4d3a);
-    border-radius: 999px;
-    background: #fff;
-    color: inherit;
-    font: 700 1rem system-ui, sans-serif;
-    padding: .3rem 1rem;
-    cursor: pointer;
-  }
+  .tartan-pick.tune .tartan-row::-webkit-scrollbar { display: none; }
   @media (max-width: 719px) {
-    .tartan-pick.corner .tartan-open {
-      width: 44px;
-      max-width: 44px;
-      padding: 5px;
-      gap: 0;
+    .tartan-tile,
+    .tile { width: 48px; }
+    .tile { height: 48px; }
+    .tartan-label { max-width: calc(48px + 12px); }
+    .tartan-pick.corner {
+      margin-top: 16px;
+      padding: 0 16px 16px;
+      width: 100%;
     }
-    .tartan-pick.corner .tartan-toast.show {
-      width: max-content;
-      max-width: 12rem;
-      height: auto;
-      margin: 0;
-      padding: .28rem .55rem;
-      overflow: visible;
-      clip: auto;
-      white-space: nowrap;
-      right: calc(44px + 8px);
-      bottom: calc(100% + 6px);
-      z-index: 2;
-      border: 2px solid var(--green, #1f4d3a);
-      border-radius: 999px;
-      background: #fff;
-      color: inherit;
-      font: 700 .75rem/1.2 system-ui, sans-serif;
-      box-shadow: 0 1px 0 rgba(42, 29, 20, .12);
+    .tartan-pick.corner .tartan-row {
+      justify-content: flex-start;
+      gap: 10px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
     }
-    .tartan-pick.corner [data-tartan-current] {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      margin: -1px;
-      padding: 0;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
+    .tartan-pick.corner .tartan-row::-webkit-scrollbar { display: none; }
   }
+  @media (prefers-reduced-motion: reduce) {
+    .tartan-tile:hover { transform: none; }
+  }
+  :global(html[data-a11y-motion=reduce]) .tartan-tile:hover { transform: none; }
 </style>
