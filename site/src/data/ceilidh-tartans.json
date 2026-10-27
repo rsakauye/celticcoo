@@ -2,6 +2,7 @@
   {
     "slug": "fraser-of-lovat",
     "name": "Fraser of Lovat",
+    "short_label": "Lovat",
     "default": true,
     "meaning": "The Lovat Frasers of Beauly, the clan behind the Calgary Frasers band name.",
     "str_ref": 1264,
@@ -15,6 +16,7 @@
   {
     "slug": "calgary",
     "name": "Calgary",
+    "short_label": "Calgary",
     "default": false,
     "meaning": "Calgary's own tartan: red for the Stampede, blue for the Bow and Elbow, gold for the prairie, black for oil and gas, white for the White Hat.",
     "str_ref": 477,
@@ -28,6 +30,7 @@
   {
     "slug": "fraser",
     "name": "Fraser (red)",
+    "short_label": "Fraser",
     "default": false,
     "meaning": "The classic red Fraser sett from 1842, the most popular Fraser tartan today.",
     "str_ref": 1247,
@@ -41,6 +44,7 @@
   {
     "slug": "fraser-hunting",
     "name": "Fraser Hunting",
+    "short_label": "Fraser Hunting",
     "default": false,
     "meaning": "The Fraser hunting sett in browns and greens, worn by the Lovat Scouts.",
     "str_ref": 1258,
@@ -54,6 +58,7 @@
   {
     "slug": "government",
     "name": "Government (Black Watch)",
+    "short_label": "Government",
     "default": false,
     "meaning": "The 1739 Government tartan, root of many clan setts and worn by anyone.",
     "str_ref": 277,
@@ -67,6 +72,7 @@
   {
     "slug": "menzies",
     "name": "Menzies",
+    "short_label": "Menzies",
     "default": false,
     "meaning": "Clan Menzies of Castle Menzies at Weem, near Aberfeldy, in red and green.",
     "str_ref": 2920,
@@ -80,6 +86,7 @@
   {
     "slug": "logan-1819",
     "name": "Logan (1819)",
+    "short_label": "Logan 1819",
     "default": false,
     "meaning": "Wilsons of Bannockburn pattern No. 119 from 1819, later the Logan clan tartan.",
     "str_ref": 2185,
@@ -93,6 +100,7 @@
   {
     "slug": "macgillivray",
     "name": "MacGillivray",
+    "short_label": "MacGillivray",
     "default": false,
     "meaning": "Clan MacGillivray of Clan Chattan, from Wilsons of Bannockburn's 1819 pattern book.",
     "str_ref": 2440,
