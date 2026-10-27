@@ -6,9 +6,13 @@ import { fileURLToPath } from 'node:url';
 import {
   STORAGE_KEY,
   TARTANS,
+  applyTartan,
   defaultTartan,
   enabledTartans,
+  kiltPeekWanted,
   readTartan,
+  swatchBackground,
+  tartanView,
   writeTartanId,
 } from '../src/lib/ceilidhTartans.js';
 
@@ -69,4 +73,105 @@ test('the picker lists only the enabled tartans from the config', () => {
   assert.match(picker, /These are simplified pixel versions of each tartan\./);
   assert.doesNotMatch(picker, /mackinnon/i);
   assert.doesNotMatch(picker, /alberta/i);
+});
+
+function swatchEl() {
+  return {
+    style: {
+      props: {},
+      setProperty(name, value) { this.props[name] = value; },
+    },
+  };
+}
+
+function textEl() {
+  return { textContent: '' };
+}
+
+function choiceEl(slug) {
+  return {
+    attrs: { 'data-tartan-choice': slug },
+    setAttribute(name, value) { this.attrs[name] = value; },
+    getAttribute(name) { return Object.prototype.hasOwnProperty.call(this.attrs, name) ? this.attrs[name] : null; },
+  };
+}
+
+test('the swatch updates when the tartan changes', () => {
+  const storage = memory();
+  const swatch = swatchEl();
+  const name = textEl();
+  const opener = choiceEl('fraser-of-lovat');
+  const calgary = choiceEl('calgary');
+  const lovat = choiceEl('fraser-of-lovat');
+  const nodes = { swatches: [swatch], names: [name], openers: [opener], choices: [lovat, calgary] };
+
+  applyTartan(readTartan(storage), nodes);
+  const first = swatch.style.props['--swatch'];
+  assert.equal(first, swatchBackground(defaultTartan()));
+  assert.match(first, /#B82E26 0px 3px, #fff 3px 4px/);
+  assert.equal(name.textContent, 'Fraser of Lovat');
+
+  applyTartan(writeTartanId('calgary', storage), nodes);
+  assert.equal(name.textContent, 'Calgary');
+  assert.equal(swatch.style.props['--swatch'], swatchBackground(readTartan(storage)));
+  assert.notEqual(swatch.style.props['--swatch'], first);
+  assert.match(swatch.style.props['--swatch'], /#E0A526/);
+  assert.equal(calgary.getAttribute('aria-pressed'), 'true');
+  assert.equal(lovat.getAttribute('aria-pressed'), 'false');
+  assert.match(opener.getAttribute('aria-label'), /Kilt tartan, Calgary\. Choose a tartan\./);
+});
+
+test('the swatch on load follows the tartan saved in storage', () => {
+  const storage = memory([[STORAGE_KEY, 'menzies']]);
+  const swatch = swatchEl();
+  const name = textEl();
+  const loaded = readTartan(storage);
+  applyTartan(loaded, { swatches: [swatch], names: [name] });
+  assert.equal(loaded.slug, 'menzies');
+  assert.equal(name.textContent, 'Menzies');
+  assert.equal(swatch.style.props['--swatch'], tartanView(loaded).swatch);
+  assert.match(swatch.style.props['--swatch'], /#78BAE6/);
+  assert.notEqual(swatch.style.props['--swatch'], swatchBackground(defaultTartan()));
+
+  const blocked = {
+    getItem() { throw new Error('blocked'); },
+    setItem() { throw new Error('blocked'); },
+  };
+  const fallback = swatchEl();
+  applyTartan(readTartan(blocked), { swatches: [fallback] });
+  assert.equal(fallback.style.props['--swatch'], swatchBackground(defaultTartan()));
+});
+
+test('each kilt has its own swatch stripe, and a tucked change can peek', () => {
+  const swatches = enabledTartans().map((tartan) => swatchBackground(tartan));
+  assert.equal(new Set(swatches).size, swatches.length);
+  assert.ok(swatches.every((swatch) => swatch.startsWith('repeating-linear-gradient(90deg, ')));
+  for (const tartan of enabledTartans()) {
+    assert.ok(tartan.threads.length >= 8);
+    assert.equal(swatchBackground(tartan), tartanView(tartan).swatch);
+  }
+
+  assert.equal(kiltPeekWanted({ tucked: true, reduceMotion: false }), true);
+  assert.equal(kiltPeekWanted({ tucked: true, reduceMotion: true }), false);
+  assert.equal(kiltPeekWanted({ tucked: false, reduceMotion: false }), false);
+
+  const picker = readFileSync(join(site, 'src/components/TartanPicker.astro'), 'utf8');
+  const coo = readFileSync(join(site, 'src/components/CeilidhCoo.astro'), 'utf8');
+  assert.match(picker, /data-tartan-swatch/);
+  assert.match(picker, /--swatch:\$\{view\.swatch\}/);
+  assert.match(picker, /applyTartan\(tartan,/);
+  assert.match(picker, /paint\(readTartan\(storage\)\)/);
+  assert.match(picker, /peekKilt\(\)/);
+  assert.match(picker, /showTartanName\(tartan\.name\)/);
+  assert.match(picker, /aria-live="polite"/);
+  assert.match(picker, /max-width: 719px/);
+  assert.match(picker, /prefers-reduced-motion: reduce/);
+  assert.match(picker, /kiltPeekWanted\(/);
+  assert.match(picker, /try \{ return localStorage\.getItem\(key\); \} catch \{ return null; \}/);
+  assert.match(picker, /try \{ localStorage\.setItem\(key, value\); \} catch/);
+  assert.doesNotMatch(picker, /repeating-linear-gradient\(90deg, #B82E26 0 3px/);
+  assert.match(coo, /data-kilt-peek/);
+  const boot = picker.slice(picker.lastIndexOf('paint('));
+  assert.match(boot, /readTartan\(storage\)/);
+  assert.doesNotMatch(boot, /peekKilt|showTartanName/);
 });

@@ -331,6 +331,13 @@ const strip = u(defaultTartan().fling);
   :global(body:has([data-ceilidh-coo][data-out])) {
     padding-bottom: calc(13rem + env(safe-area-inset-bottom, 0px));
   }
+  /* A new tartan while she is tucked: slide the window down to the kilt, then back. */
+  .coo-perch[data-kilt-peek]:not([data-out]) {
+    --peek-w: 64px;
+    --peek-h: 52px;
+    --peek-x: -32px;
+    --peek-y: -60px;
+  }
   @media (min-width: 720px) {
     .coo-perch {
       --frame: 192px;
@@ -342,6 +349,12 @@ const strip = u(defaultTartan().fling);
     .coo-perch[data-out] .coo-strip { animation-name: coo-fling-3x; }
     :global(body:has([data-ceilidh-coo][data-out])) {
       padding-bottom: calc(17rem + env(safe-area-inset-bottom, 0px));
+    }
+    .coo-perch[data-kilt-peek]:not([data-out]) {
+      --peek-w: 96px;
+      --peek-h: 78px;
+      --peek-x: -48px;
+      --peek-y: -90px;
     }
   }
   /* After the size query, so a wide screen still holds the standing frame. */
