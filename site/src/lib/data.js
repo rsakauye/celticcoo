@@ -5,7 +5,7 @@ import shopsRaw from '../../../data/shops_canada.json' with { type: 'json' };
 import groupsRaw from '../../../data/groups_canada.json' with { type: 'json' };
 import burnsRaw from '../../../data/burns_2027.json' with { type: 'json' };
 import championsRaw from '../../../data/season_champions.json' with { type: 'json' };
-import { uniqueClubSlugs } from './groupProfiles.js';
+import { assignClubSlugs } from './groupProfiles.js';
 
 // ---------- helpers ----------
 export const slugify = (s) => String(s).toLowerCase()
@@ -268,7 +268,8 @@ export const GROUP_EMOJI = {
 };
 const FEATURED_GROUP = '78th Fraser Highlanders Fort Calgary Garrison Youth Squad';
 const pName = (p) => (p === 'National' ? 'National / multi-province' : regionName(p));
-const groupIds = uniqueClubSlugs(groupsRaw.map((g) => g.name));
+// `slug` on each club is the published profile URL. assignClubSlugs keeps it.
+const groupIds = assignClubSlugs(groupsRaw);
 export const groups = groupsRaw.map((g, i) => ({
   ...g,
   id: groupIds[i],

@@ -1,6 +1,16 @@
 // Club profile slugs and which events belong on a profile.
-// Slugs are the accent-stripped name, and stay unique in source order:
-// the first club keeps the base slug, and a later collision gets -2, -3, …
+//
+// A profile URL is /groups/<slug>/. Clubs paste that link into their own
+// social bios, so a published slug never changes: not when the name,
+// spelling, city, or file order changes. The value that shipped lives on
+// the club as `slug` in data/groups_canada.json. assignClubSlugs() returns
+// that field as-is. Do not rewrite it, and do not "fix" it to match a new
+// name. A club with no slug yet (a new row, not yet deployed) gets a short
+// one: the name in lowercase, accents removed, "&" written as "and", other
+// punctuation collapsed to a hyphen. No city, province, or id is added.
+// The first club keeps that base; a later collision gets -2, -3, in file
+// order. After the first deploy, write that slug onto the club and leave it.
+//
 // An event is listed only when it carries that slug, or an organizer's name
 // is exactly the club's name. Partial titles are not a match.
 
@@ -18,6 +28,56 @@ export function uniqueClubSlugs(names) {
     seen.set(base, n);
     return n === 1 ? base : `${base}-${n}`;
   });
+}
+
+const PUBLISHED_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+export function publishedSlug(value) {
+  const slug = String(value ?? '').trim();
+  return PUBLISHED_SLUG.test(slug) ? slug : '';
+}
+
+export function assignClubSlugs(clubs) {
+  const list = Array.isArray(clubs) ? clubs : [];
+  const taken = new Set(list.map((club) => publishedSlug(club?.slug)).filter(Boolean));
+  return list.map((club) => {
+    const explicit = publishedSlug(club?.slug);
+    if (explicit) return explicit;
+    const base = slugifyClub(club?.name) || 'group';
+    let n = 1;
+    let slug = base;
+    while (taken.has(slug)) {
+      n += 1;
+      slug = `${base}-${n}`;
+    }
+    taken.add(slug);
+    return slug;
+  });
+}
+
+export function clubShareTitle(club) {
+  const name = String(club?.name || '').trim();
+  const kind = String(club?.kind || club?.type || '').trim();
+  const place = clubPlace(club);
+  return [name, kind, place].filter(Boolean).join(' · ');
+}
+
+export const CLUB_SHARE_DESCRIPTION = 'Upcoming events on The Celtic Coo';
+
+export async function shareClubPage(url, { copy, share, mobile } = {}) {
+  try {
+    if (typeof copy !== 'function') throw new Error('no clipboard');
+    await copy(url);
+    return 'copied';
+  } catch {
+    if (!(mobile && typeof share === 'function')) return 'failed';
+    try {
+      await share(url);
+      return 'shared';
+    } catch (err) {
+      return err && err.name === 'AbortError' ? 'aborted' : 'failed';
+    }
+  }
 }
 
 function asList(value) {

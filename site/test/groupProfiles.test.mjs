@@ -6,6 +6,11 @@ import { slugify, groups, events } from '../src/lib/data.js';
 import {
   slugifyClub,
   uniqueClubSlugs,
+  assignClubSlugs,
+  publishedSlug,
+  clubShareTitle,
+  CLUB_SHARE_DESCRIPTION,
+  shareClubPage,
   eventMatchesClub,
   splitClubEvents,
   clubLinks,
@@ -24,7 +29,68 @@ test('club slugs strip accents and stay unique in source order', () => {
   assert.equal(new Set(ids).size, ids.length);
   assert.equal(ids[groupsRaw.findIndex((g) => g.name === 'Sláinte Social Club')], 'slainte-social-club');
   const byName = new Map(groups.map((g) => [g.name, g.id]));
-  groupsRaw.forEach((g, i) => assert.equal(byName.get(g.name), ids[i]));
+  groupsRaw.forEach((g, i) => {
+    assert.equal(g.slug, ids[i]);
+    assert.equal(publishedSlug(g.slug), ids[i]);
+    assert.equal(byName.get(g.name), g.slug);
+  });
+  assert.deepEqual(assignClubSlugs(groupsRaw), ids);
+  assert.deepEqual(
+    assignClubSlugs([{ name: 'Sláinte Social Club', slug: 'slainte-social-club' }, { name: 'Sláinte Social Club' }]),
+    ['slainte-social-club', 'slainte-social-club-2'],
+  );
+  assert.deepEqual(assignClubSlugs([{ name: 'Renamed Club', slug: 'slainte-social-club' }]), ['slainte-social-club']);
+  const src = readFileSync(new URL('../src/lib/groupProfiles.js', import.meta.url), 'utf8');
+  assert.match(src, /published slug never changes/);
+});
+
+test('a shared profile card names the club and keeps the site image', () => {
+  const club = { name: 'Sláinte Social Club', kind: 'Pipe band / piping', city: 'Calgary', regionLabel: 'Alberta' };
+  assert.equal(clubShareTitle(club), 'Sláinte Social Club · Pipe band / piping · Calgary, Alberta');
+  assert.equal(clubShareTitle({ name: 'ScotDance Canada', kind: 'Association', city: 'National', regionLabel: 'National / multi-province' }), 'ScotDance Canada · Association · National / multi-province');
+  assert.equal(CLUB_SHARE_DESCRIPTION, 'Upcoming events on The Celtic Coo');
+  const layout = readFileSync(new URL('../src/layouts/Base.astro', import.meta.url), 'utf8');
+  assert.match(layout, /const shareTitle = ogTitle \|\| fullTitle/);
+  assert.match(layout, /property="og:title" content=\{shareTitle\}/);
+  assert.match(layout, /property="og:description" content=\{shareDescription\}/);
+  assert.match(layout, /name="twitter:title" content=\{shareTitle\}/);
+  assert.match(layout, /name="twitter:description" content=\{shareDescription\}/);
+  assert.match(layout, /property="og:image" content=\{ogImage\}/);
+  assert.match(layout, /name="twitter:card" content="summary_large_image"/);
+  const profile = readFileSync(new URL('../src/pages/groups/[id].astro', import.meta.url), 'utf8');
+  assert.match(profile, /ogTitle=\{clubShareTitle\(g\)\}/);
+  assert.match(profile, /ogDescription=\{CLUB_SHARE_DESCRIPTION\}/);
+  assert.doesNotMatch(profile, /og:image/);
+});
+
+test('share copies the page URL and falls back to the share sheet on mobile', async () => {
+  const calls = [];
+  assert.equal(await shareClubPage('https://celticcoo.ca/groups/slainte-social-club/', {
+    copy: (url) => { calls.push(['copy', url]); },
+    share: (url) => { calls.push(['share', url]); },
+    mobile: true,
+  }), 'copied');
+  assert.deepEqual(calls, [['copy', 'https://celticcoo.ca/groups/slainte-social-club/']]);
+
+  calls.length = 0;
+  assert.equal(await shareClubPage('https://celticcoo.ca/groups/x/', {
+    copy: () => Promise.reject(new Error('denied')),
+    share: (url) => { calls.push(url); },
+    mobile: true,
+  }), 'shared');
+  assert.deepEqual(calls, ['https://celticcoo.ca/groups/x/']);
+
+  assert.equal(await shareClubPage('https://celticcoo.ca/groups/x/', {
+    copy: () => Promise.reject(new Error('denied')),
+    share: () => { throw new Error('should not share on desktop'); },
+    mobile: false,
+  }), 'failed');
+
+  assert.equal(await shareClubPage('https://celticcoo.ca/groups/x/', {
+    copy: () => Promise.reject(new Error('denied')),
+    share: () => Promise.reject(Object.assign(new Error('cancel'), { name: 'AbortError' })),
+    mobile: true,
+  }), 'aborted');
 });
 
 test('events match a club by slug or exact organizer name, not by a partial title', () => {
@@ -98,4 +164,10 @@ test('listing cards link to the profile, and the profile page has the sections',
   assert.match(profile, /target="_blank"/);
   assert.match(profile, /getStaticPaths/);
   assert.match(profile, /splitClubEvents/);
+  assert.match(profile, /Share this page/);
+  assert.match(profile, /Link copied/);
+  assert.match(profile, /shareClubPage/);
+  assert.match(profile, /navigator\.clipboard/);
+  assert.match(profile, /navigator\.share/);
+  assert.match(profile, /id="share-page"/);
 });
