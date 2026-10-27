@@ -1,7 +1,7 @@
 // Sitemap of the site's pages plus one page per confirmed event (no extra dependency).
 // <lastmod> is the date the page's content really changed (see lib/lastmod.js), or omitted when unknown,
 // so search engines and the IndexNow ping (scripts/indexnow.mjs) only see genuine updates.
-import { events } from '../lib/data.js';
+import { events, groups } from '../lib/data.js';
 import { gitDate, eventLastmod } from '../lib/lastmod.js';
 const P = (f) => `site/src/pages/${f}`;
 const D = (f) => `data/${f}`;
@@ -27,9 +27,11 @@ const PAGES = {
 };
 export function GET(context) {
   const site = new URL(import.meta.env.BASE_URL, context.site).href;
+  const groupLastmod = gitDate([P('groups/[id].astro'), D('groups_canada.json'), D('events_2027.json'), D('events_manual.json')]);
   const entries = [
     ...Object.entries(PAGES).map(([p, deps]) => [p, gitDate(deps)]),
     ...events.map((e) => [`events/${e.id}/`, eventLastmod(e.id)]),
+    ...groups.map((g) => [`groups/${g.id}/`, groupLastmod]),
   ];
   const urls = entries.map(([p, d]) => `  <url><loc>${site}${p}</loc>${d ? `<lastmod>${d}</lastmod>` : ''}</url>`).join('\n');
   return new Response(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`, { headers: { 'Content-Type': 'application/xml; charset=utf-8' } });

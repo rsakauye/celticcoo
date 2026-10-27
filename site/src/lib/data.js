@@ -5,6 +5,7 @@ import shopsRaw from '../../../data/shops_canada.json' with { type: 'json' };
 import groupsRaw from '../../../data/groups_canada.json' with { type: 'json' };
 import burnsRaw from '../../../data/burns_2027.json' with { type: 'json' };
 import championsRaw from '../../../data/season_champions.json' with { type: 'json' };
+import { uniqueClubSlugs } from './groupProfiles.js';
 
 // ---------- helpers ----------
 export const slugify = (s) => String(s).toLowerCase()
@@ -267,9 +268,10 @@ export const GROUP_EMOJI = {
 };
 const FEATURED_GROUP = '78th Fraser Highlanders Fort Calgary Garrison Youth Squad';
 const pName = (p) => (p === 'National' ? 'National / multi-province' : regionName(p));
-export const groups = groupsRaw.map((g) => ({
+const groupIds = uniqueClubSlugs(groupsRaw.map((g) => g.name));
+export const groups = groupsRaw.map((g, i) => ({
   ...g,
-  id: slugify(g.name),
+  id: groupIds[i],
   kind: groupKind(g.type),
   regionLabel: pName(g.province),
   lessons: g.offers_lessons === 'y',
