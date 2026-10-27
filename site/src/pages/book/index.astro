@@ -64,6 +64,7 @@ const messagesJson = JSON.stringify(MESSAGES).replace(/</g, '\\u003c');
       <div class="card">
         <fieldset id="about-you">
           <legend>About you</legend>
+          <p class="hint">{cfg.contactHint}</p>
           <div class="row two">
             <div>
               <label class="field" for="name">Your name <span aria-hidden="true">*</span></label>
@@ -193,6 +194,26 @@ const messagesJson = JSON.stringify(MESSAGES).replace(/</g, '\\u003c');
             </div>
           </div>
           <p class="err" id="err-performers" hidden></p>
+          <fieldset class="sub" id="counts">
+            <legend class="subleg">{cfg.countsLegend}</legend>
+            <p class="hint">{cfg.countsHint}</p>
+            <div class="counts">
+              {cfg.countLines.map(([id, label, mode]) => (
+                <div>
+                  <label class="field" for={`count_${id}`}>{label} <span class="hint-inline">(optional)</span></label>
+                  <input id={`count_${id}`} name={`count_${id}`} type="number" inputmode="numeric" min="0" max={cfg.countMax} step="1" data-count={id} data-count-mode={mode || ''} data-count-max={cfg.countMax} />
+                  <p class="err" id={`err-count_${id}`} hidden></p>
+                  {mode === 'describe' && (
+                    <div class="count-note">
+                      <label class="field" for="count_other_note">{cfg.countOtherLabel}</label>
+                      <input id="count_other_note" name="count_other_note" type="text" maxlength="160" />
+                      <p class="err" id="err-count_other_note" hidden></p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </fieldset>
         </fieldset>
       </div>
 
@@ -215,23 +236,11 @@ const messagesJson = JSON.stringify(MESSAGES).replace(/</g, '\\u003c');
       </div>
 
       <div class="card">
-        <fieldset>
-          <legend>Under 18</legend>
-          <div class="toggle-block">
-            <input id="under18" type="checkbox" name="under18" value="yes" />
-            <label for="under18">{cfg.under18Label}</label>
-            <div class="reveal">
-              <p class="note">{cfg.under18Note}</p>
-              <label class="choice" for="guardian_confirm"><input id="guardian_confirm" type="checkbox" name="guardian_confirm" value="yes" /> <span>{cfg.guardianLabel}</span></label>
-              <p class="err" id="err-guardian_confirm" hidden></p>
-            </div>
-          </div>
-        </fieldset>
-      </div>
-
-      <div class="card">
-        <fieldset>
+        <fieldset id="permission">
           <legend>Permission to write back</legend>
+          <label class="choice" for="adult_confirm"><input id="adult_confirm" type="checkbox" name="adult_confirm" value="yes" required /> <span>{cfg.adultLabel} <span aria-hidden="true">*</span></span></label>
+          <p class="hint">{cfg.adultHint}</p>
+          <p class="err" id="err-adult_confirm" hidden></p>
           <label class="choice" for="casl"><input id="casl" type="checkbox" name="casl" value="yes" required /> <span>{cfg.caslLabel} <span aria-hidden="true">*</span></span></label>
           <p class="hint">{cfg.siteName}, {cfg.senderAddress}. <a href={u(cfg.privacyPath)}>Privacy policy</a>.</p>
           <p class="err" id="err-casl" hidden></p>
@@ -412,10 +421,22 @@ const messagesJson = JSON.stringify(MESSAGES).replace(/</g, '\\u003c');
             var other = document.getElementById('performer_other').value.trim();
             if (other.length < 2 || /[\r\n]/.test(other)) errors.performer_other = MSG.performer_other;
           }
+          document.querySelectorAll('[data-count]').forEach(function (el) {
+            var raw = el.value.trim();
+            if (!raw) return;
+            var max = Number(el.getAttribute('data-count-max')) || 500;
+            if (!/^\d{1,4}$/.test(raw) || Number(raw) > max) errors[el.name] = MSG.counts;
+          });
+          document.querySelectorAll('[data-count-mode="describe"]').forEach(function (el) {
+            if (!(Number(el.value) > 0)) return;
+            var noteEl = document.getElementById('count_other_note');
+            var note = noteEl ? noteEl.value.trim() : '';
+            if (note.length < 2 || note.length > 160 || /[\r\n]/.test(note)) errors.count_other_note = MSG.count_other_note;
+          });
           var message = document.getElementById('message').value.trim();
           if (message.length < 10) errors.message = MSG.message;
           else if (message.length > 4000) errors.message = MSG.message_long;
-          if (document.getElementById('under18').checked && !document.getElementById('guardian_confirm').checked) errors.guardian_confirm = MSG.guardian_confirm;
+          if (!document.getElementById('adult_confirm').checked) errors.adult_confirm = MSG.adult_confirm;
           if (!document.getElementById('casl').checked) errors.casl = MSG.casl;
           return errors;
         }
@@ -428,7 +449,19 @@ const messagesJson = JSON.stringify(MESSAGES).replace(/</g, '\\u003c');
           lines.push('Who they are: ' + (who ? who.parentNode.textContent.trim() : ''));
           var kind = checked('request_type')[0];
           lines.push('Request: ' + (kind ? kind.parentNode.textContent.trim() : ''));
-          lines.push('Under 18: ' + (document.getElementById('under18').checked ? 'Yes, parent or guardian confirmed' : 'No'));
+          lines.push('Adult: confirmed, 18 or older, and the performer, a parent or guardian, or a band representative.');
+          document.querySelectorAll('[data-count]').forEach(function (el) {
+            var raw = el.value.trim();
+            if (!raw || raw === '0') return;
+            var label = document.querySelector('label[for="' + el.id + '"]');
+            var name = label ? label.textContent.replace(/\s*\(optional\)\s*/i, '').trim() : el.name;
+            var extra = '';
+            if (el.getAttribute('data-count-mode') === 'describe') {
+              var noteEl = document.getElementById('count_other_note');
+              extra = ' (' + (noteEl ? noteEl.value.trim() : '') + ')';
+            }
+            lines.push(name + ': ' + raw + extra);
+          });
           lines.push('Events:');
           var picked = checked('events');
           if (!picked.length) lines.push('- none selected');
@@ -550,7 +583,7 @@ const messagesJson = JSON.stringify(MESSAGES).replace(/</g, '\\u003c');
   .field { display: block; font-weight: 650; margin: .75rem 0 .25rem; }
   .hint { color: var(--muted); font-size: .92rem; margin: .3rem 0 0; }
   .hint-inline { font-weight: 400; color: var(--muted); }
-  .book input[type="text"], .book input[type="email"], .book input[type="tel"], .book input[type="date"], .book input[type="search"], .book select, .book textarea {
+  .book input[type="text"], .book input[type="email"], .book input[type="tel"], .book input[type="date"], .book input[type="search"], .book input[type="number"], .book select, .book textarea {
     width: 100%; font: inherit; padding: .55rem .65rem; border: 1px solid #cdbda3; border-radius: 8px; background: #fff; color: var(--fg);
   }
   .book textarea { min-height: 8rem; resize: vertical; }
@@ -564,6 +597,8 @@ const messagesJson = JSON.stringify(MESSAGES).replace(/</g, '\\u003c');
   .months { margin-top: .6rem; }
   .selected-count { font-weight: 700; margin: .4rem 0; }
   #selected-events { margin: .2rem 0 .6rem; padding-left: 1.2rem; }
+  .counts { display: grid; grid-template-columns: 1fr; gap: 0 1rem; margin-top: .4rem; }
+  .count-note { margin-top: .2rem; }
   .custom { border-top: 1px solid var(--line); margin-top: 1rem; padding-top: .4rem; }
   .past { margin-top: .8rem; }
   .past summary { cursor: pointer; font-weight: 700; color: var(--green); min-height: 44px; display: flex; align-items: center; }
@@ -586,6 +621,7 @@ const messagesJson = JSON.stringify(MESSAGES).replace(/</g, '\\u003c');
   @media (min-width: 700px) {
     .disclosure { flex-direction: row; align-items: center; }
     .row.two { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem 1rem; }
+    .counts { grid-template-columns: 1fr 1fr; }
     .book .btn { width: auto; }
   }
   @media (max-width: 699px) {

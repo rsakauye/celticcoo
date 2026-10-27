@@ -11,7 +11,7 @@ export {
   matchProvince,
   stripBoilerplate,
 } from './engine.js';
-export { adaptiveLimit, assessBurst, decideGuard, looksGibberish, seasonFor } from './breaker.js';
+export { adaptiveLimit, assessBurst, decideGuard, decidePerformerVolume, looksGibberish, seasonFor } from './breaker.js';
 
 // analyzeMessage is the entry the classifiers call.
 // decideGuard is the entry the cutoff calls.

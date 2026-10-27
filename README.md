@@ -210,7 +210,7 @@ Do not commit the database id, the Turnstile secret, or a submission. The id in 
    unset D1_DATABASE_ID
    ```
 
-   That writes a gitignored `site/.wrangler-intake.jsonc`, runs `wrangler d1 migrations apply celticcoo-intake --remote`, and deletes the file. It applies every file in `site/migrations/` that is not on the database yet. `0001_intake.sql` creates `submissions` and `submission_failures`. `0002_inbound_emails.sql` creates the hello@ log. `0003_inbound_clarify.sql` adds clarifying-draft columns. `0004_mail_opt_outs.sql` creates the stop-mail list. Run the command again after a new migration is merged. Details for the mailbox are in `docs/inbound-email.md`.
+   That writes a gitignored `site/.wrangler-intake.jsonc`, runs `wrangler d1 migrations apply celticcoo-intake --remote`, and deletes the file. It applies every file in `site/migrations/` that is not on the database yet. `0001_intake.sql` creates `submissions` and `submission_failures`. `0002_inbound_emails.sql` creates the hello@ log. `0003_inbound_clarify.sql` adds clarifying-draft columns. `0004_mail_opt_outs.sql` creates the stop-mail list. `0008_performer_counts.sql` adds `adult_confirm` and `performer_counts_json`. Apply `0008` by hand before the form that writes those columns is deployed. A site deploy does not apply it. Run the command again after a new migration is merged. Details for the mailbox are in `docs/inbound-email.md`.
 
 3. **Give deploys the database id.** GitHub → Settings → Secrets and variables → Actions → Secrets → `D1_DATABASE_ID` = that same UUID. The deploy workflow copies it into the checkout for that deploy only. If the secret is empty, the workflow removes the D1 binding and the site still deploys, but requests are not stored.
 
@@ -249,7 +249,7 @@ Do not commit the database id, the Turnstile secret, or a submission. The id in 
    unset D1_DATABASE_ID
    ```
 
-   `status` is `new`, `flagged`, or `handled`. A row is flagged when a minor is mentioned or ticked and no guardian confirmed, when the message asks for someone's private contact details, when it talks about a cheque or another odd way to pay, or when the date or venue is missing. `submission_failures` stores reason codes (`turnstile_rejected`, `validation`, `minor_no_guardian`, `honeypot`, `store_failed`, and so on) and no message body. After you have dealt with a row, mark it handled (replace `THE_ID` with the id from the query above, not with anyone's email):
+   `status` is `new`, `flagged`, or `handled`. A row is flagged when the message mentions a minor and the sender did not confirm they are an adult, when the message asks for someone's private contact details, when it talks about a cheque or another odd way to pay, when the date or venue is missing, or when the head count is large enough to hold for review (`held_bulk_organizer`). A held row is saved and the notice is not sent (`email_status` `skipped`). The counts are in `performer_counts_json`. `submission_failures` stores reason codes (`turnstile_rejected`, `validation`, `adult_confirm`, `honeypot`, `store_failed`, and so on) and no message body. After you have dealt with a row, mark it handled (replace `THE_ID` with the id from the query above, not with anyone's email):
 
    ```bash
    node scripts/intake-d1.mjs execute --command "UPDATE submissions SET status = 'handled', updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = 'THE_ID';"

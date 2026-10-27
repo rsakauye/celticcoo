@@ -181,3 +181,68 @@ export function decideGuard({
   }
   return { action: 'allow', reason: 'ok' };
 }
+
+function countLinesOf(counts) {
+  if (!counts || typeof counts !== 'object') return [];
+  const lines = [];
+  for (const [id, n] of Object.entries(counts)) {
+    if (id === 'otherNote') continue;
+    if (!/^[a-z0-9-]{1,40}$/.test(id)) continue;
+    if (!Number.isInteger(n) || n <= 0 || n > 10000) continue;
+    lines.push({ id, n });
+  }
+  return lines;
+}
+
+function sampleCountItems(lines, options, cap) {
+  const items = [];
+  const sender = String(options.sender || 'requester');
+  const place = String(options.place || 'request');
+  const when = String(options.when || '');
+  for (const line of lines) {
+    const take = Math.min(line.n, cap - items.length);
+    for (let i = 1; i <= take; i += 1) {
+      items.push({
+        sender,
+        text: `Head count ${line.id} number ${i} for a separate part of this request.`,
+        fields: {
+          when: when || `part-${line.id}-${i}`,
+          place,
+          act: `${line.id}-${i}`,
+        },
+        turnstile: 'pass',
+        spf: 'unknown',
+        dkim: 'unknown',
+      });
+    }
+    if (items.length >= cap) break;
+  }
+  return items;
+}
+
+// One form that names enough performers is a bulk organizer request.
+// The sample is passed through assessBurst and decideGuard. The result
+// is hold, for a person to review. This path does not return pause:
+// a lineup from one requester is stored, not rejected.
+export function decidePerformerVolume(counts, options = {}) {
+  const minBurst = Number.isFinite(options.minBurst) && options.minBurst > 0
+    ? Math.floor(options.minBurst)
+    : 4;
+  const lines = countLinesOf(counts);
+  const total = lines.reduce((sum, line) => sum + line.n, 0);
+  if (total < minBurst) return { action: 'allow', reason: 'ok', total };
+  const items = sampleCountItems(lines, options, Math.max(minBurst, 8));
+  const burst = assessBurst(items, { minBurst });
+  const decision = decideGuard({
+    count: total,
+    limit: Infinity,
+    burst: burst.kind === 'bulk_organizer' ? burst : { kind: 'bulk_organizer', reasons: ['consistent_sender', 'distinct_details'] },
+    outboundToday: 0,
+    outboundCap: Infinity,
+  });
+  return {
+    action: 'hold',
+    reason: decision.action === 'hold' ? decision.reason : 'bulk_organizer',
+    total,
+  };
+}

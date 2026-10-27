@@ -19,6 +19,7 @@ import { events, tba, TODAY } from '../../src/lib/data.js';
 import { bookableFromData, handleBookingRequest, BOOKING_FROM, BOOKING_TO_DEFAULT } from '../../src/lib/booking.js';
 import { intakeFromEnv, verifyFromEnv } from '../../src/lib/intake.js';
 import { mailerSend } from '../../src/lib/mailer.js';
+import celticcoo from '../../../shared/triage/sites/celticcoo.js';
 
 const catalog = bookableFromData(events, tba, TODAY);
 
@@ -38,5 +39,6 @@ export async function onRequest(context) {
     from: BOOKING_FROM,
     verify: verifyFromEnv(env),
     intake: intakeFromEnv(env),
+    countHold: celticcoo.guard.minBurst,
   });
 }
