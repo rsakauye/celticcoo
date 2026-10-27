@@ -2,6 +2,7 @@
 
 export {
   cardSvg,
+  escapeXml,
   fitName,
   layoutCard,
   loadBrand,

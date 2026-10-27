@@ -28,11 +28,16 @@ function gnum(n) {
   return String(rounded);
 }
 
-function escapeXml(value) {
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+const XML_ESCAPE = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&apos;',
+};
+
+export function escapeXml(value) {
+  return String(value).replace(/[&<>"']/g, (ch) => XML_ESCAPE[ch]);
 }
 
 function oneLine(value) {
@@ -113,14 +118,19 @@ function settPattern(id, sett, unit, weftOpacity, rotate = 0) {
   return `<pattern id="${id}" width="${gnum(size)}" height="${gnum(size)}" patternUnits="userSpaceOnUse"${transform}>${warp}<g opacity="${gnum(weftOpacity)}">${weft}</g></pattern>`;
 }
 
+function markInner(src) {
+  const open = src.indexOf('<svg');
+  const start = open < 0 ? -1 : src.indexOf('>', open);
+  const end = src.lastIndexOf('</svg>');
+  if (start < 0 || end < start) return String(src || '').trim();
+  return src.slice(start + 1, end).trim();
+}
+
 function markSvg(tokens, base) {
   const mark = tokens.mark || {};
   if (!mark.svg) return { defs: '', body: '' };
   const src = fs.readFileSync(path.resolve(base, mark.svg), 'utf8');
-  let body = src.replace(/^[\s\S]*?<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '').trim();
-  body = body.replace(/<title[\s\S]*?<\/title>/g, '');
-  body = body.replace(/<!--[\s\S]*?-->/g, '');
-  body = body.replace(/<defs>[\s\S]*?<\/defs>/g, '');
+  let body = markInner(src);
   for (const [from, to] of Object.entries(mark.recolor || {})) {
     body = body.replaceAll(from, String(to).replace('{pattern}', 'url(#brand-sett-mark)'));
   }

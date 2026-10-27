@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { cardSvg, layoutCard, loadBrand, renderCardPng, renderSvgPng, shareAlt } from '../index.js';
+import { cardSvg, escapeXml, layoutCard, loadBrand, renderCardPng, renderSvgPng, shareAlt } from '../index.js';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const tokensPath = path.resolve(root, '../og-brand-tokens.json');
@@ -108,6 +108,24 @@ test('share alt names the club, lowercases the type, and drops empty parts', () 
   assert.equal(alt.includes('  '), false);
   assert.equal(alt.includes(', .'), false);
   assert.equal(alt.includes(', in'), false);
+});
+
+test('text is escaped in one pass, including a broken comment and a broken tag', () => {
+  assert.equal(escapeXml('<!<!--- -->'), '&lt;!&lt;!--- --&gt;');
+  assert.equal(escapeXml('<scr<script>ipt>'), '&lt;scr&lt;script&gt;ipt&gt;');
+  assert.equal(escapeXml(`&<>"'`), '&amp;&lt;&gt;&quot;&apos;');
+  assert.equal(escapeXml('<!<!--- -->').includes('<!--'), false);
+  assert.equal(escapeXml('<scr<script>ipt>').includes('<script'), false);
+
+  const svg = cardSvg({ name: '<!<!--- -->', type: '<scr<script>ipt>', location: `"'&` }, brand);
+  const name = slot(svg, 'slot-name');
+  const type = slot(svg, 'slot-type');
+  const location = slot(svg, 'slot-location');
+  assert.match(name, /&lt;!&lt;!--- --&gt;/);
+  assert.equal(name.includes('<!--'), false);
+  assert.match(type, /&lt;SCR&lt;SCRIPT&gt;IPT&gt;/);
+  assert.equal(type.includes('<script'), false);
+  assert.match(location, /&quot;&apos;&amp;/);
 });
 
 test('empty slots are removed and a missing name uses the site name from the tokens', () => {
