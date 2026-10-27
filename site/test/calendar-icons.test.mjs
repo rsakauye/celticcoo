@@ -18,7 +18,7 @@ const readme = readFileSync(join(root, 'README.md'), 'utf8');
 
 test('calendar icon buttons keep the same hrefs and have accessible names', () => {
   for (const label of labels) {
-    assert.match(widget, new RegExp(`label: '${label.replace(/[.]/g, '\\.')}'`));
+    assert.equal(widget.includes(`label: '${label}'`), true);
   }
   assert.match(widget, /href: icsHref/);
   assert.match(widget, /href: links\.google/);
@@ -60,7 +60,7 @@ test('the style page shows the tokens and stays out of the index and sitemap', (
   assert.match(stylePage, /Tone:/);
   assert.match(stylePage, /Button and microcopy wording:/);
   assert.match(stylePage, /Accessible labels:/);
-  for (const label of labels) assert.match(stylePage, new RegExp(label.replace(/[.]/g, '\\.')));
+  for (const label of labels) assert.equal(stylePage.includes(label), true);
   assert.match(stylePage, /--cal-glyph: 16px/);
   assert.match(stylePage, /Legibility check, not a usable size/);
   assert.match(stylePage, /Legibility check: 16px on a light background/);
@@ -87,7 +87,7 @@ test('the style guide records the live tokens and the voice section', () => {
   assert.match(guide, /generic and self-hosted/i);
   assert.match(guide, /The calendar glyph \(`--cal-glyph`\) stays at 24px or larger, because the \.ics, G and envelope marks blur below that\./);
   assert.doesNotMatch(guide, /--cal-glyph: 16px/);
-  for (const label of labels) assert.match(guide, new RegExp(label.replace(/[.]/g, '\\.')));
+  for (const label of labels) assert.equal(guide.includes(label), true);
   const voice = guide.split('## Voice and copy')[1];
   assert.ok(voice);
   assert.match(voice, /friendly neighbour at the beer tent/);
