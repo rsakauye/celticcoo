@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Check the shipped ears strips. This does not redraw them.
+"""Check the shipped Ceilidh strips. This does not redraw them.
 
-Each tartan folder under site/public/tartans keeps a 256x64 ears strip
-(4 frames) and a 640x64 dance strip (10 frames).
+site/public/tartans/fraser-of-lovat keeps a 256x64 ears strip (4 frames)
+and a 640x64 dance strip (10 frames).
 """
 import os
 import struct
@@ -27,8 +27,8 @@ def main():
     folders = sorted(
         name for name in os.listdir(TARTANS) if os.path.isdir(os.path.join(TARTANS, name))
     )
-    if len(folders) < 8:
-        print(f"expected at least 8 tartan folders, found {len(folders)}", file=sys.stderr)
+    if folders != ["fraser-of-lovat"]:
+        print(f"expected only fraser-of-lovat, found {folders}", file=sys.stderr)
         return 1
     failed = False
     for folder in folders:

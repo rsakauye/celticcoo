@@ -1,6 +1,5 @@
 ---
 import Base from '../../layouts/Base.astro';
-import TartanPicker from '../../components/TartanPicker.astro';
 import { u } from '../../lib/site.js';
 import { defaultTartan } from '../../lib/ceilidhTartans.js';
 import { DEFAULT_LOW_A, DEFAULT_OUTPUT_LEVEL, PRESETS, STEPS } from '../../lib/droneTuner.js';
@@ -27,7 +26,6 @@ const ears = u(defaultTartan().ears);
           <span class="slot-sizer" aria-hidden="true">Ceilidh has her hooves over her ears. Still a way off.</span>
           <span data-mood-text>Ceilidh is waiting for a drone.</span>
         </p>
-        <TartanPicker variant="tune" />
       </div>
 
       <div class="readout" data-readout data-zone="none">
