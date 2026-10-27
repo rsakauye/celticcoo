@@ -1,17 +1,68 @@
 ---
-import { CONTACT_EMAIL, kitAction, MAILING_ADDRESS, SITE_NAME, u } from '../lib/site.js';
-const { compact = false } = Astro.props;
-const id = compact ? 'nl-email-footer' : 'nl-email';
+import { CONTACT_EMAIL, KIT_REMINDER_FIELDS, kitAction, MAILING_ADDRESS, SITE_NAME, u } from '../lib/site.js';
+const { compact = false, reminders = false, event = null } = Astro.props;
+const eventId = String(event?.id || '').trim();
+const eventName = String(event?.name || '').trim();
+const region = String(event?.region || event?.province_or_region || '').trim();
+const emailId = reminders ? `remind-email-${eventId || 'event'}` : (compact ? 'nl-email-footer' : 'nl-email');
+const consentId = `remind-yes-${eventId || 'event'}`;
 ---
 {kitAction ? (
-  <form action={kitAction} method="post" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-top:.4rem">
-    <label for={id} class="sr-only">Email address</label>
-    <input id={id} type="email" name="email_address" required placeholder="you@example.com" autocomplete="email" style="flex:1;min-width:200px" />
-    <button class="btn" type="submit">{compact ? 'Subscribe' : 'Send me the Coo\'s Letter'}</button>
-    <p class="muted" style="flex-basis:100%;margin:.25rem 0 0">Sign up for The Coo's Letter, our free email about Celtic events in Canada, every two weeks. It's from {SITE_NAME}, {MAILING_ADDRESS}, {CONTACT_EMAIL}. You can unsubscribe at any time.</p>
-  </form>
+  reminders ? (
+    <form class="remind" action={kitAction} method="post">
+      <fieldset>
+        <legend>Email me event reminders</legend>
+        <p class="muted">A short email before {eventName || 'this event'}, and The Coo's Letter every two weeks (Celtic events in Canada). Watch for a confirmation email to finish signing up. You're added only after you confirm.</p>
+        <label class="consent" for={consentId}>
+          <input id={consentId} type="checkbox" name={`fields[${KIT_REMINDER_FIELDS.interest}]`} value="yes" required />
+          <span>Yes, email me a reminder{eventName ? ` for ${eventName}` : ''} and The Coo's Letter.</span>
+        </label>
+        <label for={emailId}>Email address</label>
+        <input id={emailId} type="email" name="email_address" required autocomplete="email" inputmode="email" placeholder="you@example.com" />
+        {eventId && <input type="hidden" name={`fields[${KIT_REMINDER_FIELDS.event}]`} value={eventId} />}
+        {region && <input type="hidden" name={`fields[${KIT_REMINDER_FIELDS.region}]`} value={region} />}
+        <button class="btn" type="submit">Email me event reminders</button>
+        <p class="muted">You can unsubscribe at any time. It's from {SITE_NAME}, {MAILING_ADDRESS}, {CONTACT_EMAIL}.</p>
+      </fieldset>
+    </form>
+  ) : (
+    <form action={kitAction} method="post" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-top:.4rem">
+      <label for={emailId} class="sr-only">Email address</label>
+      <input id={emailId} type="email" name="email_address" required placeholder="you@example.com" autocomplete="email" style="flex:1;min-width:200px" />
+      <button class="btn" type="submit">{compact ? 'Subscribe' : 'Send me the Coo\'s Letter'}</button>
+      <p class="muted" style="flex-basis:100%;margin:.25rem 0 0">Sign up for The Coo's Letter, our free email about Celtic events in Canada, every two weeks. Watch for a confirmation email to finish signing up. It's from {SITE_NAME}, {MAILING_ADDRESS}, {CONTACT_EMAIL}. You can unsubscribe at any time.</p>
+    </form>
+  )
 ) : (
-  compact
-    ? <span class="muted">Newsletter sign-up opens soon. Meanwhile, grab the <a href={u('events.ics')}>calendar feed</a>.</span>
-    : <div><p style="margin:.2rem 0"><b>Sign-up opens soon.</b></p><p class="muted" style="margin:.2rem 0">Until then, subscribe to the <a href={u('events.ics')}>events calendar</a> or the <a href={u('rss.xml')}>RSS feed</a>.</p></div>
+  reminders
+    ? <p class="muted">Reminder email opens soon. Until then, add the event to your calendar or subscribe to the <a href={u('events.ics')}>events calendar</a>.</p>
+    : compact
+      ? <span class="muted">Newsletter sign-up opens soon. Meanwhile, grab the <a href={u('events.ics')}>calendar feed</a>.</span>
+      : <div><p style="margin:.2rem 0"><b>Sign-up opens soon.</b></p><p class="muted" style="margin:.2rem 0">Until then, subscribe to the <a href={u('events.ics')}>events calendar</a> or the <a href={u('rss.xml')}>RSS feed</a>.</p></div>
 )}
+<style>
+  .remind { display: block; margin-top: .35rem; max-width: 40rem; }
+  .remind fieldset { border: 0; margin: 0; padding: 0; }
+  .remind legend { font-weight: 700; color: var(--green); padding: 0; margin: 0 0 .35rem; font-size: 1.05rem; }
+  .remind label { display: block; font-weight: 600; margin: .75rem 0 .3rem; }
+  .remind label.consent {
+    display: flex;
+    gap: .7rem;
+    align-items: flex-start;
+    font-weight: 500;
+    min-height: 44px;
+    padding: .45rem 0;
+    margin: .2rem 0;
+  }
+  .remind input[type="checkbox"] {
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-top: .1rem;
+    padding: 0;
+    flex: none;
+    accent-color: var(--green);
+  }
+  .remind input[type="email"] { width: 100%; max-width: 28rem; }
+  .remind button { margin-top: .75rem; min-height: 44px; }
+  .remind p { margin: .35rem 0; }
+</style>
