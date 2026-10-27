@@ -1052,5 +1052,16 @@
   "offers_lessons": "n",
   "verified": "2026-10-18",
   "note": "Monthly tastings; membership has a waitlist (adults 19+)."
+ },
+ {
+  "name": "Sláinte Social Club",
+  "type": "pipe band",
+  "city": "Calgary",
+  "province": "AB",
+  "website": "https://www.slaintesocialclub.ca",
+  "source_url": "https://www.slaintesocialclub.ca/the-band/",
+  "offers_lessons": "unknown",
+  "verified": "2026-10-27",
+  "note": "A Grade 3 pipe band that also performs as a ceilidh band, playing traditional tunes alongside newer ones. Players come from Alberta and British Columbia, and the band practices at Royal Canadian Legion Chapelhow Branch 284, 606 38 Ave NE, Calgary."
  }
 ]
