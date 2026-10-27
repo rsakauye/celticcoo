@@ -14,10 +14,11 @@ Build-time pictures for a shared link. 1200 by 630. There is no site name in the
 ## Use it
 
 ```js
-import { loadBrand, renderCardPng } from './index.js';
+import { loadBrand, renderCardPng, shareAlt } from './index.js';
 
 const brand = loadBrand(new URL('./og-brand-tokens.json', import.meta.url));
 const png = renderCardPng({ name, type, location }, brand);
+const alt = shareAlt({ name, type, location }, brand);
 ```
 
 `loadBrand` throws if either TTF is missing. The renderer loads those files itself and does not use a system font.
@@ -29,6 +30,7 @@ const png = renderCardPng({ name, type, location }, brand);
 - Type and location are one line, uppercased for the type, and ellipsized past 740 pixels.
 - An empty type or location is omitted. No type pulls the name up. No location leaves the space above the tagline empty.
 - A missing name falls back to `site_name`.
+- `shareAlt` is the image description. The type is lowercased. An empty type or location is left out, with no spare comma. The closing sentence is the tagline, with `{site}` filled from `site_name`. No name, type, or location leaves the site name plus that tagline.
 
 ## Another site
 

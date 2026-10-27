@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { groups } from '../src/lib/data.js';
 import { clubCardFields } from '../src/lib/groupProfiles.js';
-import { loadBrand, renderCardPng, renderSvgPng } from '../../shared/og/index.js';
+import { loadBrand, renderCardPng, renderSvgPng, shareAlt } from '../../shared/og/index.js';
 
 const siteOg = readFileSync(new URL('../src/pages/og.png.js', import.meta.url), 'utf8');
 const brand = loadBrand(path.resolve(process.cwd(), '../shared/og/og-brand-tokens.json'));
@@ -17,6 +17,17 @@ test('the site share image uses the token fonts and the lighter accent', () => {
   assert.equal(brand.tokens.colors.url, '#f0b27a');
   const css = readFileSync(new URL('../src/layouts/Base.astro', import.meta.url), 'utf8');
   assert.match(css, /--ginger2:#e0843f/);
+  const slainte = groups.find((g) => g.name === 'Sláinte Social Club');
+  const macbeth = groups.find((g) => g.name === 'Clan MacBeth');
+  assert.equal(
+    shareAlt(clubCardFields(slainte), brand),
+    'Sláinte Social Club, pipe band in Calgary, AB. Upcoming events on The Celtic Coo.',
+  );
+  assert.equal(
+    shareAlt(clubCardFields(macbeth), brand),
+    'Clan MacBeth, clan society. Upcoming events on The Celtic Coo.',
+  );
+  assert.equal(shareAlt({}, brand), 'The Celtic Coo. Upcoming events on The Celtic Coo.');
 });
 
 test('a club share card is a png and the site card still draws the mascot', async () => {

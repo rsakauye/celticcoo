@@ -2,6 +2,7 @@
 import NewsletterForm from '../components/NewsletterForm.astro';
 import { u, SITE_NAME } from '../lib/site.js';
 import { bookingConfig } from '../lib/booking.js';
+import { loadBrand, shareAlt } from '../../../shared/og/index.js';
 const { noindex = false, hideCornerCoo = false, breadcrumbs = null, jsonld = null, ogType = 'website', crumb = null, title = SITE_NAME, description = 'Highland Games, pipe bands, Highland dance, Gaelic and Celtic festivals across Canada, plus the shops and makers who keep the culture going.', ogTitle = '', ogDescription = '', ogImage: ogImagePath = '', ogImageAlt = '' } = Astro.props;
 const fullTitle = title === SITE_NAME ? 'The Celtic Coo: Highland Games & Celtic events in Canada' : `${title} · The Celtic Coo`;
 const shareTitle = ogTitle || fullTitle;
@@ -21,7 +22,8 @@ const robots = noindex || !isProd ? 'noindex, follow' : 'index, follow, max-imag
 const ogImage = ogImagePath
   ? (String(ogImagePath).startsWith('http') ? ogImagePath : `${ORIGIN}${String(ogImagePath).startsWith('/') ? '' : '/'}${ogImagePath}`)
   : `${ORIGIN}/og.png`;
-const imageAlt = ogImageAlt || "Ceilidh the Coo, The Celtic Coo's Highland coo mascot";
+const shareBrand = loadBrand(`${process.cwd()}/../shared/og/og-brand-tokens.json`);
+const imageAlt = ogImageAlt || shareAlt({}, shareBrand);
 const ld = [];
 if (relPath === '') {
   ld.push({ '@context': 'https://schema.org', '@type': 'Organization', '@id': `${ORIGIN}/#org`, name: SITE_NAME, url: `${ORIGIN}/`, logo: `${ORIGIN}/og.png`, address: { '@type': 'PostalAddress', postOfficeBoxNumber: '1604', addressLocality: 'Okotoks', addressRegion: 'AB', postalCode: 'T1S 1B5', addressCountry: 'CA' } });
@@ -56,6 +58,7 @@ const ldJson = JSON.stringify(ld.length === 1 ? ld[0] : ld).replace(/</g, '\\u00
   <meta name="twitter:title" content={shareTitle} />
   <meta name="twitter:description" content={shareDescription} />
   <meta name="twitter:image" content={ogImage} />
+  <meta name="twitter:image:alt" content={imageAlt} />
   {ld.length > 0 && <script type="application/ld+json" set:html={ldJson} />}
   <meta name="theme-color" content="#1f4d3a" />
   <link rel="icon" href={u('favicon.svg')} type="image/svg+xml" />

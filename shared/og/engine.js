@@ -35,6 +35,10 @@ function escapeXml(value) {
     .replace(/>/g, '&gt;');
 }
 
+function oneLine(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim();
+}
+
 function loadPackage(name) {
   const here = path.dirname(fileURLToPath(import.meta.url));
   let dir = here;
@@ -196,6 +200,23 @@ export function layoutCard(fields, brand) {
     nameY,
     locationY: last + GAP_NAME_LOC,
   };
+}
+
+export function shareAlt(fields, tokensOrBrand) {
+  const tokens = tokensOrBrand && tokensOrBrand.tokens ? tokensOrBrand.tokens : (tokensOrBrand || {});
+  const site = oneLine(tokens.site_name);
+  const name = oneLine(fields?.name) || site;
+  const type = oneLine(fields?.type).toLowerCase();
+  const location = oneLine(fields?.location);
+  let subject = name;
+  if (type && location) subject = `${name}, ${type} in ${location}`;
+  else if (location) subject = `${name} in ${location}`;
+  else if (type) subject = `${name}, ${type}`;
+  let tagline = oneLine(String(tokens.tagline || '').replaceAll('{site}', site));
+  if (tagline && !/[.!?]$/.test(tagline)) tagline = `${tagline}.`;
+  if (!subject) return tagline;
+  if (!tagline) return `${subject}.`;
+  return `${subject}. ${tagline}`;
 }
 
 export function cardSvg(fields, brand) {

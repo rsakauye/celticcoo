@@ -80,11 +80,17 @@ test('a shared profile card names the club and uses that club\'s share image', (
   assert.match(layout, /name="twitter:title" content=\{shareTitle\}/);
   assert.match(layout, /name="twitter:description" content=\{shareDescription\}/);
   assert.match(layout, /property="og:image" content=\{ogImage\}/);
+  assert.match(layout, /property="og:image:alt" content=\{imageAlt\}/);
+  assert.match(layout, /name="twitter:image:alt" content=\{imageAlt\}/);
+  assert.match(layout, /shareAlt\(\{\}, shareBrand\)/);
+  assert.doesNotMatch(layout, /Highland coo mascot/);
   assert.match(layout, /name="twitter:card" content="summary_large_image"/);
   const profile = readFileSync(new URL('../src/pages/groups/[id]/index.astro', import.meta.url), 'utf8');
   assert.match(profile, /ogTitle=\{clubShareTitle\(g\)\}/);
   assert.match(profile, /ogDescription=\{CLUB_SHARE_DESCRIPTION\}/);
   assert.match(profile, /ogImage=\{`\/groups\/\$\{g\.id\}\/og\.png`\}/);
+  assert.match(profile, /shareAlt\(clubCardFields\(g\), shareBrand\)/);
+  assert.match(profile, /ogImageAlt=\{cardAlt\}/);
   assert.match(layout, /--ginger2:#e0843f/);
   assert.equal(clubCardFields({ name: 'Sláinte Social Club', type: 'pipe band', city: 'Calgary', province: 'AB' }).location, 'Calgary, AB');
   assert.equal(clubCardFields({ name: 'ScotDance Canada', type: 'association', city: 'National', province: 'National' }).location, '');

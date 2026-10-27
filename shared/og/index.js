@@ -7,5 +7,6 @@ export {
   loadBrand,
   renderCardPng,
   renderSvgPng,
+  shareAlt,
   templateSvg,
 } from './engine.js';

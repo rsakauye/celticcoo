@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { cardSvg, layoutCard, loadBrand, renderCardPng, renderSvgPng } from '../index.js';
+import { cardSvg, layoutCard, loadBrand, renderCardPng, renderSvgPng, shareAlt } from '../index.js';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const tokensPath = path.resolve(root, '../og-brand-tokens.json');
@@ -73,6 +73,41 @@ test('a short name stays one line at 80px and a long name wraps then shrinks to 
   assert.match(slot(longSvg, 'slot-type'), />PIPE BAND &amp; DANCE SCHOOL</);
   assert.match(slot(longSvg, 'slot-location'), /y="348"/);
   assert.match(slot(longSvg, 'slot-location'), />Lethbridge and Medicine Hat, Alberta, Canada</);
+});
+
+test('share alt names the club, lowercases the type, and drops empty parts', () => {
+  const tokens = brand.tokens;
+  assert.equal(
+    shareAlt({ name: 'Sláinte Social Club', type: 'Pipe Band', location: 'Calgary, AB' }, tokens),
+    'Sláinte Social Club, pipe band in Calgary, AB. Upcoming events on The Celtic Coo.',
+  );
+  assert.equal(
+    shareAlt({ name: 'Sláinte  Social Club', type: '  pipe   band ', location: 'Calgary,  AB' }, brand),
+    'Sláinte Social Club, pipe band in Calgary, AB. Upcoming events on The Celtic Coo.',
+  );
+  assert.equal(
+    shareAlt({ name: 'Sláinte Social Club', type: '', location: 'Calgary, AB' }, tokens),
+    'Sláinte Social Club in Calgary, AB. Upcoming events on The Celtic Coo.',
+  );
+  assert.equal(
+    shareAlt({ name: 'Sláinte Social Club', type: 'Pipe band', location: '   ' }, tokens),
+    'Sláinte Social Club, pipe band. Upcoming events on The Celtic Coo.',
+  );
+  assert.equal(
+    shareAlt({ name: 'Sláinte Social Club', type: '', location: '' }, tokens),
+    'Sláinte Social Club. Upcoming events on The Celtic Coo.',
+  );
+  assert.equal(shareAlt({}, tokens), 'The Celtic Coo. Upcoming events on The Celtic Coo.');
+  const other = { site_name: 'Used Glass', tagline: 'Listings on {site}' };
+  assert.equal(shareAlt({ name: 'Shop', type: 'Stained Glass', location: '' }, other), 'Shop, stained glass. Listings on Used Glass.');
+  assert.equal(shareAlt({ name: 'Shop', location: 'Toronto' }, other), 'Shop in Toronto. Listings on Used Glass.');
+  assert.equal(shareAlt({ name: 'Shop' }, other), 'Shop. Listings on Used Glass.');
+  assert.equal(shareAlt({}, other), 'Used Glass. Listings on Used Glass.');
+  const alt = shareAlt(SAMPLE_1, tokens);
+  assert.doesNotMatch(alt, /tartan|mascot|artwork/i);
+  assert.equal(alt.includes('  '), false);
+  assert.equal(alt.includes(', .'), false);
+  assert.equal(alt.includes(', in'), false);
 });
 
 test('empty slots are removed and a missing name uses the site name from the tokens', () => {

@@ -2,12 +2,15 @@
 import Base from '../../../layouts/Base.astro';
 import ClubEventRow from '../../../components/ClubEventRow.astro';
 import { groups, events, TODAY, GROUP_EMOJI } from '../../../lib/data.js';
-import { CLUB_SHARE_DESCRIPTION, clubLinks, clubMetaDescription, clubPlace, clubShareTitle, linkPack, splitClubEvents } from '../../../lib/groupProfiles.js';
+import { CLUB_SHARE_DESCRIPTION, clubCardFields, clubLinks, clubMetaDescription, clubPlace, clubShareTitle, linkPack, splitClubEvents } from '../../../lib/groupProfiles.js';
 import { DOMAIN, u } from '../../../lib/site.js';
+import { loadBrand, shareAlt } from '../../../../../shared/og/index.js';
 export function getStaticPaths() {
   return groups.map((g) => ({ params: { id: g.id }, props: { g } }));
 }
 const { g } = Astro.props;
+const shareBrand = loadBrand(`${process.cwd()}/../shared/og/og-brand-tokens.json`);
+const cardAlt = shareAlt(clubCardFields(g), shareBrand);
 const place = clubPlace(g);
 const links = clubLinks(g);
 const { upcoming, past } = splitClubEvents(events, g, TODAY);
@@ -37,7 +40,7 @@ const icons = {
   share: '<path d="M12 16V6"/><path d="M8 9l4-4 4 4"/><path d="M6 12v6a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-6"/>',
 };
 ---
-<Base title={place ? `${g.name} in ${place}` : g.name} crumb={g.name} breadcrumbs={[['Clubs & lessons', 'groups/']]} description={description} ogTitle={clubShareTitle(g)} ogDescription={CLUB_SHARE_DESCRIPTION} ogImage={`/groups/${g.id}/og.png`} ogImageAlt={`${g.name}. ${CLUB_SHARE_DESCRIPTION}`} jsonld={jsonld}>
+<Base title={place ? `${g.name} in ${place}` : g.name} crumb={g.name} breadcrumbs={[['Clubs & lessons', 'groups/']]} description={description} ogTitle={clubShareTitle(g)} ogDescription={CLUB_SHARE_DESCRIPTION} ogImage={`/groups/${g.id}/og.png`} ogImageAlt={cardAlt} jsonld={jsonld}>
   <p class="back"><a id="group-back" href={u('groups/')}>← Clubs &amp; lessons</a></p>
   <header class="club-head">
     <h1>{g.name}</h1>
