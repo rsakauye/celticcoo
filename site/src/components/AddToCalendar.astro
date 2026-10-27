@@ -1,10 +1,18 @@
 ---
 import { calendarLinks } from '../lib/calendar.js';
 import { u } from '../lib/site.js';
+import CalendarGlyph from './CalendarGlyph.astro';
 const { e, compact = false } = Astro.props;
 const site = Astro.site ? Astro.site.href : 'https://celticcoo.ca/';
 const links = e ? calendarLinks(e, { site }) : null;
 const icsHref = links ? u(`events/${e.id}.ics`) : '';
+const actions = links
+  ? [
+      { href: icsHref, label: 'Download calendar file', mark: 'ics' },
+      { href: links.google, label: 'Add to Google Calendar', mark: 'g', external: true },
+      { href: links.outlook, label: 'Add to Outlook calendar', mark: 'mail', external: true },
+    ]
+  : [];
 ---
 {links && (
   <nav class:list={['add-cal', { compact }]} aria-label={`Add ${e.name} to your calendar`}>
@@ -20,32 +28,44 @@ const icsHref = links ? u(`events/${e.id}.ics`) : '';
         {' '}The .ics file opens in Apple Calendar and other calendar apps.
       </p>
     )}
-    <a href={icsHref}>Download .ics</a>
-    <a href={links.google} rel="noopener noreferrer" target="_blank">Google Calendar <span class="sr-only">(opens in a new tab)</span>↗</a>
-    <a href={links.outlook} rel="noopener noreferrer" target="_blank">Outlook <span class="sr-only">(opens in a new tab)</span>↗</a>
+    <span class="add-cal-row">
+      {actions.map((action) => (
+        <a
+          href={action.href}
+          aria-label={action.label}
+          title={action.label}
+          rel={action.external ? 'noopener noreferrer' : undefined}
+          target={action.external ? '_blank' : undefined}
+        >
+          <CalendarGlyph mark={action.mark} />
+        </a>
+      ))}
+    </span>
   </nav>
 )}
 <style>
   .add-cal { display: flex; flex-wrap: wrap; gap: .35rem .5rem; align-items: center; margin: .2rem 0 .4rem; max-width: 100%; }
   .add-cal-label, .add-cal-note { flex-basis: 100%; }
   .add-cal-label { font-size: .85rem; color: var(--muted); }
+  .add-cal-row { display: flex; flex-wrap: wrap; gap: .5rem; flex-basis: 100%; }
   .add-cal-note { margin: 0 0 .15rem; }
   .add-cal a {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
     min-height: 44px;
-    padding: .35rem .7rem;
+    padding: 0;
     border-radius: 10px;
     border: 2px solid var(--green);
     color: var(--green);
     background: transparent;
     text-decoration: none;
-    font-weight: 600;
-    font-size: .95rem;
-    white-space: nowrap;
+    line-height: 0;
   }
   .add-cal a:hover { background: var(--cream); }
   .add-cal.compact { margin: .55rem 0 0; }
-  .add-cal.compact a { font-size: .88rem; padding: .3rem .55rem; }
 </style>

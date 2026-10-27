@@ -23,6 +23,7 @@ GitHub Actions and deployed to Cloudflare Pages with wrangler.
 | `data/sources_and_orgs.csv` | Calendars and associations re-checked weekly. |
 | `data/source_state.json` | Last snapshot from the weekly source check (written by the workflow). |
 | `site/` | Astro site: `/`, `/events/`, `/results/`, `/groups/`, `/burns-night/`, `/shops/`, `/fundraising/`, `/what-to-wear/`, `/tartans/`, `/roots/`, `/submit/`, `/about/`, `/newsletter/`, `/book/`, `/events.ics`, `/rss.xml`, `/sitemap.xml`, 404. `/results/` pulls headline + link only from the pipes\|drums and Piping Press RSS feeds at build time. |
+| [`STYLEGUIDE.md`](STYLEGUIDE.md) | Colours, type, tartan accents, buttons and icon rules taken from the CSS. The same tokens render at `/style/` (noindex, and not listed in the sitemap). |
 | `site/functions/api/book.js` | Booking form endpoint. Checks Turnstile, validates the fields, stores the request in private D1, then asks the mailer for a notice. |
 | `site/migrations/` | D1 schema for the private booking intake and the hello@ log. Not applied until the setup below. |
 | `scripts/check_sources.py` | Weekly re-check of source pages (standard library only). |
