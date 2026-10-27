@@ -27,7 +27,7 @@ const PAGES = {
 };
 export function GET(context) {
   const site = new URL(import.meta.env.BASE_URL, context.site).href;
-  const groupLastmod = gitDate([P('groups/[id].astro'), D('groups_canada.json'), D('events_2027.json'), D('events_manual.json')]);
+  const groupLastmod = gitDate([P('groups/[id]/index.astro'), P('groups/[id]/og.png.js'), D('groups_canada.json'), D('events_2027.json'), D('events_manual.json')]);
   const entries = [
     ...Object.entries(PAGES).map(([p, deps]) => [p, gitDate(deps)]),
     ...events.map((e) => [`events/${e.id}/`, eventLastmod(e.id)]),

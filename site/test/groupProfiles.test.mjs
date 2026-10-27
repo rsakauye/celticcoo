@@ -16,6 +16,7 @@ import {
   eventMatchesClub,
   splitClubEvents,
   clubLinks,
+  clubCardFields,
   clubMetaDescription,
   eventDateParts,
   eventPlace,
@@ -67,7 +68,7 @@ test('short club slugs drop fillers and suffixes, and a published slug never cha
   assert.match(src, /published slug never changes/);
 });
 
-test('a shared profile card names the club and keeps the site image', () => {
+test('a shared profile card names the club and uses that club\'s share image', () => {
   const club = { name: 'Sláinte Social Club', kind: 'Pipe band / piping', city: 'Calgary', regionLabel: 'Alberta' };
   assert.equal(clubShareTitle(club), 'Sláinte Social Club · Pipe band / piping · Calgary, Alberta');
   assert.equal(clubShareTitle({ name: 'ScotDance Canada', kind: 'Association', city: 'National', regionLabel: 'National / multi-province' }), 'ScotDance Canada · Association · National / multi-province');
@@ -80,10 +81,13 @@ test('a shared profile card names the club and keeps the site image', () => {
   assert.match(layout, /name="twitter:description" content=\{shareDescription\}/);
   assert.match(layout, /property="og:image" content=\{ogImage\}/);
   assert.match(layout, /name="twitter:card" content="summary_large_image"/);
-  const profile = readFileSync(new URL('../src/pages/groups/[id].astro', import.meta.url), 'utf8');
+  const profile = readFileSync(new URL('../src/pages/groups/[id]/index.astro', import.meta.url), 'utf8');
   assert.match(profile, /ogTitle=\{clubShareTitle\(g\)\}/);
   assert.match(profile, /ogDescription=\{CLUB_SHARE_DESCRIPTION\}/);
-  assert.doesNotMatch(profile, /og:image/);
+  assert.match(profile, /ogImage=\{`\/groups\/\$\{g\.id\}\/og\.png`\}/);
+  assert.match(layout, /--ginger2:#e0843f/);
+  assert.equal(clubCardFields({ name: 'Sláinte Social Club', type: 'pipe band', city: 'Calgary', province: 'AB' }).location, 'Calgary, AB');
+  assert.equal(clubCardFields({ name: 'ScotDance Canada', type: 'association', city: 'National', province: 'National' }).location, '');
 });
 
 test('share copies the page URL and falls back to the share sheet on mobile', async () => {
@@ -173,7 +177,7 @@ test('profile links and the event row only use values that are actually there', 
 
 test('listing cards link to the profile, and the profile page has the sections', () => {
   const listing = readFileSync(new URL('../src/pages/groups/index.astro', import.meta.url), 'utf8');
-  const profile = readFileSync(new URL('../src/pages/groups/[id].astro', import.meta.url), 'utf8');
+  const profile = readFileSync(new URL('../src/pages/groups/[id]/index.astro', import.meta.url), 'utf8');
   assert.match(listing, /class="card grp"/);
   assert.match(listing, /href=\{u\(`groups\/\$\{g\.id\}\/`\)\}/);
   assert.match(listing, /View profile →/);

@@ -143,6 +143,18 @@ export function clubPlace(club) {
   return [city, region].filter(Boolean).join(', ');
 }
 
+export function clubCardFields(club) {
+  const city = club?.city && String(club.city).trim() && club.city !== 'National' ? String(club.city).trim() : '';
+  const province = city && club?.province && String(club.province).trim() && club.province !== 'National'
+    ? String(club.province).trim()
+    : '';
+  return {
+    name: String(club?.name || '').trim(),
+    type: String(club?.type || '').trim(),
+    location: [city, province].filter(Boolean).join(', '),
+  };
+}
+
 export function clubMetaDescription(club) {
   const place = clubPlace(club);
   const kind = club?.kind || club?.type || 'group';
