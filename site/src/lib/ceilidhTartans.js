@@ -10,6 +10,7 @@ export const TARTANS = [
   {
     "slug": "fraser-of-lovat",
     "name": "Fraser of Lovat",
+    "short_label": "Lovat",
     "threads": ["#B82E26", "#B82E26", "#B82E26", "#fff", "#B82E26", "#B82E26", "#B82E26", "#1F4D3A", "#20284E", "#1F4D3A"],
     "default": true,
     "meaning": "The Lovat Frasers of Beauly, the clan behind the Calgary Frasers band name.",
@@ -25,6 +26,7 @@ export const TARTANS = [
   {
     "slug": "calgary",
     "name": "Calgary",
+    "short_label": "Calgary",
     "threads": ["#B82E26", "#B82E26", "#B82E26", "#B82E26", "#20284E", "#781A22", "#fff", "#781A22", "#20284E", "#E0A526", "#20284E", "#20284E"],
     "default": false,
     "meaning": "Calgary's own tartan: red for the Stampede, blue for the Bow and Elbow, gold for the prairie, black for oil and gas, white for the White Hat.",
@@ -40,6 +42,7 @@ export const TARTANS = [
   {
     "slug": "fraser",
     "name": "Fraser (red)",
+    "short_label": "Fraser",
     "threads": ["#B82E26", "#B82E26", "#B82E26", "#B82E26", "#1F4D3A", "#B82E26", "#B82E26", "#1F4D3A", "#1F4D3A", "#20284E", "#20284E", "#1F4D3A"],
     "default": false,
     "meaning": "The classic red Fraser sett from 1842, the most popular Fraser tartan today.",
@@ -55,6 +58,7 @@ export const TARTANS = [
   {
     "slug": "fraser-hunting",
     "name": "Fraser Hunting",
+    "short_label": "Fraser Hunting",
     "threads": ["#8A6230", "#8A6230", "#8A6230", "#1F4D3A", "#1F4D3A", "#20284E", "#8A6230", "#20284E", "#1F4D3A", "#1F4D3A", "#8A6230", "#B82E26"],
     "default": false,
     "meaning": "The Fraser hunting sett in browns and greens, worn by the Lovat Scouts.",
@@ -70,6 +74,7 @@ export const TARTANS = [
   {
     "slug": "government",
     "name": "Government (Black Watch)",
+    "short_label": "Government",
     "threads": ["#20284E", "#20284E", "#20284E", "#18161A", "#1F4D3A", "#1F4D3A", "#18161A", "#1F4D3A", "#1F4D3A", "#18161A", "#20284E", "#18161A"],
     "default": false,
     "meaning": "The 1739 Government tartan, root of many clan setts and worn by anyone.",
@@ -85,6 +90,7 @@ export const TARTANS = [
   {
     "slug": "menzies",
     "name": "Menzies",
+    "short_label": "Menzies",
     "threads": ["#B82E26", "#B82E26", "#B82E26", "#B82E26", "#1F4D3A", "#1F4D3A", "#1F4D3A", "#fff", "#78BAE6", "#B82E26"],
     "default": false,
     "meaning": "Clan Menzies of Castle Menzies at Weem, near Aberfeldy, in red and green.",
@@ -100,6 +106,7 @@ export const TARTANS = [
   {
     "slug": "logan-1819",
     "name": "Logan (1819)",
+    "short_label": "Logan 1819",
     "threads": ["#18161A", "#18161A", "#18161A", "#B82E26", "#18161A", "#B82E26", "#1F4D3A", "#1F4D3A", "#1F4D3A", "#B82E26"],
     "default": false,
     "meaning": "Wilsons of Bannockburn pattern No. 119 from 1819, later the Logan clan tartan.",
@@ -115,6 +122,7 @@ export const TARTANS = [
   {
     "slug": "macgillivray",
     "name": "MacGillivray",
+    "short_label": "MacGillivray",
     "threads": ["#B82E26", "#B82E26", "#B82E26", "#B82E26", "#C4A068", "#B82E26", "#1F4D3A", "#1F4D3A", "#20284E", "#20284E"],
     "default": false,
     "meaning": "Clan MacGillivray of Clan Chattan, from Wilsons of Bannockburn's 1819 pattern book.",
@@ -227,9 +235,10 @@ export function tartanView(tartan) {
   return {
     slug: tartan.slug,
     name: tartan.name,
+    shortLabel: tartan.short_label || tartan.name,
     swatch: swatchMarkup(tartan),
     tile: settTileImage(tartan),
-    label: tartan.name,
+    label: tartan.short_label || tartan.name,
   };
 }
 

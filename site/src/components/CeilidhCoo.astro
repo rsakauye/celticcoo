@@ -1,8 +1,9 @@
 ---
 import { u } from '../lib/site.js';
 import TartanPicker from './TartanPicker.astro';
-import { defaultTartan } from '../lib/ceilidhTartans.js';
+import { defaultTartan, settTileImage } from '../lib/ceilidhTartans.js';
 const strip = u(defaultTartan().fling);
+const chip = settTileImage(defaultTartan());
 ---
 <div class="coo-perch" data-ceilidh-coo>
   <button type="button" class="coo-bring" data-coo-toggle aria-pressed="false" aria-label="Bring out Ceilidh to dance to Highland Laddie">
@@ -15,10 +16,15 @@ const strip = u(defaultTartan().fling);
         </span>
       </span>
     </span>
-    <span class="coo-cue" aria-hidden="true"><span class="coo-cue-in" data-coo-tune>Highland Laddie</span><span class="coo-cue-out"><span class="coo-stop">stop</span> <span class="coo-tune-out" data-coo-tune>Highland Laddie</span></span></span>
+    <span class="coo-cue" aria-hidden="true"><span class="coo-cue-out"><span class="coo-stop">stop</span> <span class="coo-tune-out" data-coo-tune>Highland Laddie</span></span></span>
   </button>
-  <span class="sr-only" data-coo-status aria-live="polite"></span>
+  <button type="button" class="tartan-trigger" data-tartan-open aria-expanded="false" aria-controls="tartan-panel-corner" aria-label="Pick Ceilidh's tartan">
+    <span class="tartan-chip" data-tartan-chip style={`background-image:${chip}`}></span>
+    <span data-coo-tune>Highland Laddie</span>
+    <span class="tartan-caret" aria-hidden="true">▾</span>
+  </button>
   <TartanPicker variant="corner" />
+  <span class="sr-only" data-coo-status aria-live="polite"></span>
 </div>
 
 <script>
@@ -203,17 +209,16 @@ const strip = u(defaultTartan().fling);
     --peek-x: -74px;
     --peek-y: -2px;
     position: fixed;
-    z-index: 25;
+    z-index: 90;
     top: auto;
     left: auto;
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
+    flex-direction: row-reverse;
+    align-items: center;
     width: max-content;
-    max-width: 100%;
-    padding-top: 8px;
+    gap: 8px;
     right: calc(0.35rem + env(safe-area-inset-right, 0px));
-    bottom: env(safe-area-inset-bottom, 0px);
+    bottom: calc(0.35rem + env(safe-area-inset-bottom, 0px));
     pointer-events: none;
   }
   .coo-perch :global(.sr-only) {
@@ -228,8 +233,10 @@ const strip = u(defaultTartan().fling);
     border: 0;
   }
   .coo-bring {
+    position: relative;
+    z-index: 91;
     display: flex;
-    flex-direction: row-reverse;
+    flex-direction: column;
     align-items: flex-end;
     gap: .28rem;
     margin: 0;
@@ -264,6 +271,39 @@ const strip = u(defaultTartan().fling);
     user-select: none;
   }
   .coo-cue-out { display: none; }
+  .coo-bring > .coo-cue { display: none; }
+  .tartan-trigger {
+    position: relative;
+    z-index: 91;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin: 0;
+    padding: 0 .55rem;
+    border: 2px solid var(--green, #1f4d3a);
+    border-radius: 999px;
+    background: var(--card, #fffdf8);
+    color: var(--green, #1f4d3a);
+    box-shadow: 0 1px 0 rgba(42, 29, 20, .12);
+    font: 700 .72rem/1.2 system-ui, sans-serif;
+    letter-spacing: .02em;
+    cursor: pointer;
+    pointer-events: auto;
+  }
+  .tartan-trigger .tartan-chip {
+    width: 14px;
+    height: 14px;
+    margin-right: 6px;
+    flex: none;
+    border-radius: 2px;
+    border: 1px solid rgba(31, 77, 58, .45);
+    background-repeat: repeat;
+    background-size: 50% 50%;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+  }
+  .tartan-trigger .tartan-caret { margin-left: 4px; font-size: 10px; line-height: 1; }
+  .coo-perch[data-out] .tartan-trigger { display: none; }
   .coo-window {
     flex: none;
     width: var(--peek-w);
@@ -299,7 +339,7 @@ const strip = u(defaultTartan().fling);
   .coo-perch[data-out] .coo-window { width: var(--frame); height: var(--frame); }
   .coo-perch[data-out] .coo-shift { transform: translate3d(0, 0, 0); }
   .coo-perch[data-out] .coo-strip { animation: coo-fling-2x 1s steps(10, end) infinite; }
-  .coo-perch[data-out] .coo-cue {
+  .coo-perch[data-out] .coo-bring > .coo-cue {
     min-width: 2.75rem;
     min-height: 2.75rem;
     display: grid;
@@ -324,27 +364,20 @@ const strip = u(defaultTartan().fling);
     to { transform: translate3d(-1920px, 0, 0); }
   }
   /* Narrow screens: the tune name stays in the aria-label, and the peek sits in the side padding. */
+  /* Narrow screens: the tune name stays in the aria-label, and the peek sits in the side padding. */
   @media (max-width: 719px) {
-    .coo-perch {
-      left: 0;
-      right: 0;
-      width: auto;
-      max-width: none;
-      align-items: stretch;
-    }
-    .coo-bring { align-self: flex-end; }
-    .coo-perch:not([data-out]) .coo-cue { display: none; }
+    .coo-perch:not([data-out]) .coo-cue,
+    .coo-perch:not([data-out]) .tartan-trigger { display: none; }
     :global(main.wrap:has([data-ceilidh-coo])),
     :global(body:has([data-ceilidh-coo]) footer.site .wrap) {
       padding-right: calc(2.85rem + env(safe-area-inset-right, 0px));
     }
   }
-  /* The window size is fixed, so swapping the kilt image does not move the picker. */
   :global(body:has([data-ceilidh-coo])) {
-    padding-bottom: calc(16rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
   }
   :global(body:has([data-ceilidh-coo][data-out])) {
-    padding-bottom: calc(22rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(13rem + env(safe-area-inset-bottom, 0px));
   }
   @media (min-width: 720px) {
     .coo-perch {
@@ -355,11 +388,8 @@ const strip = u(defaultTartan().fling);
       --peek-y: 0px;
     }
     .coo-perch[data-out] .coo-strip { animation-name: coo-fling-3x; }
-    :global(body:has([data-ceilidh-coo])) {
-      padding-bottom: calc(22rem + env(safe-area-inset-bottom, 0px));
-    }
     :global(body:has([data-ceilidh-coo][data-out])) {
-      padding-bottom: calc(30rem + env(safe-area-inset-bottom, 0px));
+      padding-bottom: calc(17rem + env(safe-area-inset-bottom, 0px));
     }
   }
   /* After the size query, so a wide screen still holds the standing frame. */

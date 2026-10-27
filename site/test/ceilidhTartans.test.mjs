@@ -67,6 +67,7 @@ test('the picker lists only the enabled tartans from the config', () => {
   for (const row of catalog) {
     const found = TARTANS.find((tartan) => tartan.slug === row.slug);
     assert.equal(found.name, row.name);
+    assert.equal(found.short_label, row.short_label);
     assert.equal(found.meaning, row.meaning);
     assert.equal(found.enabled, true);
   }
@@ -186,7 +187,7 @@ test('each swatch is the woven sett, not one colour or a stripe', () => {
   assert.match(picker, /applyTartan\(tartan,/);
   assert.match(picker, /paint\(readTartan\(storage\)\)/);
   assert.match(picker, /aria-pressed=/);
-  assert.match(picker, /max-width: 719px/);
+  assert.match(picker, /max-width: 640px/);
   assert.match(picker, /prefers-reduced-motion: reduce/);
   assert.match(picker, /try \{ return localStorage\.getItem\(key\); \} catch \{ return null; \}/);
   assert.match(picker, /try \{ localStorage\.setItem\(key, value\); \} catch/);
@@ -196,7 +197,8 @@ test('each swatch is the woven sett, not one colour or a stripe', () => {
   assert.doesNotMatch(coo, /data-kilt-peek/);
   const boot = picker.slice(picker.lastIndexOf('paint('));
   assert.match(boot, /readTartan\(storage\)/);
-  assert.match(boot, /revealSelected/);
+  assert.match(picker, /aria-expanded/);
+  assert.match(picker, /Escape/);
 });
 
 function cssBlock(css, selector) {
@@ -216,81 +218,101 @@ function intersects(a, b) {
   return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
 }
 
-test('the picker stays below the stage at 1280 and 390', () => {
+const SHORT_LABELS = {
+  'fraser-of-lovat': 'Lovat',
+  calgary: 'Calgary',
+  fraser: 'Fraser',
+  'fraser-hunting': 'Fraser Hunting',
+  government: 'Government',
+  menzies: 'Menzies',
+  'logan-1819': 'Logan 1819',
+  macgillivray: 'MacGillivray',
+};
+
+test('the tartan picker opens from the name tag, not the hero flow', () => {
   const picker = readFileSync(join(site, 'src/components/TartanPicker.astro'), 'utf8');
   const coo = readFileSync(join(site, 'src/components/CeilidhCoo.astro'), 'utf8');
-  const stageAt = coo.indexOf('data-coo-stage');
-  const pickerAt = coo.indexOf('<TartanPicker');
-  assert.ok(stageAt > -1 && pickerAt > stageAt);
-  assert.doesNotMatch(picker, /position:\s*absolute/);
+  const catalog = JSON.parse(readFileSync(join(site, 'src/data/ceilidh-tartans.json'), 'utf8'));
+  for (const row of catalog) assert.equal(row.short_label, SHORT_LABELS[row.slug], row.slug);
+  assert.match(picker, /\{tartan\.short_label\}/);
+  assert.match(picker, /aria-label=\{tartan\.name\}/);
+  assert.match(picker, /title=\{tartan\.name\}/);
+  assert.match(picker, /data-tartan-current/);
+  assert.match(coo, /data-tartan-open/);
+  assert.match(coo, /aria-expanded="false"/);
+  assert.match(coo, /aria-controls="tartan-panel-corner"/);
+  assert.match(coo, /aria-label="Pick Ceilidh's tartan"/);
+  assert.match(coo, /class="tartan-chip"/);
+  assert.match(coo, /tartan-caret/);
+  assert.match(picker, /aria-label="Close"/);
+  assert.match(picker, /Pick Ceilidh's tartan/);
+  assert.doesNotMatch(picker, /tartan-row|scroll-snap|scrollIntoView/);
+  assert.match(coo, /padding-bottom: calc\(4\.5rem \+ env\(safe-area-inset-bottom, 0px\)\)/);
+  assert.match(coo, /bottom: calc\(0\.35rem \+ env\(safe-area-inset-bottom, 0px\)\)/);
   assert.match(coo, /flex-direction:\s*column/);
-  assert.match(coo, /padding-top:\s*8px/);
-  assert.match(coo, /height:\s*var\(--peek-h\)/);
 
+  const panel = cssBlock(picker, '.tartan-panel');
+  const grid = cssBlock(picker, '.tartan-grid');
   const tile = cssBlock(picker, '.tile');
-  const button = cssBlock(picker, '.tartan-tile');
   const label = cssBlock(picker, '.tartan-label');
-  const row = cssBlock(picker, '.tartan-row');
-  const corner = cssBlock(picker, '.tartan-pick.corner');
-  const narrow = picker.slice(picker.indexOf('@media (max-width: 719px)'));
-  const mobileCorner = cssBlock(narrow, '.tartan-pick.corner');
-  const mobileRow = cssBlock(narrow, '.tartan-pick.corner .tartan-row');
-  const mobileLabel = cssBlock(narrow, '.tartan-label');
+  const current = cssBlock(picker, '.tartan-current');
+  const close = cssBlock(picker, '.tartan-close');
+  const narrow = picker.slice(picker.indexOf('@media (max-width: 640px)'));
+  const mobileGrid = cssBlock(narrow, '.tartan-grid');
+  const sheet = cssBlock(narrow, '.tartan-panel');
 
+  assert.equal(cssDecl(panel, 'width'), '324px');
+  assert.equal(cssDecl(panel, 'padding'), '16px');
+  assert.equal(cssDecl(panel, 'border-radius'), '12px');
+  assert.match(cssDecl(panel, 'background'), /#FFFDF8/i);
+  assert.match(cssDecl(panel, 'border'), /1px solid rgba\(31,\s*77,\s*58,\s*\.2\)/);
+  assert.match(cssDecl(panel, 'box-shadow'), /0 8px 24px rgba\(0,\s*0,\s*0,\s*\.18\)/);
+  assert.match(cssDecl(grid, 'grid-template-columns'), /repeat\(4,\s*minmax\(0,\s*64px\)\)/);
+  assert.equal(cssDecl(grid, 'column-gap'), '12px');
+  assert.equal(cssDecl(grid, 'row-gap'), '14px');
   assert.equal(cssDecl(tile, 'width'), '56px');
   assert.equal(cssDecl(tile, 'height'), '56px');
   assert.equal(cssDecl(tile, 'border-radius'), '4px');
   assert.equal(cssDecl(tile, 'background-size'), '50% 50%');
-  assert.match(cssDecl(tile, 'background-repeat'), /repeat/);
   assert.match(picker, /image-rendering:\s*pixelated/);
   assert.match(cssDecl(tile, 'border'), /1px solid rgba\(31,\s*77,\s*58,\s*\.45\)/);
-  assert.equal(cssDecl(row, 'gap'), '12px');
-  assert.match(cssDecl(row, 'justify-content'), /center/);
-  assert.equal(cssDecl(corner, 'margin-top'), '24px');
-  assert.equal(cssDecl(corner, 'padding-bottom'), '32px');
-  assert.equal(cssDecl(button, 'gap'), '6px');
-  assert.equal(cssDecl(button, 'min-height'), '70px');
-  assert.equal(cssDecl(button, 'min-width'), '48px');
-  assert.match(label, /13px\/16px/);
-  assert.match(label, /#2B1D14/i);
-  assert.match(cssDecl(label, 'white-space'), /normal/);
-  assert.match(cssDecl(label, 'overflow'), /visible/);
-  assert.equal(cssDecl(label, 'max-width'), 'calc(56px + 12px)');
-  assert.doesNotMatch(label, /ellipsis|line-clamp|nowrap/);
   assert.match(picker, /outline:\s*3px solid #1F4D3A/);
   assert.match(picker, /outline-offset:\s*2px/);
-  assert.match(picker, /aria-pressed="true"/);
-  assert.match(picker, /font-weight:\s*700/);
-  assert.match(picker, /translateY\(-2px\)/);
-  assert.match(picker, /scrollIntoView\(\{ inline: 'nearest'/);
-
-  assert.match(narrow, /\.tartan-tile,\s*\n\s*\.tile \{ width: 48px; \}/);
-  assert.match(narrow, /\.tile \{ height: 48px; \}/);
-  assert.equal(cssDecl(mobileRow, 'gap'), '10px');
-  assert.match(cssDecl(mobileRow, 'scroll-snap-type'), /x mandatory/);
-  assert.match(cssDecl(mobileRow, 'overflow-x'), /auto/);
-  assert.match(picker, /scroll-snap-align:\s*start/);
-  assert.match(picker, /scrollbar-width:\s*none/);
-  assert.equal(cssDecl(mobileCorner, 'margin-top'), '16px');
-  assert.match(cssDecl(mobileCorner, 'padding'), /16px/);
-  assert.equal(cssDecl(mobileLabel, 'max-width'), 'calc(48px + 12px)');
-
-  const desktop = {
-    stage: { left: 700, top: 400, right: 770, bottom: 488 },
-    picker: { left: 400, top: 488 + 24, right: 960, bottom: 488 + 24 + 160 },
-  };
-  const mobile = {
-    stage: { left: 340, top: 620, right: 390, bottom: 664 },
-    picker: { left: 0, top: 664 + 16, right: 390, bottom: 664 + 16 + 140 },
-  };
-  assert.equal(intersects(desktop.stage, desktop.picker), false);
-  assert.equal(intersects(mobile.stage, mobile.picker), false);
-  assert.ok(desktop.picker.top - desktop.stage.bottom >= 24);
-  assert.ok(mobile.picker.top - mobile.stage.bottom >= 16);
-  assert.ok(desktop.stage.top >= 8);
+  assert.match(label, /12px\/15px/);
+  assert.match(label, /#2B1D14/i);
+  assert.match(cssDecl(label, 'overflow-wrap'), /normal/);
+  assert.match(cssDecl(label, 'text-align'), /center/);
+  assert.match(cssDecl(label, 'width'), /100%/);
+  assert.doesNotMatch(label, /ellipsis|line-clamp/);
+  assert.match(current, /13px/);
+  assert.match(current, /#2B1D14/i);
+  assert.match(cssDecl(current, 'white-space'), /nowrap/);
+  assert.equal(cssDecl(close, 'width'), '44px');
+  assert.equal(cssDecl(close, 'height'), '44px');
+  assert.match(picker, /svg \{ display: block; width: 16px; height: 16px; \}/);
+  assert.match(sheet, /border-radius:\s*16px 16px 0 0/);
+  assert.match(sheet, /max-height:\s*60vh/);
+  assert.match(sheet, /safe-area-inset-bottom/);
+  assert.match(sheet, /transform:\s*translateY\(100%\)/);
+  assert.match(sheet, /transition:\s*transform 200ms ease/);
+  assert.match(picker, /background:\s*rgba\(0, 0, 0, \.35\)/);
+  assert.equal(cssDecl(mobileGrid, 'column-gap'), 'calc((100% - 256px) / 3)');
+  assert.equal(cssDecl(mobileGrid, 'row-gap'), '14px');
+  assert.match(narrow, /\.tartan-grid \.tile \{ width: 64px; height: 64px; \}/);
+  assert.match(narrow, /top:\s*8px/);
+  assert.match(narrow, /width:\s*36px/);
+  assert.match(narrow, /height:\s*4px/);
+  assert.match(picker, /prefers-reduced-motion: reduce/);
+  assert.match(picker, /opacity:\s*0/);
+  assert.match(coo, /min-height:\s*44px/);
+  assert.match(coo, /width:\s*14px/);
+  assert.match(coo, /margin-right:\s*6px/);
+  assert.match(picker, /z-index:\s*80/);
+  assert.match(picker, /z-index:\s*70/);
+  assert.match(coo, /z-index:\s*91/);
 });
 
-test('rendered tiles clear the stage at 1280 and 390', async (t) => {
+test('the open and closed picker clears the hero at 1280 and 390', async (t) => {
   if (!existsSync('/usr/local/bin/google-chrome')) {
     t.skip('chrome is not installed');
     return;
@@ -319,69 +341,181 @@ test('rendered tiles clear the stage at 1280 and 390', async (t) => {
     args: ['--no-sandbox', '--disable-dev-shm-usage'],
   });
   try {
-    for (const [width, height, tile, minGap, slug] of [[1280, 800, 56, 24, 'calgary'], [390, 844, 48, 16, 'macgillivray']]) {
-      const page = await browser.newPage({ viewport: { width, height } });
-      await page.goto('http://127.0.0.1:4321/', { waitUntil: 'networkidle' });
-      await page.evaluate((id) => localStorage.setItem('ceilidh-tartan', id), slug);
-      await page.reload({ waitUntil: 'networkidle' });
-      await page.waitForTimeout(200);
-      const measured = await page.evaluate(() => {
-        const rect = (el) => {
-          const box = el.getBoundingClientRect();
-          return { left: box.left, top: box.top, right: box.right, bottom: box.bottom, width: box.width, height: box.height };
-        };
-        const stage = document.querySelector('[data-coo-stage]');
-        const picker = document.querySelector('[data-tartan-picker="corner"]');
-        const perch = document.querySelector('[data-ceilidh-coo]');
-        const tiles = [...document.querySelectorAll('[data-tartan-picker="corner"] .tile')];
-        const labels = [...document.querySelectorAll('[data-tartan-picker="corner"] .tartan-label')];
-        const pressed = document.querySelector('[data-tartan-picker="corner"] [aria-pressed="true"]');
-        const row = document.querySelector('[data-tartan-row]');
-        const pressedBox = pressed.getBoundingClientRect();
-        const rowBox = row.getBoundingClientRect();
+    const readLayout = (page) => page.evaluate(() => {
+      const rect = (el) => {
+        if (!el) return null;
+        const box = el.getBoundingClientRect();
+        return { left: box.left, top: box.top, right: box.right, bottom: box.bottom, width: box.width, height: box.height };
+      };
+      const visible = (el) => !!el && el.getClientRects().length > 0;
+      const panel = document.getElementById('tartan-panel-corner');
+      const copy = [...document.querySelectorAll('.hero h1, .hero .lede, .hero .meet, .hero .stats')].filter(visible).map(rect);
+      const tiles = [...document.querySelectorAll('#tartan-panel-corner .tartan-tile')].filter(visible);
+      const labels = tiles.map((cell) => {
+        const label = cell.querySelector('.tartan-label');
+        const style = getComputedStyle(label);
         return {
-          stage: rect(stage),
-          picker: rect(picker),
-          clearAbove: rect(stage).top - rect(perch).top,
-          tiles: tiles.map((el) => rect(el)),
-          labels: labels.map((el) => ({
-            text: el.textContent,
-            height: el.getBoundingClientRect().height,
-            overflow: getComputedStyle(el).overflow,
-            textOverflow: getComputedStyle(el).textOverflow,
-            whiteSpace: getComputedStyle(el).whiteSpace,
-          })),
-          outline: getComputedStyle(pressed.querySelector('.tile')).outline,
-          outlineOffset: getComputedStyle(pressed.querySelector('.tile')).outlineOffset,
-          pressed: pressed.getAttribute('aria-pressed'),
-          scrollY: window.scrollY,
-          selectedInRow: pressedBox.left >= rowBox.left - 1 && pressedBox.right <= rowBox.right + 1,
+          text: label.textContent,
+          title: cell.getAttribute('title'),
+          label: cell.getAttribute('aria-label'),
+          height: label.getBoundingClientRect().height,
+          scrollWidth: label.scrollWidth,
+          clientWidth: label.clientWidth,
+          cell: rect(cell),
+          box: rect(label),
+          weight: style.fontWeight,
+          wrap: style.overflowWrap,
         };
       });
-      const hit = intersects(measured.stage, measured.picker);
-      assert.equal(hit, false, String(width));
-      assert.ok(measured.picker.top - measured.stage.bottom >= minGap - 0.5, String(width));
-      assert.ok(measured.clearAbove >= 8 - 0.5, String(width));
-      assert.equal(measured.scrollY, 0, String(width));
-      assert.equal(measured.selectedInRow, true, String(width));
-      assert.equal(measured.pressed, 'true');
-      assert.match(measured.outline, /3px/);
-      assert.equal(measured.outlineOffset, '2px');
-      for (const box of measured.tiles) {
-        assert.ok(Math.abs(box.width - tile) < 0.6, String(width));
-        assert.ok(Math.abs(box.height - tile) < 0.6, String(width));
-        assert.ok(Math.abs(box.width - box.height) < 0.6, String(width));
+      const nav = [...document.querySelectorAll('nav, .tune-actions')].filter((el) => {
+        const style = getComputedStyle(el);
+        return visible(el) && (style.position === 'fixed' || style.position === 'sticky') && rect(el).top > window.innerHeight * 0.5;
+      }).map(rect);
+      return {
+        open: !panel.hidden,
+        expanded: document.querySelector('[aria-controls="tartan-panel-corner"]')?.getAttribute('aria-expanded'),
+        stage: rect(document.querySelector('[data-coo-stage]')),
+        heroCow: rect(document.querySelector('.hero > img')),
+        panel: visible(panel) ? rect(panel) : null,
+        copy,
+        tiles: tiles.map(rect),
+        labels,
+        nav,
+        current: document.querySelector('[data-tartan-current]')?.textContent || '',
+        triggerHeight: rect(document.querySelector('[aria-controls="tartan-panel-corner"]'))?.height || 0,
+      };
+    });
+
+    for (const [width, height, tileSize] of [[1280, 1100, 56], [390, 844, 64]]) {
+      const page = await browser.newPage({ viewport: { width, height } });
+      await page.addInitScript(() => localStorage.setItem('ceilidh-tartan', 'fraser-of-lovat'));
+      await page.goto('http://127.0.0.1:4321/', { waitUntil: 'networkidle' });
+      await page.waitForTimeout(200);
+      const closed = await readLayout(page);
+      assert.equal(closed.open, false, `closed ${width}`);
+      assert.equal(closed.expanded, width > 640 ? 'false' : closed.expanded);
+      assert.equal(closed.panel, null, `closed panel ${width}`);
+      for (const block of closed.copy) assert.equal(intersects(closed.stage, block), false, `closed sprite vs copy ${width}`);
+      if (closed.heroCow) assert.equal(intersects(closed.stage, closed.heroCow), false, `closed sprite vs hero cow ${width}`);
+
+      if (width > 640) await page.locator('[data-tartan-open]').click();
+      else await page.locator('[data-tartan-open]').evaluate((el) => el.click());
+      await page.waitForTimeout(280);
+      const opened = await readLayout(page);
+      assert.equal(opened.open, true, `open ${width}`);
+      assert.equal(opened.expanded, 'true', `expanded ${width}`);
+      assert.ok(opened.panel, `panel ${width}`);
+      if (width > 640) assert.equal(intersects(opened.panel, opened.stage), false, `panel vs sprite ${width}`);
+      const stack = await page.evaluate(() => ({
+        sprite: Number(getComputedStyle(document.querySelector('[data-coo-toggle]')).zIndex),
+        panel: Number(getComputedStyle(document.getElementById('tartan-panel-corner')).zIndex),
+      }));
+      assert.ok(stack.sprite > stack.panel, `sprite stacks above the panel ${width}`);
+      if (opened.heroCow) assert.equal(intersects(opened.panel, opened.heroCow), false, `panel vs hero cow ${width}`);
+      if (width > 640) {
+        for (const block of opened.copy) assert.equal(intersects(opened.panel, block), false, `panel vs copy ${width}`);
+      } else {
+        assert.ok(opened.panel.top >= opened.heroCow.bottom - 1, 'the sheet leaves the hero coo uncovered');
+        assert.ok(opened.panel.height <= height * 0.6 + 1, 'sheet max-height');
       }
-      for (const name of ['Fraser Hunting', 'Logan (1819)']) {
-        const label = measured.labels.find((item) => item.text === name);
-        assert.ok(label, name);
-        assert.equal(label.whiteSpace, 'normal');
-        assert.equal(label.overflow, 'visible');
-        assert.notEqual(label.textOverflow, 'ellipsis');
-        assert.ok(label.height > 16 && label.height <= 32.5, name);
+      for (const bar of opened.nav) assert.equal(intersects(opened.panel, bar), false, `panel vs nav ${width}`);
+      assert.equal(opened.tiles.length, 8, `tiles ${width}`);
+      for (let i = 0; i < opened.tiles.length; i += 1) {
+        for (let j = i + 1; j < opened.tiles.length; j += 1) {
+          assert.equal(intersects(opened.tiles[i], opened.tiles[j]), false, `tiles overlap ${width}`);
+        }
+        const box = opened.tiles[i];
+        assert.ok(Math.abs(box.width - (width > 640 ? 64 : box.width)) < 1 || width <= 640, `cell ${width}`);
+      }
+      const tileBoxes = await page.locator('#tartan-panel-corner .tile').evaluateAll((els) => els.map((el) => {
+        const box = el.getBoundingClientRect();
+        return { width: box.width, height: box.height };
+      }));
+      for (const box of tileBoxes) {
+        assert.ok(Math.abs(box.width - tileSize) < 1.2, `tile width ${width}`);
+        assert.ok(Math.abs(box.height - tileSize) < 1.2, `tile height ${width}`);
+      }
+      for (const label of opened.labels) {
+        assert.equal(label.wrap, 'normal', label.text);
+        assert.ok(label.box.left >= label.cell.left - 1 && label.box.right <= label.cell.right + 1, label.text);
+        assert.ok(label.cell.width <= 64.6, `${label.text} cell grew to ${label.cell.width}`);
+        const spill = Math.max(0, label.scrollWidth - label.clientWidth) / 2;
+        assert.ok(spill <= 6, `${label.text} spills ${spill}px into the next tile`);
+        assert.ok(label.height <= 30.5, `${label.text} is taller than two lines`);
+        assert.equal(label.label, label.title);
+      }
+      assert.equal(opened.labels.map((label) => label.text).join('|'), 'Lovat|Calgary|Fraser|Fraser Hunting|Government|Menzies|Logan 1819|MacGillivray');
+      assert.equal(opened.current, 'Fraser of Lovat');
+      if (width > 640) {
+        assert.ok(Math.abs(opened.panel.width - 324) < 1.5, 'panel width');
+        assert.ok(opened.triggerHeight >= 44, 'trigger height');
+        const tag = await page.locator('[data-tartan-open]').boundingBox();
+        const above = tag.y - opened.panel.bottom;
+        const below = opened.panel.top - (tag.y + tag.height);
+        assert.ok(Math.abs(above - 8) < 3 || Math.abs(below - 8) < 3, `anchor gap above ${above} below ${below}`);
+        assert.ok(Math.abs(opened.panel.right - (tag.x + tag.width)) < 3, 'right aligned to the name tag');
+        assert.ok(opened.panel.left >= 16 && opened.panel.right <= width - 16, 'clamped');
+        assert.equal(intersects(opened.panel, { left: tag.x, top: tag.y, right: tag.x + tag.width, bottom: tag.y + tag.height }), false);
+      } else {
+        assert.ok(opened.panel.left <= 1 && opened.panel.right >= width - 1, 'full width sheet');
+        assert.ok(opened.panel.height <= height * 0.6 + 1, 'max 60vh');
+        const gap = opened.labels.length > 1 ? opened.tiles[1].left - opened.tiles[0].right : 0;
+        assert.ok(gap > 20, `column gap ${gap}`);
       }
       await page.close();
     }
+
+    const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    await page.goto('http://127.0.0.1:4321/', { waitUntil: 'networkidle' });
+    const trigger = page.locator('[data-tartan-open]');
+    for (let i = 0; i < 40 && await trigger.evaluate((el) => el !== document.activeElement); i += 1) {
+      await page.keyboard.press('Tab');
+    }
+    assert.equal(await trigger.evaluate((el) => el === document.activeElement), true);
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(50);
+    assert.equal(await trigger.getAttribute('aria-expanded'), 'true');
+    const inside = await page.evaluate(() => {
+      const panel = document.getElementById('tartan-panel-corner');
+      return panel.contains(document.activeElement);
+    });
+    assert.equal(inside, true);
+    const before = await page.evaluate(() => document.activeElement.getAttribute('data-tartan-choice'));
+    await page.keyboard.press('ArrowRight');
+    const after = await page.evaluate(() => document.activeElement.getAttribute('data-tartan-choice'));
+    assert.notEqual(after, before);
+    await page.keyboard.press('Tab');
+    const stillInside = await page.evaluate(() => document.getElementById('tartan-panel-corner').contains(document.activeElement));
+    assert.equal(stillInside, true);
+    await page.locator('[data-tartan-close]').focus();
+    await page.keyboard.press('Shift+Tab');
+    const wrapped = await page.evaluate(() => document.getElementById('tartan-panel-corner').contains(document.activeElement));
+    assert.equal(wrapped, true);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(50);
+    assert.equal(await trigger.getAttribute('aria-expanded'), 'false');
+    assert.equal(await trigger.evaluate((el) => el === document.activeElement), true);
+    await trigger.click();
+    await page.waitForTimeout(50);
+    assert.equal(await trigger.getAttribute('aria-expanded'), 'true');
+    await page.locator('[data-tartan-choice="calgary"]').click();
+    assert.match(await page.locator('[data-ceilidh-dance]').first().getAttribute('src'), /calgary/);
+    assert.equal(await page.locator('[data-tartan-current]').first().textContent(), 'Calgary');
+    assert.equal(await page.locator('#tartan-panel-corner').evaluate((el) => el.hidden), false);
+    await page.locator('.hero h1').click();
+    await page.waitForTimeout(50);
+    assert.equal(await trigger.getAttribute('aria-expanded'), 'false');
+    await page.locator('[data-coo-toggle]').click();
+    await page.waitForTimeout(50);
+    assert.equal(await page.locator('#tartan-panel-corner').evaluate((el) => el.hidden), false);
+    await page.close();
+
+    const phone = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await phone.goto('http://127.0.0.1:4321/', { waitUntil: 'networkidle' });
+    await phone.locator('[data-coo-toggle]').click();
+    await phone.waitForTimeout(50);
+    assert.equal(await phone.locator('#tartan-panel-corner').evaluate((el) => el.hidden), false);
+    await phone.close();
   } finally {
     await browser.close();
   }
