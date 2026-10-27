@@ -1,0 +1,107 @@
+---
+import Base from '../../layouts/Base.astro';
+import ClubEventRow from '../../components/ClubEventRow.astro';
+import { groups, events, TODAY, GROUP_EMOJI } from '../../lib/data.js';
+import { clubLinks, clubMetaDescription, clubPlace, splitClubEvents } from '../../lib/groupProfiles.js';
+import { u } from '../../lib/site.js';
+export function getStaticPaths() {
+  return groups.map((g) => ({ params: { id: g.id }, props: { g } }));
+}
+const { g } = Astro.props;
+const place = clubPlace(g);
+const links = clubLinks(g);
+const { upcoming, past } = splitClubEvents(events, g, TODAY);
+const pastShown = past.slice(0, 5);
+const pastMore = past.slice(5);
+const description = clubMetaDescription(g);
+const jsonld = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: g.name,
+  ...(g.website ? { url: g.website } : {}),
+  ...(g.note ? { description: g.note } : {}),
+  ...(g.city && g.city !== 'National' ? { address: { '@type': 'PostalAddress', addressLocality: g.city, addressRegion: g.province, addressCountry: 'CA' } } : {}),
+};
+const icons = {
+  website: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.6 2.8 2.6 15.2 0 18"/><path d="M12 3c-2.6 2.8-2.6 15.2 0 18"/>',
+  facebook: '<path d="M15 7h-3a2 2 0 0 0-2 2v2H8"/><path d="M10 11v8"/><path d="M10 14h5"/>',
+  instagram: '<rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="12" cy="12" r="3.5"/><circle cx="17.2" cy="6.8" r=".7"/>',
+  youtube: '<rect x="3" y="7" width="18" height="12" rx="3"/><path d="M11 10.5v5l4.5-2.5z"/>',
+  tiktok: '<path d="M14 7v9.5a3.5 3.5 0 1 1-2.5-3.4"/><path d="M14 7c.8 2 2.4 3.2 4.5 3.4"/>',
+  x: '<path d="M5 5l14 14M19 5L5 19"/>',
+  bluesky: '<path d="M7 8c1.6 1.8 3.3 4.4 5 6.6C13.7 12.4 15.4 9.8 17 8c1.2 2.4.6 5.2-.8 6.8C15 16.4 13.2 17 12 17s-3-.6-4.2-2.2C6.4 13.2 5.8 10.4 7 8z"/>',
+  linkedin: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 11v6M8 8h.01M12 17v-3.5a2 2 0 0 1 4 0V17"/>',
+  other: '<path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.2 1.2"/><path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.2-1.2"/>',
+};
+---
+<Base title={place ? `${g.name} in ${place}` : g.name} crumb={g.name} breadcrumbs={[['Clubs & lessons', 'groups/']]} description={description} jsonld={jsonld}>
+  <p class="back"><a id="group-back" href={u('groups/')}>← Clubs &amp; lessons</a></p>
+  <header class="club-head">
+    <h1>{g.name}</h1>
+    <p class="club-kicker"><span class="pill green">{GROUP_EMOJI[g.kind] || ''} {g.kind}</span></p>
+    {place && <p class="muted where">{place}</p>}
+  </header>
+  {links.length > 0 && (
+    <div class="links">
+      {links.map((link) => (
+        <a class="btn ghost" href={link.url} target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true" set:html={icons[link.id] || icons.other}></svg>
+          {link.label}
+        </a>
+      ))}
+    </div>
+  )}
+  {g.note && <p class="about">{g.note}</p>}
+
+  <section class="events" aria-labelledby="upcoming-heading">
+    <h2 id="upcoming-heading">Upcoming events</h2>
+    {upcoming.length > 0 ? (
+      <ul class="ev-list">{upcoming.map((e) => <ClubEventRow e={e} />)}</ul>
+    ) : (
+      <p class="none">No upcoming events listed. <a href={u('submit/')}>Add yours</a>.</p>
+    )}
+  </section>
+
+  {past.length > 0 && (
+    <section class="events" aria-labelledby="past-heading">
+      <h2 id="past-heading">Past events</h2>
+      <ul class="ev-list">{pastShown.map((e) => <ClubEventRow e={e} muted={true} />)}</ul>
+      {pastMore.length > 0 && (
+        <details class="more-past">
+          <summary>Show all</summary>
+          <ul class="ev-list">{pastMore.map((e) => <ClubEventRow e={e} muted={true} />)}</ul>
+        </details>
+      )}
+    </section>
+  )}
+  <script is:inline>
+    (function () {
+      var back = document.getElementById('group-back');
+      if (!back) return;
+      try {
+        var ref = new URL(document.referrer);
+        var home = new URL(back.href, location.origin);
+        if (ref.origin === location.origin && ref.pathname.replace(/\/$/, '') === home.pathname.replace(/\/$/, '')) {
+          back.href = ref.pathname + ref.search + ref.hash;
+        }
+      } catch (e) {}
+    })();
+  </script>
+</Base>
+<style>
+  .back { margin:0 0 .4rem; }
+  .club-head h1 { margin-bottom:.35rem; }
+  .club-kicker { margin:.2rem 0; }
+  .where { margin:.15rem 0 0; }
+  .links { display:flex; flex-wrap:wrap; gap:.5rem; margin:1rem 0; }
+  .links .btn { display:inline-flex; align-items:center; gap:.4rem; }
+  .links svg { width:1rem; height:1rem; flex:none; fill:none; stroke:currentColor; stroke-width:1.75; stroke-linecap:round; stroke-linejoin:round; }
+  .links a.btn:hover, .links a.btn:focus-visible { background:var(--cream); }
+  .about { max-width:65ch; }
+  .events { margin-top:1.6rem; }
+  .events h2 { margin-bottom:.4rem; }
+  .ev-list { list-style:none; margin:0; padding:0; }
+  .none { margin:.2rem 0 0; }
+  .more-past { margin-top:.6rem; }
+  .more-past summary { cursor:pointer; color:var(--green2); font-weight:700; }
+</style>
