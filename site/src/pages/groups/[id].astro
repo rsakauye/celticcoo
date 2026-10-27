@@ -2,8 +2,8 @@
 import Base from '../../layouts/Base.astro';
 import ClubEventRow from '../../components/ClubEventRow.astro';
 import { groups, events, TODAY, GROUP_EMOJI } from '../../lib/data.js';
-import { CLUB_SHARE_DESCRIPTION, clubLinks, clubMetaDescription, clubPlace, clubShareTitle, splitClubEvents } from '../../lib/groupProfiles.js';
-import { u } from '../../lib/site.js';
+import { CLUB_SHARE_DESCRIPTION, clubLinks, clubMetaDescription, clubPlace, clubShareTitle, linkPack, splitClubEvents } from '../../lib/groupProfiles.js';
+import { DOMAIN, u } from '../../lib/site.js';
 export function getStaticPaths() {
   return groups.map((g) => ({ params: { id: g.id }, props: { g } }));
 }
@@ -14,6 +14,8 @@ const { upcoming, past } = splitClubEvents(events, g, TODAY);
 const pastShown = past.slice(0, 5);
 const pastMore = past.slice(5);
 const description = clubMetaDescription(g);
+const shortHost = `${DOMAIN.toLowerCase()}${linkPack.shortPrefix}${g.code}`;
+const shortUrl = `https://${shortHost}`;
 const jsonld = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
@@ -52,6 +54,9 @@ const icons = {
     <button type="button" class="btn ghost" id="share-page">
       <svg viewBox="0 0 24 24" aria-hidden="true" set:html={icons.share}></svg>
       <span id="share-label" aria-live="polite">Share this page</span>
+    </button>
+    <button type="button" class="btn ghost" id="short-link" data-url={shortUrl}>
+      <span id="short-label" aria-live="polite">Short link: {shortHost}</span>
     </button>
   </div>
   {g.note && <p class="about">{g.note}</p>}
@@ -105,6 +110,18 @@ const icons = {
       label.textContent = 'Link copied';
       window.clearTimeout(btn._copied);
       btn._copied = window.setTimeout(() => { label.textContent = 'Share this page'; }, 2000);
+    });
+    const shortBtn = document.getElementById('short-link');
+    const shortLabel = document.getElementById('short-label');
+    const shortText = shortLabel ? shortLabel.textContent : '';
+    shortBtn?.addEventListener('click', async () => {
+      const result = await shareClubPage(shortBtn.getAttribute('data-url'), {
+        copy: (url) => navigator.clipboard?.writeText ? navigator.clipboard.writeText(url) : Promise.reject(new Error('no clipboard')),
+      });
+      if (result !== 'copied' || !shortLabel) return;
+      shortLabel.textContent = 'Link copied';
+      window.clearTimeout(shortBtn._copied);
+      shortBtn._copied = window.setTimeout(() => { shortLabel.textContent = shortText; }, 2000);
     });
   </script>
 </Base>

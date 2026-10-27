@@ -2,6 +2,7 @@
  {
   "name": "Calgary Burns Club",
   "slug": "calgary-burns",
+  "code": "p4u5",
   "type": "burns club",
   "city": "Calgary",
   "province": "AB",
@@ -13,6 +14,7 @@
  {
   "name": "Calgary Highland Dancing Association",
   "slug": "calgary-highland-dancing",
+  "code": "k2hz",
   "type": "highland dance association",
   "city": "Calgary",
   "province": "AB",
@@ -24,6 +26,7 @@
  {
   "name": "Calgary School of Highland Dance",
   "slug": "calgary-school-highland-dance",
+  "code": "utj9",
   "type": "highland dance school",
   "city": "Calgary",
   "province": "AB",
@@ -35,6 +38,7 @@
  {
   "name": "Irish Cultural Society of Calgary",
   "slug": "irish-cultural-calgary",
+  "code": "338t",
   "type": "irish club",
   "city": "Calgary",
   "province": "AB",
@@ -46,6 +50,7 @@
  {
   "name": "Calgary Police Service Pipe Band",
   "slug": "calgary-police-service",
+  "code": "dmfg",
   "type": "pipe band",
   "city": "Calgary",
   "province": "AB",
@@ -57,6 +62,7 @@
  {
   "name": "Rocky Mountain Pipe Band",
   "slug": "rocky-mountain",
+  "code": "nve6",
   "type": "pipe band",
   "city": "Calgary",
   "province": "AB",
@@ -68,6 +74,7 @@
  {
   "name": "Foothills Caledonia Youth Pipe Band",
   "slug": "foothills-caledonia-youth",
+  "code": "4vbd",
   "type": "pipe band (youth)",
   "city": "Calgary",
   "province": "AB",
@@ -79,6 +86,7 @@
  {
   "name": "78th Fraser Highlanders Fort Calgary Garrison Youth Squad",
   "slug": "78th-fraser-highlanders-fort",
+  "code": "wpv6",
   "type": "pipe band (youth) / re-enactment",
   "city": "Calgary",
   "province": "AB",
@@ -90,6 +98,7 @@
  {
   "name": "78th Fraser Highlanders - Fort Calgary Garrison",
   "slug": "78th-fraser-calgary",
+  "code": "j36v",
   "type": "re-enactment / pipe band",
   "city": "Calgary",
   "province": "AB",
@@ -101,6 +110,7 @@
  {
   "name": "RSCDS Calgary Branch",
   "slug": "rscds-calgary",
+  "code": "szuw",
   "type": "scottish country dance",
   "city": "Calgary",
   "province": "AB",
@@ -112,6 +122,7 @@
  {
   "name": "St. Andrew-Caledonian Society of Calgary",
   "slug": "st-andrew-caledonian-calgary",
+  "code": "ujxa",
   "type": "st andrew's / caledonian society",
   "city": "Calgary",
   "province": "AB",
@@ -123,6 +134,7 @@
  {
   "name": "Calgary Welsh Society",
   "slug": "calgary-welsh",
+  "code": "nzka",
   "type": "welsh club",
   "city": "Calgary",
   "province": "AB",
@@ -134,6 +146,7 @@
  {
   "name": "Medicine Hat Burns Club",
   "slug": "medicine-hat-burns",
+  "code": "nv2f",
   "type": "burns club",
   "city": "Medicine Hat",
   "province": "AB",
@@ -145,6 +158,7 @@
  {
   "name": "Alberta Highland Dancing Association",
   "slug": "alberta-highland-dancing",
+  "code": "et99",
   "type": "highland dance association",
   "city": "",
   "province": "AB",
@@ -156,6 +170,7 @@
  {
   "name": "Edmonton Highland Dancing Association",
   "slug": "edmonton-highland-dancing",
+  "code": "kqyr",
   "type": "highland dance association",
   "city": "Edmonton",
   "province": "AB",
@@ -167,6 +182,7 @@
  {
   "name": "Edmonton Irish Sports and Social Society",
   "slug": "edmonton-irish-sports-social",
+  "code": "x3a5",
   "type": "irish club",
   "city": "Edmonton",
   "province": "AB",
@@ -178,6 +194,7 @@
  {
   "name": "Airdrie Scots Pipes and Drums",
   "slug": "airdrie-scots",
+  "code": "7xa9",
   "type": "pipe band",
   "city": "Airdrie",
   "province": "AB",
@@ -189,6 +206,7 @@
  {
   "name": "Edmonton Police Service Pipes & Drums",
   "slug": "edmonton-police-service",
+  "code": "rme6",
   "type": "pipe band",
   "city": "Edmonton",
   "province": "AB",
@@ -200,6 +218,7 @@
  {
   "name": "North Stratton Pipe Band",
   "slug": "north-stratton",
+  "code": "ffa5",
   "type": "pipe band",
   "city": "Edmonton",
   "province": "AB",
@@ -211,6 +230,7 @@
  {
   "name": "Red Deer & District Pipe Band",
   "slug": "red-deer-district",
+  "code": "gz9r",
   "type": "pipe band",
   "city": "Red Deer",
   "province": "AB",
@@ -222,6 +242,7 @@
  {
   "name": "Edmonton Youth Pipe Band",
   "slug": "edmonton-youth",
+  "code": "dvyb",
   "type": "pipe band (youth)",
   "city": "Edmonton",
   "province": "AB",
@@ -233,6 +254,7 @@
  {
   "name": "Alberta Society of Pipers & Drummers (ASPD)",
   "slug": "alberta-pipers-drummers-aspd",
+  "code": "sv44",
   "type": "pipe band association",
   "city": "",
   "province": "AB",
@@ -244,6 +266,7 @@
  {
   "name": "RSCDS Edmonton (Edmonton Caledonian Branch)",
   "slug": "rscds-edmonton-caledonian-branch",
+  "code": "fvqw",
   "type": "scottish country dance",
   "city": "Edmonton",
   "province": "AB",
@@ -255,6 +278,7 @@
  {
   "name": "Edmonton Scottish Society",
   "slug": "edmonton-scottish",
+  "code": "mwdt",
   "type": "scottish society",
   "city": "Edmonton",
   "province": "AB",
@@ -266,6 +290,7 @@
  {
   "name": "Flagstaff Scottish Club",
   "slug": "flagstaff-scottish",
+  "code": "rxew",
   "type": "scottish society",
   "city": "",
   "province": "AB",
@@ -277,6 +302,7 @@
  {
   "name": "Gaelic language program - Vancouver Scottish Cultural Societies",
   "slug": "gaelic-language-program",
+  "code": "u67g",
   "type": "gaelic class",
   "city": "Vancouver",
   "province": "BC",
@@ -288,6 +314,7 @@
  {
   "name": "ScotDance British Columbia",
   "slug": "scotdance-british-columbia",
+  "code": "eq3n",
   "type": "highland dance association",
   "city": "",
   "province": "BC",
@@ -299,6 +326,7 @@
  {
   "name": "Simon Fraser University Pipe Band",
   "slug": "simon-fraser-university",
+  "code": "x2ea",
   "type": "pipe band",
   "city": "Burnaby",
   "province": "BC",
@@ -310,6 +338,7 @@
  {
   "name": "BC Pipers' Association",
   "slug": "bc-pipers",
+  "code": "xahp",
   "type": "pipe band association",
   "city": "",
   "province": "BC",
@@ -321,6 +350,7 @@
  {
   "name": "RSCDS Vancouver Branch",
   "slug": "rscds-vancouver-branch",
+  "code": "jf3e",
   "type": "scottish country dance",
   "city": "Vancouver",
   "province": "BC",
@@ -332,6 +362,7 @@
  {
   "name": "Vancouver Scottish Cultural Centre / Vancouver Scottish Cultural Societies",
   "slug": "vancouver-scottish-cultural",
+  "code": "gsfh",
   "type": "scottish society",
   "city": "Vancouver",
   "province": "BC",
@@ -343,6 +374,7 @@
  {
   "name": "St. Andrew's and Caledonian Society of the City of Vancouver",
   "slug": "st-andrews-caledonian-vancouver",
+  "code": "5a7j",
   "type": "st andrew's / caledonian society",
   "city": "Vancouver",
   "province": "BC",
@@ -354,6 +386,7 @@
  {
   "name": "ScotDance Saskatchewan",
   "slug": "scotdance-saskatchewan",
+  "code": "36dw",
   "type": "highland dance association",
   "city": "",
   "province": "SK",
@@ -365,6 +398,7 @@
  {
   "name": "Saskatchewan Pipe Band Association",
   "slug": "saskatchewan",
+  "code": "zh35",
   "type": "pipe band association",
   "city": "",
   "province": "SK",
@@ -376,6 +410,7 @@
  {
   "name": "Prairie Pipe Band Association of Manitoba",
   "slug": "prairie-manitoba",
+  "code": "ncn6",
   "type": "pipe band association",
   "city": "Winnipeg",
   "province": "MB",
@@ -387,6 +422,7 @@
  {
   "name": "RSCDS Winnipeg Branch",
   "slug": "rscds-winnipeg-branch",
+  "code": "ncbs",
   "type": "scottish country dance",
   "city": "Winnipeg",
   "province": "MB",
@@ -398,6 +434,7 @@
  {
   "name": "St. Andrew's Society of Winnipeg",
   "slug": "st-andrews-winnipeg",
+  "code": "pdv4",
   "type": "st andrew's / caledonian society",
   "city": "Winnipeg",
   "province": "MB",
@@ -409,6 +446,7 @@
  {
   "name": "Comann Luchd-ionnsachaidh Thoronto (Toronto Gaelic Learners Association)",
   "slug": "comann-luchd-ionnsachaidh",
+  "code": "h4dx",
   "type": "gaelic class",
   "city": "Toronto",
   "province": "ON",
@@ -420,6 +458,7 @@
  {
   "name": "Comunn Gàidhlig Thoronto (Gaelic Society of Toronto)",
   "slug": "comunn-gaidhlig-thoronto-gaelic",
+  "code": "bvaf",
   "type": "gaelic society",
   "city": "Toronto",
   "province": "ON",
@@ -431,6 +470,7 @@
  {
   "name": "ScotDance Ontario",
   "slug": "scotdance-ontario",
+  "code": "p53k",
   "type": "highland dance association",
   "city": "",
   "province": "ON",
@@ -442,6 +482,7 @@
  {
   "name": "Glengarry Pipe Band",
   "slug": "glengarry",
+  "code": "uukk",
   "type": "pipe band",
   "city": "Maxville",
   "province": "ON",
@@ -453,6 +494,7 @@
  {
   "name": "Guelph Pipe Band",
   "slug": "guelph",
+  "code": "7ex9",
   "type": "pipe band",
   "city": "Guelph",
   "province": "ON",
@@ -464,6 +506,7 @@
  {
   "name": "Pipers' and Pipe Band Society of Ontario (PPBSO)",
   "slug": "pipers-ontario-ppbso",
+  "code": "pw8w",
   "type": "pipe band association",
   "city": "",
   "province": "ON",
@@ -475,6 +518,7 @@
  {
   "name": "York Garrison, 78th Fraser Highlanders",
   "slug": "york-garrison-78th-fraser",
+  "code": "26cn",
   "type": "re-enactment",
   "city": "Toronto",
   "province": "ON",
@@ -486,6 +530,7 @@
  {
   "name": "RSCDS Ottawa",
   "slug": "rscds-ottawa",
+  "code": "48pr",
   "type": "scottish country dance",
   "city": "Ottawa",
   "province": "ON",
@@ -497,6 +542,7 @@
  {
   "name": "RSCDS Toronto",
   "slug": "rscds-toronto",
+  "code": "e8vc",
   "type": "scottish country dance",
   "city": "Toronto",
   "province": "ON",
@@ -508,6 +554,7 @@
  {
   "name": "Scottish Studies Foundation",
   "slug": "scottish-studies-foundation",
+  "code": "sv5f",
   "type": "scottish society",
   "city": "Toronto",
   "province": "ON",
@@ -519,6 +566,7 @@
  {
   "name": "The Scottish Society of Ottawa",
   "slug": "scottish-ottawa",
+  "code": "8mjh",
   "type": "scottish society",
   "city": "Ottawa",
   "province": "ON",
@@ -530,6 +578,7 @@
  {
   "name": "St. Andrew's Society of Toronto",
   "slug": "st-andrews-toronto",
+  "code": "z23w",
   "type": "st andrew's / caledonian society",
   "city": "Toronto",
   "province": "ON",
@@ -541,6 +590,7 @@
  {
   "name": "The 78th Fraser Highlanders (Regimental HQ)",
   "slug": "78th-fraser-highlanders",
+  "code": "xgdj",
   "type": "re-enactment",
   "city": "Montreal",
   "province": "QC",
@@ -552,6 +602,7 @@
  {
   "name": "78th Fraser Highlanders, Garnison St-Andrews de Québec",
   "slug": "78th-fraser-highlanders-garnison",
+  "code": "6vr4",
   "type": "re-enactment / pipe band",
   "city": "Quebec City",
   "province": "QC",
@@ -563,6 +614,7 @@
  {
   "name": "RSCDS Montréal",
   "slug": "rscds-montreal",
+  "code": "qtyk",
   "type": "scottish country dance",
   "city": "Montreal",
   "province": "QC",
@@ -574,6 +626,7 @@
  {
   "name": "St. Andrew's Society of Montreal",
   "slug": "st-andrews-montreal",
+  "code": "tzc7",
   "type": "st andrew's / caledonian society",
   "city": "Montreal",
   "province": "QC",
@@ -585,6 +638,7 @@
  {
   "name": "ScotDance New Brunswick",
   "slug": "scotdance-new-brunswick",
+  "code": "dg7s",
   "type": "highland dance association",
   "city": "",
   "province": "NB",
@@ -596,6 +650,7 @@
  {
   "name": "Greater Moncton Scottish Association",
   "slug": "greater-moncton-scottish",
+  "code": "njwz",
   "type": "scottish society",
   "city": "Moncton",
   "province": "NB",
@@ -607,6 +662,7 @@
  {
   "name": "New Brunswick Scottish Cultural Association",
   "slug": "new-brunswick-scottish-cultural",
+  "code": "sptn",
   "type": "scottish society",
   "city": "",
   "province": "NB",
@@ -618,6 +674,7 @@
  {
   "name": "Gaelic Language Society of Halifax",
   "slug": "gaelic-language-halifax",
+  "code": "t86s",
   "type": "gaelic class",
   "city": "Halifax",
   "province": "NS",
@@ -629,6 +686,7 @@
  {
   "name": "Colaisde na Gàidhlig / The Gaelic College",
   "slug": "colaisde-na-gaidhlig-gaelic",
+  "code": "sr8t",
   "type": "gaelic class / piping & dance school",
   "city": "St. Ann's",
   "province": "NS",
@@ -640,6 +698,7 @@
  {
   "name": "Baile nan Gàidheal / Highland Village Museum",
   "slug": "baile-nan-gaidheal-highland",
+  "code": "ew7t",
   "type": "gaelic culture centre",
   "city": "Iona",
   "province": "NS",
@@ -651,6 +710,7 @@
  {
   "name": "Comhairle na Gàidhlig (NS Gaelic Council)",
   "slug": "comhairle-na-gaidhlig-ns-gaelic",
+  "code": "zdjn",
   "type": "gaelic society",
   "city": "",
   "province": "NS",
@@ -662,6 +722,7 @@
  {
   "name": "ScotDance Nova Scotia",
   "slug": "scotdance-nova-scotia",
+  "code": "gg58",
   "type": "highland dance association",
   "city": "",
   "province": "NS",
@@ -673,6 +734,7 @@
  {
   "name": "Atlantic Canada Pipe Band Association",
   "slug": "atlantic",
+  "code": "dp6x",
   "type": "pipe band association",
   "city": "",
   "province": "NS",
@@ -684,6 +746,7 @@
  {
   "name": "Halifax Citadel Society (78th Highlanders living history)",
   "slug": "halifax-citadel-78th-highlanders",
+  "code": "78rv",
   "type": "re-enactment",
   "city": "Halifax",
   "province": "NS",
@@ -695,6 +758,7 @@
  {
   "name": "RSCDS Nova Scotia Branch",
   "slug": "rscds-nova-scotia-branch",
+  "code": "bx8g",
   "type": "scottish country dance",
   "city": "Halifax",
   "province": "NS",
@@ -706,6 +770,7 @@
  {
   "name": "Antigonish Highland Society",
   "slug": "antigonish-highland",
+  "code": "h8qj",
   "type": "scottish society",
   "city": "Antigonish",
   "province": "NS",
@@ -717,6 +782,7 @@
  {
   "name": "Ship Hector Society",
   "slug": "ship-hector",
+  "code": "9mrc",
   "type": "scottish society",
   "city": "Pictou",
   "province": "NS",
@@ -728,6 +794,7 @@
  {
   "name": "College of Piping and Celtic Performing Arts of Canada",
   "slug": "college-piping-celtic-performing",
+  "code": "2zne",
   "type": "piping & dance school",
   "city": "Summerside",
   "province": "PE",
@@ -739,6 +806,7 @@
  {
   "name": "Clan Baird Society - Canada",
   "slug": "clan-baird",
+  "code": "8nrb",
   "type": "clan society",
   "city": "",
   "province": "National",
@@ -750,6 +818,7 @@
  {
   "name": "Clan Campbell Society (North America)",
   "slug": "clan-campbell-north-america",
+  "code": "mgda",
   "type": "clan society",
   "city": "",
   "province": "National",
@@ -761,6 +830,7 @@
  {
   "name": "Clan Chisholm Society Canada Branch",
   "slug": "clan-chisholm-branch",
+  "code": "6hmf",
   "type": "clan society",
   "city": "",
   "province": "National",
@@ -772,6 +842,7 @@
  {
   "name": "Clan Colquhoun of Canada",
   "slug": "clan-colquhoun",
+  "code": "8q4y",
   "type": "clan society",
   "city": "",
   "province": "National",
@@ -783,6 +854,7 @@
  {
   "name": "Clan Donald Canada",
   "slug": "clan-donald",
+  "code": "wjh2",
   "type": "clan society",
   "city": "",
   "province": "National",
@@ -794,6 +866,7 @@
  {
   "name": "Clan Fraser Society of North America",
   "slug": "clan-fraser-north-america",
+  "code": "mhym",
   "type": "clan society",
   "city": "",
   "province": "National",
@@ -805,6 +878,7 @@
  {
   "name": "Clan Grant Society Canada",
   "slug": "clan-grant",
+  "code": "md7j",
   "type": "clan society",
   "city": "",
   "province": "National",
@@ -816,6 +890,7 @@
  {
   "name": "Clan Gregor Society Canada Chapter",
   "slug": "clan-gregor-chapter",
+  "code": "gksp",
   "type": "clan society",
   "city": "",
   "province": "National",
@@ -827,6 +902,7 @@
  {
   "name": "Clan Hunter Association, Canada",
   "slug": "clan-hunter",
+  "code": "qdt7",
   "type": "clan society",
   "city": "",
   "province": "National",
@@ -838,6 +914,7 @@
  {
   "name": "Clan Logan Society of Canada",
   "slug": "clan-logan",
+  "code": "vcuh",
   "type": "clan society",
   "city": "",
   "province": "National",
@@ -849,6 +926,7 @@
  {
   "name": "Clan MacBeth",
   "slug": "clan-macbeth",
+  "code": "6tec",
   "type": "clan society",
   "city": "",
   "province": "National",
@@ -860,6 +938,7 @@
  {
   "name": "Clan MacKenzie Society of Canada",
   "slug": "clan-mackenzie",
+  "code": "c2w3",
   "type": "clan society",
   "city": "",
   "province": "National",
@@ -871,6 +950,7 @@
  {
   "name": "Clan MacLennan Canada",
   "slug": "clan-maclennan",
+  "code": "g5w7",
   "type": "clan society",
   "city": "",
   "province": "National",
@@ -882,6 +962,7 @@
  {
   "name": "Clan MacLeod Societies of Canada",
   "slug": "clan-macleod-societies",
+  "code": "mfgp",
   "type": "clan society",
   "city": "",
   "province": "National",
@@ -893,6 +974,7 @@
  {
   "name": "Clan MacNeil in Canada",
   "slug": "clan-macneil-in",
+  "code": "qepd",
   "type": "clan society",
   "city": "",
   "province": "National",
@@ -904,6 +986,7 @@
  {
   "name": "Clan MacPherson Association Canadian Branch",
   "slug": "clan-macpherson-canadian-branch",
+  "code": "fhx9",
   "type": "clan society",
   "city": "",
   "province": "National",
@@ -915,6 +998,7 @@
  {
   "name": "Clan MacRae Society of Canada",
   "slug": "clan-macrae",
+  "code": "unuy",
   "type": "clan society",
   "city": "",
   "province": "National",
@@ -926,6 +1010,7 @@
  {
   "name": "Clan Munro Association of Canada",
   "slug": "clan-munro",
+  "code": "3s6x",
   "type": "clan society",
   "city": "",
   "province": "National",
@@ -937,6 +1022,7 @@
  {
   "name": "Clan Sinclair Association (Canada)",
   "slug": "clan-sinclair",
+  "code": "zq7g",
   "type": "clan society",
   "city": "",
   "province": "National",
@@ -948,6 +1034,7 @@
  {
   "name": "Elliot Clan Society of Canada",
   "slug": "elliot-clan",
+  "code": "kkqh",
   "type": "clan society",
   "city": "",
   "province": "National",
@@ -959,6 +1046,7 @@
  {
   "name": "MacFie Clan Society in Canada",
   "slug": "macfie-clan-in",
+  "code": "tg8j",
   "type": "clan society",
   "city": "",
   "province": "National",
@@ -970,6 +1058,7 @@
  {
   "name": "Canadian Scottish Athletic Federation",
   "slug": "canadian-scottish-athletic",
+  "code": "qfh3",
   "type": "heavy events association",
   "city": "",
   "province": "National",
@@ -982,6 +1071,7 @@
  {
   "name": "ScotDance Canada",
   "slug": "scotdance",
+  "code": "ssg7",
   "type": "highland dance association",
   "city": "",
   "province": "National",
@@ -993,6 +1083,7 @@
  {
   "name": "Scots of Canada (Clans and Scottish Societies of Canada)",
   "slug": "scots-clans-scottish-societies",
+  "code": "3npz",
   "type": "umbrella organization",
   "city": "",
   "province": "National",
@@ -1004,6 +1095,7 @@
  {
   "name": "Alberta Scottish Athletic Association (ASAA)",
   "slug": "alberta-scottish-athletic-asaa",
+  "code": "v3yk",
   "type": "heavy events club",
   "city": "",
   "province": "AB",
@@ -1016,6 +1108,7 @@
  {
   "name": "Vancouver Island Scottish Throwing Association (VISTA)",
   "slug": "vancouver-island-scottish",
+  "code": "eedv",
   "type": "heavy events club",
   "city": "Victoria",
   "province": "BC",
@@ -1028,6 +1121,7 @@
  {
   "name": "Irish Cultural Society trad session at Hickey's",
   "slug": "irish-cultural-trad-session-at",
+  "code": "z6qc",
   "type": "trad session",
   "city": "Calgary",
   "province": "AB",
@@ -1040,6 +1134,7 @@
  {
   "name": "Irish trad session at The Nonsuch",
   "slug": "irish-trad-session-at-nonsuch",
+  "code": "f43q",
   "type": "trad session",
   "city": "Edmonton",
   "province": "AB",
@@ -1052,6 +1147,7 @@
  {
   "name": "Celtic session at O'Byrne's Downtown",
   "slug": "celtic-session-at-obyrnes",
+  "code": "czzn",
   "type": "trad session",
   "city": "Edmonton",
   "province": "AB",
@@ -1064,6 +1160,7 @@
  {
   "name": "Edmonton Irish Club jam session",
   "slug": "edmonton-irish-jam-session",
+  "code": "2tyb",
   "type": "trad session",
   "city": "Edmonton",
   "province": "AB",
@@ -1076,6 +1173,7 @@
  {
   "name": "Trad session at Hynes Irish Pub",
   "slug": "trad-session-at-hynes-irish-pub",
+  "code": "kheh",
   "type": "trad session",
   "city": "Vancouver",
   "province": "BC",
@@ -1088,6 +1186,7 @@
  {
   "name": "Trad sessions at Noonan's Pub",
   "slug": "trad-sessions-at-noonans-pub",
+  "code": "qza3",
   "type": "trad session",
   "city": "Toronto",
   "province": "ON",
@@ -1100,6 +1199,7 @@
  {
   "name": "Alberta Scotch Society",
   "slug": "alberta-scotch",
+  "code": "4qhx",
   "type": "whisky society",
   "city": "Edmonton",
   "province": "AB",
@@ -1112,6 +1212,7 @@
  {
   "name": "The Scotch Malt Whisky Society of Canada",
   "slug": "scotch-malt-whisky",
+  "code": "8b7c",
   "type": "whisky society",
   "city": "Calgary",
   "province": "AB",
@@ -1124,6 +1225,7 @@
  {
   "name": "West Coast Whisky Society",
   "slug": "west-coast-whisky",
+  "code": "nekx",
   "type": "whisky society",
   "city": "Vancouver",
   "province": "BC",
@@ -1136,6 +1238,7 @@
  {
   "name": "Toronto Whisky Society",
   "slug": "toronto-whisky",
+  "code": "5uym",
   "type": "whisky society",
   "city": "Toronto",
   "province": "ON",
@@ -1148,6 +1251,7 @@
  {
   "name": "The Commons Scotch Whisky Society",
   "slug": "commons-scotch-whisky",
+  "code": "dz49",
   "type": "whisky society",
   "city": "Halifax",
   "province": "NS",
@@ -1160,6 +1264,7 @@
  {
   "name": "Sláinte Social Club",
   "slug": "slainte",
+  "code": "63kr",
   "type": "pipe band",
   "city": "Calgary",
   "province": "AB",

@@ -3,10 +3,13 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import groupsRaw from '../../data/groups_canada.json' with { type: 'json' };
 import { groups, events } from '../src/lib/data.js';
+import { DEFAULT_ALPHABET, redirectLines } from '../../shared/slugs/index.js';
 import {
   suggestClubSlug,
   assignClubSlugs,
+  assignClubCodes,
   publishedSlug,
+  linkPack,
   clubShareTitle,
   CLUB_SHARE_DESCRIPTION,
   shareClubPage,
@@ -39,18 +42,27 @@ test('short club slugs drop fillers and suffixes, and a published slug never cha
   assert.deepEqual(assignClubSlugs([{ name: 'Renamed Club', city: 'Calgary', slug: 'slainte' }]), ['slainte']);
 
   const snapshot = JSON.parse(readFileSync(new URL('./fixtures/published-club-slugs.json', import.meta.url), 'utf8'));
-  assert.deepEqual(groupsRaw.map((g) => [g.name, g.slug]), snapshot);
+  assert.deepEqual(groupsRaw.map((g) => [g.name, g.slug, g.code]), snapshot);
   assert.equal(new Set(snapshot.map((row) => row[1])).size, snapshot.length);
-  snapshot.forEach(([, slug]) => {
+  assert.equal(new Set(snapshot.map((row) => row[2])).size, snapshot.length);
+  snapshot.forEach(([, slug, code]) => {
     assert.equal(publishedSlug(slug), slug);
     assert.equal(/-\d+$/.test(slug), false);
+    assert.equal(code.length, linkPack.shortCodeLength);
+    assert.equal([...code].every((char) => DEFAULT_ALPHABET.includes(char)), true);
   });
   const byName = new Map(groups.map((g) => [g.name, g.id]));
   groupsRaw.forEach((g) => assert.equal(byName.get(g.name), g.slug));
   assert.deepEqual(assignClubSlugs(groupsRaw), snapshot.map((row) => row[1]));
+  assert.deepEqual(assignClubCodes(groupsRaw), snapshot.map((row) => row[2]));
+  assert.deepEqual(assignClubCodes([{ name: 'Renamed Club', code: 'k7mp' }]), ['k7mp']);
   const manual = new Map([['RSCDS Calgary Branch', 'rscds-calgary']]);
   const regenerated = assignClubSlugs(groupsRaw.map((g) => (manual.has(g.name) ? g : { ...g, slug: '' })));
   assert.deepEqual(regenerated, snapshot.map((row) => row[1]));
+  const redirects = readFileSync(new URL('../public/_redirects', import.meta.url), 'utf8').trim().split('\n').filter((line) => line && !line.startsWith('#'));
+  const expected = redirectLines(groupsRaw.map((g) => ({ slug: g.slug, code: g.code })), linkPack);
+  assert.deepEqual(redirects, expected);
+  assert.equal(expected.length >= groupsRaw.length, true);
   const src = readFileSync(new URL('../src/lib/groupProfiles.js', import.meta.url), 'utf8');
   assert.match(src, /published slug never changes/);
 });
@@ -181,4 +193,8 @@ test('listing cards link to the profile, and the profile page has the sections',
   assert.match(profile, /navigator\.clipboard/);
   assert.match(profile, /navigator\.share/);
   assert.match(profile, /id="share-page"/);
+  assert.match(profile, /id="short-link"/);
+  assert.match(profile, /Short link:/);
+  assert.match(profile, /DOMAIN\.toLowerCase\(\)/);
+  assert.match(profile, /shortPrefix/);
 });
