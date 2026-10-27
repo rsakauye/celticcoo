@@ -8,7 +8,7 @@ const path = Astro.url.pathname;
 const nav = [['', 'Home'], ['events/', 'Events'], ['results/', 'Results'], ['groups/', 'Clubs & lessons'], ['burns-night/', 'Burns Night'], ['shops/', 'Shops'], ['fundraising/', 'Fundraising']];
 const navNew = [['what-to-wear/', 'What to wear'], ['tartans/', 'Find your tartan'], ['roots/', 'Trace your roots'], ['about/', 'About Ceilidh']];
 const navEnd = [['book/', bookingConfig.navLabel], ['submit/', 'Add yours']];
-const tartanBg = `background-image:url(${u('tartan-maple-leaf.svg')})`;
+const tartanBg = `background-image:url(${u('tartan-fraser-of-lovat.svg')})`;
 // SEO: canonical always points at the production domain (celticcoo.pages.dev is a duplicate host).
 const ORIGIN = 'https://celticcoo.ca';
 const BASE_URL = import.meta.env.BASE_URL.replace(/\/?$/, '/');
@@ -74,8 +74,8 @@ const ldJson = JSON.stringify(ld.length === 1 ? ld[0] : ld).replace(/</g, '\\u00
     h2 { font-size:1.5rem; margin:2rem 0 .7rem; }
     .wrap { max-width:1100px; margin:0 auto; padding:.8rem 1.1rem; }
     main.wrap { padding-top:1.4rem; padding-bottom:3rem; }
-    /* tartan band: Canada's national Maple Leaf tartan, rendered from its threadcount (scripts/make_tartan.py) */
-    .tartan { height:10px; background:var(--green) 0 0 / 68px 68px repeat; }
+    /* tartan band: Fraser of Lovat, drawn by scripts/make_tartan.py */
+    .tartan { height:10px; background:var(--green) 0 0 / 10px 10px repeat; }
     header.site { background:var(--green); color:#fff; }
     header.site .wrap { display:flex; flex-wrap:wrap; gap:.6rem 1.4rem; align-items:center; justify-content:space-between; }
     header.site a { color:#fff; text-decoration:none; }
@@ -162,15 +162,11 @@ const ldJson = JSON.stringify(ld.length === 1 ? ld[0] : ld).replace(/</g, '\\u00
       <div class="muted" style="max-width:460px">
         Dates come from organizers' and associations' websites and can change. Always confirm with the organizer before you travel.<br />
         <a href={u('events.ics')}>Calendar (ICS)</a> · <a href={u('rss.xml')}>RSS</a> · <a href={u('book/')}>{bookingConfig.navLabel}</a> · <a href={u('submit/')}>Add an event or shop</a> · <a href={u('about/')}>About</a> · <a href={u('sitemap.xml')}>Sitemap</a> · <a href={u('privacy/')}>Privacy</a> · <a href={u('terms/')}>Terms</a> · <button type="button" class="a11y-link" data-a11y-open aria-haspopup="dialog">Accessibility</button><br />
-        Mascot: Ceilidh the Coo (say "Kaylee"), in Canada's Maple Leaf tartan.<br />
+        Mascot: Ceilidh the Coo (say "Kaylee"), in the Fraser of Lovat tartan.<br />
         © {new Date().getFullYear()} The Celtic Coo · CelticCoo.ca
       </div>
     </div>
   </footer>
-  <script is:inline>
-    // Personal banner tartan chosen on /tartans/. Stored only in this browser (localStorage); no accounts, nothing sent anywhere.
-    try { var t = localStorage.getItem('coo-tartan-svg'); if (t) document.querySelectorAll('.tartan').forEach(function (el) { el.style.backgroundImage = 'url("data:image/svg+xml,' + encodeURIComponent(t) + '")'; }); } catch (e) {}
-  </script>
   <script is:inline src={u('a11y.js')} data-font={u('fonts/atkinson.css')} data-omit="tables" defer></script>
 </body>
 </html>

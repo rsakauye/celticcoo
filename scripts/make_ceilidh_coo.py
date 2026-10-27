@@ -2,20 +2,14 @@
 """Ceilidh Coo 8-bit sprite generator (Highland fling loop).
 
 Everything is drawn in code at 1x on a 64x64 grid, using a fixed palette.
-Edit PALETTE / POSES below and re-run (needs Pillow):
-
-    python3 scripts/make_ceilidh_coo.py
-
-Writes site/public/ceilidh-coo-strip.png (640x64, 10 frames).
-Pass --preview to also write a 4x PNG and a GIF next to this script.
+Edit PALETTE / POSES below and re-run:  python3 scripts/make_ceilidh_coo.py
+Writes site/public/tartans/fraser-of-lovat/ceilidh-coo-strip.png.
+Previews go to /tmp and are not part of the site.
 """
 import os
-import sys
 from PIL import Image, ImageDraw, ImageFilter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(HERE)
-STRIP = os.path.join(ROOT, "site", "public", "ceilidh-coo-strip.png")
 W = H = 64
 FPS = 10
 SCALE = 4
@@ -32,10 +26,11 @@ PALETTE = [
     (246, 236, 214),  # 7 horn cream
     (31, 77, 58),     # 8 tartan green (FB cover green #1f4d3a)
     (60, 122, 78),    # 9 tartan light green
-    (184, 46, 38),    # 10 tartan red (Maple Leaf tartan red)
+    (184, 46, 38),    # 10 Fraser of Lovat red
     (224, 165, 38),   # 11 tartan gold (celticcoo.ca gold)
     (85, 50, 30),     # 12 hoof / tartan brown
-    (255, 255, 255),  # 13 eye highlight
+    (255, 255, 255),  # 13 eye highlight,
+    (32, 40, 78),     # 14 navy (Fraser of Lovat dark blue)
 ]
 T, OUT, FUR, FURL, FURD, MUZ, BLUSH, HORN, GRN, LGRN, RED, GOLD, HOOF, WHT = range(14)
 
@@ -90,16 +85,23 @@ def limb(pts, width):
     return m
 
 
-def tartan(x0, y0, step=4):
-    """Maple Leaf tartan, simplified so it reads cleanly at 1x: green ground,
-    red over-check every `step` px, gold where the red lines cross."""
+NAVY = 14
+# Fraser of Lovat, simplified for 1x pixels: red ground, a white pivot,
+# green bands, and navy blocks.
+LOVAT = [RED, RED, RED, WHT, RED, RED, RED, GRN, NAVY, GRN]
+
+
+def tartan(x0, y0, step=None):
+    """Fraser of Lovat tartan at 1x: warp and weft stripes from LOVAT,
+    woven as a 2/2-style twill check (alternate pixels show warp or weft)."""
+    n = len(LOVAT)
     def f(x, y):
-        u, v = (x - x0) % step == 0, (y - y0) % step == 0
-        if u and v:
-            return GOLD
-        if u or v:
-            return RED
-        return GRN
+        a, b = LOVAT[(x - x0) % n], LOVAT[(y - y0) % n]
+        if a == b:
+            return a
+        if WHT in (a, b):
+            return WHT if (x + y) % 2 == 0 else (b if a == WHT else a)
+        return a if (x + y) % 2 == 0 else b
     return f
 
 
@@ -158,9 +160,13 @@ def draw_arm(c, pts, dy):
     c.stamp(ellipse(hx, hy, 1.6, 1.6), HOOF)
 
 
-def draw_frame(pose):
+def draw_frame(pose, arms_on_top=False, pre=None, mid=None, post=None):
+    """Hooks (used by make_stickers.py): pre/mid(c, dy) draw props behind the body / before the arms;
+    post(c, hx, hy, dy) draws on top. arms_on_top draws arms after the head."""
     dy, armL, armR, legL, legR, swing, hdx = pose
     c = Canvas()
+    if pre:
+        pre(c, dy)
     # back layer: tail, legs
     tail = sh([(38, 44), (44, 42), (47, 45)], 0, dy)
     c.stamp(limb(tail, 2), FURD)
@@ -185,13 +191,16 @@ def draw_frame(pose):
     for x in (31, 32, 33, 34):
         c.put(x, top + 3, HOOF)
     c.put(32, top + 6, GOLD); c.put(33, top + 6, GOLD)
-    # sash (Maple Leaf tartan) across chest, with gold brooch
+    # sash across the chest, with a gold brooch
     sash = limb(sh([(26, 30), (38, 41)], 0, dy), 3)
     c.stamp(sash, None, pattern=sash_fill)
     c.stamp(ellipse(28, 32 + dy, 1, 1), GOLD)
+    if mid:
+        mid(c, dy)
     # arms over body
-    for arm in (armL, armR):
-        draw_arm(c, arm, dy)
+    if not arms_on_top:
+        for arm in (armL, armR):
+            draw_arm(c, arm, dy)
     # ---- head
     hx, hy = 32 + hdx, 18 + dy
     for s in (-1, 1):  # horns: curve outward and up
@@ -234,51 +243,12 @@ def draw_frame(pose):
     c.stamp(ellipse(bx + 3, by, 2, 1.6), RED)
     c.put(bx - 2, by, GRN); c.put(bx + 3, by, GRN)  # tartan hint
     c.put(bx, by, GOLD); c.put(bx + 1, by, GOLD)
+    if arms_on_top:
+        for arm in (armL, armR):
+            draw_arm(c, arm, dy)
+    if post:
+        post(c, hx, hy, dy)
     return c.img
-
-
-def draw_wince_frame(nudge):
-    """Standing coo with both hooves up over her ears. `nudge` 0 or 1 is the wiggle."""
-    dy = -1 if nudge else 0
-    hdx = 1 if nudge else 0
-    # Elbows out and up, then in onto the ears. draw_arm adds dy itself.
-    arm_l = [(25, 33), (8, 20), (20 + hdx, 16)]
-    arm_r = [(39, 33), (56, 20), (44 + hdx, 16)]
-    img = draw_frame((dy, arm_l, arm_r, STAND_L, STAND_R, 0, hdx))
-    c = Canvas()
-    c.img = img
-    c.px = img.load()
-    hx, hy = 32 + hdx, 18 + dy
-    # Shut the open eyes and turn the smile down. The dance frame drew both.
-    for ex in (hx - 5, hx + 4):
-        for xx in range(ex - 1, ex + 3):
-            for yy in (hy - 3, hy - 2, hy - 1, hy):
-                if 0 <= xx < W and c.px[xx, yy] in (OUT, WHT):
-                    c.px[xx, yy] = FUR
-        c.put(ex, hy - 4, OUT)
-        c.put(ex + 1, hy - 4, OUT)
-        for xx in (ex, ex + 1, ex + 2):
-            c.put(xx, hy - 1, OUT)
-    for y in (hy + 7, hy + 8, hy + 9, hy + 10):
-        for x in range(hx - 4, hx + 5):
-            if 0 <= x < W and c.px[x, y] == OUT:
-                c.px[x, y] = MUZ
-    for x, y in (
-        (hx - 2, hy + 10), (hx - 1, hy + 9), (hx, hy + 9),
-        (hx + 1, hy + 9), (hx + 2, hy + 10),
-    ):
-        c.put(x, y, OUT)
-    # Forearms on top of the head, then a wide cloven hoof over each ear.
-    for pts in (arm_l, arm_r):
-        forearm = sh(pts[-2:], 0, dy)
-        c.stamp(limb(forearm, 5), FUR)
-    for s in (-1, 1):
-        ex, ey = hx + s * 12, hy - 2
-        c.stamp(ellipse(ex - 2, ey, 3.6, 4.2), HOOF)
-        c.stamp(ellipse(ex + 2, ey, 3.6, 4.2), HOOF)
-        for yy in range(ey - 2, ey + 3):
-            c.put(ex, yy, OUT)
-    return img
 
 
 def palettize(img):
@@ -294,19 +264,18 @@ def main():
     strip = palettize(Image.new("P", (W * n, H), 0))
     for i, f in enumerate(frames):
         strip.paste(f, (i * W, 0))
-    os.makedirs(os.path.dirname(STRIP), exist_ok=True)
-    strip.save(STRIP, optimize=True, transparency=0, bits=4)
-    if "--preview" in sys.argv:
-        strip.resize((W * n * SCALE, H * SCALE), Image.NEAREST).save(
-            os.path.join(HERE, "preview-4x.png"), optimize=True, transparency=0)
-        big = [f.resize((W * SCALE, H * SCALE), Image.NEAREST) for f in frames]
-        big[0].save(os.path.join(HERE, "ceilidh-coo-preview.gif"), save_all=True, append_images=big[1:],
-                    duration=int(1000 / FPS), loop=0, transparency=0, disposal=2, optimize=False)
+    out = os.path.join(os.path.dirname(HERE), "site", "public", "tartans", "fraser-of-lovat", "ceilidh-coo-strip.png")
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    strip.save(out, optimize=True, transparency=0, bits=4)
+    strip.resize((W * n * SCALE, H * SCALE), Image.NEAREST).save(
+        "/tmp/ceilidh-coo-preview-4x.png", optimize=True, transparency=0)
+    big = [f.resize((W * SCALE, H * SCALE), Image.NEAREST) for f in frames]
+    big[0].save("/tmp/ceilidh-coo-preview.gif", save_all=True, append_images=big[1:],
+                duration=int(1000 / FPS), loop=0, transparency=0, disposal=2, optimize=False)
     used = set()
     for f in frames:
         used |= {i for _, i in f.getcolors()}
     print(f"{n} frames, {W}x{H}, {FPS} fps, colours used (incl. transparent): {len(used)}")
-    print(STRIP)
 
 
 if __name__ == "__main__":

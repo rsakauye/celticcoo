@@ -1,44 +1,52 @@
 #!/usr/bin/env python3
-"""Two-frame wince strip for the drone tuner.
+"""Check the shipped ears strips. This does not redraw them.
 
-Same 64x64 grid and palette as scripts/make_ceilidh_coo.py. Frame 0 and
-frame 1 are a small wiggle: hooves up, covering the ears. This does not
-edit the dance strip (that file stays 640x64).
-
-    python3 scripts/make_ceilidh_ears.py
+Each tartan folder under site/public/tartans keeps a 256x64 ears strip
+(4 frames) and a 640x64 dance strip (10 frames).
 """
-import importlib.util
 import os
-
-from PIL import Image
+import struct
+import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-OUT_PATH = os.path.join(ROOT, "site", "public", "ceilidh-coo-ears.png")
+TARTANS = os.path.join(ROOT, "site", "public", "tartans")
+EXPECT = {
+    "ceilidh-coo-strip.png": (640, 64),
+    "ceilidh-coo-ears-covered-strip.png": (256, 64),
+}
 
 
-def load_coo():
-    path = os.path.join(HERE, "make_ceilidh_coo.py")
-    spec = importlib.util.spec_from_file_location("make_ceilidh_coo", path)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
+def size(path):
+    with open(path, "rb") as handle:
+        handle.seek(16)
+        return struct.unpack(">II", handle.read(8))
 
 
 def main():
-    coo = load_coo()
-    frames = [coo.palettize(coo.draw_wince_frame(i)) for i in (0, 1)]
-    strip = coo.palettize(Image.new("P", (coo.W * 2, coo.H), 0))
-    for i, frame in enumerate(frames):
-        strip.paste(frame, (i * coo.W, 0))
-    os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
-    strip.save(OUT_PATH, optimize=True, transparency=0, bits=4)
-    preview = strip.resize((coo.W * 2 * 4, coo.H * 4), Image.NEAREST)
-    preview.save("/tmp/ceilidh-wince-preview.png")
-    close = frames[0].resize((coo.W * 8, coo.H * 8), Image.NEAREST)
-    close.save("/tmp/ceilidh-wince-close.png")
-    print(OUT_PATH, strip.size)
+    folders = sorted(
+        name for name in os.listdir(TARTANS) if os.path.isdir(os.path.join(TARTANS, name))
+    )
+    if len(folders) < 8:
+        print(f"expected at least 8 tartan folders, found {len(folders)}", file=sys.stderr)
+        return 1
+    failed = False
+    for folder in folders:
+        for name, expect in EXPECT.items():
+            path = os.path.join(TARTANS, folder, name)
+            if not os.path.isfile(path):
+                print("missing", path, file=sys.stderr)
+                failed = True
+                continue
+            found = size(path)
+            if found != expect:
+                print(path, found, "expected", expect, file=sys.stderr)
+                failed = True
+    if failed:
+        return 1
+    print(f"{len(folders)} tartan folders ok")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

@@ -2,9 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import { groups } from '../../lib/data.js';
 import { u } from '../../lib/site.js';
-// Link-out tartan finder. We don't copy threadcounts or images from the Scottish Register of Tartans:
-// its images are Crown copyright (fair dealing only), legacy STA text needs STA permission, threadcounts
-// need an account, and database rights rest with the Crown. So we link to each name's A-Z listing there.
+// Link-out tartan finder. Each name links to its A-Z listing on the Scottish Register of Tartans.
 const CLANS = ['Anderson','Armstrong','Baird','Bruce','Buchanan','Cameron','Campbell','Chisholm','Colquhoun','Cunningham','Davidson','Donald','Douglas','Elliot','Erskine','Farquharson','Ferguson','Forbes','Fraser','Gordon','Graham','Grant','Gunn','Hamilton','Hay','Henderson','Hunter','Innes','Johnston','Keith','Kerr','Lamont','Leslie','Lindsay','Logan','MacBeth','MacDonald','MacDougall','MacFarlane','MacFie','MacGregor','MacInnes','MacIntyre','MacKay','MacKenzie','MacKinnon','MacLachlan','MacLean','MacLennan','MacLeod','MacMillan','MacNab','MacNeil','MacPherson','MacRae','Maxwell','Menzies','Montgomery','Morrison','Munro','Murray','Ogilvie','Robertson','Ross','Scott','Sinclair','Stewart','Sutherland','Urquhart','Wallace'];
 const azUrl = (n) => `https://www.tartanregister.gov.uk/az.aspx?searchString=${encodeURIComponent(n)}`;
 const norm = (s) => s.toLowerCase().replace(/^mc/, 'mac').replace(/[^a-z]/g, '');
@@ -15,7 +13,7 @@ const clanData = CLANS.map((c) => {
   return { name: c, key: norm(c), az: azUrl(c), society: soc ? { name: soc.name, url: soc.website } : null };
 });
 ---
-<Base title="Find your family tartan" description="Look up your surname or clan and find its tartans on the official Scottish Register of Tartans, plus clan societies in Canada. Set Canada's Maple Leaf tartan as your banner.">
+<Base title="Find your family tartan" description="Look up your surname or clan and find its tartans on the official Scottish Register of Tartans, plus clan societies in Canada.">
   <h1>Find your family tartan</h1>
   <p>Type your surname or clan to see its tartans on the official <a href="https://www.tartanregister.gov.uk/" rel="noopener" target="_blank">Scottish Register of Tartans ↗</a>, and whether there's a clan society in Canada you can join.</p>
 
@@ -29,23 +27,11 @@ const clanData = CLANS.map((c) => {
     <div id="t-out" aria-live="polite" style="margin-top:.8rem"></div>
   </form>
 
-  <h2 id="banner">Make it yours: banner tartan</h2>
-  <p>Pick a tartan for the stripe across the top of every page. It's saved only in this browser, with no account and nothing sent to us.</p>
-  <div class="grid banners">
-    <button type="button" class="card pick" data-svg={u('tartan-maple-leaf.svg')}>
-      <span class="sw" style={`background-image:url(${u('tartan-maple-leaf.svg')})`}></span>
-      <b>Maple Leaf</b><span class="muted">Canada's national tartan (1964), and Ceilidh's own. Anyone can wear it.</span>
-    </button>
-    <button type="button" class="card pick" data-reset="1">
-      <span class="sw" style={`background-image:url(${u('tartan-maple-leaf.svg')})`}></span>
-      <b>Back to default</b><span class="muted">Clear your choice.</span>
-    </button>
-  </div>
-  <p class="muted" id="t-saved" aria-live="polite"></p>
-  <p class="muted">Why only one for now? We only draw tartans we're sure are free to depict. Clan tartans are traditional, but some are restricted by a chief, and some modern ones are registered designs or trademarks. The Register's own images are Crown copyright. We're checking clan tartans one by one, and until then we link you to the official Register.</p>
+  <h2 id="banner">The page stripe</h2>
+  <p>The stripe across the top of every page is <b>Fraser of Lovat</b>. The Lovat Frasers of Beauly, the clan behind the Calgary Frasers band name. Ceilidh wears the same tartan by default. The button beside her lists eight kilts, each with its meaning. The sprites are simplified pixel versions.</p>
 
   <h2>Do I need a clan to wear tartan?</h2>
-  <p>No. Anyone can wear a <b>district or national</b> tartan, like Canada's Maple Leaf or your province's tartan. Clan tartans are traditionally worn by people with that surname or a family link, but most clan societies are happy to see anyone wear theirs respectfully. A few tartans are restricted, such as royal or personal ones, so check the Register's notes. See <a href={u('what-to-wear/')}>what to wear</a> for more.</p>
+  <p>No. Anyone can wear a <b>district or national</b> tartan, and many provinces and cities have their own. Clan tartans are traditionally worn by people with that surname or a family link, but most clan societies are happy to see anyone wear theirs respectfully. A few tartans are restricted, such as royal or personal ones, so check the Register's notes. See <a href={u('what-to-wear/')}>what to wear</a> for more.</p>
 
   <script type="application/json" id="t-data" set:html={JSON.stringify(clanData)} />
   <script is:inline>
@@ -65,25 +51,9 @@ const clanData = CLANS.map((c) => {
         $('t-out').innerHTML = html;
       }
       $('t-go').addEventListener('click', find);
-      document.querySelectorAll('.pick').forEach(function (b) {
-        b.addEventListener('click', function () {
-          try {
-            if (b.dataset.reset) { localStorage.removeItem('coo-tartan-svg'); location.reload(); return; }
-            fetch(b.dataset.svg).then(function (r) { return r.text(); }).then(function (svg) {
-              localStorage.setItem('coo-tartan-svg', svg);
-              document.querySelectorAll('.tartan').forEach(function (el) { el.style.backgroundImage = 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '")'; });
-              $('t-saved').textContent = 'Saved in this browser.';
-            });
-          } catch (e) { $('t-saved').textContent = 'Your browser blocked saving this setting.'; }
-        });
-      });
     })();
   </script>
 </Base>
 <style>
   .finder { max-width:720px; }
-  .banners { grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); }
-  .pick { text-align:left; cursor:pointer; font:inherit; display:flex; flex-direction:column; gap:.3rem; }
-  .pick:hover { border-color:var(--ginger); }
-  .sw { display:block; height:46px; border-radius:8px; background-size:68px 68px; border:1px solid var(--line); }
 </style>

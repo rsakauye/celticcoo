@@ -1,14 +1,17 @@
 ---
 import { u } from '../lib/site.js';
-const strip = u('ceilidh-coo-strip.png');
+import TartanPicker from './TartanPicker.astro';
+import { defaultTartan } from '../lib/ceilidhTartans.js';
+const strip = u(defaultTartan().fling);
 ---
 <div class="coo-perch" data-ceilidh-coo>
+  <TartanPicker variant="corner" />
   <button type="button" class="coo-bring" data-coo-toggle aria-pressed="false" aria-label="Bring out Ceilidh to dance to Highland Laddie">
     <span class="coo-window">
       <span class="coo-nudge">
         <span class="coo-shift">
           <span class="coo-strip">
-            <img src={strip} alt="" width="640" height="64" />
+            <img src={strip} alt="" width="640" height="64" data-ceilidh-dance />
           </span>
         </span>
       </span>
