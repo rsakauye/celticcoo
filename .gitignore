@@ -1,5 +1,7 @@
 node_modules/
 site/dist/
+site/test-results/
+site/playwright-report/
 site/.astro/
 source-check-report.md
 .DS_Store

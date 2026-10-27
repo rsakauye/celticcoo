@@ -115,6 +115,7 @@ const kinds = [...new Set(groups.map((g) => g.kind))].sort();
   .g-search-field input::-webkit-search-cancel-button,
   .g-search-field input::-webkit-search-decoration { -webkit-appearance:none; appearance:none; display:none; }
   .g-clear { position:absolute; top:50%; right:.2rem; transform:translateY(-50%); display:grid; place-items:center; width:1.7rem; height:1.7rem; margin:0; padding:0; border:0; border-radius:6px; background:transparent; color:var(--muted); font:700 1.15rem/1 system-ui,sans-serif; cursor:pointer; }
+  .g-clear[hidden] { display:none !important; }
   .g-clear:hover, .g-clear:focus-visible { color:var(--fg); background:var(--cream); }
   #g-empty-clear { margin:0 .35rem; }
   html[data-a11y-space=on] .g-clear { width:2.75rem; height:2.75rem; min-height:0; padding:0; }

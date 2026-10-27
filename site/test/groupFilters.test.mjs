@@ -45,6 +45,17 @@ test('a short province code matches the code, not letters inside another word', 
   assert.equal(groupMatches(quebec, { q: 'quebec' }), true);
 });
 
+test('the first letters of a word keep matching cards visible', () => {
+  assert.equal(groupMatches(calgary, { q: 'c' }), true);
+  assert.equal(groupMatches(calgary, { q: 'ca' }), true);
+  assert.equal(groupMatches(calgary, { q: 'cal' }), true);
+  assert.equal(groupMatches(toronto, { q: 't' }), true);
+  assert.equal(groupMatches(toronto, { q: 'to' }), true);
+  assert.equal(groups.filter((g) => groupMatches(g, { q: 'c' })).length > 0, true);
+  assert.equal(groups.filter((g) => groupMatches(g, { q: 'ca' })).length > 0, true);
+  assert.equal(groupMatches(calgary, { q: 'zz' }), false);
+});
+
 test('accent-insensitive type and city search hits the real directory', () => {
   const gaelic = groups.filter((g) => groupMatches(g, { q: 'gaidhlig' }));
   assert.ok(gaelic.some((g) => g.name.includes('Gàidhlig')));
@@ -118,5 +129,6 @@ test('the clubs page has an accessible search box wired to the shared filter', (
   assert.match(page, /searchFromFilters/);
   assert.match(page, /data-search=\{groupSearchText\(g\)\}/);
   assert.match(page, /setTimeout\(apply, 200\)/);
+  assert.match(page, /\.g-clear\[hidden\] \{ display:none !important; \}/);
   assert.match(page, /from '\.\.\/\.\.\/lib\/groupFilters\.js'/);
 });

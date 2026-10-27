@@ -25,9 +25,12 @@ export function groupSearchText(group = {}) {
   ].filter((part) => part != null && String(part).trim() !== '').join(' ');
 }
 
-// Two-letter words match whole words, so "ON" hits Ontario's code and not "Toronto".
+// One- and two-letter queries match the start of a word. A whole-word check
+// made the first keystrokes ("c", "ca") match nothing, so every card was
+// hidden while someone was still typing. "on" still does not match "toronto"
+// or "demonstration", because those words do not start with "on".
 function hasWord(hay, word) {
-  if (word.length <= 2) return ` ${hay} `.includes(` ${word} `);
+  if (word.length <= 2) return hay.split(' ').some((part) => part.startsWith(word));
   return hay.includes(word);
 }
 
