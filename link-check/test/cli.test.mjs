@@ -39,10 +39,21 @@ function writeFixture(dir) {
   return { dataPath, outputPath, configPath, records };
 }
 
+function isInstagramHost(url) {
+  let host;
+  try {
+    host = new URL(String(url)).hostname.toLowerCase();
+  } catch {
+    return false;
+  }
+  if (host.endsWith('.')) host = host.slice(0, -1);
+  return host === 'instagram.com' || host.endsWith('.instagram.com');
+}
+
 function fetchImpl() {
   return async (url, opts) => {
     const method = opts.method;
-    if (String(url).includes('instagram.com')) {
+    if (isInstagramHost(url)) {
       assert.equal(method, 'HEAD');
       return { status: 403, headers: { get: () => null }, body: { cancel: async () => {} } };
     }

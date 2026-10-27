@@ -1,9 +1,59 @@
 import { formatDisplayDate } from './dates.js';
 import { meaningfulChanges } from './check.js';
 
+function isEmailChar(ch, local) {
+  const code = ch.charCodeAt(0);
+  if (code >= 48 && code <= 57) return true;
+  if (code >= 65 && code <= 90) return true;
+  if (code >= 97 && code <= 122) return true;
+  if (ch === '.' || ch === '_' || ch === '-') return true;
+  return local && ch === '+';
+}
+
+function isEmailToken(token) {
+  const at = token.indexOf('@');
+  if (at <= 0 || token.indexOf('@', at + 1) !== -1) return false;
+  const local = token.slice(0, at);
+  const domain = token.slice(at + 1);
+  const dot = domain.lastIndexOf('.');
+  if (dot <= 0 || dot > domain.length - 3) return false;
+  for (const ch of local) if (!isEmailChar(ch, true)) return false;
+  for (const ch of domain.slice(0, dot)) if (!isEmailChar(ch, false)) return false;
+  for (const ch of domain.slice(dot + 1)) {
+    const code = ch.charCodeAt(0);
+    if (!((code >= 65 && code <= 90) || (code >= 97 && code <= 122))) return false;
+  }
+  return true;
+}
+
+// Labels come from the directory. Scan them in one pass instead of a regex:
+// a pattern like /[...%+-]+@.../ backtracks on a long run of "%" characters.
+function redactEmails(value) {
+  let out = '';
+  let token = '';
+  const flush = () => {
+    let start = 0;
+    let end = token.length;
+    while (start < end && '([<\'"'.includes(token[start])) start += 1;
+    while (end > start && '.,:;!?)]>\'"'.includes(token[end - 1])) end -= 1;
+    const core = token.slice(start, end);
+    out += isEmailToken(core) ? `${token.slice(0, start)}(redacted)${token.slice(end)}` : token;
+    token = '';
+  };
+  for (const ch of value) {
+    if (ch === ' ' || ch === '\n' || ch === '\r' || ch === '\t') {
+      flush();
+      out += ch;
+    } else {
+      token += ch;
+    }
+  }
+  flush();
+  return out;
+}
+
 function escapeMd(value) {
-  return String(value ?? '')
-    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '(redacted)')
+  return redactEmails(String(value ?? ''))
     .replace(/[\\`*_{}[\]<>]/g, '\\$&')
     .replace(/\r?\n/g, ' ')
     .trim();
