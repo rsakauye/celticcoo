@@ -1,0 +1,40 @@
+{
+  "_doc": "Brand tokens for the club/group og:image template. Swap this file (and the files it points to) to rebrand. Paths are relative to this file. See og-club-template.md.",
+  "site_name": "The Celtic Coo",
+  "site_url": "celticcoo.ca",
+  "tagline": "Upcoming events on {site}",
+  "colors": {
+    "background": "#1f4d3a",
+    "medallion": "#f4e6c8",
+    "name": "#ffffff",
+    "type": "#f0b27a",
+    "location": "#f4e6c8",
+    "tagline": "#ffffff",
+    "url": "#f0b27a",
+    "rule": "#f4e6c8"
+  },
+  "fonts": {
+    "family": "Atkinson Hyperlegible",
+    "bold": "fonts/AtkinsonHyperlegible-Bold.ttf",
+    "regular": "fonts/AtkinsonHyperlegible-Regular.ttf",
+    "license": "fonts/OFL.txt",
+    "license_name": "SIL Open Font License 1.1"
+  },
+  "pattern": {
+    "_doc": "Tartan sett, one colour per equal stripe unit, drawn as warp (vertical) plus weft (horizontal at weft_opacity). Fraser of Lovat: R R R W R R R G Navy G.",
+    "name": "Fraser of Lovat",
+    "sett": ["#b82e26", "#b82e26", "#b82e26", "#ffffff", "#b82e26", "#b82e26", "#b82e26", "#1f4d3a", "#20284e", "#1f4d3a"],
+    "weft_opacity": 0.5,
+    "band_unit_px": 4,
+    "band_height_px": 26,
+    "rule_px": 3
+  },
+  "mark": {
+    "_doc": "Square SVG mark shown in the medallion. recolor maps literal strings in the mark SVG to replacements; {pattern} becomes the brand pattern scaled to mark_unit (in the mark's own viewBox units) and rotated mark_rotate degrees. Set svg to null for no mark.",
+    "svg": "mark-coo.svg",
+    "viewbox": "0 0 120 120",
+    "recolor": {"url(#ml)": "{pattern}"},
+    "mark_unit": 1.632,
+    "mark_rotate": 35
+  }
+}

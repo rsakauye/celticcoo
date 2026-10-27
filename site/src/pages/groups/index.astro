@@ -11,11 +11,11 @@ const kinds = [...new Set(groups.map((g) => g.kind))].sort();
   <p>Pipe bands, Highland and Scottish country dance, clan societies, Gaelic classes, Burns clubs, heavy events, trad sessions, whisky societies and more: <b>{counts.groups}</b> groups across Canada, <b>{counts.groupsLessons}</b> of them offering lessons. Every website was checked on Oct 17–18, 2026. Ask the group directly about schedules and fees.</p>
 
   {featuredGroup && (
-    <aside class="card featured" id={featuredGroup.id} data-prov={featuredGroup.province} data-kind={featuredGroup.kind} data-lessons={featuredGroup.lessons ? 'y' : 'n'} data-search={groupSearchText(featuredGroup)}>
+    <aside class="card featured" id={`featured-${featuredGroup.id}`} data-prov={featuredGroup.province} data-kind={featuredGroup.kind} data-lessons={featuredGroup.lessons ? 'y' : 'n'} data-search={groupSearchText(featuredGroup)}>
       <span class="pill tba">⭐ Featured in Alberta</span>
       <h2 style="margin:.3rem 0">{featuredGroup.name}</h2>
       <p style="margin:.2rem 0">Calgary youth pipe band and living-history program in the 1757 uniform of the 78th Fraser Highlanders. Members learn piping, drumming, music theory, drill, history and Highland dance, and travel every second year to events in places like Inverness, Louisbourg, Quebec City and Montreal. Practices are on Sundays in Calgary, and new members are interviewed in September.</p>
-      <p style="margin:.4rem 0 0"><a href={featuredGroup.website} rel="noopener" target="_blank">Visit the Youth Squad's page ↗</a> · Part of the <a href="https://78fraserscalgary.ca/" rel="noopener" target="_blank">Fort Calgary Garrison ↗</a></p>
+      <p style="margin:.4rem 0 0"><a href={featuredGroup.website} rel="noopener" target="_blank">Visit the Youth Squad's page ↗</a> · Part of the <a href="https://78fraserscalgary.ca/" rel="noopener" target="_blank">Fort Calgary Garrison ↗</a> · <a href={u(`groups/${featuredGroup.id}/`)}>View profile</a></p>
     </aside>
   )}
 
@@ -36,15 +36,15 @@ const kinds = [...new Set(groups.map((g) => g.kind))].sort();
 
   <div class="grid" id="g-list">
     {groups.map((g) => (
-      <article class="card grp" id={g.id} data-prov={g.province} data-kind={g.kind} data-lessons={g.lessons ? 'y' : 'n'} data-search={groupSearchText(g)}>
+      <a class="card grp" id={g.id} href={u(`groups/${g.id}/`)} data-prov={g.province} data-kind={g.kind} data-lessons={g.lessons ? 'y' : 'n'} data-search={groupSearchText(g)} aria-label={`${g.name}. View profile`}>
         <span class="pill green">{GROUP_EMOJI[g.kind]} {g.kind}</span>
         {g.lessons && <span class="pill tba">🎓 Lessons</span>}
         <h3>{g.name}</h3>
         <div class="muted">📍 {g.city && g.city !== 'National' ? `${g.city}, ` : ''}{g.regionLabel}</div>
         {g.type.toLowerCase() !== g.kind.toLowerCase() && <p class="muted" style="margin:.3rem 0 0;font-size:.85rem">{g.type}</p>}
         {g.note && <p style="margin:.35rem 0 0;font-size:.92rem">{g.note}</p>}
-        <a href={g.website} rel="noopener" target="_blank" style="font-size:.92rem;display:inline-block;margin-top:.4rem">Visit website ↗</a>
-      </article>
+        <span class="view">View profile →</span>
+      </a>
     ))}
   </div>
   <p id="g-empty" class="card" hidden><span id="g-empty-text">No groups match yet.</span> <button type="button" class="btn ghost small" id="g-empty-clear" hidden>Clear search</button> Know one? <a href={u('submit/')}>Tell us about it</a>.</p>
@@ -135,6 +135,10 @@ const kinds = [...new Set(groups.map((g) => g.kind))].sort();
   html[data-a11y-space=on] .g-search-field input { padding-right:3.2rem; }
   @media (max-width:640px) { .filters { position:static; } .g-search { flex-basis:100%; } }
   .btn.small { padding:.35rem .7rem; font-size:.9rem; }
-  .grp { border-left:5px solid var(--navy); }
-  .grp h3 { margin:.3rem 0 .25rem; font-size:1.08rem; }
+  a.grp { display:flex; flex-direction:column; height:100%; border-left:5px solid var(--navy); color:var(--fg); text-decoration:none; }
+  a.grp[hidden] { display:none !important; }
+  a.grp h3 { margin:.3rem 0 .25rem; font-size:1.08rem; }
+  a.grp:hover, a.grp:focus-visible { border-color:var(--ginger); }
+  a.grp .view { margin-top:auto; padding-top:.75rem; text-align:right; color:var(--ginger); font-weight:700; font-size:.92rem; }
+  a.grp:hover .view, a.grp:focus-visible .view { text-decoration:underline; text-underline-offset:2px; }
 </style>
