@@ -69,7 +69,7 @@ test('the style page shows the tokens and stays out of the index and sitemap', (
   assert.doesNotMatch(stylePage, /fonts\.google|fontawesome|iconify|unpkg|jsdelivr/i);
 });
 
-test('the style guide records the live tokens and a voice stub', () => {
+test('the style guide records the live tokens and the voice section', () => {
   assert.match(readme, /STYLEGUIDE\.md/);
   assert.match(guide, /#1f4d3a/);
   assert.match(guide, /#fbf6ec/);
@@ -85,8 +85,11 @@ test('the style guide records the live tokens and a voice stub', () => {
   for (const label of labels) assert.match(guide, new RegExp(label.replace(/[.]/g, '\\.')));
   const voice = guide.split('## Voice and copy')[1];
   assert.ok(voice);
-  assert.match(voice, /To be filled in\./);
-  assert.match(voice, /Tone:/);
-  assert.match(voice, /Button and microcopy wording:/);
-  assert.match(voice, /Accessible labels:/);
+  assert.match(voice, /friendly neighbour at the beer tent/);
+  assert.match(voice, /No em dashes/);
+  assert.match(voice, /"Download calendar file"/);
+  assert.doesNotMatch(voice, /Download \.ics/);
+  assert.match(voice, /aria-label="Add to Outlook calendar"/);
+  assert.match(voice, /Words to avoid/);
+  assert.doesNotMatch(voice, /To be filled in/);
 });

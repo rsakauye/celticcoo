@@ -108,8 +108,32 @@ Generic and self-hosted. Draw them inline in the page. Do not load an icon font,
 
 ## Voice and copy
 
-To be filled in.
+The Coo sounds like a friendly neighbour at the beer tent: warm, plain, a wee bit cheeky. Never corporate, never pushy.
 
-- Tone:
-- Button and microcopy wording:
-- Accessible labels:
+**Tone**
+- Short sentences. Contractions are fine (you're, we'll, it's).
+- Concrete over clever: say what, where and when first.
+- Ceilidh can be playful in headlines and empty states. Keep forms, privacy and booking copy plain.
+- Canadian spelling (colour, centre, honour).
+
+**Punctuation**
+- No em dashes. Use a comma, a colon or a new sentence.
+- One exclamation mark per screen, at most.
+- Gaelic words keep their accents: Slàinte, ceilidh (lower case in running text, Ceilidh when it's her name).
+
+**Buttons and links**
+- Start with a verb and say what happens: "Add to Google Calendar", "Download calendar file", "Book a performer", "Get event reminders".
+- Icon-only buttons always carry an aria-label with the full wording, e.g. aria-label="Add to Outlook calendar".
+- No "Click here" or "Submit".
+
+**Forms and messages**
+- Labels are nouns ("Your email"), help text is one line.
+- Errors say what to fix: "Add an email so we can reply."
+- Success says what's next: "Thanks! Check your email to confirm."
+
+**Tartans**
+- Describe each tartan by its story and who wears it. Ceilidh wears Fraser of Lovat as a nod to the band, and visitors can pick from 8 tartans.
+- Keep tartan copy to the story, the clan or region, and who wears it.
+
+**Words to avoid**
+Seamless, elevate, unlock, curated, journey, world-class, game-changer.
