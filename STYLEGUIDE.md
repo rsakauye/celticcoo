@@ -133,7 +133,7 @@ The Coo sounds like a friendly neighbour at the beer tent: warm, plain, a wee bi
 - Success says what's next: "Thanks! Check your email to confirm."
 
 **Tartans**
-- Describe each tartan by its story and who wears it. Ceilidh wears Fraser of Lovat as a nod to the band, and visitors can pick from 8 tartans.
+- Describe each tartan by its story and who wears it. Ceilidh wears Fraser of Lovat as a nod to the band.
 - Keep tartan copy to the story, the clan or region, and who wears it.
 
 **Words to avoid**
