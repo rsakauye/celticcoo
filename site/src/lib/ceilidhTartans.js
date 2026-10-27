@@ -1,8 +1,9 @@
 // Kilt choices for Ceilidh. Meanings for the eight shown tartans are copied
 // from site/src/data/ceilidh-tartans.json. MacKinnon stays in the list and
 // is not shown until its strips are added.
-// threads is the warp stripe on that kilt, one entry per pixel. The picker
-// swatch repeats the same stripe.
+// threads is the sett, one entry per thread, used for both warp and weft.
+// weaveColor is the twill the kilt sprite is drawn with, so the swatch and
+// the kilt share one pattern.
 export const STORAGE_KEY = 'ceilidh-tartan';
 
 export const TARTANS = [
@@ -169,26 +170,49 @@ export function writeTartanId(id, storage, list = TARTANS) {
   return tartan;
 }
 
-export function swatchBackground(tartan) {
+// Three full setts, one CSS pixel per thread. The square stays small, and
+// the edges stay sharp on a normal screen and on a high-density screen.
+export const SWATCH_REPEATS = 3;
+
+export function weaveColor(threads, x, y, originX = 0, originY = 0) {
+  const n = threads.length;
+  const hex = (value) => {
+    const raw = String(value).trim().toLowerCase();
+    if (raw === '#fff' || raw === '#ffffff') return '#fff';
+    return raw;
+  };
+  const at = (index) => hex(threads[((index % n) + n) % n]);
+  const warp = at(x - originX);
+  const weft = at(y - originY);
+  if (warp === weft) return warp;
+  const even = (x + y) % 2 === 0;
+  if (warp === '#fff' || weft === '#fff') return even ? '#fff' : (warp === '#fff' ? weft : warp);
+  return even ? warp : weft;
+}
+
+export function swatchMarkup(tartan, repeats = SWATCH_REPEATS) {
   const threads = tartan?.threads;
   if (!threads?.length) return '';
-  const stops = [];
-  let start = 0;
-  while (start < threads.length) {
-    let end = start + 1;
-    while (end < threads.length && threads[end].toLowerCase() === threads[start].toLowerCase()) end += 1;
-    const color = threads[start].toLowerCase() === '#ffffff' ? '#fff' : threads[start];
-    stops.push(`${color} ${start}px ${end}px`);
-    start = end;
+  const size = threads.length * repeats;
+  const rects = [];
+  for (let y = 0; y < size; y += 1) {
+    let x = 0;
+    while (x < size) {
+      const fill = weaveColor(threads, x, y);
+      let end = x + 1;
+      while (end < size && weaveColor(threads, end, y) === fill) end += 1;
+      rects.push(`<rect x="${x}" y="${y}" width="${end - x}" height="1" fill="${fill}"/>`);
+      x = end;
+    }
   }
-  return `repeating-linear-gradient(90deg, ${stops.join(', ')})`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" shape-rendering="crispEdges">${rects.join('')}</svg>`;
 }
 
 export function tartanView(tartan) {
   return {
     slug: tartan.slug,
     name: tartan.name,
-    swatch: swatchBackground(tartan),
+    swatch: swatchMarkup(tartan),
     label: `Kilt tartan, ${tartan.name}. Choose a tartan.`,
   };
 }
@@ -197,7 +221,7 @@ export function tartanView(tartan) {
 // the tartan from readTartan (page load) or writeTartanId (a new pick).
 export function applyTartan(tartan, nodes = {}) {
   const view = tartanView(tartan);
-  for (const el of nodes.swatches || []) el.style.setProperty('--swatch', view.swatch);
+  for (const el of nodes.swatches || []) el.innerHTML = view.swatch;
   for (const el of nodes.names || []) el.textContent = view.name;
   for (const el of nodes.openers || []) el.setAttribute('aria-label', view.label);
   for (const el of nodes.choices || []) {
