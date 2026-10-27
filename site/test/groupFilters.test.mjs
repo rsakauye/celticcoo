@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { groups } from '../src/lib/data.js';
-import { fold, groupMatches, groupSearchText, filtersFromSearch, searchFromFilters } from '../src/lib/groupFilters.js';
+import { fold, groupMatches, visibleMatches, groupSearchText, filtersFromSearch, searchFromFilters } from '../src/lib/groupFilters.js';
 
 const slainte = groups.find((g) => g.name === 'Sláinte Social Club');
 const calgary = groups.find((g) => g.name === 'Calgary Burns Club');
@@ -43,6 +43,23 @@ test('a short province code matches the code, not letters inside another word', 
   const quebec = groups.find((g) => g.name.includes('Québec'));
   assert.equal(groupMatches(quebec, { q: 'qc' }), true);
   assert.equal(groupMatches(quebec, { q: 'quebec' }), true);
+});
+
+test('the first letters of a word keep matching cards visible', () => {
+  assert.equal(groupMatches(calgary, { q: 'c' }), true);
+  assert.equal(groupMatches(calgary, { q: 'ca' }), true);
+  assert.equal(groupMatches(calgary, { q: 'cal' }), true);
+  assert.equal(groupMatches(toronto, { q: 't' }), true);
+  assert.equal(groupMatches(toronto, { q: 'to' }), true);
+  assert.equal(groups.filter((g) => groupMatches(g, { q: 'c' })).length > 0, true);
+  assert.equal(groups.filter((g) => groupMatches(g, { q: 'ca' })).length > 0, true);
+  assert.equal(groupMatches(calgary, { q: 'zz' }), false);
+});
+
+test('a throw while matching keeps every card visible', () => {
+  const boom = { province: 'AB', kind: 'Pipe band / piping', lessons: false, get search() { throw new Error('blocked'); } };
+  assert.deepEqual(visibleMatches([boom, calgary], { q: 'ca' }), [true, true]);
+  assert.deepEqual(visibleMatches([calgary], filtersFromSearch('?q=calgary')), [true]);
 });
 
 test('accent-insensitive type and city search hits the real directory', () => {
@@ -113,10 +130,17 @@ test('the clubs page has an accessible search box wired to the shared filter', (
   assert.match(page, /aria-label="Clear search"/);
   assert.match(page, /aria-live="polite"/);
   assert.match(page, /id="g-empty-clear"/);
-  assert.match(page, /groupMatches/);
+  assert.match(page, /visibleMatches/);
+  assert.match(page, /revealAll/);
   assert.match(page, /filtersFromSearch/);
   assert.match(page, /searchFromFilters/);
   assert.match(page, /data-search=\{groupSearchText\(g\)\}/);
   assert.match(page, /setTimeout\(apply, 200\)/);
+  assert.match(page, /\.g-clear\[hidden\] \{ display:none !important; \}/);
   assert.match(page, /from '\.\.\/\.\.\/lib\/groupFilters\.js'/);
+  const headers = readFileSync(new URL('../public/_headers', import.meta.url), 'utf8');
+  assert.match(headers, /\/groups\/\n  Cache-Control: public, max-age=0, must-revalidate/);
+  assert.match(headers, /\/_astro\/\*\n  Cache-Control: public, max-age=31536000, immutable/);
+  const a11y = readFileSync(new URL('../public/a11y.js', import.meta.url), 'utf8');
+  assert.match(a11y, /catch \(e\) \{\}/);
 });
