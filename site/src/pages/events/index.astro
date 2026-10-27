@@ -20,7 +20,7 @@ const monthLabel = (m) => new Date(m + '-15T12:00:00Z').toLocaleDateString('en-C
 <Base title="Celtic events calendar 2026–27" description="Confirmed Highland Games, pipe bands, ceilidhs, concerts, parades and Celtic festivals in Canada and abroad. Filter by province, type, or free admission.">
   <h1>Celtic &amp; Highland events, 2026–27</h1>
   <p class="muted">"At the games" tags (clan tents, vendor village, heavy events) come from each organizer's own site, usually from their latest year. Check closer to the date.</p>
-  <p>Dates are confirmed on the organizer's or association's own website, or sent in by the host. A host-submitted date is marked on its listing. A <b>FREE</b> badge means the organizer says admission is free. Subscribe to the whole calendar in Google, Apple or Outlook: <a href={u('events.ics')}><b>events.ics</b></a> (or copy the link into "subscribe by URL").</p>
+  <p>Dates are confirmed on the organizer's or association's own website, or sent in by the host. A host-submitted date is marked on its listing. A <b>FREE</b> badge means the organizer says admission is free. Subscribe to the whole calendar in Google, Apple or Outlook: <a href={u('events.ics')}><b>events.ics</b></a> (or copy the link into "subscribe by URL"). Each event also has its own .ics file, plus Google Calendar and Outlook links.</p>
 
   <p class="card" style="background:#fff4e8;border-color:#f1cfae">🏴󠁧󠁢󠁳󠁣󠁴󠁿 <b>St Andrew's Day is Monday, November 30.</b> See <a href={u('st-andrews-day/')}>St Andrew's balls and ceilidhs in Calgary and across Canada</a>, or plan ahead for <a href={u('burns-night/')}>Burns Night</a>.</p>
   <form class="filters card" id="filters" onsubmit="return false">
@@ -47,7 +47,7 @@ const monthLabel = (m) => new Date(m + '-15T12:00:00Z').toLocaleDateString('en-C
   <p id="f-empty" class="card" hidden>No events match those filters yet. Know one we're missing? <a href={u('submit/')}>Tell us about it</a>.</p>
 
   <h2 id="coming-2027">Coming in 2027, dates to be announced</h2>
-  <p class="muted">These Canadian events are expected in 2027, but we haven't confirmed the exact dates yet. They are <b>not</b> in the calendar feed. Check the organizer's site before making plans.</p>
+  <p class="muted">These Canadian events are expected in 2027, but we haven't confirmed the exact dates yet. They are <b>not</b> in the calendar feed, and they don't have Add to calendar links. Check the organizer's site before making plans.</p>
   <div class="grid" id="tba-grid">
     {tba.map((e) => (
       <article class="card tba-ev" id={e.id} data-cost={e.cost} data-country={e.country} data-region={e.region} data-cat={e.category}>

@@ -1,4 +1,5 @@
 ---
+import AddToCalendar from './AddToCalendar.astro';
 import BookLink from './BookLink.astro';
 import { CATEGORY_EMOJI, COUNTRY_FLAG, FEATURES, sourceLinkLabel } from '../lib/data.js';
 import { u } from '../lib/site.js';
@@ -16,6 +17,7 @@ const { e } = Astro.props;
   {e.note && <p class="muted" style="margin:.4rem 0 0">{e.note}</p>}
   {e.celtic_vendors && <p style="margin:.4rem 0 0;font-size:.92rem">🏴 {e.celtic_vendors}</p>}
   <p style="margin:.55rem 0 0;font-size:.92rem"><a href={e.source_url} rel="noopener" target="_blank">{sourceLinkLabel(e.source_kind)} ↗</a></p>
+  <AddToCalendar e={e} compact={true} />
   <p class="need"><BookLink eventId={e.id} name={e.name} /></p>
 </article>
 <style>

@@ -11,6 +11,15 @@ const kitId = (import.meta.env.PUBLIC_KIT_FORM_ID || '').trim() || '10068901';
 export const KIT_FORM_ID = /^\d+$/.test(kitId) ? kitId : '';
 export const kitAction = KIT_FORM_ID ? `https://app.kit.com/forms/${KIT_FORM_ID}/subscriptions` : '';
 
+// Custom field keys for the event-reminder opt-in. Kit derives each key from the field label
+// ("Event reminders" → event_reminders). The public form can send fields[key] with no API key.
+// Values are stored only after those fields exist on the Kit account. See the form component.
+export const KIT_REMINDER_FIELDS = {
+  interest: 'event_reminders',
+  event: 'reminder_event',
+  region: 'reminder_region',
+};
+
 // Contact inbox (forwards via Cloudflare Email Routing).
 // Override with repo variable CONTACT_EMAIL (PUBLIC_CONTACT_EMAIL).
 export const CONTACT_EMAIL = (import.meta.env.PUBLIC_CONTACT_EMAIL || '').trim() || 'hello@celticcoo.ca';
