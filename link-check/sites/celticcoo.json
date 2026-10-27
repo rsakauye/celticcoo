@@ -1,0 +1,22 @@
+{
+  "dataPath": "data/groups_canada.json",
+  "urlField": "website",
+  "idField": "name",
+  "idMode": "slug",
+  "labelField": "name",
+  "outputPath": "data/groups_link_status.json",
+  "schedule": "0 15 * * 1",
+  "timeZone": "America/Edmonton",
+  "userAgent": "CelticCooBot/1.0 (+https://celticcoo.ca/groups/; weekly club website check)",
+  "concurrency": 4,
+  "timeoutMs": 10000,
+  "delayMs": 200,
+  "unverifiableHosts": ["facebook.com", "fb.com", "fb.me", "instagram.com", "instagr.am"],
+  "prTitle": "Weekly club link check",
+  "branch": "bot/weekly-club-link-check",
+  "base": "main",
+  "git": {
+    "name": "celticcoo-bot",
+    "email": "41898282+github-actions[bot]@users.noreply.github.com"
+  }
+}

@@ -3,6 +3,8 @@ import pendingRaw from '../../../data/events_2027_pending.json' with { type: 'js
 import manualRaw from '../../../data/events_manual.json' with { type: 'json' };
 import shopsRaw from '../../../data/shops_canada.json' with { type: 'json' };
 import groupsRaw from '../../../data/groups_canada.json' with { type: 'json' };
+import linkStatusRaw from '../../../data/groups_link_status.json' with { type: 'json' };
+import { offersLessons, buildClubIntro } from './groupIntro.js';
 import burnsRaw from '../../../data/burns_2027.json' with { type: 'json' };
 import championsRaw from '../../../data/season_champions.json' with { type: 'json' };
 
@@ -272,7 +274,7 @@ export const groups = groupsRaw.map((g) => ({
   id: slugify(g.name),
   kind: groupKind(g.type),
   regionLabel: pName(g.province),
-  lessons: g.offers_lessons === 'y',
+  lessons: offersLessons(g.offers_lessons),
   featured: g.name === FEATURED_GROUP,
 })).sort((a, b) => (a.province === 'AB' ? -1 : 0) - (b.province === 'AB' ? -1 : 0) || (a.province === 'National' ? 1 : 0) - (b.province === 'National' ? 1 : 0)
   || a.province.localeCompare(b.province) || sortName(a.name).localeCompare(sortName(b.name)));
@@ -297,8 +299,9 @@ export const burns = [...burnsRaw, ...manualBurnsRows(manualRaw, burnsRaw)].map(
 // ---------- season champions (band level only, hand-entered with sources) ----------
 export const champions = championsRaw;
 
-counts.groups = groups.length;
-counts.groupsLessons = groups.filter((g) => g.lessons).length;
+export const clubIntro = buildClubIntro(groups, linkStatusRaw);
+counts.groups = clubIntro.groupCount;
+counts.groupsLessons = clubIntro.lessonCount;
 counts.clans = groups.filter((g) => g.kind === 'Clan society').length;
 counts.burnsConfirmed = burns.filter((b) => b.confirmed).length;
 counts.burnsUnconfirmed = burns.filter((b) => b.unconfirmed).length;

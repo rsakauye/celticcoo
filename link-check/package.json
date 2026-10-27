@@ -1,0 +1,11 @@
+{
+  "name": "link-check",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Site-agnostic weekly checker for a directory of public website URLs. Site-specific paths, fields, schedule, and user agent live in a config file.",
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "check": "node src/cli.js"
+  }
+}
