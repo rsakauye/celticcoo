@@ -1,0 +1,29 @@
+---
+// Generic calendar marks, drawn inline. Self-hosted. Same frame, stroke and size.
+const { mark = 'ics' } = Astro.props;
+---
+<svg class="cal-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+  <g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8 3.15v3.1M16 3.15v3.1" />
+    <rect x="3.1" y="4.85" width="17.8" height="16.2" rx="2" />
+    <path d="M3.1 9.15h17.8" />
+    {mark === 'g' && (
+      <>
+        <path d="M15.5 13.05a3.05 3.05 0 1 0 .85 2.35" />
+        <path d="M12.2 15.55h4.25" />
+      </>
+    )}
+    {mark === 'mail' && (
+      <>
+        <rect x="6.35" y="11.85" width="11.3" height="6.85" rx="1" />
+        <path d="M6.6 12.2 12 15.9 17.4 12.2" />
+      </>
+    )}
+  </g>
+  {mark === 'ics' && (
+    <text x="12" y="17.35" text-anchor="middle" fill="currentColor" font-family="system-ui, Segoe UI, sans-serif" font-size="6.2" font-weight="700" letter-spacing="-0.05em">.ics</text>
+  )}
+</svg>
+<style>
+  .cal-glyph { width: var(--cal-glyph, 32px); height: var(--cal-glyph, 32px); display: block; }
+</style>

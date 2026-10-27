@@ -1,0 +1,135 @@
+---
+import Base from '../../layouts/Base.astro';
+import AddToCalendar from '../../components/AddToCalendar.astro';
+import CalendarGlyph from '../../components/CalendarGlyph.astro';
+import { events } from '../../lib/data.js';
+import { u } from '../../lib/site.js';
+const sample = events.find((e) => e.id === 'ets-pipes-and-drums-ceilidh-night-2026-11-07') || events[0];
+const tartanBg = `background-image:url(${u('tartan-fraser-of-lovat.svg')})`;
+const palette = [
+  ['--fg', 'Text', '#2a1d14'],
+  ['--muted', 'Muted text', '#6b5a4c'],
+  ['--bg', 'Page', '#fbf6ec'],
+  ['--card', 'Card', '#fffdf8'],
+  ['--line', 'Line', '#eadfcb'],
+  ['--green', 'Green', '#1f4d3a'],
+  ['--green2', 'Link green', '#2f6b52'],
+  ['--ginger', 'Ginger', '#a54e1e'],
+  ['--ginger2', 'Ginger light', '#e0843f'],
+  ['--cream', 'Cream', '#f4e6c8'],
+  ['--navy', 'Navy', '#1d3557'],
+  ['--focus', 'Focus', '#1d3557'],
+];
+const tartan = [
+  ['#B82E26', 'Red'],
+  ['#1F4D3A', 'Green'],
+  ['#FFFFFF', 'White'],
+  ['#20284E', 'Navy'],
+];
+const marks = [
+  ['ics', 'Download calendar file'],
+  ['g', 'Add to Google Calendar'],
+  ['mail', 'Add to Outlook calendar'],
+];
+---
+<Base title="Style" noindex={true} description="Colours, type, buttons and icons used on The Celtic Coo.">
+  <h1>Style</h1>
+  <p class="muted">Colours, type, buttons and icons already used on this site. The notes live in <code>STYLEGUIDE.md</code>. This page is not indexed.</p>
+
+  <h2>Palette</h2>
+  <ul class="swatches">
+    {palette.map(([token, name, hex]) => (
+      <li>
+        <span class="blob" style={`background: var(${token})`}></span>
+        <b>{name}</b>
+        <span class="muted">{token}</span>
+        <span class="muted">{hex}</span>
+      </li>
+    ))}
+  </ul>
+
+  <h2>Tartan accents</h2>
+  <p>Fraser of Lovat, the band under the header and the coo's bow. The green matches <code>--green</code>. The navy here is the tartan navy, separate from <code>--navy</code>.</p>
+  <div class="tartan-sample" style={tartanBg} role="img" aria-label="Fraser of Lovat tartan stripe"></div>
+  <ul class="swatches">
+    {tartan.map(([hex, name]) => (
+      <li>
+        <span class="blob" style={`background:${hex}`}></span>
+        <b>{name}</b>
+        <span class="muted">{hex}</span>
+      </li>
+    ))}
+  </ul>
+
+  <h2>Type</h2>
+  <p class="lede-sample">Body text uses the system sans at 1.0625rem. Headings use Georgia, in green.</p>
+  <p class="muted">Muted text is smaller, in <code>--muted</code>. <a href="#type">Inline links</a> use <code>--green2</code>.</p>
+
+  <h2 id="buttons">Buttons</h2>
+  <p class="btn-row">
+    <a class="btn" href="#buttons">Primary button</a>
+    <a class="btn ghost" href="#buttons">Ghost button</a>
+  </p>
+  <p class="muted">Primary buttons are ginger. Ghost buttons are a green outline. Calendar actions use that outline, a cream hover, and a 44px square.</p>
+  <div class="card">
+    <h3>On an event page</h3>
+    <AddToCalendar e={sample} />
+  </div>
+  <div class="card card-gap">
+    <h3>On an event card</h3>
+    <AddToCalendar e={sample} compact={true} />
+  </div>
+
+  <h2 id="icons">Icons</h2>
+  <p>Generic and self-hosted. One calendar outline, stroke 1.75, round caps and joins, in <code>currentColor</code>. The link carries the name. The same words are the tooltip.</p>
+  <div id="icon-review">
+    <h3>16px on a light background</h3>
+    <div class="spec-row on-light">
+      {marks.map(([mark, label]) => (
+        <figure>
+          <span class="spec" style="--cal-glyph: 16px"><CalendarGlyph mark={mark} /></span>
+          <figcaption>{label}</figcaption>
+        </figure>
+      ))}
+    </div>
+    <h3>16px on a dark background</h3>
+    <div class="spec-row on-dark">
+      {marks.map(([mark, label]) => (
+        <figure>
+          <span class="spec" style="--cal-glyph: 16px"><CalendarGlyph mark={mark} /></span>
+          <figcaption>{label}</figcaption>
+        </figure>
+      ))}
+    </div>
+    <h3>Normal button size</h3>
+    <div class="card">
+      <AddToCalendar e={sample} compact={true} />
+    </div>
+  </div>
+
+  <h2>Voice and copy</h2>
+  <p>To be filled in.</p>
+  <ul>
+    <li>Tone:</li>
+    <li>Button and microcopy wording:</li>
+    <li>Accessible labels:</li>
+  </ul>
+</Base>
+<style>
+  .swatches { list-style: none; padding: 0; margin: .4rem 0 1rem; display: flex; flex-wrap: wrap; gap: .8rem 1rem; }
+  .swatches li { width: 7.6rem; font-size: .85rem; }
+  .swatches b, .swatches .muted { display: block; }
+  .blob { display: block; height: 3rem; border-radius: 10px; border: 1px solid var(--line); margin-bottom: .35rem; }
+  .tartan-sample { height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--green) 0 0 / 10px 10px repeat; margin: .4rem 0 .8rem; }
+  .lede-sample { font-size: 1.0625rem; max-width: 40rem; }
+  .btn-row { display: flex; flex-wrap: wrap; gap: .6rem; }
+  .card-gap { margin-top: 1rem; }
+  .card h3 { margin: .1rem 0 .6rem; font-size: 1.15rem; }
+  .spec-row { display: flex; flex-wrap: wrap; gap: 1rem; margin: 0 0 1rem; padding: .8rem; border-radius: 14px; }
+  .spec-row figure { margin: 0; text-align: center; width: 9.5rem; }
+  .spec-row figcaption { font-size: .85rem; margin-top: .45rem; }
+  .spec { display: inline-flex; }
+  .on-light { background: var(--card); color: var(--green); border: 1px solid var(--line); }
+  .on-dark { background: var(--green); color: var(--cream); }
+  .on-dark figcaption { color: var(--cream); }
+</style>
