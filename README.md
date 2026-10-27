@@ -17,7 +17,7 @@ GitHub Actions and deployed to Cloudflare Pages with wrangler.
 | `data/events_2027_pending.json` | Expected events without a confirmed date. Shown on /events/ **only as "Date TBA"** (Canada only, no tentative dates) and never in the feeds. |
 | `data/events_manual.json` | Organizer-submitted or hand-curated events. Merged into the calendar at build time. Burns Supper rows are also added to the Burns Night list. The daily deploy and the weekly source check do not rewrite this file. |
 | `data/shops_canada.json` | Shops and makers directory. |
-| `data/groups_canada.json` | Clubs, bands, dance schools, clan societies, Gaelic classes. The directory is /groups/, and each club has a profile page. Organizations only, never members' names. |
+| `data/groups_canada.json` | Clubs, bands, dance schools, clan societies, Gaelic classes. The directory is /groups/, and each club has a profile page. `slug` is that page's URL. It is the short form of the name, and it never changes once the club has been published, even if the name is corrected. Organizations only, never members' names. |
 | `data/burns_2027.json` | Burns Night 2027 suppers (/burns-night/). Host-confirmed rows are also in `events_2027.json` (type "Burns Supper"). A Burns Supper in `events_manual.json` is added here at build time. |
 | `data/season_champions.json` | Hand-entered band-level season winners by grade, each with its source link (/results/). No soloists. |
 | `data/sources_and_orgs.csv` | Calendars and associations re-checked weekly. |

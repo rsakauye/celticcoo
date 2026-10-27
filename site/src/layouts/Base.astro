@@ -2,8 +2,10 @@
 import NewsletterForm from '../components/NewsletterForm.astro';
 import { u, SITE_NAME } from '../lib/site.js';
 import { bookingConfig } from '../lib/booking.js';
-const { noindex = false, hideCornerCoo = false, breadcrumbs = null, jsonld = null, ogType = 'website', crumb = null, title = SITE_NAME, description = 'Highland Games, pipe bands, Highland dance, Gaelic and Celtic festivals across Canada, plus the shops and makers who keep the culture going.' } = Astro.props;
+const { noindex = false, hideCornerCoo = false, breadcrumbs = null, jsonld = null, ogType = 'website', crumb = null, title = SITE_NAME, description = 'Highland Games, pipe bands, Highland dance, Gaelic and Celtic festivals across Canada, plus the shops and makers who keep the culture going.', ogTitle = '', ogDescription = '' } = Astro.props;
 const fullTitle = title === SITE_NAME ? 'The Celtic Coo: Highland Games & Celtic events in Canada' : `${title} · The Celtic Coo`;
+const shareTitle = ogTitle || fullTitle;
+const shareDescription = ogDescription || description;
 const path = Astro.url.pathname;
 const nav = [['', 'Home'], ['events/', 'Events'], ['results/', 'Results'], ['groups/', 'Clubs & lessons'], ['burns-night/', 'Burns Night'], ['shops/', 'Shops'], ['fundraising/', 'Fundraising']];
 const navNew = [['what-to-wear/', 'What to wear'], ['tartans/', 'Find your tartan'], ['roots/', 'Trace your roots'], ['about/', 'About Ceilidh']];
@@ -40,16 +42,16 @@ const ldJson = JSON.stringify(ld.length === 1 ? ld[0] : ld).replace(/</g, '\\u00
   <meta property="og:site_name" content={SITE_NAME} />
   <meta property="og:type" content={ogType} />
   <meta property="og:locale" content="en_CA" />
-  <meta property="og:title" content={fullTitle} />
-  <meta property="og:description" content={description} />
+  <meta property="og:title" content={shareTitle} />
+  <meta property="og:description" content={shareDescription} />
   <meta property="og:url" content={canonical} />
   <meta property="og:image" content={ogImage} />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta property="og:image:alt" content="Ceilidh the Coo, The Celtic Coo's Highland coo mascot" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content={fullTitle} />
-  <meta name="twitter:description" content={description} />
+  <meta name="twitter:title" content={shareTitle} />
+  <meta name="twitter:description" content={shareDescription} />
   <meta name="twitter:image" content={ogImage} />
   {ld.length > 0 && <script type="application/ld+json" set:html={ldJson} />}
   <meta name="theme-color" content="#1f4d3a" />

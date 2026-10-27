@@ -2,7 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import ClubEventRow from '../../components/ClubEventRow.astro';
 import { groups, events, TODAY, GROUP_EMOJI } from '../../lib/data.js';
-import { clubLinks, clubMetaDescription, clubPlace, splitClubEvents } from '../../lib/groupProfiles.js';
+import { CLUB_SHARE_DESCRIPTION, clubLinks, clubMetaDescription, clubPlace, clubShareTitle, splitClubEvents } from '../../lib/groupProfiles.js';
 import { u } from '../../lib/site.js';
 export function getStaticPaths() {
   return groups.map((g) => ({ params: { id: g.id }, props: { g } }));
@@ -32,25 +32,28 @@ const icons = {
   bluesky: '<path d="M7 8c1.6 1.8 3.3 4.4 5 6.6C13.7 12.4 15.4 9.8 17 8c1.2 2.4.6 5.2-.8 6.8C15 16.4 13.2 17 12 17s-3-.6-4.2-2.2C6.4 13.2 5.8 10.4 7 8z"/>',
   linkedin: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 11v6M8 8h.01M12 17v-3.5a2 2 0 0 1 4 0V17"/>',
   other: '<path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.2 1.2"/><path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.2-1.2"/>',
+  share: '<path d="M12 16V6"/><path d="M8 9l4-4 4 4"/><path d="M6 12v6a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-6"/>',
 };
 ---
-<Base title={place ? `${g.name} in ${place}` : g.name} crumb={g.name} breadcrumbs={[['Clubs & lessons', 'groups/']]} description={description} jsonld={jsonld}>
+<Base title={place ? `${g.name} in ${place}` : g.name} crumb={g.name} breadcrumbs={[['Clubs & lessons', 'groups/']]} description={description} ogTitle={clubShareTitle(g)} ogDescription={CLUB_SHARE_DESCRIPTION} jsonld={jsonld}>
   <p class="back"><a id="group-back" href={u('groups/')}>← Clubs &amp; lessons</a></p>
   <header class="club-head">
     <h1>{g.name}</h1>
     <p class="club-kicker"><span class="pill green">{GROUP_EMOJI[g.kind] || ''} {g.kind}</span></p>
     {place && <p class="muted where">{place}</p>}
   </header>
-  {links.length > 0 && (
-    <div class="links">
-      {links.map((link) => (
-        <a class="btn ghost" href={link.url} target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24" aria-hidden="true" set:html={icons[link.id] || icons.other}></svg>
-          {link.label}
-        </a>
-      ))}
-    </div>
-  )}
+  <div class="links">
+    {links.map((link) => (
+      <a class="btn ghost" href={link.url} target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" aria-hidden="true" set:html={icons[link.id] || icons.other}></svg>
+        {link.label}
+      </a>
+    ))}
+    <button type="button" class="btn ghost" id="share-page">
+      <svg viewBox="0 0 24 24" aria-hidden="true" set:html={icons.share}></svg>
+      <span id="share-label" aria-live="polite">Share this page</span>
+    </button>
+  </div>
   {g.note && <p class="about">{g.note}</p>}
 
   <section class="events" aria-labelledby="upcoming-heading">
@@ -87,6 +90,23 @@ const icons = {
       } catch (e) {}
     })();
   </script>
+  <script>
+    import { shareClubPage } from '../../lib/groupProfiles.js';
+    const btn = document.getElementById('share-page');
+    const label = document.getElementById('share-label');
+    btn?.addEventListener('click', async () => {
+      const mobile = window.matchMedia('(max-width: 640px), (pointer: coarse)').matches;
+      const result = await shareClubPage(location.href, {
+        copy: (url) => navigator.clipboard?.writeText ? navigator.clipboard.writeText(url) : Promise.reject(new Error('no clipboard')),
+        share: typeof navigator.share === 'function' ? (url) => navigator.share({ title: document.title, url }) : null,
+        mobile,
+      });
+      if (result !== 'copied' || !label) return;
+      label.textContent = 'Link copied';
+      window.clearTimeout(btn._copied);
+      btn._copied = window.setTimeout(() => { label.textContent = 'Share this page'; }, 2000);
+    });
+  </script>
 </Base>
 <style>
   .back { margin:0 0 .4rem; }
@@ -96,7 +116,7 @@ const icons = {
   .links { display:flex; flex-wrap:wrap; gap:.5rem; margin:1rem 0; }
   .links .btn { display:inline-flex; align-items:center; gap:.4rem; }
   .links svg { width:1rem; height:1rem; flex:none; fill:none; stroke:currentColor; stroke-width:1.75; stroke-linecap:round; stroke-linejoin:round; }
-  .links a.btn:hover, .links a.btn:focus-visible { background:var(--cream); }
+  .links .btn:hover, .links .btn:focus-visible { background:var(--cream); }
   .about { max-width:65ch; }
   .events { margin-top:1.6rem; }
   .events h2 { margin-bottom:.4rem; }
