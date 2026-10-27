@@ -2,10 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import groupsRaw from '../../data/groups_canada.json' with { type: 'json' };
-import { slugify, groups, events } from '../src/lib/data.js';
+import { groups, events } from '../src/lib/data.js';
 import {
-  slugifyClub,
-  uniqueClubSlugs,
+  suggestClubSlug,
   assignClubSlugs,
   publishedSlug,
   clubShareTitle,
@@ -19,27 +18,39 @@ import {
   eventPlace,
 } from '../src/lib/groupProfiles.js';
 
-test('club slugs strip accents and stay unique in source order', () => {
-  assert.equal(slugifyClub('Sláinte Social Club'), 'slainte-social-club');
-  assert.equal(slugifyClub('Comunn Gàidhlig Thoronto (Gaelic Society of Toronto)'), slugify('Comunn Gàidhlig Thoronto (Gaelic Society of Toronto)'));
-  assert.equal(slugifyClub('RSCDS Montréal'), 'rscds-montreal');
-  assert.equal(slugifyClub('Pipes & Drums'), 'pipes-and-drums');
-  assert.deepEqual(uniqueClubSlugs(['Sláinte', 'Slainte', 'Other', 'Sláinte']), ['slainte', 'slainte-2', 'other', 'slainte-3']);
-  const ids = uniqueClubSlugs(groupsRaw.map((g) => g.name));
-  assert.equal(new Set(ids).size, ids.length);
-  assert.equal(ids[groupsRaw.findIndex((g) => g.name === 'Sláinte Social Club')], 'slainte-social-club');
-  const byName = new Map(groups.map((g) => [g.name, g.id]));
-  groupsRaw.forEach((g, i) => {
-    assert.equal(g.slug, ids[i]);
-    assert.equal(publishedSlug(g.slug), ids[i]);
-    assert.equal(byName.get(g.name), g.slug);
-  });
-  assert.deepEqual(assignClubSlugs(groupsRaw), ids);
+test('short club slugs drop fillers and suffixes, and a published slug never changes', () => {
+  assert.equal(suggestClubSlug('Sláinte Social Club'), 'slainte');
+  assert.equal(suggestClubSlug('City of Calgary Pipe Band'), 'calgary');
+  assert.equal(suggestClubSlug('RSCDS Montréal'), 'rscds-montreal');
+  assert.equal(suggestClubSlug('Airdrie Scots Pipes & Drums'), 'airdrie-scots');
+  assert.notEqual(suggestClubSlug('Royal Scottish Country Dance Society Calgary Branch'), 'rscds-calgary');
   assert.deepEqual(
-    assignClubSlugs([{ name: 'Sláinte Social Club', slug: 'slainte-social-club' }, { name: 'Sláinte Social Club' }]),
-    ['slainte-social-club', 'slainte-social-club-2'],
+    assignClubSlugs([{ name: 'Royal Scottish Country Dance Society Calgary Branch', city: 'Calgary', slug: 'rscds-calgary' }]),
+    ['rscds-calgary'],
   );
-  assert.deepEqual(assignClubSlugs([{ name: 'Renamed Club', slug: 'slainte-social-club' }]), ['slainte-social-club']);
+  assert.deepEqual(assignClubSlugs([
+    { name: 'Harbour Pipe Band', city: 'Calgary' },
+    { name: 'Harbour Pipe Band', city: 'Edmonton' },
+  ]), ['harbour', 'harbour-edmonton']);
+  assert.equal(JSON.stringify(assignClubSlugs([
+    { name: 'Harbour Pipe Band', city: 'Calgary' },
+    { name: 'Harbour Pipe Band', city: 'Edmonton' },
+  ])).includes('-2'), false);
+  assert.deepEqual(assignClubSlugs([{ name: 'Renamed Club', city: 'Calgary', slug: 'slainte' }]), ['slainte']);
+
+  const snapshot = JSON.parse(readFileSync(new URL('./fixtures/published-club-slugs.json', import.meta.url), 'utf8'));
+  assert.deepEqual(groupsRaw.map((g) => [g.name, g.slug]), snapshot);
+  assert.equal(new Set(snapshot.map((row) => row[1])).size, snapshot.length);
+  snapshot.forEach(([, slug]) => {
+    assert.equal(publishedSlug(slug), slug);
+    assert.equal(/-\d+$/.test(slug), false);
+  });
+  const byName = new Map(groups.map((g) => [g.name, g.id]));
+  groupsRaw.forEach((g) => assert.equal(byName.get(g.name), g.slug));
+  assert.deepEqual(assignClubSlugs(groupsRaw), snapshot.map((row) => row[1]));
+  const manual = new Map([['RSCDS Calgary Branch', 'rscds-calgary']]);
+  const regenerated = assignClubSlugs(groupsRaw.map((g) => (manual.has(g.name) ? g : { ...g, slug: '' })));
+  assert.deepEqual(regenerated, snapshot.map((row) => row[1]));
   const src = readFileSync(new URL('../src/lib/groupProfiles.js', import.meta.url), 'utf8');
   assert.match(src, /published slug never changes/);
 });

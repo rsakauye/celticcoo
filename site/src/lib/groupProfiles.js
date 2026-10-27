@@ -3,31 +3,92 @@
 // A profile URL is /groups/<slug>/. Clubs paste that link into their own
 // social bios, so a published slug never changes: not when the name,
 // spelling, city, or file order changes. The value that shipped lives on
-// the club as `slug` in data/groups_canada.json. assignClubSlugs() returns
+// the club as `slug` in data/groups_canada.json and in
+// site/test/fixtures/published-club-slugs.json. assignClubSlugs() returns
 // that field as-is. Do not rewrite it, and do not "fix" it to match a new
 // name. A club with no slug yet (a new row, not yet deployed) gets a short
-// one: the name in lowercase, accents removed, "&" written as "and", other
-// punctuation collapsed to a hyphen. No city, province, or id is added.
-// The first club keeps that base; a later collision gets -2, -3, in file
-// order. After the first deploy, write that slug onto the club and leave it.
+// one from suggestClubSlug(): lowercase ASCII, accents removed, hyphens
+// only, filler words and generic suffixes dropped, cut at a word boundary
+// around 30 characters. Two new clubs that land on the same slug get a
+// short city suffix (harbour, harbour-edmonton), never a number or a hash.
+// After the first deploy, write that slug onto the club and leave it.
 //
 // An event is listed only when it carries that slug, or an organizer's name
 // is exactly the club's name. Partial titles are not a match.
 
-export function slugifyClub(name) {
-  return String(name ?? '').toLowerCase()
+const FILLERS = new Set(['the', 'of', 'and', 'a', 'an', 'city']);
+const SUFFIX_PHRASES = [['social', 'club'], ['pipe', 'band'], ['pipes', 'and', 'drums'], ['pipes', 'drums']];
+const SUFFIX_WORDS = new Set(['society', 'association', 'club', 'inc', 'ltd', 'canada']);
+const SLUG_MAX = 30;
+
+function wordsOf(name) {
+  const raw = String(name ?? '').toLowerCase()
     .normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    .replace(/['’ʼ]/g, '')
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim().split(/\s+/).filter(Boolean);
+  return raw.filter((word, i) => i === 0 || word !== raw[i - 1]);
 }
 
-export function uniqueClubSlugs(names) {
-  const seen = new Map();
-  return (Array.isArray(names) ? names : []).map((name) => {
-    const base = slugifyClub(name) || 'group';
-    const n = (seen.get(base) || 0) + 1;
-    seen.set(base, n);
-    return n === 1 ? base : `${base}-${n}`;
-  });
+function stripSuffixes(words) {
+  let w = words.slice();
+  for (let guard = 0; w.length > 1 && guard < 24; guard += 1) {
+    let removed = false;
+    for (const phrase of SUFFIX_PHRASES) {
+      for (let i = 0; i <= w.length - phrase.length; i += 1) {
+        if (w.length === phrase.length) continue;
+        if (!phrase.every((part, k) => w[i + k] === part)) continue;
+        w = w.slice(0, i).concat(w.slice(i + phrase.length));
+        removed = true;
+        break;
+      }
+      if (removed) break;
+    }
+    if (removed) continue;
+    const at = w.findIndex((word) => SUFFIX_WORDS.has(word));
+    if (at < 0) break;
+    w = w.slice(0, at).concat(w.slice(at + 1));
+  }
+  return w;
+}
+
+function significantWords(name) {
+  const tokens = wordsOf(name).filter((word) => !FILLERS.has(word));
+  const stripped = stripSuffixes(tokens);
+  if (stripped.length) return stripped;
+  if (tokens.length) return tokens;
+  const raw = wordsOf(name);
+  return raw.length ? raw : ['group'];
+}
+
+function capWords(words, max = SLUG_MAX) {
+  const out = [];
+  for (const word of words) {
+    const next = out.length ? `${out.join('-')}-${word}` : word;
+    if (next.length > max) {
+      if (out.length && next.length <= max + 2) out.push(word);
+      break;
+    }
+    out.push(word);
+  }
+  if (!out.length) return [String(words[0] || 'group').slice(0, max)];
+  return out;
+}
+
+function citySuffix(city) {
+  if (!city || String(city).trim().toLowerCase() === 'national') return '';
+  return capWords(significantWords(city), 16).join('-');
+}
+
+function fitSuffix(words, extra, max = SLUG_MAX) {
+  const kept = words.slice();
+  while (kept.length > 1 && `${kept.join('-')}-${extra}`.length > max) kept.pop();
+  return `${kept.join('-')}-${extra}`;
+}
+
+export function suggestClubSlug(name) {
+  return capWords(significantWords(name)).join('-');
 }
 
 const PUBLISHED_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -43,12 +104,23 @@ export function assignClubSlugs(clubs) {
   return list.map((club) => {
     const explicit = publishedSlug(club?.slug);
     if (explicit) return explicit;
-    const base = slugifyClub(club?.name) || 'group';
-    let n = 1;
-    let slug = base;
-    while (taken.has(slug)) {
-      n += 1;
-      slug = `${base}-${n}`;
+    const words = significantWords(club?.name);
+    let slug = capWords(words).join('-');
+    if (taken.has(slug)) {
+      const city = citySuffix(club?.city);
+      if (city && !slug.split('-').includes(city)) slug = fitSuffix(words, city);
+      if (taken.has(slug)) {
+        for (const word of words) {
+          if (slug.split('-').includes(word)) continue;
+          const next = fitSuffix(slug.split('-'), word, SLUG_MAX + 2);
+          if (!taken.has(next)) {
+            slug = next;
+            break;
+          }
+        }
+      }
+      const province = String(club?.province || '').toLowerCase().replace(/[^a-z]/g, '');
+      if (taken.has(slug) && province && !slug.endsWith(`-${province}`)) slug = `${slug}-${province}`;
     }
     taken.add(slug);
     return slug;
