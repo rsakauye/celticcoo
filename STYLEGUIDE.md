@@ -102,7 +102,8 @@ Generic and self-hosted. Draw them inline in the page. Do not load an icon font,
 
 - ViewBox `0 0 24 24`. One stroke of `1.75`, round caps and round joins, `fill: none` on the line work, colour `currentColor` so the icon follows the control (green on a light card, cream when the same drawing sits on `--green`).
 - The three calendar icons share that frame. One has a small `.ics` label in the body font. One has a small `G`. One has a small envelope. Same stroke and same size.
-- Drawn size inside a calendar button is `32px` (`--cal-glyph`). A specimen may set `--cal-glyph: 16px`.
+- Drawn size inside a calendar button is `32px` (`--cal-glyph`).
+- The calendar glyph (`--cal-glyph`) stays at 24px or larger, because the .ics, G and envelope marks blur below that.
 - The svg is `aria-hidden`. The control has the accessible name and a `title` tooltip with the same words.
 - Current names: "Download calendar file", "Add to Google Calendar", "Add to Outlook calendar".
 

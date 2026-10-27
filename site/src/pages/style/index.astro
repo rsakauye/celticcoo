@@ -83,7 +83,9 @@ const marks = [
   <h2 id="icons">Icons</h2>
   <p>Generic and self-hosted. One calendar outline, stroke 1.75, round caps and joins, in <code>currentColor</code>. The link carries the name. The same words are the tooltip.</p>
   <div id="icon-review">
-    <h3>16px on a light background</h3>
+    <h3>Legibility check, not a usable size</h3>
+    <p class="muted">These rows draw the icons at 16px. The .ics, G and envelope marks blur below 24px, so <code>--cal-glyph</code> stays at 24px or larger.</p>
+    <h3>Legibility check: 16px on a light background</h3>
     <div class="spec-row on-light">
       {marks.map(([mark, label]) => (
         <figure>
@@ -92,7 +94,7 @@ const marks = [
         </figure>
       ))}
     </div>
-    <h3>16px on a dark background</h3>
+    <h3>Legibility check: 16px on a dark background</h3>
     <div class="spec-row on-dark">
       {marks.map(([mark, label]) => (
         <figure>

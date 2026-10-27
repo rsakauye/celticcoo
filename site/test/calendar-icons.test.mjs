@@ -62,6 +62,9 @@ test('the style page shows the tokens and stays out of the index and sitemap', (
   assert.match(stylePage, /Accessible labels:/);
   for (const label of labels) assert.match(stylePage, new RegExp(label.replace(/[.]/g, '\\.')));
   assert.match(stylePage, /--cal-glyph: 16px/);
+  assert.match(stylePage, /Legibility check, not a usable size/);
+  assert.match(stylePage, /Legibility check: 16px on a light background/);
+  assert.match(stylePage, /Legibility check: 16px on a dark background/);
   assert.match(stylePage, /#B82E26/);
   assert.match(stylePage, /#20284E/);
   assert.doesNotMatch(sitemap, /['"]style\/['"]/);
@@ -82,6 +85,8 @@ test('the style guide records the live tokens and the voice section', () => {
   assert.match(guide, /1\.75/);
   assert.match(guide, /44px/);
   assert.match(guide, /generic and self-hosted/i);
+  assert.match(guide, /The calendar glyph \(`--cal-glyph`\) stays at 24px or larger, because the \.ics, G and envelope marks blur below that\./);
+  assert.doesNotMatch(guide, /--cal-glyph: 16px/);
   for (const label of labels) assert.match(guide, new RegExp(label.replace(/[.]/g, '\\.')));
   const voice = guide.split('## Voice and copy')[1];
   assert.ok(voice);
