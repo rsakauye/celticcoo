@@ -17,6 +17,7 @@ const LABELS = [
   'Burns Night 2027 (Jan 25)',
   "Get The Coo's Letter, free",
   'Drone tuner for pipers',
+  "Ceilidh's GIPHY stickers",
   'Visit celticcoo.ca',
 ];
 const PATHS = ['events/', 'submit/', 'groups/', 'burns-night/', 'newsletter/', 'tune/', ''];
@@ -49,15 +50,19 @@ test('utm tags same-origin links and leaves mailto and other hosts alone', () =>
 
   assert.equal(tagHref('mailto:hello@celticcoo.ca', pageUrl, 'facebook'), 'mailto:hello@celticcoo.ca');
   assert.equal(tagHref('https://example.com/out', pageUrl, 'facebook'), 'https://example.com/out');
+  assert.equal(tagHref('https://giphy.com/channel/celticcoo', pageUrl, 'facebook'), 'https://giphy.com/channel/celticcoo');
 });
 
-test('the links page lists the seven buttons in order', () => {
+test('the links page lists the eight buttons in order', () => {
   assert.match(page, /<title>\{title\}<\/title>/);
   assert.match(page, /Links \| The Celtic Coo/);
-  assert.match(page, /Find Celtic events across Canada, list your own for free, and find clubs, bands and lessons near you\./);
+  assert.match(page, /Find Celtic events across Canada, list your own for free, and grab Ceilidh's stickers on GIPHY\./);
   assert.match(page, /Hiya! Find a ceilidh, bring your crew\. Here's everywhere the Coo hangs out\./);
   assert.doesNotMatch(page, /Base\.astro/);
-  assert.doesNotMatch(page, /instagram\.com|giphy|mock-flag|fonts\.google|kit\.com/i);
+  assert.doesNotMatch(page, /instagram\.com|mock-flag|fonts\.google|kit\.com/i);
+  assert.match(page, /href="https:\/\/giphy\.com\/channel\/celticcoo" rel="noopener"/);
+  assert.doesNotMatch(page, /giphy\.com[^"]*" data-utm|data-utm href="https:\/\/giphy\.com/);
+  assert.doesNotMatch(page, /giphy\.com\/channel\/celticcoo"[^>]*target=/);
 
   const labels = [...page.matchAll(/class="lbl">(.*?)<\/span>/g)].map((m) => m[1]);
   assert.deepEqual(labels, LABELS);
@@ -74,7 +79,7 @@ test('the links page lists the seven buttons in order', () => {
   const hidden = page.match(/<svg\b[^>]*aria-hidden="true"/g);
   assert.ok(svgs && hidden);
   assert.equal(svgs.length, hidden.length);
-  assert.equal(svgs.length, 15);
+  assert.equal(svgs.length, 17);
 
   assert.match(page, /min-height:56px/);
   assert.match(page, /min-height:44px/);
