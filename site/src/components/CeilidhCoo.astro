@@ -4,7 +4,7 @@ import { defaultTartan } from '../lib/ceilidhTartans.js';
 const strip = u(defaultTartan().fling);
 ---
 <div class="coo-perch" data-ceilidh-coo>
-  <button type="button" class="coo-bring" data-coo-toggle aria-pressed="false" aria-label="Bring out Ceilidh to dance to Highland Laddie">
+  <button type="button" class="coo-bring" data-coo-toggle aria-pressed="false" aria-label="Bring out Ceilidh to dance">
     <span class="coo-window">
       <span class="coo-nudge">
         <span class="coo-shift">
@@ -14,14 +14,14 @@ const strip = u(defaultTartan().fling);
         </span>
       </span>
     </span>
-    <span class="coo-cue" aria-hidden="true"><span class="coo-cue-in" data-coo-tune>Highland Laddie</span><span class="coo-cue-out"><span class="coo-stop">stop</span> <span class="coo-tune-out" data-coo-tune>Highland Laddie</span></span></span>
+    <span class="coo-cue" aria-hidden="true"><span class="coo-cue-in" data-coo-tune>Coo theme</span><span class="coo-cue-out"><span class="coo-stop">stop</span> <span class="coo-tune-out" data-coo-tune>Coo theme</span></span></span>
   </button>
   <span class="sr-only" data-coo-status aria-live="polite"></span>
 </div>
 
 <script>
-  import { MASTER_GAIN, VOICES, midiToHz } from '../lib/highlandLaddie.js';
-  import { DANCE_TUNES, nextTuneIndex, prepareTune } from '../lib/danceTunes.js';
+  import { MASTER_GAIN, VOICES, midiToHz } from '../lib/cooSynth.js';
+  import { TITLE, prepareTheme } from '../lib/cooTheme.js';
 
   const root = document.querySelector('[data-ceilidh-coo]');
   // /tune/ sets this so the fixed corner coo cannot cover that page's buttons.
@@ -30,9 +30,7 @@ const strip = u(defaultTartan().fling);
   const status = root && root.isConnected && root.querySelector('[data-coo-status]');
   if (button && root && root.isConnected) {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    // First play is Highland Laddie. The index is memory only, so a reload starts over.
-    let tuneIndex = 0;
-    let active = prepareTune(tuneIndex);
+    const active = prepareTheme();
     let ctx = null;
     let master = null;
     let melodyBus = null;
@@ -42,20 +40,13 @@ const strip = u(defaultTartan().fling);
     let timer = 0;
     const live = new Set();
 
-    function title() {
-      const name = DANCE_TUNES[tuneIndex].title;
-      for (const el of root.querySelectorAll('[data-coo-tune]')) el.textContent = name;
-      return name;
-    }
-
     function setUi(on) {
-      const name = title();
       button.setAttribute('aria-pressed', on ? 'true' : 'false');
-      button.setAttribute('aria-label', on ? `Tuck Ceilidh away and stop ${name}` : `Bring out Ceilidh to dance to ${name}`);
+      button.setAttribute('aria-label', on ? `Tuck Ceilidh away and stop ${TITLE}` : 'Bring out Ceilidh to dance');
       if (status) {
         status.textContent = on
-          ? `Ceilidh is out and dancing. ${name} is playing.`
-          : `Ceilidh is tucked away. ${name} is next, and the music is muted.`;
+          ? `Ceilidh is out and dancing. ${TITLE} is playing.`
+          : `Ceilidh is tucked away. ${TITLE} is next, and the music is muted.`;
       }
     }
 
@@ -166,12 +157,11 @@ const strip = u(defaultTartan().fling);
       root.setAttribute('data-out', '');
       let heard = false;
       try { heard = startTune(); } catch (e) { silence(); }
-      const name = title();
       button.setAttribute('aria-pressed', 'true');
-      button.setAttribute('aria-label', `Tuck Ceilidh away and stop ${name}`);
+      button.setAttribute('aria-label', `Tuck Ceilidh away and stop ${TITLE}`);
       if (status) {
         status.textContent = heard
-          ? `Ceilidh is out and dancing. ${name} is playing.`
+          ? `Ceilidh is out and dancing. ${TITLE} is playing.`
           : 'Ceilidh is out and dancing. Sound is not available in this browser.';
       }
     }
@@ -179,8 +169,6 @@ const strip = u(defaultTartan().fling);
     function tuck() {
       silence();
       root.removeAttribute('data-out');
-      tuneIndex = nextTuneIndex(tuneIndex);
-      active = prepareTune(tuneIndex);
       setUi(false);
     }
 
@@ -315,7 +303,7 @@ const strip = u(defaultTartan().fling);
     from { transform: translate3d(0, 0, 0); }
     to { transform: translate3d(-1920px, 0, 0); }
   }
-  /* Narrow screens: the tune name stays in the aria-label, and the peek sits in the side padding. */
+  /* Narrow screens: the tucked cue hides, and the peek sits in the side padding. */
   @media (max-width: 719px) {
     .coo-perch:not([data-out]) .coo-cue { display: none; }
     :global(main.wrap:has([data-ceilidh-coo])),
