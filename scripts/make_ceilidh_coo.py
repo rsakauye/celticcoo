@@ -3,7 +3,7 @@
 
 Everything is drawn in code at 1x on a 64x64 grid, using a fixed palette.
 Edit PALETTE / POSES below and re-run:  python3 scripts/make_ceilidh_coo.py
-Writes site/public/tartans/fraser-of-lovat/ceilidh-coo-strip.png.
+Writes site/public/img/ceilidh-fling-strip.png.
 Previews go to /tmp and are not part of the site.
 """
 import os
@@ -27,7 +27,7 @@ PALETTE = [
     (31, 77, 58),     # 8 tartan green (FB cover green #1f4d3a)
     (60, 122, 78),    # 9 tartan light green
     (184, 46, 38),    # 10 Fraser of Lovat red
-    (224, 165, 38),   # 11 tartan gold (celticcoo.ca gold)
+    (224, 165, 38),   # 11 hardware gold (bow knot, belt buckle, sporran clasp)
     (85, 50, 30),     # 12 hoof / tartan brown
     (255, 255, 255),  # 13 eye highlight,
     (32, 40, 78),     # 14 navy (Fraser of Lovat dark blue)
@@ -106,9 +106,13 @@ def tartan(x0, y0, step=None):
 
 
 def sash_fill(x, y):
-    """Diagonal sash: red band with a gold pinstripe and green edge rows."""
-    k = (x - y) % 5
-    return GOLD if k == 2 else (GRN if k in (0, 4) else RED)
+    """Diagonal sash in Fraser of Lovat: red, green, and navy."""
+    k = (x - y) % 6
+    if k in (0, 1):
+        return GRN
+    if k == 2:
+        return NAVY
+    return RED
 
 
 # ---- poses: dy = hop, arms/legs as joint lists (relative to body, before dy)
@@ -264,7 +268,7 @@ def main():
     strip = palettize(Image.new("P", (W * n, H), 0))
     for i, f in enumerate(frames):
         strip.paste(f, (i * W, 0))
-    out = os.path.join(os.path.dirname(HERE), "site", "public", "tartans", "fraser-of-lovat", "ceilidh-coo-strip.png")
+    out = os.path.join(os.path.dirname(HERE), "site", "public", "img", "ceilidh-fling-strip.png")
     os.makedirs(os.path.dirname(out), exist_ok=True)
     strip.save(out, optimize=True, transparency=0, bits=4)
     strip.resize((W * n * SCALE, H * SCALE), Image.NEAREST).save(

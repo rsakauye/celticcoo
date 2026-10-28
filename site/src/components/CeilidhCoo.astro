@@ -20,8 +20,9 @@ const strip = u(defaultTartan().fling);
 </div>
 
 <script>
-  import { MASTER_GAIN, VOICES, midiToHz } from '../lib/highlandLaddie.js';
+  import { MASTER_GAIN, VOICES, midiToHz } from '../lib/cooSynth.js';
   import { DANCE_TUNES, nextTuneIndex, prepareTune } from '../lib/danceTunes.js';
+  import { TITLE, prepareTheme } from '../lib/cooTheme.js';
 
   const root = document.querySelector('[data-ceilidh-coo]');
   // /tune/ sets this so the fixed corner coo cannot cover that page's buttons.
@@ -30,7 +31,8 @@ const strip = u(defaultTartan().fling);
   const status = root && root.isConnected && root.querySelector('[data-coo-status]');
   if (button && root && root.isConnected) {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    // First play is Highland Laddie. The index is memory only, so a reload starts over.
+    // First play is Highland Laddie. Stop and start moves through the traditional
+    // tunes, then the Coo theme, then back. The index is memory only.
     let tuneIndex = 0;
     let active = prepareTune(tuneIndex);
     let ctx = null;
@@ -42,16 +44,28 @@ const strip = u(defaultTartan().fling);
     let timer = 0;
     const live = new Set();
 
-    function title() {
-      const name = DANCE_TUNES[tuneIndex].title;
+    function cooThemeSelected() {
+      return tuneIndex === DANCE_TUNES.length;
+    }
+
+    function tuneName() {
+      return cooThemeSelected() ? TITLE : DANCE_TUNES[tuneIndex].title;
+    }
+
+    function showTune() {
+      const name = tuneName();
       for (const el of root.querySelectorAll('[data-coo-tune]')) el.textContent = name;
       return name;
     }
 
     function setUi(on) {
-      const name = title();
+      const name = showTune();
       button.setAttribute('aria-pressed', on ? 'true' : 'false');
-      button.setAttribute('aria-label', on ? `Tuck Ceilidh away and stop ${name}` : `Bring out Ceilidh to dance to ${name}`);
+      if (cooThemeSelected()) {
+        button.setAttribute('aria-label', on ? 'Tuck Ceilidh away and stop Coo theme' : 'Bring out Ceilidh to dance');
+      } else {
+        button.setAttribute('aria-label', on ? `Tuck Ceilidh away and stop ${name}` : `Bring out Ceilidh to dance to ${name}`);
+      }
       if (status) {
         status.textContent = on
           ? `Ceilidh is out and dancing. ${name} is playing.`
@@ -140,8 +154,14 @@ const strip = u(defaultTartan().fling);
       src.start(0);
     }
 
+    function loadActive() {
+      active = cooThemeSelected() ? prepareTheme() : prepareTune(tuneIndex);
+    }
+
     function startTune() {
       if (!AudioCtx) return false;
+      // A second start replaces the tune that is already sounding.
+      if (playing) silence();
       // Created here, on the tap, never on load and never from storage.
       if (!ctx) {
         ctx = new AudioCtx();
@@ -166,9 +186,9 @@ const strip = u(defaultTartan().fling);
       root.setAttribute('data-out', '');
       let heard = false;
       try { heard = startTune(); } catch (e) { silence(); }
-      const name = title();
+      const name = showTune();
       button.setAttribute('aria-pressed', 'true');
-      button.setAttribute('aria-label', `Tuck Ceilidh away and stop ${name}`);
+      button.setAttribute('aria-label', cooThemeSelected() ? 'Tuck Ceilidh away and stop Coo theme' : `Tuck Ceilidh away and stop ${name}`);
       if (status) {
         status.textContent = heard
           ? `Ceilidh is out and dancing. ${name} is playing.`
@@ -179,8 +199,14 @@ const strip = u(defaultTartan().fling);
     function tuck() {
       silence();
       root.removeAttribute('data-out');
-      tuneIndex = nextTuneIndex(tuneIndex);
-      active = prepareTune(tuneIndex);
+      if (tuneIndex === DANCE_TUNES.length) tuneIndex = 0;
+      else if (tuneIndex === DANCE_TUNES.length - 1) {
+        tuneIndex = nextTuneIndex(tuneIndex);
+        tuneIndex = DANCE_TUNES.length;
+      } else {
+        tuneIndex = nextTuneIndex(tuneIndex);
+      }
+      loadActive();
       setUi(false);
     }
 
@@ -194,8 +220,18 @@ const strip = u(defaultTartan().fling);
 <style>
   :global(html[data-hide-corner-coo]) .coo-perch { display: none !important; }
   :global(html[data-hide-corner-coo] body) { padding-bottom: 0 !important; }
+  :global(html:has([data-ceilidh-coo])) {
+    --coo-frame: 128px;
+    --coo-edge: calc(12px + env(safe-area-inset-right, 0px));
+    --coo-gutter: max(0px, calc((100vw - 1100px) / 2));
+    --coo-pad: max(1.1rem, calc(max(var(--coo-frame), 8.5rem) + var(--coo-edge) + 8px - var(--coo-gutter)));
+  }
+  :global(main.wrap:has([data-ceilidh-coo])),
+  :global(body:has([data-ceilidh-coo]) footer.site .wrap) {
+    padding-right: var(--coo-pad);
+  }
   .coo-perch {
-    --frame: 128px;
+    --frame: var(--coo-frame, 128px);
     --peek-w: 30px;
     --peek-h: 44px;
     --peek-x: -74px;
@@ -204,7 +240,7 @@ const strip = u(defaultTartan().fling);
     z-index: 25;
     top: auto;
     left: auto;
-    right: calc(0.35rem + env(safe-area-inset-right, 0px));
+    right: var(--coo-edge, calc(12px + env(safe-area-inset-right, 0px)));
     bottom: calc(0.35rem + env(safe-area-inset-bottom, 0px));
     pointer-events: none;
   }
@@ -260,7 +296,9 @@ const strip = u(defaultTartan().fling);
     flex: none;
     width: var(--peek-w);
     height: var(--peek-h);
+    max-width: calc(100vw - 32px - env(safe-area-inset-right, 0px));
     overflow: hidden;
+    contain: paint;
     transition: width .42s ease, height .42s ease;
   }
   .coo-nudge, .coo-shift, .coo-strip { display: block; }
@@ -315,32 +353,25 @@ const strip = u(defaultTartan().fling);
     from { transform: translate3d(0, 0, 0); }
     to { transform: translate3d(-1920px, 0, 0); }
   }
-  /* Narrow screens: the tune name stays in the aria-label, and the peek sits in the side padding. */
+  /* Narrow screens: the tucked cue hides, and the peek sits in the side padding. */
   @media (max-width: 719px) {
     .coo-perch:not([data-out]) .coo-cue { display: none; }
-    :global(main.wrap:has([data-ceilidh-coo])),
-    :global(body:has([data-ceilidh-coo]) footer.site .wrap) {
-      padding-right: calc(2.85rem + env(safe-area-inset-right, 0px));
-    }
   }
   :global(body:has([data-ceilidh-coo])) {
     padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
   }
   :global(body:has([data-ceilidh-coo][data-out])) {
-    padding-bottom: calc(13rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(var(--coo-frame, 128px) + 5.5rem + env(safe-area-inset-bottom, 0px));
   }
   @media (min-width: 720px) {
+    :global(html:has([data-ceilidh-coo])) { --coo-frame: 192px; }
     .coo-perch {
-      --frame: 192px;
       --peek-w: 70px;
       --peek-h: 88px;
       --peek-x: -84px;
       --peek-y: 0px;
     }
     .coo-perch[data-out] .coo-strip { animation-name: coo-fling-3x; }
-    :global(body:has([data-ceilidh-coo][data-out])) {
-      padding-bottom: calc(17rem + env(safe-area-inset-bottom, 0px));
-    }
   }
   /* After the size query, so a wide screen still holds the standing frame. */
   @media (prefers-reduced-motion: reduce) {
