@@ -84,13 +84,19 @@ async function columnUsesMostOfTheWidth(page) {
 }
 
 async function scrollToEnd(page) {
+  // iPhone WebKit's layout viewport is taller than clientHeight by the browser
+  // chrome, so scrollTop + clientHeight never reaches scrollHeight. The page is
+  // at the end when a further scroll does not move.
   await page.evaluate(() => {
     const root = document.scrollingElement;
     root.scrollTop = root.scrollHeight;
+    window.scrollTo(0, root.scrollHeight);
   });
   await page.waitForFunction(() => {
     const root = document.scrollingElement;
-    return root.scrollTop + root.clientHeight >= root.scrollHeight - 2;
+    const top = root.scrollTop;
+    root.scrollTop = root.scrollHeight;
+    return root.scrollTop <= top + 1;
   });
 }
 
