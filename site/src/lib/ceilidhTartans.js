@@ -3,7 +3,7 @@
 export const CEILIDH_TARTAN = {
   slug: 'fraser-of-lovat',
   name: 'Fraser of Lovat',
-  fling: 'tartans/fraser-of-lovat/ceilidh-coo-strip.png',
+  fling: 'img/ceilidh-fling-strip.png',
   fling_frames: 10,
   ears: 'tartans/fraser-of-lovat/ceilidh-coo-ears-covered-strip.png',
   ears_frames: 4,

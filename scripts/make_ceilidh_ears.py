@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Check the shipped Ceilidh strips. This does not redraw them.
 
-site/public/tartans/fraser-of-lovat keeps a 256x64 ears strip (4 frames)
-and a 640x64 dance strip (10 frames).
+site/public/tartans/fraser-of-lovat keeps a 256x64 ears strip (4 frames).
+The dance strip is site/public/img/ceilidh-fling-strip.png (640x64, 10 frames).
 """
 import os
 import struct
@@ -12,9 +12,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 TARTANS = os.path.join(ROOT, "site", "public", "tartans")
 EXPECT = {
-    "ceilidh-coo-strip.png": (640, 64),
     "ceilidh-coo-ears-covered-strip.png": (256, 64),
 }
+FLING = os.path.join(ROOT, "site", "public", "img", "ceilidh-fling-strip.png")
 
 
 def size(path):
@@ -42,6 +42,9 @@ def main():
             if found != expect:
                 print(path, found, "expected", expect, file=sys.stderr)
                 failed = True
+    if not os.path.isfile(FLING) or size(FLING) != (640, 64):
+        print(FLING, "expected", (640, 64), file=sys.stderr)
+        failed = True
     if failed:
         return 1
     print(f"{len(folders)} tartan folders ok")

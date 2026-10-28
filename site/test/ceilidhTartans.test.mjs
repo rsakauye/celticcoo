@@ -27,7 +27,7 @@ test('Ceilidh wears Fraser of Lovat and nothing else', () => {
   assert.equal(defaultTartan(), CEILIDH_TARTAN);
   assert.equal(CEILIDH_TARTAN.slug, 'fraser-of-lovat');
   assert.equal(CEILIDH_TARTAN.name, 'Fraser of Lovat');
-  assert.equal(CEILIDH_TARTAN.fling, 'tartans/fraser-of-lovat/ceilidh-coo-strip.png');
+  assert.equal(CEILIDH_TARTAN.fling, 'img/ceilidh-fling-strip.png');
   assert.equal(CEILIDH_TARTAN.ears, 'tartans/fraser-of-lovat/ceilidh-coo-ears-covered-strip.png');
   assert.equal(Object.keys(CEILIDH_TARTAN).some((key) => /storage|choice|enabled/i.test(key)), false);
 
@@ -35,10 +35,11 @@ test('Ceilidh wears Fraser of Lovat and nothing else', () => {
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name);
   assert.deepEqual(folders, ['fraser-of-lovat']);
-  for (const file of ['ceilidh-coo-strip.png', 'ceilidh-coo-ears-covered-strip.png']) {
-    const png = readFileSync(join(site, 'public/tartans/fraser-of-lovat', file));
-    assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
-  }
+  const ears = readFileSync(join(site, 'public/tartans/fraser-of-lovat/ceilidh-coo-ears-covered-strip.png'));
+  const fling = readFileSync(join(site, 'public/img/ceilidh-fling-strip.png'));
+  assert.equal(ears.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
+  assert.equal(fling.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
+  assert.equal(existsSync(join(site, 'public/tartans/fraser-of-lovat/ceilidh-coo-strip.png')), false);
 });
 
 test('the corner coo, the tuner, and the hero render Fraser of Lovat with no picker', () => {
@@ -249,7 +250,7 @@ test('clicking the dance control does not open another panel', async (t) => {
       const tucked = await evalPage(page, state);
       assert.equal(tucked.out, false, `tucked ${width}`);
       assert.equal(tucked.pressed, 'false', `pressed ${width}`);
-      assert.match(tucked.src, /fraser-of-lovat\/ceilidh-coo-strip\.png$/, `src ${width}`);
+      assert.match(tucked.src, /img\/ceilidh-fling-strip\.png$/, `src ${width}`);
       assert.equal(tucked.stored, 'calgary', `stored value is ignored ${width}`);
       assert.equal(tucked.openDialog, false, `dialog ${width}`);
       assert.deepEqual(tucked.expanded, [], `expanded ${width}`);
@@ -263,7 +264,7 @@ test('clicking the dance control does not open another panel', async (t) => {
       const dancing = await evalPage(page, state);
       assert.equal(dancing.out, true, `dancing ${width}`);
       assert.equal(dancing.pressed, 'true', `dancing pressed ${width}`);
-      assert.match(dancing.src, /fraser-of-lovat\/ceilidh-coo-strip\.png$/);
+      assert.match(dancing.src, /img\/ceilidh-fling-strip\.png$/);
       assert.equal(dancing.openDialog, false, `dialog while dancing ${width}`);
       assert.deepEqual(dancing.expanded, [], `expanded while dancing ${width}`);
       assert.equal(dancing.panels, 0, `panel while dancing ${width}`);
@@ -278,7 +279,7 @@ test('clicking the dance control does not open another panel', async (t) => {
       assert.equal(stopped.openDialog, false, `dialog after stop ${width}`);
       assert.deepEqual(stopped.expanded, [], `expanded after stop ${width}`);
       assert.equal(stopped.panels, 0, `panel after stop ${width}`);
-      assert.match(stopped.src, /fraser-of-lovat\/ceilidh-coo-strip\.png$/);
+      assert.match(stopped.src, /img\/ceilidh-fling-strip\.png$/);
       assert.equal(stopped.stored, 'calgary');
     });
   }

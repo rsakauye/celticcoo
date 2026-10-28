@@ -99,5 +99,6 @@ test('the corner coo plays this one theme and does not cycle tunes', () => {
   assert.match(css, /html\[data-hide-corner-coo\]/);
   assert.match(css, /steps\(10,\s*end\)/);
   assert.match(css, /coo-fling-2x 1s steps\(10, end\)/);
-  assert.match(css, /right:\s*calc\(16px \+ env\(safe-area-inset-right, 0px\)\)/);
+  assert.match(css, /--coo-pad:/);
+  assert.match(css, /padding-right:\s*var\(--coo-pad\)/);
 });
