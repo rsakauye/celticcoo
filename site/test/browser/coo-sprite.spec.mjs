@@ -44,7 +44,72 @@ test('each tune starts and stops, and switching leaves only one playing', async 
 });
 
 
-const WIDTHS = [1024, 1280, 390];
+const WIDTHS = [1024, 1280];
+
+const PHONES = [
+  { width: 390, height: 844 },
+  { width: 375, height: 667 },
+];
+
+async function spriteInVisualViewport(page) {
+  const box = await page.evaluate(() => {
+    const el = document.querySelector('[data-ceilidh-coo]');
+    const rect = el.getBoundingClientRect();
+    const vv = window.visualViewport;
+    const left = rect.left - vv.offsetLeft;
+    const top = rect.top - vv.offsetTop;
+    return {
+      left,
+      top,
+      right: left + rect.width,
+      bottom: top + rect.height,
+      width: vv.width,
+      height: vv.height,
+    };
+  });
+  expect(box.left, 'sprite left').toBeGreaterThanOrEqual(-1);
+  expect(box.top, 'sprite top').toBeGreaterThanOrEqual(-1);
+  expect(box.right, 'sprite right').toBeLessThanOrEqual(box.width + 1);
+  expect(box.bottom, 'sprite bottom').toBeLessThanOrEqual(box.height + 1);
+}
+
+async function columnUsesMostOfTheWidth(page) {
+  const ratio = await page.evaluate(() => {
+    const main = document.querySelector('main.wrap');
+    const style = getComputedStyle(main);
+    const content = main.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    return content / window.visualViewport.width;
+  });
+  expect(ratio).toBeGreaterThanOrEqual(0.9);
+}
+
+test('on a phone the coo stays on screen and the column stays wide', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'chromium', 'checked on iPhone WebKit and Brave');
+  await page.goto('/');
+  const button = page.locator('[data-coo-toggle]');
+  const newsletter = page.locator('.nl');
+  for (const size of PHONES) {
+    await page.setViewportSize(size);
+    if ((await page.locator('[data-ceilidh-coo]').getAttribute('data-out')) != null) {
+      await button.click();
+    }
+    await newsletter.scrollIntoViewIfNeeded();
+    await spriteInVisualViewport(page);
+    await columnUsesMostOfTheWidth(page);
+    await button.click();
+    await page.waitForFunction(() => {
+      const perch = document.querySelector('[data-ceilidh-coo]');
+      const win = document.querySelector('.coo-window');
+      const frame = getComputedStyle(perch).getPropertyValue('--frame').trim();
+      return Math.abs(win.getBoundingClientRect().width - parseFloat(frame)) < 1;
+    });
+    await newsletter.scrollIntoViewIfNeeded();
+    await spriteInVisualViewport(page);
+    await columnUsesMostOfTheWidth(page);
+    await button.click();
+  }
+});
+
 
 test('the dancing sprite stays inside the viewport and off the page controls', async ({ page }) => {
   await page.goto('/');
