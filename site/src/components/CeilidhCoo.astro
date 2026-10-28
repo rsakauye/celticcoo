@@ -2,9 +2,11 @@
 import { u } from '../lib/site.js';
 import { defaultTartan } from '../lib/ceilidhTartans.js';
 const strip = u(defaultTartan().fling);
+const head = u('coo.svg');
 ---
 <div class="coo-perch" data-ceilidh-coo>
   <button type="button" class="coo-bring" data-coo-toggle aria-pressed="false" aria-label="Bring out Ceilidh to dance to Highland Laddie">
+    <span class="coo-head" data-coo-head><img src={head} alt="" width="48" height="48" /></span>
     <span class="coo-window">
       <span class="coo-nudge">
         <span class="coo-shift">
@@ -23,6 +25,7 @@ const strip = u(defaultTartan().fling);
   import { MASTER_GAIN, VOICES, midiToHz } from '../lib/cooSynth.js';
   import { DANCE_TUNES, nextTuneIndex, prepareTune } from '../lib/danceTunes.js';
   import { TITLE, prepareTheme } from '../lib/cooTheme.js';
+  import { createHeadNudge } from '../lib/headNudge.js';
 
   const root = document.querySelector('[data-ceilidh-coo]');
   // /tune/ sets this so the fixed corner coo cannot cover that page's buttons.
@@ -210,7 +213,32 @@ const strip = u(defaultTartan().fling);
       setUi(false);
     }
 
+    const headEl = root.querySelector('[data-coo-head]');
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      || document.documentElement.getAttribute('data-a11y-motion') === 'reduce';
+    const nudge = createHeadNudge({
+      reducedMotion,
+      initiallyHidden: document.hidden,
+      now: () => Date.now(),
+      schedule: (fn, ms) => window.setTimeout(fn, ms),
+      cancel: (id) => window.clearTimeout(id),
+      onShake() {
+        if (!headEl) return;
+        headEl.classList.remove('coo-head-shake');
+        void headEl.offsetWidth;
+        headEl.classList.add('coo-head-shake');
+        headEl.dispatchEvent(new Event('coo-head-shake'));
+      },
+    });
+    if (headEl) headEl.addEventListener('animationend', () => headEl.classList.remove('coo-head-shake'));
+    const phone = window.matchMedia('(max-width: 719px)');
+    const armHead = () => { if (phone.matches) nudge.start(); };
+    armHead();
+    phone.addEventListener('change', armHead);
+    document.addEventListener('visibilitychange', () => nudge.setHidden(document.hidden));
+
     button.addEventListener('click', () => {
+      nudge.stop();
       if (root.hasAttribute('data-out')) tuck();
       else bringOut();
     });
@@ -292,12 +320,38 @@ const strip = u(defaultTartan().fling);
     user-select: none;
   }
   .coo-cue-out { display: none; }
+  .coo-head {
+    display: none;
+    flex: none;
+    width: 48px;
+    height: 48px;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--card, #fffdf8);
+    border: 2px solid var(--green, #1f4d3a);
+    box-shadow: 0 2px 8px rgba(42, 29, 20, .22);
+  }
+  .coo-head img { display: block; width: 100%; height: 100%; }
+  .coo-head.coo-head-shake { animation: coo-head-shake .6s ease-in-out; }
+  @keyframes coo-head-shake {
+    0%, 100% { transform: rotate(0deg); }
+    30% { transform: rotate(-7deg); }
+    60% { transform: rotate(6deg); }
+    80% { transform: rotate(-3deg); }
+  }
+  @keyframes coo-appear {
+    from { transform: scale(.55); }
+    to { transform: scale(1); }
+  }
   .coo-window {
     flex: none;
     width: var(--peek-w);
     height: var(--peek-h);
     max-width: calc(100vw - 32px - env(safe-area-inset-right, 0px));
     overflow: hidden;
+    clip-path: inset(0);
     contain: paint;
     transition: width .42s ease, height .42s ease;
   }
@@ -354,22 +408,32 @@ const strip = u(defaultTartan().fling);
     to { transform: translate3d(-1920px, 0, 0); }
   }
   /*
-    Phones: no right gutter. The column uses its normal padding.
-    The coo stays in the visible corner, above the browser bar and the home indicator.
+    Phones: no right gutter. Idle is the round head from the logo, fully on
+    screen. The dancing strip and its pill stay hidden until a tune starts.
+    Bottom padding matches whichever of them is showing, so the end of the
+    page can scroll clear of the browser bar and the home indicator.
   */
   @media (max-width: 719px) {
     :global(html:has([data-ceilidh-coo])) {
       --coo-frame: 88px;
       --coo-edge: calc(8px + env(safe-area-inset-right, 0px));
       --coo-pad: 1.1rem;
+      --coo-head: 48px;
+      --coo-pill: 2.75rem;
+      --coo-gap: 12px;
+      --coo-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+      --coo-bottom: calc(8px + env(safe-area-inset-bottom, 0px) + max(0px, 100lvh - 100dvh));
     }
     .coo-perch {
       right: var(--coo-edge);
-      bottom: calc(8px + env(safe-area-inset-bottom, 0px));
-      bottom: calc(8px + env(safe-area-inset-bottom, 0px) + 100lvh - 100dvh);
-      max-width: calc(100dvw - 8px - env(safe-area-inset-right, 0px));
+      bottom: var(--coo-bottom);
+      max-width: calc(100dvw - var(--coo-edge));
     }
+    .coo-perch:not([data-out]) .coo-head { display: block; }
+    .coo-perch:not([data-out]) .coo-window,
     .coo-perch:not([data-out]) .coo-cue { display: none; }
+    .coo-perch[data-out] .coo-head { display: none; }
+    .coo-perch[data-out] .coo-window { animation: coo-appear .35s ease; }
     .coo-perch[data-out] .coo-strip { animation-name: coo-fling-phone; }
   }
   @keyframes coo-fling-phone {
@@ -381,6 +445,14 @@ const strip = u(defaultTartan().fling);
   }
   :global(body:has([data-ceilidh-coo][data-out])) {
     padding-bottom: calc(var(--coo-frame, 128px) + 5.5rem + env(safe-area-inset-bottom, 0px));
+  }
+  @media (max-width: 719px) {
+    :global(body:has([data-ceilidh-coo])) {
+      padding-bottom: calc(var(--coo-head) + var(--coo-gap) + var(--coo-bottom));
+    }
+    :global(body:has([data-ceilidh-coo][data-out])) {
+      padding-bottom: calc(var(--coo-frame) + var(--coo-pill) + .28rem + var(--coo-gap) + var(--coo-bottom));
+    }
   }
   @media (min-width: 720px) {
     :global(html:has([data-ceilidh-coo])) { --coo-frame: 192px; }
@@ -394,7 +466,7 @@ const strip = u(defaultTartan().fling);
   }
   /* After the size query, so a wide screen still holds the standing frame. */
   @media (prefers-reduced-motion: reduce) {
-    .coo-nudge, .coo-strip { animation: none !important; }
+    .coo-nudge, .coo-strip, .coo-head, .coo-window { animation: none !important; }
     .coo-window, .coo-shift { transition: none !important; }
   }
   :global(html[data-a11y-space=on]) .coo-bring { padding: 0; }
