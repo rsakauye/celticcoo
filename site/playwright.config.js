@@ -1,4 +1,20 @@
+import { existsSync } from 'node:fs';
 import { defineConfig, devices } from '@playwright/test';
+
+const bravePath = '/opt/brave.com/brave/brave';
+const projects = [
+  { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+  { name: 'webkit-iphone', use: { ...devices['iPhone 13'] } },
+];
+if (existsSync(bravePath)) {
+  projects.push({
+    name: 'brave',
+    use: {
+      ...devices['Desktop Chrome'],
+      launchOptions: { executablePath: bravePath },
+    },
+  });
+}
 
 export default defineConfig({
   testDir: './test/browser',
@@ -13,8 +29,5 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 180000,
   },
-  projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'webkit-iphone', use: { ...devices['iPhone 13'] } },
-  ],
+  projects,
 });

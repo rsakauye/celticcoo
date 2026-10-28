@@ -31,6 +31,9 @@
 /tartan-fraser-of-lovat.svg
   Cache-Control: public, max-age=604800
 
+/img/*
+  Cache-Control: public, max-age=604800
+
 /og.png
   Cache-Control: public, max-age=604800
 
