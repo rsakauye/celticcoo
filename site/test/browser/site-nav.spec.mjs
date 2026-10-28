@@ -150,16 +150,26 @@ test.describe('narrow menu', () => {
     expect(cta.y + cta.height).toBeGreaterThan(viewport.height - 2);
     expect(cta.y + cta.height).toBeLessThanOrEqual(viewport.height + 1);
 
+    await expect(page.locator('[data-nav-about]')).toBeInViewport();
+    await expect(page.locator('#nav-play-blurb')).toBeInViewport();
     const padding = await page.locator('.nav-cta').evaluate((el) => getComputedStyle(el).paddingBottom);
     expect(padding).toMatch(/px$/);
-    const css = await page.locator('style').allTextContents();
-    expect(css.join('\n')).toContain('safe-area-inset-bottom');
+    const css = await page.evaluate(() => [...document.styleSheets].map((sheet) => {
+      try { return [...sheet.cssRules].map((rule) => rule.cssText).join('\n'); }
+      catch { return ''; }
+    }).join('\n'));
+    expect(css).toContain('.nav-cta');
+    expect(css).toContain('safe-area-inset-bottom');
 
     await expect(page.locator('html')).toHaveClass(/nav-lock/);
     await expect(page.locator('html')).toHaveCSS('overflow', 'hidden');
-    await page.locator('a.brand').hover();
-    await page.mouse.wheel(0, 1600);
-    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    await expect(page.locator('body')).toHaveCSS('position', 'fixed');
+    const scrolled = await page.evaluate(() => {
+      window.scrollTo(0, 1600);
+      document.documentElement.scrollTop = 1600;
+      return window.scrollY;
+    });
+    expect(scrolled).toBe(0);
 
     await page.locator('.tartan').first().click();
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');

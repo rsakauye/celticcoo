@@ -165,16 +165,20 @@ const ldJson = JSON.stringify(ld.length === 1 ? ld[0] : ld).replace(/</g, '\\u00
         left:0; right:0; bottom:0; top:var(--site-bar-bottom, 4.75rem);
         background:var(--green); overflow:hidden;
       }
+      html.nav-js .nav-label { margin:.28rem 0 0; }
+      html.nav-js .nav-group:first-child .nav-label { margin-top:0; }
+      html.nav-js .nav-panel a, html.nav-js .nav-about a { padding:0 .15rem; line-height:1.2; }
+      html.nav-js .nav-blurb { font-size:.84rem; line-height:1.35; padding-bottom:.25rem; }
+      html.nav-js .nav-about { margin-top:.1rem; }
       html.nav-js .nav-scroll {
         flex:1 1 auto; min-height:0; overflow:auto;
-        padding:.35rem calc(1.1rem + env(safe-area-inset-right, 0px)) .8rem calc(1.1rem + env(safe-area-inset-left, 0px));
+        padding:.25rem calc(1.1rem + env(safe-area-inset-right, 0px)) .2rem calc(1.1rem + env(safe-area-inset-left, 0px));
       }
       html.nav-js .nav-cta {
         flex:none; margin:0; background:var(--green);
         border-top:1px solid rgba(255,255,255,.18);
         padding:.7rem calc(1.1rem + env(safe-area-inset-right, 0px)) calc(.7rem + env(safe-area-inset-bottom, 0px)) calc(1.1rem + env(safe-area-inset-left, 0px));
       }
-      html.nav-js .nav-about { margin-top:.35rem; }
       .nav-cta .btn { width:100%; }
     }
     @media (min-width: 900px) {
