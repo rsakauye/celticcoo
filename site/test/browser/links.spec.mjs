@@ -7,6 +7,7 @@ const BUTTONS = [
   ['/burns-night/', 'Burns Night 2027 (Jan 25)'],
   ['/newsletter/', "Get The Coo's Letter, free"],
   ['/tune/', 'Drone tuner for pipers'],
+  ['https://giphy.com/channel/celticcoo', "Ceilidh's GIPHY stickers", true],
   ['/', 'Visit celticcoo.ca'],
 ];
 
@@ -24,13 +25,20 @@ function watchExternal(page) {
 
 async function expectButtons(page, source) {
   const buttons = page.locator('nav a.btn');
-  await expect(buttons).toHaveCount(7);
+  await expect(buttons).toHaveCount(8);
   for (let i = 0; i < BUTTONS.length; i++) {
-    const [path, label] = BUTTONS[i];
+    const [path, label, external] = BUTTONS[i];
     const link = buttons.nth(i);
     await expect(link).toContainText(label);
-    await expect(link).toHaveAttribute('href', new RegExp(`[?&]utm_source=${source}(&|$)`));
     const href = await link.getAttribute('href');
+    if (external) {
+      expect(href).toBe(path);
+      expect(href).not.toMatch(/utm_/);
+      await expect(link).toHaveAttribute('rel', 'noopener');
+      expect(await link.getAttribute('target')).toBeNull();
+      continue;
+    }
+    await expect(link).toHaveAttribute('href', new RegExp(`[?&]utm_source=${source}(&|$)`));
     const url = new URL(href);
     expect(url.pathname).toBe(path);
     expect(url.searchParams.get('utm_source')).toBe(source);
@@ -40,14 +48,14 @@ async function expectButtons(page, source) {
   }
 }
 
-test('links page loads with seven tagged buttons and no outside requests', async ({ page }) => {
+test('links page loads with eight buttons and no outside requests', async ({ page }) => {
   const external = watchExternal(page);
   const res = await page.goto('/links/');
   expect(res.status()).toBe(200);
   await expect(page).toHaveTitle('Links | The Celtic Coo');
   await expect(page.locator('meta[name="description"]')).toHaveAttribute(
     'content',
-    'Find Celtic events across Canada, list your own for free, and find clubs, bands and lessons near you.',
+    "Find Celtic events across Canada, list your own for free, and grab Ceilidh's stickers on GIPHY.",
   );
   await expect(page.locator('h1')).toHaveText('The Celtic Coo');
   await expect(page.locator('.intro')).toHaveText("Hiya! Find a ceilidh, bring your crew. Here's everywhere the Coo hangs out.");
@@ -67,8 +75,9 @@ test('links page loads with seven tagged buttons and no outside requests', async
   expect(privacyUrl.searchParams.get('utm_campaign')).toBe('links');
 
   const html = await page.content();
-  expect(html).not.toMatch(/instagram\.com|giphy|fonts\.google|kit\.com|unpkg|jsdelivr/i);
-  await expect(page.locator('a')).toHaveCount(9);
+  expect(html).not.toMatch(/instagram\.com|fonts\.google|kit\.com|unpkg|jsdelivr/i);
+  expect(html).not.toMatch(/<(?:script|img|link)[^>]+giphy\.com/i);
+  await expect(page.locator('a')).toHaveCount(10);
 
   await page.setViewportSize({ width: 390, height: 844 });
   const overflow = await page.evaluate(() => ({
@@ -81,7 +90,7 @@ test('links page loads with seven tagged buttons and no outside requests', async
     const box = el.getBoundingClientRect();
     return { h: box.height, w: box.width };
   }));
-  expect(targets).toHaveLength(9);
+  expect(targets).toHaveLength(10);
   for (const box of targets) {
     expect(box.h).toBeGreaterThanOrEqual(44);
     expect(box.w).toBeGreaterThanOrEqual(44);
@@ -110,7 +119,7 @@ test('links still go to the right pages when javascript is off', async ({ browse
   const res = await page.goto('/links/');
   expect(res.status()).toBe(200);
   const buttons = page.locator('nav a.btn');
-  await expect(buttons).toHaveCount(7);
+  await expect(buttons).toHaveCount(8);
   for (let i = 0; i < BUTTONS.length; i++) {
     await expect(buttons.nth(i)).toHaveAttribute('href', BUTTONS[i][0]);
   }
