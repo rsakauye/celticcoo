@@ -1,5 +1,49 @@
 import { test, expect } from '@playwright/test';
 
+const TUNES = [
+  {
+    name: 'Highland Laddie',
+    ariaOn: 'Tuck Ceilidh away and stop Highland Laddie',
+    nextAria: 'Bring out Ceilidh to dance to Gillie Callum',
+  },
+  {
+    name: 'Gillie Callum',
+    ariaOn: 'Tuck Ceilidh away and stop Gillie Callum',
+    nextAria: 'Bring out Ceilidh to dance to Seann Triubhas',
+  },
+  {
+    name: 'Seann Triubhas',
+    ariaOn: 'Tuck Ceilidh away and stop Seann Triubhas',
+    nextAria: 'Bring out Ceilidh to dance',
+  },
+  {
+    name: 'Coo theme',
+    ariaOn: 'Tuck Ceilidh away and stop Coo theme',
+    nextAria: 'Bring out Ceilidh to dance to Highland Laddie',
+  },
+];
+
+test('each tune starts and stops, and switching leaves only one playing', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/');
+  const button = page.locator('[data-coo-toggle]');
+  const status = page.locator('[data-coo-status]');
+  await expect(button).toHaveAttribute('aria-label', 'Bring out Ceilidh to dance to Highland Laddie');
+
+  for (const tune of TUNES) {
+    await button.click();
+    await expect(button).toHaveAttribute('aria-pressed', 'true');
+    await expect(button).toHaveAttribute('aria-label', tune.ariaOn);
+    await expect(status).toHaveText(`Ceilidh is out and dancing. ${tune.name} is playing.`);
+    if (tune.name === 'Coo theme') await expect(page.locator('.coo-cue-out')).toHaveText('stop Coo theme');
+    await button.click();
+    await expect(button).toHaveAttribute('aria-pressed', 'false');
+    await expect(button).toHaveAttribute('aria-label', tune.nextAria);
+    await expect(status).toContainText('is next, and the music is muted.');
+  }
+});
+
+
 const WIDTHS = [1024, 1280, 390];
 
 test('the dancing sprite stays inside the viewport and off the page controls', async ({ page }) => {

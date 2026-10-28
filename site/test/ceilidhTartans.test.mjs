@@ -39,7 +39,7 @@ test('Ceilidh wears Fraser of Lovat and nothing else', () => {
   const fling = readFileSync(join(site, 'public/img/ceilidh-fling-strip.png'));
   assert.equal(ears.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
   assert.equal(fling.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
-  assert.equal(existsSync(join(site, 'public/tartans/fraser-of-lovat/ceilidh-coo-strip.png')), false);
+  assert.equal(readFileSync(join(site, 'public/tartans/fraser-of-lovat/ceilidh-coo-strip.png')).equals(fling), true);
 });
 
 test('the corner coo, the tuner, and the hero render Fraser of Lovat with no picker', () => {

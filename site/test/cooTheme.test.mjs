@@ -76,18 +76,15 @@ test('playback gain stays within a modest limit', () => {
   assert.equal(midiToHz(69), 440);
 });
 
-test('the corner coo plays this one theme and does not cycle tunes', () => {
+test('the Coo theme keeps its own cues beside the traditional tunes', () => {
   const widget = readFileSync(join(site, 'src/components/CeilidhCoo.astro'), 'utf8');
-  const html = widget.split('<script>')[0];
   const css = widget.split('<style>')[1] || '';
 
-  assert.match(html, /aria-label="Bring out Ceilidh to dance"/);
-  assert.match(html, /data-coo-tune>Coo theme</);
-  assert.match(html, /coo-stop">stop<\/span> <span class="coo-tune-out" data-coo-tune>Coo theme</);
-  assert.match(widget, /Tuck Ceilidh away and stop \$\{TITLE\}/);
+  assert.match(widget, /Bring out Ceilidh to dance'/);
+  assert.match(widget, /Tuck Ceilidh away and stop Coo theme/);
   assert.match(widget, /from '\.\.\/lib\/cooSynth\.js'/);
   assert.match(widget, /from '\.\.\/lib\/cooTheme\.js'/);
-  assert.doesNotMatch(widget, /nextTuneIndex|tuneIndex|DANCE_TUNES|prepareTune/);
+  assert.match(widget, /from '\.\.\/lib\/danceTunes\.js'/);
   assert.match(widget, /data-hide-corner-coo/);
   assert.match(widget, /webkitAudioContext/);
   assert.match(widget, /ctx\.resume\(\)/);
