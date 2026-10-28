@@ -30,10 +30,10 @@
     "rule_px": 3
   },
   "mark": {
-    "_doc": "Square SVG mark shown in the medallion. recolor maps literal strings in the mark SVG to replacements; {pattern} becomes the brand pattern scaled to mark_unit (in the mark's own viewBox units) and rotated mark_rotate degrees. Set svg to null for no mark.",
+    "_doc": "Square SVG mark shown in the medallion. recolor maps literal strings in the mark SVG to replacements; {pattern} becomes the brand pattern scaled to mark_unit (in the mark's own viewBox units) and rotated mark_rotate degrees. An empty recolor leaves the mark's own fills. Set svg to null for no mark.",
     "svg": "mark-coo.svg",
     "viewbox": "0 0 120 120",
-    "recolor": {"url(#ml)": "{pattern}"},
+    "recolor": {},
     "mark_unit": 1.632,
     "mark_rotate": 35
   }

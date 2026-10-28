@@ -18,13 +18,15 @@ Set on `:root` in `Base.astro`.
 | `--green` | `#1f4d3a` | Headings, header, footer, primary icon colour, `theme-color` |
 | `--green2` | `#2f6b52` | Inline links, header menu border |
 | `--ginger` | `#a54e1e` | Primary buttons, dates, card top stripe |
-| `--ginger2` | `#e0843f` | Header nav underline, coo fringe in the mascot drawing |
+| `--ginger2` | `#e0843f` | Coo fringe in the mascot drawing |
 | `--cream` | `#f4e6c8` | Pills, icon-button hover, mascot badge |
 | `--navy` | `#1d3557` | Feature tags, focus ring |
 | `--focus` | `#1d3557` | `:focus-visible` outline |
 | `--focus-halo` | `#fff` | Ring outside the focus outline |
 
 Header and footer sit on `--green` with white text (`#fff`). Footer body copy is `#e9f1ec`. Footer muted text is `#c7d8ce`.
+
+The main nav uses `#f0b27a` for its focus ring and for the current-page underline (the same ginger as the share-card type colour). The header sets it as `--nav-mark`. Footer focus stays a white outline with a black halo.
 
 Other colours used beside the tokens:
 
@@ -92,9 +94,9 @@ Radii:
 - **Ghost** (`.btn.ghost`): transparent, text `--green`, `2px` solid `--green`. It still uses `.btn`, so the shared hover rule paints the fill `#8a4118`.
 - **Calendar icon button**: not a `.btn`. Same green outline and `10px` radius as the ghost button, transparent fill, cream hover (`--cream`). The control is `44px` by `44px` (the minimum tap size, including on a narrow screen). The icon inside is `32px`.
 
-Focus, site-wide: `:focus-visible` is a `3px` solid `--focus` outline, `2px` offset, plus a `5px` `--focus-halo` shadow. Header and footer swap that outline to white with a black halo. Do not remove the outline on icon buttons.
+Focus, site-wide: `:focus-visible` is a `3px` solid `--focus` outline, `2px` offset, plus a `5px` `--focus-halo` shadow. The header swaps that outline to `#f0b27a` with a dark green halo. The footer keeps a white outline with a black halo. Do not remove the outline on icon buttons.
 
-Inline links use `--green2`. Header links are white, with a `--ginger2` underline on hover and on the current page.
+Inline links use `--green2`. Header links are white. The current page, an open group, and header hover use a `#f0b27a` underline.
 
 ## Icons
 
