@@ -1,6 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
-import { groups, featuredGroup, counts, GROUP_EMOJI } from '../../lib/data.js';
+import { groups, featuredGroup, counts, GROUP_EMOJI, clubIntro } from '../../lib/data.js';
 import { groupSearchText } from '../../lib/groupFilters.js';
 import { u } from '../../lib/site.js';
 const provs = [...new Set(groups.map((g) => g.province))].map((p) => ({ p, label: groups.find((g) => g.province === p).regionLabel }));
@@ -8,7 +8,7 @@ const kinds = [...new Set(groups.map((g) => g.kind))].sort();
 ---
 <Base title="Celtic clubs, pipe bands & lessons in Canada" description="Find a pipe band, Highland dance school, clan society, Gaelic class, Scottish country dance group or Burns club near you, and who offers lessons.">
   <h1>Clubs &amp; lessons</h1>
-  <p>Pipe bands, Highland and Scottish country dance, clan societies, Gaelic classes, Burns clubs, heavy events, trad sessions, whisky societies and more: <b>{counts.groups}</b> groups across Canada, <b>{counts.groupsLessons}</b> of them offering lessons. Every website was checked on Oct 17–18, 2026. Ask the group directly about schedules and fees.</p>
+  <p>Pipe bands, Highland and Scottish country dance, clan societies, Gaelic classes, Burns clubs, heavy events, trad sessions, whisky societies and more: <b>{clubIntro.groupCount}</b> groups across Canada, <b>{clubIntro.lessonCount}</b> of them offering lessons. We check every website weekly (last check: {clubIntro.lastChecked}). Ask the group directly about schedules and fees.</p>
 
   {featuredGroup && (
     <aside class="card featured" id={`featured-${featuredGroup.id}`} data-prov={featuredGroup.province} data-kind={featuredGroup.kind} data-lessons={featuredGroup.lessons ? 'y' : 'n'} data-search={groupSearchText(featuredGroup)}>

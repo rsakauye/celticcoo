@@ -7,7 +7,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "test": "node --test test/*.test.mjs ../shared/slugs/test/*.test.mjs ../shared/og/test/*.test.mjs",
+    "test": "node --test test/*.test.mjs ../link-check/test/*.test.mjs ../shared/slugs/test/*.test.mjs ../shared/og/test/*.test.mjs",
     "test:browser": "playwright test"
   },
   "dependencies": {

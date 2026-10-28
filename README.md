@@ -17,11 +17,13 @@ GitHub Actions and deployed to Cloudflare Pages with wrangler.
 | `data/events_2027_pending.json` | Expected events without a confirmed date. Shown on /events/ **only as "Date TBA"** (Canada only, no tentative dates) and never in the feeds. |
 | `data/events_manual.json` | Organizer-submitted or hand-curated events. Merged into the calendar at build time. Burns Supper rows are also added to the Burns Night list. The daily deploy and the weekly source check do not rewrite this file. |
 | `data/shops_canada.json` | Shops and makers directory. |
-| `data/groups_canada.json` | Clubs, bands, dance schools, clan societies, Gaelic classes. The directory is /groups/, and each club has a profile page. `slug` is that page's URL: lowercase, accents removed, filler words and generic suffixes dropped, cut around 30 characters. `code` is the permanent short link at `/g/<code>`, which redirects to the profile. Neither value changes once the club has been published. Set `slug` by hand to override the generated one (`RSCDS Calgary Branch` is `rscds-calgary`). The rules live in `shared/slugs/`. Organizations only, never members' names. |
+| `data/groups_canada.json` | Clubs, bands, dance schools, clan societies, Gaelic classes. The directory is /groups/, and each club has a profile page. `slug` is that page's URL: lowercase, accents removed, filler words and generic suffixes dropped, cut around 30 characters. `code` is the permanent short link at `/g/<code>`, which redirects to the profile. Neither value changes once the club has been published. Set `slug` by hand to override the generated one (`RSCDS Calgary Branch` is `rscds-calgary`). The rules live in `shared/slugs/`. Organizations only, never members' names. `offers_lessons` is `y`, `n`, or `unknown`. Only `y` counts as offering lessons. `unknown` is not counted. |
 | `data/burns_2027.json` | Burns Night 2027 suppers (/burns-night/). Host-confirmed rows are also in `events_2027.json` (type "Burns Supper"). A Burns Supper in `events_manual.json` is added here at build time. |
 | `data/season_champions.json` | Hand-entered band-level season winners by grade, each with its source link (/results/). No soloists. |
 | `data/sources_and_orgs.csv` | Calendars and associations re-checked weekly. |
 | `data/source_state.json` | Last snapshot from the weekly source check (written by the workflow). |
+| `data/groups_link_status.json` | Latest weekly check of club websites. The checker writes this file. It does not edit `groups_canada.json`. |
+| `link-check/` | Reusable website checker (its own folder and README). Celtic Coo settings are `link-check/sites/celticcoo.json`. |
 | `site/` | Astro site: `/`, `/events/`, `/results/`, `/groups/` plus one profile page per club, `/burns-night/`, `/shops/`, `/fundraising/`, `/what-to-wear/`, `/tartans/`, `/roots/`, `/submit/`, `/about/`, `/newsletter/`, `/book/`, `/events.ics`, `/rss.xml`, `/sitemap.xml`, 404. `/results/` pulls headline + link only from the pipes\|drums and Piping Press RSS feeds at build time. |
 | [`STYLEGUIDE.md`](STYLEGUIDE.md) | Colours, type, tartan accents, buttons and icon rules taken from the CSS. The same tokens render at `/style/` (noindex, and not listed in the sitemap). |
 | `site/functions/api/book.js` | Booking form endpoint. Checks Turnstile, validates the fields, stores the request in private D1, then asks the mailer for a notice. |
@@ -29,6 +31,7 @@ GitHub Actions and deployed to Cloudflare Pages with wrangler.
 | `scripts/check_sources.py` | Weekly re-check of source pages (standard library only). |
 | `.github/workflows/deploy.yml` | Build on push, daily at 7am MT, or manual. Deploys to Cloudflare Pages project `celticcoo` only if the secrets exist; otherwise it builds and skips. The inbound mail job skips on its own when its secrets are missing. |
 | `.github/workflows/source-check.yml` | Mondays 8am MT. Opens (or comments on) an issue labelled `source-check` when a source page's dates change, a page disappears, or one of our dates is no longer on its page. |
+| `.github/workflows/club-link-check.yml` | Mondays 9am MT. Checks each club website and opens or updates one pull request, "Weekly club link check", with the status file. A person reviews it. The workflow does not change the club directory. |
 | `workers/inbound/` | Email Worker for `hello@celticcoo.ca`. Forwards a copy, logs the message, and classifies it. See `docs/inbound-email.md`. |
 | `workers/mailer/` | Private Worker that sends booking notices. Pages calls it. It is not the hello@ inbox. |
 
