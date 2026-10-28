@@ -1,0 +1,183 @@
+---
+import { u, SITE_NAME, CONTACT_EMAIL } from '../../lib/site.js';
+
+const title = 'Links | The Celtic Coo';
+const description = 'Find Celtic events across Canada, list your own for free, and find clubs, bands and lessons near you.';
+const ORIGIN = 'https://celticcoo.ca';
+const isProd = !Astro.site || Astro.site.host === 'celticcoo.ca';
+const robots = isProd ? 'index, follow, max-image-preview:large' : 'noindex, follow';
+const canonical = `${ORIGIN}/links/`;
+const year = new Date().getFullYear();
+const fling = u('img/ceilidh-fling-strip.png');
+const avatarGif = u('img/ceilidh-avatar-52.gif');
+const avatarStill = u('img/ceilidh-avatar-52.png');
+const avatarAlt = 'Ceilidh the Coo, a pixel-art Highland cow with a red bow, wearing a Fraser of Lovat tartan sash';
+---
+<!doctype html>
+<html lang="en-CA">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  <meta name="robots" content={robots} />
+  <link rel="canonical" href={canonical} />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="theme-color" content="#1f4d3a" />
+  <link rel="icon" href={u('favicon.svg')} type="image/svg+xml" />
+  <meta property="og:site_name" content={SITE_NAME} />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="en_CA" />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:url" content={canonical} />
+  <style is:inline>
+    :root{
+      color-scheme:light dark;
+      --fg:#2a1d14; --muted:#6b5a4c; --bg:#fbf6ec; --card:#fffdf8; --line:#eadfcb;
+      --green:#1f4d3a; --green2:#2f6b52; --ginger:#a54e1e; --ginger2:#e0843f; --cream:#f4e6c8; --navy:#1d3557;
+      --lovat-red:#b82e26; --lovat-white:#ffffff; --lovat-green:#1f4d3a; --lovat-navy:#20284e;
+      --focus-ring:#f0b27a; --focus-inner:#1d3557;
+      --btn-bg:var(--card); --btn-fg:var(--green); --btn-border:var(--green);
+      --btn-hover:#f3ecdc;
+      --cta-bg:var(--ginger); --cta-fg:#fff; --cta-hover:#8a4118;
+      --heading:var(--green);
+    }
+    @media (prefers-color-scheme:dark){
+      :root{
+        --fg:#f4e6c8; --muted:#d3c3a6; --bg:#0f2219; --card:#173226; --line:#2f6b52;
+        --heading:#f4e6c8;
+        --btn-bg:#173226; --btn-fg:#f4e6c8; --btn-border:#3f7d62; --btn-hover:#1f4433;
+        --cta-bg:#e0843f; --cta-fg:#1a120c; --cta-hover:#f0b27a;
+        --focus-inner:#0f2219;
+      }
+    }
+    *{box-sizing:border-box}
+    html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+    body{margin:0;min-height:100vh;min-height:100dvh;font:1.0625rem/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--fg);background:var(--bg);
+      padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+    .tartan{
+      background:
+        repeating-linear-gradient(0deg, rgba(184,46,38,.5) 0 12px, rgba(255,255,255,.5) 12px 16px, rgba(184,46,38,.5) 16px 28px, rgba(31,77,58,.5) 28px 32px, rgba(32,40,78,.5) 32px 36px, rgba(31,77,58,.5) 36px 40px),
+        repeating-linear-gradient(90deg, #b82e26 0 12px, #fff 12px 16px, #b82e26 16px 28px, #1f4d3a 28px 32px, #20284e 32px 36px, #1f4d3a 36px 40px);
+    }
+    .band{height:12px;border-bottom:3px solid var(--green)}
+    main{max-width:30rem;margin:0 auto;padding:1.75rem 1.1rem 1.5rem}
+    header{text-align:center}
+    .avatar{display:inline-block;padding:4px;border-radius:50%;line-height:0}
+    .avatar picture,.avatar img{display:block;width:104px;height:104px;border-radius:50%;border:3px solid var(--cream);
+      image-rendering:pixelated;image-rendering:crisp-edges;background:var(--green)}
+    .avatar picture{border:0;width:auto;height:auto}
+    h1{font-family:Georgia,"Iowan Old Style","Palatino Linotype",serif;color:var(--heading);font-size:1.75rem;line-height:1.2;margin:.7rem 0 .25rem}
+    .intro{margin:0 auto;max-width:24rem;color:var(--muted);font-size:1rem}
+    nav ul{list-style:none;margin:1.5rem 0 0;padding:0;display:grid;gap:.7rem}
+    .btn{display:flex;align-items:center;gap:.85rem;min-height:56px;padding:.75rem 1rem;border-radius:14px;
+      background:var(--btn-bg);color:var(--btn-fg);border:2px solid var(--btn-border);text-decoration:none;
+      font-weight:650;font-size:1.0625rem;line-height:1.25;-webkit-tap-highlight-color:transparent;
+      transition:background-color .15s ease,transform .15s ease}
+    .btn:hover{background:var(--btn-hover)}
+    .btn:active{transform:scale(.985)}
+    .btn svg{flex:none;width:24px;height:24px}
+    .btn .lbl{flex:1}
+    .btn .chev{width:18px;height:18px;opacity:.7}
+    .btn.cta{background:var(--cta-bg);color:var(--cta-fg);border-color:var(--cta-bg)}
+    .btn.cta:hover{background:var(--cta-hover);border-color:var(--cta-hover)}
+    /* Peach outline, navy inner ring, so the ring stays visible on the ginger button. */
+    :focus-visible{outline:3px solid var(--focus-ring);outline-offset:3px;box-shadow:0 0 0 3px var(--focus-inner)}
+    .btn:focus-visible{outline-offset:3px}
+    footer{margin-top:1.75rem;text-align:center;color:var(--muted);font-size:.95rem}
+    .fling{width:64px;height:64px;margin:0 auto .5rem;background:var(--fling) 0 0/640px 64px no-repeat;
+      image-rendering:pixelated;image-rendering:crisp-edges;animation:fling 1s steps(10) infinite}
+    @keyframes fling{to{background-position:-640px 0}}
+    .small-links{display:flex;justify-content:center;flex-wrap:wrap;gap:.25rem 1rem;margin:.25rem 0 0;padding:0;list-style:none}
+    .small-links a{display:inline-flex;align-items:center;gap:.4rem;min-height:44px;min-width:44px;padding:0 .5rem;color:var(--fg);text-decoration:underline;text-underline-offset:3px;border-radius:10px}
+    .small-links svg{width:20px;height:20px}
+    .fine{font-size:.85rem;margin:.25rem 0 0}
+    .fine a{display:inline-flex;align-items:center;min-height:44px;min-width:44px;padding:0 .4rem;color:inherit;border-radius:8px}
+    @media (min-width:768px){
+      .band{height:18px}
+      main{max-width:34rem;margin:3rem auto;padding:2.25rem 2.25rem 1.75rem;background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:0 10px 30px rgba(42,29,20,.08)}
+      .avatar picture,.avatar img{width:156px;height:156px}
+      h1{font-size:2rem}
+      .btn{background:var(--bg)}
+      .btn.cta{background:var(--cta-bg)}
+    }
+    @media (prefers-color-scheme:dark) and (min-width:768px){ main{box-shadow:none} .btn{background:#123024} }
+    @media (prefers-reduced-motion:reduce){
+      .fling{animation:none}
+      .btn{transition:none}
+      .btn:active{transform:none}
+    }
+    @media (forced-colors:active){ .btn{border:2px solid ButtonText} .tartan{forced-color-adjust:none} }
+  </style>
+</head>
+<body style={`--fling:url('${fling}')`}>
+  <div class="band tartan" aria-hidden="true"></div>
+  <main>
+    <header>
+      <span class="avatar tartan">
+        <picture>
+          <source srcset={avatarStill} media="(prefers-reduced-motion: reduce)" />
+          <img src={avatarGif} width="104" height="104" alt={avatarAlt} />
+        </picture>
+      </span>
+      <h1>The Celtic Coo</h1>
+      <p class="intro">Hiya! Find a ceilidh, bring your crew. Here's everywhere the Coo hangs out.</p>
+    </header>
+
+    <nav aria-label="Celtic Coo links">
+      <ul>
+        <li><a class="btn cta" data-utm href={u('events/')}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+          <span class="lbl">Find Celtic events near you</span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+        </a></li>
+        <li><a class="btn" data-utm href={u('submit/')}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+          <span class="lbl">List your event, free</span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+        </a></li>
+        <li><a class="btn" data-utm href={u('groups/')}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M15 14.5c3 0 6 2 6 5.5"/></svg>
+          <span class="lbl">Clubs, bands and lessons</span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+        </a></li>
+        <li><a class="btn" data-utm href={u('burns-night/')}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/></svg>
+          <span class="lbl">Burns Night 2027 (Jan 25)</span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+        </a></li>
+        <li><a class="btn" data-utm href={u('newsletter/')}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+          <span class="lbl">Get The Coo's Letter, free</span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+        </a></li>
+        <li><a class="btn" data-utm href={u('tune/')}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>
+          <span class="lbl">Drone tuner for pipers</span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+        </a></li>
+        <li><a class="btn" data-utm href={u('')}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>
+          <span class="lbl">Visit celticcoo.ca</span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+        </a></li>
+      </ul>
+    </nav>
+
+    <footer>
+      <div class="fling" role="img" aria-label="Ceilidh the Coo dancing a Highland fling"></div>
+      <ul class="small-links">
+        <li><a href={`mailto:${CONTACT_EMAIL}`}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>
+          Say hello to the Coo</a></li>
+      </ul>
+      <p class="fine">© {year} The Celtic Coo · <a data-utm href={u('privacy/')}>Privacy</a></p>
+    </footer>
+  </main>
+  <script>
+    import { tagOnSiteLinks } from '../../lib/linksUtm.js';
+    tagOnSiteLinks(document, location.href);
+  </script>
+</body>
+</html>

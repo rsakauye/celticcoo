@@ -1,4 +1,21 @@
+import { existsSync } from 'node:fs';
 import { defineConfig, devices } from '@playwright/test';
+
+// BRAVE_PATH wins when it is set. Otherwise use the official package path when that binary is installed.
+const bravePath = process.env.BRAVE_PATH || '/opt/brave.com/brave/brave';
+const projects = [
+  { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+  { name: 'webkit-iphone', use: { ...devices['iPhone 13'] } },
+];
+if (process.env.BRAVE_PATH || existsSync(bravePath)) {
+  projects.push({
+    name: 'brave',
+    use: {
+      ...devices['Desktop Chrome'],
+      launchOptions: { executablePath: bravePath },
+    },
+  });
+}
 
 export default defineConfig({
   testDir: './test/browser',
@@ -13,17 +30,5 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 180000,
   },
-  projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'webkit-iphone', use: { ...devices['iPhone 13'] } },
-    ...(process.env.BRAVE_PATH
-      ? [{
-          name: 'brave',
-          use: {
-            ...devices['Desktop Chrome'],
-            launchOptions: { executablePath: process.env.BRAVE_PATH },
-          },
-        }]
-      : []),
-  ],
+  projects,
 });

@@ -22,6 +22,7 @@ const PAGES = {
   'submit/': [P('submit/index.astro')],
   'about/': [P('about/index.astro'), D('events_manual.json')],
   'newsletter/': [P('newsletter/index.astro')],
+  'links/': [P('links/index.astro')],
   'privacy/': [P('privacy/index.astro')],
   'terms/': [P('terms/index.astro')],
 };
