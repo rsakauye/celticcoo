@@ -106,9 +106,20 @@ def tartan(x0, y0, step=None):
 
 
 def sash_fill(x, y):
-    """Diagonal sash: red band with a gold pinstripe and green edge rows."""
+    """Diagonal sash: red ground, green edges, navy bars, a white fleck."""
     k = (x - y) % 5
-    return GOLD if k == 2 else (GRN if k in (0, 4) else RED)
+    if k in (0, 4):
+        return GRN
+    if k == 2:
+        band = (x + y) % 4
+        if band == 0:
+            return WHT
+        if band == 1:
+            return NAVY
+        return RED
+    if k in (1, 3) and (x + 2 * y) % 7 == 0:
+        return NAVY
+    return RED
 
 
 # ---- poses: dy = hop, arms/legs as joint lists (relative to body, before dy)

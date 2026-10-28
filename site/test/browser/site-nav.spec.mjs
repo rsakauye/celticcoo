@@ -232,4 +232,12 @@ test('header screenshots', async ({ page }, testInfo) => {
   await eventsButton(page).click();
   await expect(page.locator('#nav-events')).toBeVisible();
   await page.screenshot({ path: `${dir}/nav-1280-dropdown.png` });
+
+  await page.keyboard.press('Escape');
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.locator('[data-coo-toggle]').click();
+  await expect(page.locator('[data-ceilidh-coo]')).toHaveAttribute('data-out', '');
+  await expect(page.locator('.tartan').first()).toBeVisible();
+  await expect(page.locator('.hero > img')).toBeVisible();
+  await page.screenshot({ path: `${dir}/palette-check.png` });
 });

@@ -2,7 +2,7 @@
 // The only filled control is Add yours. Play lists live tools only.
 import bookingConfig from '../../../data/booking.json' with { type: 'json' };
 
-export const PLAY_BLURB = 'Tune your pipe drones right from your phone. Tap to start, play your drones, and the tuner shows you if you\'re flat, sharp or right on. Nothing is recorded or saved.';
+export const PLAY_BLURB = 'Tune your drones on your phone';
 
 export const NAV_GROUPS = [
   {

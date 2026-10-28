@@ -99,12 +99,12 @@ test('the dancing coo is on the home hero only, tucked until tapped, and quiet u
   const css = widget.split('<style>')[1] || '';
 
   assert.match(html, /aria-pressed="false"/);
-  assert.match(html, /aria-label="Bring out Ceilidh to dance to Highland Laddie"/);
-  assert.match(html, /data-coo-tune>Highland Laddie</);
+  assert.match(html, /aria-label="Bring out Ceilidh to dance to the Coo theme"/);
+  assert.match(html, /data-coo-tune>Coo theme</);
   assert.doesNotMatch(html, /data-out/);
   assert.match(widget, /Tuck Ceilidh away and stop \$\{name\}/);
-  assert.match(widget, /let tuneIndex = 0/);
-  assert.match(widget, /tuneIndex = nextTuneIndex\(tuneIndex\)/);
+  assert.match(widget, /prepareCooTheme/);
+  assert.doesNotMatch(widget, /nextTuneIndex|DANCE_TUNES/);
   const bring = widget.slice(widget.indexOf('function bringOut'), widget.indexOf('function tuck'));
   assert.doesNotMatch(bring, /nextTuneIndex/);
   assert.match(widget, /webkitAudioContext/);
