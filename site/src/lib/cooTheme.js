@@ -1,49 +1,251 @@
-// Coo theme. An original dance tune written for this site, in G major.
-// Cheerful 2/4 with a Scotch snap (dotted eighth + sixteenth). The loop is
-// AABB, four bars to a part, sixteen bars in all. Durations are sixteenth
-// notes. A quarter note is 4 steps, and a bar is 8 steps.
-//
-//   A: G>B D G | E>D B G | D>F# G B | A G G2 |
-//   B: B>D G E | E>C B A | G>B D B | A B D2 |
+// The site's Coo theme, played by the corner widget.
+// 4/4 in A, sixteen bars. The file is a sixteenth-note grid at 120 BPM
+// (a quarter note is four steps) so the dance sprite keeps its timing.
+// The whistle is the melody. The bagpipe hook joins it an octave lower
+// where that line carries the tune. A light bass pulse sits underneath.
+// Drums and pads are not part of this arrangement.
 
-import { cycleDurationSeconds, expandTune, stepSeconds } from './cooSynth.js';
+import { stepSeconds } from './cooSynth.js';
 
 export const TITLE = 'Coo theme';
 export const TEMPO_BPM = 120;
-export const FORM = ['A', 'A', 'B', 'B'];
+export const BARS = 16;
+export const BEATS_PER_BAR = 4;
+export const STEPS_PER_BEAT = 4;
 
-const A_MELODY = [
-  [67, 3], [71, 1], [74, 2], [79, 2],
-  [76, 3], [74, 1], [71, 2], [67, 2],
-  [74, 3], [78, 1], [79, 2], [71, 2],
-  [69, 2], [67, 2], [67, 4],
+export const WHISTLE = [
+  { midi: 81, at: 0, steps: 2 },
+  { midi: 85, at: 2, steps: 2 },
+  { midi: 88, at: 4, steps: 1 },
+  { midi: 88, at: 5, steps: 3 },
+  { midi: 90, at: 8, steps: 2 },
+  { midi: 88, at: 10, steps: 2 },
+  { midi: 85, at: 12, steps: 4 },
+  { midi: 83, at: 32, steps: 2 },
+  { midi: 86, at: 34, steps: 2 },
+  { midi: 91, at: 36, steps: 1 },
+  { midi: 88, at: 37, steps: 3 },
+  { midi: 86, at: 40, steps: 2 },
+  { midi: 83, at: 42, steps: 2 },
+  { midi: 86, at: 44, steps: 4 },
+  { midi: 81, at: 64, steps: 2 },
+  { midi: 85, at: 66, steps: 2 },
+  { midi: 88, at: 68, steps: 1 },
+  { midi: 85, at: 69, steps: 3 },
+  { midi: 88, at: 72, steps: 2 },
+  { midi: 90, at: 74, steps: 2 },
+  { midi: 93, at: 76, steps: 4 },
+  { midi: 91, at: 96, steps: 2 },
+  { midi: 90, at: 98, steps: 2 },
+  { midi: 88, at: 100, steps: 1 },
+  { midi: 86, at: 101, steps: 3 },
+  { midi: 85, at: 104, steps: 2 },
+  { midi: 86, at: 106, steps: 2 },
+  { midi: 83, at: 108, steps: 4 },
+  { midi: 93, at: 128, steps: 4 },
+  { midi: 88, at: 132, steps: 4 },
+  { midi: 91, at: 136, steps: 1 },
+  { midi: 88, at: 137, steps: 3 },
+  { midi: 93, at: 140, steps: 8 },
+  { midi: 90, at: 160, steps: 2 },
+  { midi: 88, at: 162, steps: 2 },
+  { midi: 86, at: 164, steps: 1 },
+  { midi: 88, at: 165, steps: 3 },
+  { midi: 85, at: 168, steps: 2 },
+  { midi: 83, at: 170, steps: 2 },
+  { midi: 81, at: 172, steps: 8 },
+  { midi: 93, at: 192, steps: 4 },
+  { midi: 88, at: 196, steps: 4 },
+  { midi: 91, at: 200, steps: 1 },
+  { midi: 88, at: 201, steps: 3 },
+  { midi: 93, at: 204, steps: 8 },
+  { midi: 90, at: 224, steps: 2 },
+  { midi: 88, at: 226, steps: 2 },
+  { midi: 86, at: 228, steps: 1 },
+  { midi: 88, at: 229, steps: 3 },
+  { midi: 85, at: 232, steps: 2 },
+  { midi: 83, at: 234, steps: 2 },
+  { midi: 81, at: 236, steps: 8 },
 ];
 
-const B_MELODY = [
-  [71, 3], [74, 1], [79, 2], [76, 2],
-  [76, 3], [72, 1], [71, 2], [69, 2],
-  [67, 3], [71, 1], [74, 2], [71, 2],
-  [69, 2], [71, 2], [74, 4],
+export const HOOK = [
+  { midi: 81, at: 128, steps: 4 },
+  { midi: 76, at: 132, steps: 4 },
+  { midi: 79, at: 136, steps: 1 },
+  { midi: 76, at: 137, steps: 3 },
+  { midi: 81, at: 140, steps: 8 },
+  { midi: 78, at: 160, steps: 2 },
+  { midi: 76, at: 162, steps: 2 },
+  { midi: 74, at: 164, steps: 1 },
+  { midi: 76, at: 165, steps: 3 },
+  { midi: 73, at: 168, steps: 2 },
+  { midi: 71, at: 170, steps: 2 },
+  { midi: 69, at: 172, steps: 8 },
+  { midi: 81, at: 192, steps: 4 },
+  { midi: 76, at: 196, steps: 4 },
+  { midi: 79, at: 200, steps: 1 },
+  { midi: 76, at: 201, steps: 3 },
+  { midi: 81, at: 204, steps: 8 },
+  { midi: 78, at: 224, steps: 2 },
+  { midi: 76, at: 226, steps: 2 },
+  { midi: 74, at: 228, steps: 1 },
+  { midi: 76, at: 229, steps: 3 },
+  { midi: 73, at: 232, steps: 2 },
+  { midi: 71, at: 234, steps: 2 },
+  { midi: 69, at: 236, steps: 8 },
 ];
 
-// One MIDI number per quarter-note beat.
-const A_BASS = [55, 50, 55, 50, 55, 50, 50, 55];
-const B_BASS = [55, 50, 52, 50, 55, 50, 57, 50];
+export const BASS = [
+  { midi: 45, at: 0, steps: 1 },
+  { midi: 57, at: 2, steps: 1 },
+  { midi: 45, at: 4, steps: 1 },
+  { midi: 57, at: 6, steps: 1 },
+  { midi: 45, at: 8, steps: 1 },
+  { midi: 57, at: 10, steps: 1 },
+  { midi: 45, at: 12, steps: 1 },
+  { midi: 57, at: 14, steps: 1 },
+  { midi: 45, at: 16, steps: 1 },
+  { midi: 57, at: 18, steps: 1 },
+  { midi: 45, at: 20, steps: 1 },
+  { midi: 57, at: 22, steps: 1 },
+  { midi: 45, at: 24, steps: 1 },
+  { midi: 57, at: 26, steps: 1 },
+  { midi: 45, at: 28, steps: 1 },
+  { midi: 57, at: 30, steps: 1 },
+  { midi: 43, at: 32, steps: 1 },
+  { midi: 55, at: 34, steps: 1 },
+  { midi: 43, at: 36, steps: 1 },
+  { midi: 55, at: 38, steps: 1 },
+  { midi: 43, at: 40, steps: 1 },
+  { midi: 55, at: 42, steps: 1 },
+  { midi: 43, at: 44, steps: 1 },
+  { midi: 55, at: 46, steps: 1 },
+  { midi: 38, at: 48, steps: 1 },
+  { midi: 50, at: 50, steps: 1 },
+  { midi: 38, at: 52, steps: 1 },
+  { midi: 50, at: 54, steps: 1 },
+  { midi: 38, at: 56, steps: 1 },
+  { midi: 50, at: 58, steps: 1 },
+  { midi: 38, at: 60, steps: 1 },
+  { midi: 50, at: 62, steps: 1 },
+  { midi: 45, at: 64, steps: 1 },
+  { midi: 57, at: 66, steps: 1 },
+  { midi: 45, at: 68, steps: 1 },
+  { midi: 57, at: 70, steps: 1 },
+  { midi: 45, at: 72, steps: 1 },
+  { midi: 57, at: 74, steps: 1 },
+  { midi: 45, at: 76, steps: 1 },
+  { midi: 57, at: 78, steps: 1 },
+  { midi: 42, at: 80, steps: 1 },
+  { midi: 54, at: 82, steps: 1 },
+  { midi: 42, at: 84, steps: 1 },
+  { midi: 54, at: 86, steps: 1 },
+  { midi: 42, at: 88, steps: 1 },
+  { midi: 54, at: 90, steps: 1 },
+  { midi: 42, at: 92, steps: 1 },
+  { midi: 54, at: 94, steps: 1 },
+  { midi: 38, at: 96, steps: 1 },
+  { midi: 50, at: 98, steps: 1 },
+  { midi: 38, at: 100, steps: 1 },
+  { midi: 50, at: 102, steps: 1 },
+  { midi: 38, at: 104, steps: 1 },
+  { midi: 50, at: 106, steps: 1 },
+  { midi: 38, at: 108, steps: 1 },
+  { midi: 50, at: 110, steps: 1 },
+  { midi: 40, at: 112, steps: 1 },
+  { midi: 52, at: 114, steps: 1 },
+  { midi: 40, at: 116, steps: 1 },
+  { midi: 52, at: 118, steps: 1 },
+  { midi: 40, at: 120, steps: 1 },
+  { midi: 52, at: 122, steps: 1 },
+  { midi: 40, at: 124, steps: 1 },
+  { midi: 52, at: 126, steps: 1 },
+  { midi: 45, at: 128, steps: 1 },
+  { midi: 57, at: 130, steps: 1 },
+  { midi: 45, at: 132, steps: 1 },
+  { midi: 57, at: 134, steps: 1 },
+  { midi: 45, at: 136, steps: 1 },
+  { midi: 57, at: 138, steps: 1 },
+  { midi: 52, at: 140, steps: 1 },
+  { midi: 57, at: 142, steps: 1 },
+  { midi: 43, at: 144, steps: 1 },
+  { midi: 55, at: 146, steps: 1 },
+  { midi: 43, at: 148, steps: 1 },
+  { midi: 55, at: 150, steps: 1 },
+  { midi: 43, at: 152, steps: 1 },
+  { midi: 55, at: 154, steps: 1 },
+  { midi: 50, at: 156, steps: 1 },
+  { midi: 55, at: 158, steps: 1 },
+  { midi: 38, at: 160, steps: 1 },
+  { midi: 50, at: 162, steps: 1 },
+  { midi: 38, at: 164, steps: 1 },
+  { midi: 50, at: 166, steps: 1 },
+  { midi: 40, at: 168, steps: 1 },
+  { midi: 52, at: 170, steps: 1 },
+  { midi: 47, at: 172, steps: 1 },
+  { midi: 52, at: 174, steps: 1 },
+  { midi: 45, at: 176, steps: 1 },
+  { midi: 57, at: 178, steps: 1 },
+  { midi: 45, at: 180, steps: 1 },
+  { midi: 57, at: 182, steps: 1 },
+  { midi: 45, at: 184, steps: 1 },
+  { midi: 57, at: 186, steps: 1 },
+  { midi: 52, at: 188, steps: 1 },
+  { midi: 57, at: 190, steps: 1 },
+  { midi: 45, at: 192, steps: 1 },
+  { midi: 57, at: 194, steps: 1 },
+  { midi: 45, at: 196, steps: 1 },
+  { midi: 57, at: 198, steps: 1 },
+  { midi: 45, at: 200, steps: 1 },
+  { midi: 57, at: 202, steps: 1 },
+  { midi: 52, at: 204, steps: 1 },
+  { midi: 57, at: 206, steps: 1 },
+  { midi: 43, at: 208, steps: 1 },
+  { midi: 55, at: 210, steps: 1 },
+  { midi: 43, at: 212, steps: 1 },
+  { midi: 55, at: 214, steps: 1 },
+  { midi: 43, at: 216, steps: 1 },
+  { midi: 55, at: 218, steps: 1 },
+  { midi: 50, at: 220, steps: 1 },
+  { midi: 55, at: 222, steps: 1 },
+  { midi: 38, at: 224, steps: 1 },
+  { midi: 50, at: 226, steps: 1 },
+  { midi: 38, at: 228, steps: 1 },
+  { midi: 50, at: 230, steps: 1 },
+  { midi: 40, at: 232, steps: 1 },
+  { midi: 52, at: 234, steps: 1 },
+  { midi: 47, at: 236, steps: 1 },
+  { midi: 52, at: 238, steps: 1 },
+  { midi: 45, at: 240, steps: 1 },
+  { midi: 57, at: 242, steps: 1 },
+  { midi: 45, at: 244, steps: 1 },
+  { midi: 57, at: 246, steps: 1 },
+  { midi: 45, at: 248, steps: 1 },
+  { midi: 57, at: 250, steps: 1 },
+  { midi: 52, at: 252, steps: 1 },
+  { midi: 57, at: 254, steps: 1 },
+];
 
-export const PARTS = {
-  A: { melody: A_MELODY, bass: A_BASS },
-  B: { melody: B_MELODY, bass: B_BASS },
-};
+const TOTAL_STEPS = BARS * BEATS_PER_BAR * STEPS_PER_BEAT;
+
+function stamp(notes, voice) {
+  return notes.map((note) => ({ ...note, voice }));
+}
 
 /** Notes, step length, and cycle length for the one theme the coo plays. */
 export function prepareTheme() {
-  const expanded = expandTune(FORM, PARTS);
+  const expanded = {
+    melody: [...stamp(WHISTLE, 'melody'), ...stamp(HOOK, 'melody')],
+    bass: stamp(BASS, 'bass'),
+    totalSteps: TOTAL_STEPS,
+  };
+  const step = stepSeconds(TEMPO_BPM);
   return {
     id: 'coo-theme',
     title: TITLE,
     bpm: TEMPO_BPM,
     expanded,
-    step: stepSeconds(TEMPO_BPM),
-    cycleSeconds: cycleDurationSeconds(expanded, TEMPO_BPM),
+    step,
+    cycleSeconds: expanded.totalSteps * step,
   };
 }
