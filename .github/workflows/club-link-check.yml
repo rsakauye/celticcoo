@@ -21,8 +21,6 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    env:
-      LINK_CHECK_REPORT: ${{ runner.temp }}/club-link-check.md
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -39,7 +37,8 @@ jobs:
         run: node --test link-check/test
 
       - name: Check club websites
-        run: node link-check/src/cli.js --config link-check/sites/celticcoo.json --report "$LINK_CHECK_REPORT"
+        # The runner context is not available in a job-level env block, so the report path uses the RUNNER_TEMP environment variable.
+        run: node link-check/src/cli.js --config link-check/sites/celticcoo.json --report "$RUNNER_TEMP/club-link-check.md"
 
       - name: Commit status file on the bot branch
         id: commit
@@ -80,4 +79,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-        run: node link-check/src/cli.js --config link-check/sites/celticcoo.json --open-pr --report "$LINK_CHECK_REPORT"
+        run: node link-check/src/cli.js --config link-check/sites/celticcoo.json --open-pr --report "$RUNNER_TEMP/club-link-check.md"

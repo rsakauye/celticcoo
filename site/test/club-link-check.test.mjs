@@ -28,8 +28,9 @@ test('the weekly workflow matches the Celtic Coo link-check config and stays on 
   assert.match(workflow, new RegExp(raw.git.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   assert.match(workflow, /contents:\s*write/);
   assert.match(workflow, /pull-requests:\s*write/);
-  assert.match(workflow, /--dry-run does not|node link-check\/src\/cli\.js --config link-check\/sites\/celticcoo\.json --report/);
-  assert.match(workflow, /--open-pr/);
+  assert.match(workflow, /node link-check\/src\/cli\.js --config link-check\/sites\/celticcoo\.json --report "\$RUNNER_TEMP\/club-link-check\.md"/);
+  assert.match(workflow, /--open-pr --report "\$RUNNER_TEMP\/club-link-check\.md"/);
+  assert.doesNotMatch(workflow, /\$\{\{\s*runner\./);
 
   const secrets = [...workflow.matchAll(/secrets\.([A-Z0-9_]+)/g)].map((match) => match[1]);
   assert.deepEqual([...new Set(secrets)], ['GITHUB_TOKEN']);
