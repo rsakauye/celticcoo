@@ -262,14 +262,18 @@ test('demo detune is the same cents the meter measures, and the mic is unprocess
   assert.deepEqual(STEPS.map((step) => step.id), ['ref', 'tenor1', 'tenor2', 'bass']);
 });
 
-test('the tuner page is hidden: noindex, unlinked, and off the sitemap', () => {
+test('the tuner page is linked from Play, still noindex, and off the sitemap', () => {
   const astro = readFileSync(join(site, 'src/pages/tune/index.astro'), 'utf8');
   const client = readFileSync(join(site, 'src/lib/droneTunerPage.js'), 'utf8');
   const page = `${astro}\n${client}`;
   const layout = readFileSync(join(site, 'src/layouts/Base.astro'), 'utf8');
+  const nav = readFileSync(join(site, 'src/lib/nav.js'), 'utf8');
   const sitemap = readFileSync(join(site, 'src/pages/sitemap.xml.js'), 'utf8');
   const home = readFileSync(join(site, 'src/pages/index.astro'), 'utf8');
   assert.match(page, /noindex=\{true\}/);
+  assert.match(nav, /href: 'tune\/'/);
+  assert.match(nav, /Drone tuner/);
+  assert.match(layout, /SiteNav/);
   assert.match(page, /Artificial intelligence\. Tuning the drones anyway\./);
   assert.match(page, /analyzed on your device only/i);
   assert.match(page, /Nothing is sent or saved/i);
@@ -313,10 +317,14 @@ test('the tuner page is hidden: noindex, unlinked, and off the sitemap', () => {
   assert.doesNotMatch(page, /CeilidhCoo/);
   assert.doesNotMatch(page, /https?:\/\//);
   assert.doesNotMatch(page, /localStorage|sessionStorage|MediaRecorder/);
-  assert.doesNotMatch(layout, /tune\//);
+  assert.doesNotMatch(page, /fetch\(|XMLHttpRequest|indexedDB|sendBeacon|FormData/);
+  assert.match(page, />Flat</);
+  assert.match(page, />Sharp</);
   assert.doesNotMatch(home, /tune\//);
   assert.doesNotMatch(sitemap, /tune\//);
   const lib = readFileSync(join(site, 'src/lib/droneTuner.js'), 'utf8');
+  assert.match(lib, /cents sharp/);
+  assert.match(lib, /cents flat/);
   assert.doesNotMatch(lib, /https?:\/\//);
-  assert.doesNotMatch(lib, /localStorage|sessionStorage/);
+  assert.doesNotMatch(lib, /localStorage|sessionStorage|indexedDB|MediaRecorder|sendBeacon/);
 });

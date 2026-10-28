@@ -1,5 +1,6 @@
 ---
 import NewsletterForm from '../components/NewsletterForm.astro';
+import SiteNav from '../components/SiteNav.astro';
 import { u, SITE_NAME } from '../lib/site.js';
 import { bookingConfig } from '../lib/booking.js';
 import { loadBrand, shareAlt } from '../../../shared/og/index.js';
@@ -8,9 +9,6 @@ const fullTitle = title === SITE_NAME ? 'The Celtic Coo: Highland Games & Celtic
 const shareTitle = ogTitle || fullTitle;
 const shareDescription = ogDescription || description;
 const path = Astro.url.pathname;
-const nav = [['', 'Home'], ['events/', 'Events'], ['results/', 'Results'], ['groups/', 'Clubs & lessons'], ['burns-night/', 'Burns Night'], ['shops/', 'Shops'], ['fundraising/', 'Fundraising']];
-const navNew = [['what-to-wear/', 'What to wear'], ['tartans/', 'Find your tartan'], ['roots/', 'Trace your roots'], ['about/', 'About Ceilidh']];
-const navEnd = [['book/', bookingConfig.navLabel], ['submit/', 'Add yours']];
 const tartanBg = `background-image:url(${u('tartan-fraser-of-lovat.svg')})`;
 // SEO: canonical always points at the production domain (celticcoo.pages.dev is a duplicate host).
 const ORIGIN = 'https://celticcoo.ca';
@@ -64,6 +62,7 @@ const ldJson = JSON.stringify(ld.length === 1 ? ld[0] : ld).replace(/</g, '\\u00
   <link rel="icon" href={u('favicon.svg')} type="image/svg+xml" />
   <link rel="sitemap" type="application/xml" href={u('sitemap.xml')} />
   <link rel="alternate" type="application/rss+xml" title="The Celtic Coo: upcoming events" href={u('rss.xml')} />
+  <script is:inline src={u('nav.js')}></script>
   <script is:inline define:vars={{ FONT: u('fonts/atkinson.css') }}>
     // Accessibility settings before first paint (saved choice, else the OS preference): no flash.
     (function(){var d=document.documentElement,s={};try{s=JSON.parse(localStorage.getItem('a11y')||'{}')||{}}catch(e){}function m(q){return!!(window.matchMedia&&matchMedia(q).matches)}d.setAttribute('data-a11y-size',s.size||'m');d.setAttribute('data-a11y-contrast',s.contrast||(m('(prefers-contrast: more)')?'high':'normal'));d.setAttribute('data-a11y-motion',s.motion||(m('(prefers-reduced-motion: reduce)')?'reduce':'full'));['font','cb','space','links','tables'].forEach(function(k){if(s[k]&&s[k]!=='default')d.setAttribute('data-a11y-'+k,s[k])});if(s.font==='readable'){var l=document.createElement('link');l.id='a11y-font';l.rel='stylesheet';l.href=FONT;document.head.appendChild(l)}})();
@@ -84,14 +83,13 @@ const ldJson = JSON.stringify(ld.length === 1 ? ld[0] : ld).replace(/</g, '\\u00
     main.wrap { padding-top:1.4rem; padding-bottom:3rem; }
     /* tartan band: Fraser of Lovat, drawn by scripts/make_tartan.py */
     .tartan { height:10px; background:var(--green) 0 0 / 10px 10px repeat; }
-    header.site { background:var(--green); color:#fff; }
-    header.site .wrap { display:flex; flex-wrap:wrap; gap:.6rem 1.4rem; align-items:center; justify-content:space-between; }
+    header.site { --nav-mark:#f0b27a; background:var(--green); color:#fff; position:relative; z-index:30; }
+    header.site .wrap { display:flex; flex-wrap:wrap; gap:.6rem 1rem; align-items:center; justify-content:space-between; }
     header.site a { color:#fff; text-decoration:none; }
     .brand { display:flex; align-items:center; gap:.6rem; font-family:Georgia,serif; font-size:1.35rem; font-weight:700; }
     .brand img { width:46px; height:46px; background:var(--cream); border-radius:50%; padding:3px; }
     .brand small { display:block; font:400 .78rem/1.1 system-ui,sans-serif; opacity:.8; letter-spacing:.02em; }
-    header.site nav a { white-space:nowrap; display:inline-block; margin-right:1rem; opacity:.85; font-size:.97rem; padding:.2rem 0; border-bottom:2px solid transparent; }
-    header.site nav a:hover, header.site nav a[aria-current="page"] { opacity:1; border-bottom-color:var(--ginger2); }
+    .brand[aria-current="page"] .brand-name { box-shadow:inset 0 -2px 0 var(--nav-mark); }
     .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:1rem 1.1rem; }
     .grid { display:grid; gap:1rem; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); }
     .muted { color:var(--muted); font-size:.92rem; }
@@ -107,13 +105,6 @@ const ldJson = JSON.stringify(ld.length === 1 ? ld[0] : ld).replace(/</g, '\\u00
     footer.site a { color:#fff; }
     footer.site .wrap { display:flex; flex-wrap:wrap; gap:1.5rem 3rem; justify-content:space-between; padding-top:1.4rem; padding-bottom:1.6rem; font-size:.92rem; }
     footer.site .muted { color:#c7d8ce; }
-    header.site nav { display:flex; flex-wrap:wrap; align-items:center; }
-    details.more { position:relative; margin-right:1rem; font-size:.97rem; }
-    details.more summary { cursor:pointer; opacity:.85; list-style:none; padding:.2rem 0; }
-    details.more summary::after { content:" ▾"; font-size:.8em; }
-    details.more[open] summary, details.more summary:hover { opacity:1; }
-    details.more > div { position:absolute; z-index:20; top:100%; left:0; background:var(--green); border:1px solid #2f6b52; border-radius:10px; padding:.4rem .8rem; min-width:190px; box-shadow:0 8px 20px rgba(0,0,0,.2); }
-    details.more > div a { display:block; margin:0; padding:.3rem 0; }
     .sr-only { position:absolute; left:-9999px; }
     /* ---------- Accessibility (WCAG 2.2 AA) + settings menu (public/a11y.js). Choices live in localStorage only. ---------- */
     .skip { position:absolute; left:.5rem; top:.5rem; transform:translateY(-200%); z-index:100; background:#fff; color:#000; padding:.6rem 1rem; border:3px solid #000; border-radius:6px; font-weight:700; text-decoration:underline; }
@@ -131,12 +122,13 @@ const ldJson = JSON.stringify(ld.length === 1 ? ld[0] : ld).replace(/</g, '\\u00
     .a11y-table { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
     html[data-a11y-tables=on] .a11y-table { position:static; width:auto; height:auto; overflow:visible; clip:auto; white-space:normal; margin-top:.8rem; }
     .a11y-link { background:none; border:0; padding:0; color:inherit; text-decoration:underline; font:inherit; cursor:pointer; border-radius:0; }
-    header.site :focus-visible, footer.site :focus-visible { outline-color:#fff; box-shadow:0 0 0 5px #000; }
+    footer.site :focus-visible { outline-color:#fff; box-shadow:0 0 0 5px #000; }
+    header.site :focus-visible { outline:3px solid var(--nav-mark); outline-offset:2px; box-shadow:0 0 0 5px #143528; }
     html[data-a11y-contrast=high] { --fg:#000; --muted:#1f1f1f; --bg:#fff; --card:#fff; --line:#000; --green:#0d2e22; --green2:#0b4a32; --ginger:#7a3510; }
     html[data-a11y-contrast=high] .card { border:2px solid #000; }
     html[data-a11y-contrast=high] .pill.free { background:#0d2e22; color:#fff; }
     html[data-a11y-contrast=high] a { text-decoration:underline; }
-    html[data-a11y-contrast=high] header.site nav a, html[data-a11y-contrast=high] details.more summary { opacity:1; }
+    html[data-a11y-contrast=high] header.site .site-nav a, html[data-a11y-contrast=high] header.site .nav-group-btn { opacity:1; }
     html[data-a11y-contrast=high] footer.site .muted { color:#fff; }
     html[data-a11y-cb=on] { --green2:#005a9c; --ginger:#9a4a00; }
     /* menu skin: parchment card with a tartan band, like the site */
@@ -144,19 +136,92 @@ const ldJson = JSON.stringify(ld.length === 1 ? ld[0] : ld).replace(/</g, '\\u00
     #a11y-dlg .a11y-in { border-top:10px solid var(--green); background-image:linear-gradient(var(--green),var(--green)); background-size:100% 0; }
     #a11y-dlg h2 { font-family:Georgia,"Iowan Old Style",serif; color:var(--green); }
     html[data-a11y-contrast=high] #a11y-dlg { --a11y-muted:#000; --a11y-line:#000; --a11y-ctl:#000; }
+
+    /* Grouped header. Closed panels need .nav-js from nav.js. No script: every link stays in the list. */
+    .site-nav { width:100%; }
+    .nav-toggle { display:none; align-items:center; justify-content:center; min-width:44px; min-height:44px; margin-left:auto; padding:0; border:2px solid transparent; border-radius:10px; background:transparent; color:#fff; cursor:pointer; }
+    .nav-toggle .nav-ico { display:block; }
+    .nav-toggle .nav-ico-close { display:none; }
+    .nav-toggle[aria-expanded="true"] .nav-ico-open { display:none; }
+    .nav-toggle[aria-expanded="true"] .nav-ico-close { display:block; }
+    .nav-group-btn { display:none; align-items:center; gap:.3rem; min-width:44px; min-height:44px; padding:.35rem .4rem; border:0; border-bottom:2px solid transparent; background:transparent; color:#fff; font:inherit; font-size:.97rem; line-height:1.2; cursor:pointer; white-space:nowrap; }
+    .nav-chevron { flex:none; }
+    .nav-group-btn[aria-expanded="true"] .nav-chevron { transform:rotate(180deg); }
+    .nav-label { display:block; margin:.85rem 0 .05rem; font:700 .72rem/1.2 system-ui,sans-serif; letter-spacing:.08em; text-transform:uppercase; color:var(--nav-mark); }
+    .nav-group:first-child .nav-label { margin-top:.15rem; }
+    .nav-panel ul { list-style:none; margin:0; padding:0; }
+    .nav-panel a, .nav-about a { display:flex; align-items:center; width:100%; min-height:44px; padding:.35rem .15rem; border-bottom:2px solid transparent; color:#fff; }
+    .nav-blurb { margin:0; padding:0 .15rem .55rem; color:#e7d7c3; font-size:.92rem; line-height:1.4; }
+    .nav-cta { margin-top:.35rem; }
+    .nav-cta .btn { display:flex; align-items:center; justify-content:center; width:auto; min-height:44px; text-align:center; }
+    header.site .site-nav a[aria-current="page"], header.site .nav-group.is-current > .nav-group-btn, header.site .nav-group-btn[aria-expanded="true"] { border-bottom-color:var(--nav-mark); }
+    html.nav-lock { overflow:hidden; }
+    html.nav-lock body { position:fixed; left:0; right:0; width:100%; overflow:hidden; }
+    @media (max-width: 899px) {
+      html.nav-js .nav-toggle { display:inline-flex; }
+      html.nav-js .site-nav { display:none; }
+      html.nav-js.nav-open .site-nav {
+        display:flex; flex-direction:column; position:fixed; z-index:40;
+        left:0; right:0; bottom:0; top:var(--site-bar-bottom, 4.75rem);
+        background:var(--green); overflow:hidden;
+      }
+      html.nav-js .nav-label { margin:.28rem 0 0; }
+      html.nav-js .nav-group:first-child .nav-label { margin-top:0; }
+      html.nav-js .nav-panel a, html.nav-js .nav-about a { padding:0 .15rem; line-height:1.2; }
+      html.nav-js .nav-blurb { font-size:.84rem; line-height:1.35; padding-bottom:.25rem; }
+      html.nav-js .nav-about { margin-top:.1rem; }
+      html.nav-js .nav-scroll {
+        flex:1 1 auto; min-height:0; overflow:auto;
+        padding:.25rem calc(1.1rem + env(safe-area-inset-right, 0px)) .2rem calc(1.1rem + env(safe-area-inset-left, 0px));
+      }
+      html.nav-js .nav-cta {
+        flex:none; margin:0; background:var(--green);
+        border-top:1px solid rgba(255,255,255,.18);
+        padding:.7rem calc(1.1rem + env(safe-area-inset-right, 0px)) calc(.7rem + env(safe-area-inset-bottom, 0px)) calc(1.1rem + env(safe-area-inset-left, 0px));
+      }
+      .nav-cta .btn { width:100%; }
+    }
+    @media (min-width: 900px) {
+      html.nav-js .site-head { flex-wrap:wrap; }
+      html.nav-js .site-nav { display:flex; flex-direction:row; align-items:center; width:auto; margin-left:auto; gap:.1rem; }
+      html.nav-js .nav-scroll { display:flex; flex-direction:row; align-items:center; gap:.05rem; }
+      html.nav-js .nav-label { display:none; }
+      html.nav-js .nav-group { position:relative; }
+      html.nav-js .nav-group-btn { display:inline-flex; }
+      html.nav-js .nav-group-btn:hover, html.nav-js .nav-about a:hover { border-bottom-color:var(--nav-mark); }
+      html.nav-js .nav-panel {
+        display:none; position:absolute; z-index:40; top:calc(100% + .3rem); left:0;
+        min-width:15.5rem; max-width:calc(100vw - 1.5rem); padding:.35rem; background:var(--card); color:var(--fg);
+        border:1px solid var(--line); border-radius:10px; box-shadow:0 8px 20px rgba(42,29,20,.18);
+      }
+      html.nav-js .nav-play .nav-panel { left:auto; right:0; width:19rem; }
+      html.nav-js .nav-group.is-open .nav-panel { display:block; }
+      html.nav-js .nav-panel a { color:var(--green); border-radius:8px; padding:.35rem .7rem; }
+      html.nav-js .nav-panel a:hover { background:var(--cream); }
+      html.nav-js .nav-blurb { color:var(--muted); padding:.05rem .7rem .55rem; }
+      html.nav-js .nav-about a { width:auto; min-height:44px; padding:.35rem .45rem; white-space:nowrap; }
+      html.nav-js .nav-cta { margin:0 0 0 .35rem; background:transparent; border:0; padding:0; }
+      html.nav-js .nav-cta .btn { width:auto; }
+    }
+    @media (min-width: 1100px) {
+      html.nav-js .site-head { flex-wrap:nowrap; }
+    }
+    html[data-a11y-space=on] header.site .site-nav a { display:flex; align-items:center; min-height:48px; }
+    html[data-a11y-space=on] header.site .nav-group-btn,
+    html[data-a11y-space=on] header.site .nav-toggle { min-height:48px; }
   </style>
 </head>
 <body>
   <a class="skip" href="#main">Skip to main content</a>
   <div class="tartan" aria-hidden="true" style={tartanBg}></div>
-  <header class="site">
-    <div class="wrap">
-      <a class="brand" href={u('')}><img src={u('coo.svg')} alt="" width="46" height="46" /><span>The Celtic Coo<small>Celtic &amp; Highland life in Canada</small></span></a>
-      <nav aria-label="Main">
-        {nav.map(([p, label]) => <a href={u(p)} aria-current={path === u(p) ? 'page' : undefined}>{label}</a>)}
-        <details class="more"><summary>New here?</summary><div>{navNew.map(([p, label]) => <a href={u(p)} aria-current={path === u(p) ? 'page' : undefined}>{label}</a>)}</div></details>
-        {navEnd.map(([p, label]) => <a href={u(p)} aria-current={path === u(p) ? 'page' : undefined}>{label}</a>)}
-      </nav>
+  <header class="site" data-site-header>
+    <div class="wrap site-head" data-site-bar>
+      <a class="brand" href={u('')} aria-current={path === u('') ? 'page' : undefined}><img src={u('coo.svg')} alt="" width="46" height="46" /><span><span class="brand-name">The Celtic Coo</span><small>Celtic &amp; Highland life in Canada</small></span></a>
+      <button type="button" class="nav-toggle" data-nav-toggle aria-expanded="false" aria-controls="site-menu" aria-label="Open menu">
+        <svg class="nav-ico nav-ico-open" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"></path></svg>
+        <svg class="nav-ico nav-ico-close" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"></path></svg>
+      </button>
+      <SiteNav path={path} />
     </div>
   </header>
   <main class="wrap" id="main" tabindex="-1"><slot /></main>
