@@ -16,5 +16,14 @@ export default defineConfig({
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
     { name: 'webkit-iphone', use: { ...devices['iPhone 13'] } },
+    ...(process.env.BRAVE_PATH
+      ? [{
+          name: 'brave',
+          use: {
+            ...devices['Desktop Chrome'],
+            launchOptions: { executablePath: process.env.BRAVE_PATH },
+          },
+        }]
+      : []),
   ],
 });

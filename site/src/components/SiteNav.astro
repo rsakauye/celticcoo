@@ -1,0 +1,48 @@
+---
+import { u } from '../lib/site.js';
+import { NAV_ABOUT, NAV_CTA, NAV_GROUPS } from '../lib/nav.js';
+
+const { path } = Astro.props;
+const current = (href) => path === u(href);
+---
+<nav id="site-menu" class="site-nav" aria-label="Main" data-site-nav>
+  <div class="nav-scroll">
+    {NAV_GROUPS.map((group) => {
+      const groupCurrent = group.items.some((item) => current(item.href));
+      return (
+        <div class:list={['nav-group', group.id === 'play' && 'nav-play', groupCurrent && 'is-current']} data-nav-group={group.id}>
+          <button
+            type="button"
+            class="nav-group-btn"
+            data-nav-group-btn
+            id={`nav-${group.id}-btn`}
+            aria-expanded="false"
+            aria-controls={`nav-${group.id}`}
+          >
+            {group.label}
+            <svg class="nav-chevron" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+          </button>
+          <p class="nav-label" id={`nav-${group.id}-label`}>{group.label}</p>
+          <div class="nav-panel" id={`nav-${group.id}`} data-nav-panel role="group" aria-labelledby={`nav-${group.id}-btn nav-${group.id}-label`}>
+            <ul>
+              {group.items.map((item) => (
+                <li>
+                  <a href={u(item.href)} aria-current={current(item.href) ? 'page' : undefined} aria-describedby={item.blurb ? 'nav-play-blurb' : undefined}>{item.label}</a>
+                  {item.blurb && <p class="nav-blurb" id="nav-play-blurb">{item.blurb}</p>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      );
+    })}
+    <div class="nav-about">
+      <a data-nav-about href={u(NAV_ABOUT.href)} aria-current={current(NAV_ABOUT.href) ? 'page' : undefined}>{NAV_ABOUT.label}</a>
+    </div>
+  </div>
+  <div class="nav-cta">
+    <a class="btn" data-nav-cta href={u(NAV_CTA.href)} aria-current={current(NAV_CTA.href) ? 'page' : undefined}>{NAV_CTA.label}</a>
+  </div>
+</nav>
