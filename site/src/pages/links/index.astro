@@ -2,7 +2,7 @@
 import { u, SITE_NAME, CONTACT_EMAIL } from '../../lib/site.js';
 
 const title = 'Links | The Celtic Coo';
-const description = 'Find Celtic events across Canada, list your own for free, and find clubs, bands and lessons near you.';
+const description = "Find Celtic events across Canada, list your own for free, and grab Ceilidh's stickers on GIPHY.";
 const ORIGIN = 'https://celticcoo.ca';
 const isProd = !Astro.site || Astro.site.host === 'celticcoo.ca';
 const robots = isProd ? 'index, follow, max-image-preview:large' : 'noindex, follow';
@@ -155,6 +155,11 @@ const avatarAlt = 'Ceilidh the Coo, a pixel-art Highland cow with a red bow, wea
         <li><a class="btn" data-utm href={u('tune/')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>
           <span class="lbl">Drone tuner for pipers</span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+        </a></li>
+        <li><a class="btn" href="https://giphy.com/channel/celticcoo" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.5 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3z"/><path d="M15 3v6h6"/><path d="M8 13h.01M16 13h.01"/><path d="M10 16s.8 1 2 1 2-1 2-1"/></svg>
+          <span class="lbl">Ceilidh's GIPHY stickers</span>
           <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
         </a></li>
         <li><a class="btn" data-utm href={u('')}>

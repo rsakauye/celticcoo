@@ -7,6 +7,7 @@ const BUTTONS = [
   ['/burns-night/', 'Burns Night 2027 (Jan 25)'],
   ['/newsletter/', "Get The Coo's Letter, free"],
   ['/tune/', 'Drone tuner for pipers'],
+  ['https://giphy.com/channel/celticcoo', "Ceilidh's GIPHY stickers", true],
   ['/', 'Visit celticcoo.ca'],
 ];
 
@@ -24,13 +25,20 @@ function watchExternal(page) {
 
 async function expectButtons(page, source) {
   const buttons = page.locator('nav a.btn');
-  await expect(buttons).toHaveCount(7);
+  await expect(buttons).toHaveCount(8);
   for (let i = 0; i < BUTTONS.length; i++) {
-    const [path, label] = BUTTONS[i];
+    const [path, label, external] = BUTTONS[i];
     const link = buttons.nth(i);
     await expect(link).toContainText(label);
-    await expect(link).toHaveAttribute('href', new RegExp(`[?&]utm_source=${source}(&|$)`));
     const href = await link.getAttribute('href');
+    if (external) {
+      expect(href).toBe(path);
+      expect(href).not.toMatch(/utm_/);
+      await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+      expect(await link.getAttribute('target')).toBeNull();
+      continue;
+    }
+    await expect(link).toHaveAttribute('href', new RegExp(`[?&]utm_source=${source}(&|$)`));
     const url = new URL(href);
     expect(url.pathname).toBe(path);
     expect(url.searchParams.get('utm_source')).toBe(source);
@@ -40,14 +48,14 @@ async function expectButtons(page, source) {
   }
 }
 
-test('links page loads with seven tagged buttons and no outside requests', async ({ page }) => {
+test('links page loads with eight buttons and no outside requests', async ({ page }) => {
   const external = watchExternal(page);
   const res = await page.goto('/links/');
   expect(res.status()).toBe(200);
   await expect(page).toHaveTitle('Links | The Celtic Coo');
   await expect(page.locator('meta[name="description"]')).toHaveAttribute(
     'content',
-    'Find Celtic events across Canada, list your own for free, and find clubs, bands and lessons near you.',
+    "Find Celtic events across Canada, list your own for free, and grab Ceilidh's stickers on GIPHY.",
   );
   await expect(page.locator('h1')).toHaveText('The Celtic Coo');
   await expect(page.locator('.intro')).toHaveText("Hiya! Find a ceilidh, bring your crew. Here's everywhere the Coo hangs out.");
@@ -67,8 +75,9 @@ test('links page loads with seven tagged buttons and no outside requests', async
   expect(privacyUrl.searchParams.get('utm_campaign')).toBe('links');
 
   const html = await page.content();
-  expect(html).not.toMatch(/instagram\.com|giphy|fonts\.google|kit\.com|unpkg|jsdelivr/i);
-  await expect(page.locator('a')).toHaveCount(9);
+  expect(html).not.toMatch(/instagram\.com|fonts\.google|kit\.com|unpkg|jsdelivr/i);
+  expect(html).not.toMatch(/<(?:script|img|link)[^>]+giphy\.com/i);
+  await expect(page.locator('a')).toHaveCount(10);
 
   await page.setViewportSize({ width: 390, height: 844 });
   const overflow = await page.evaluate(() => ({
@@ -81,7 +90,7 @@ test('links page loads with seven tagged buttons and no outside requests', async
     const box = el.getBoundingClientRect();
     return { h: box.height, w: box.width };
   }));
-  expect(targets).toHaveLength(9);
+  expect(targets).toHaveLength(10);
   for (const box of targets) {
     expect(box.h).toBeGreaterThanOrEqual(44);
     expect(box.w).toBeGreaterThanOrEqual(44);
@@ -104,13 +113,87 @@ test('src=fb tags facebook and src=ig tags instagram', async ({ page }) => {
   expect(mail).not.toContain('utm_');
 });
 
+test('/links shows the GIPHY stickers button', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+  await page.goto('/links/');
+  const link = page.getByRole('link', { name: "Ceilidh's GIPHY stickers" });
+  await expect(link).toBeVisible();
+  await expect(link).toHaveAttribute('href', 'https://giphy.com/channel/celticcoo');
+  await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+  expect(await link.getAttribute('target')).toBeNull();
+  await expect(link).toHaveClass('btn');
+
+  const matched = await page.evaluate(() => {
+    const buttons = [...document.querySelectorAll('nav a.btn')];
+    const el = buttons.find((node) => node.textContent.includes('GIPHY'));
+    const tuneEl = buttons.find((node) => node.textContent.includes('Drone tuner'));
+    const a = getComputedStyle(el);
+    const b = getComputedStyle(tuneEl);
+    return {
+      border: a.borderTopColor === b.borderTopColor && a.borderTopWidth === b.borderTopWidth,
+      background: a.backgroundColor === b.backgroundColor,
+      color: a.color === b.color,
+      radius: a.borderRadius === b.borderRadius,
+      minHeight: a.minHeight,
+    };
+  });
+  expect(matched.border).toBe(true);
+  expect(matched.background).toBe(true);
+  expect(matched.color).toBe(true);
+  expect(matched.radius).toBe(true);
+  expect(parseFloat(matched.minHeight)).toBeGreaterThanOrEqual(44);
+
+  const box = await link.boundingBox();
+  expect(box.height).toBeGreaterThanOrEqual(44);
+  expect(box.width).toBeGreaterThanOrEqual(44);
+
+  for (const width of [375, 390, 1024, 1280]) {
+    await page.setViewportSize({ width, height: width < 800 ? 844 : 1000 });
+    await link.scrollIntoViewIfNeeded();
+    const covered = await link.evaluate((el) => {
+      const rect = el.getBoundingClientRect();
+      const points = [
+        [rect.left + rect.width / 2, rect.top + rect.height / 2],
+        [rect.left + 12, rect.top + 12],
+        [rect.right - 12, rect.bottom - 12],
+      ];
+      const coo = document.querySelector('[data-ceilidh-coo], .coo-perch');
+      return points.some(([x, y]) => {
+        const top = document.elementFromPoint(x, y);
+        if (!top) return true;
+        if (coo && (top === coo || coo.contains(top))) return true;
+        return !(el === top || el.contains(top));
+      });
+    });
+    expect(covered, `GIPHY button covered at ${width}px`).toBe(false);
+  }
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('nav a.btn').first().focus();
+  for (let i = 0; i < 6; i++) await page.keyboard.press('Tab');
+  await expect(link).toBeFocused();
+  const ring = await link.evaluate((el) => {
+    const style = getComputedStyle(el);
+    return {
+      visible: el.matches(':focus-visible'),
+      outline: style.outlineColor,
+      width: style.outlineWidth,
+      shadow: style.boxShadow,
+    };
+  });
+  expect(ring.visible).toBe(true);
+  expect(ring.width).toBe('3px');
+  expect(ring.outline).toBe('rgb(240, 178, 122)');
+  expect(ring.shadow).toContain('rgb(29, 53, 87)');
+});
+
 test('links still go to the right pages when javascript is off', async ({ browser, baseURL }) => {
   const context = await browser.newContext({ javaScriptEnabled: false, baseURL });
   const page = await context.newPage();
   const res = await page.goto('/links/');
   expect(res.status()).toBe(200);
   const buttons = page.locator('nav a.btn');
-  await expect(buttons).toHaveCount(7);
+  await expect(buttons).toHaveCount(8);
   for (let i = 0; i < BUTTONS.length; i++) {
     await expect(buttons.nth(i)).toHaveAttribute('href', BUTTONS[i][0]);
   }
