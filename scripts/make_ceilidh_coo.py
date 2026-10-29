@@ -184,6 +184,7 @@ def draw_frame(pose, arms_on_top=False, pre=None, mid=None, post=None):
     top, bot = 42 + dy, 51 + dy
     kilt = poly([(24, top), (40, top), (42 + swing, bot), (22 + swing, bot)])
     c.stamp(kilt, None, pattern=tartan(24, top))
+    # Shipped strips were hand-edited so the front apron is flat.
     for x in (27, 31, 35, 39):  # pleat shadows in the lower half
         for y in range(bot - 3, bot + 1):
             if kilt.getpixel((x + swing // 2, y)):
