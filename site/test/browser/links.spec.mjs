@@ -34,7 +34,7 @@ async function expectButtons(page, source) {
     if (external) {
       expect(href).toBe(path);
       expect(href).not.toMatch(/utm_/);
-      await expect(link).toHaveAttribute('rel', 'noopener');
+      await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
       expect(await link.getAttribute('target')).toBeNull();
       continue;
     }
@@ -111,6 +111,80 @@ test('src=fb tags facebook and src=ig tags instagram', async ({ page }) => {
   const mail = await page.locator('a[href^="mailto:"]').getAttribute('href');
   expect(mail).toBe('mailto:hello@celticcoo.ca');
   expect(mail).not.toContain('utm_');
+});
+
+test('/links shows the GIPHY stickers button', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+  await page.goto('/links/');
+  const link = page.getByRole('link', { name: "Ceilidh's GIPHY stickers" });
+  await expect(link).toBeVisible();
+  await expect(link).toHaveAttribute('href', 'https://giphy.com/channel/celticcoo');
+  await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+  expect(await link.getAttribute('target')).toBeNull();
+  await expect(link).toHaveClass('btn');
+
+  const matched = await page.evaluate(() => {
+    const buttons = [...document.querySelectorAll('nav a.btn')];
+    const el = buttons.find((node) => node.textContent.includes('GIPHY'));
+    const tuneEl = buttons.find((node) => node.textContent.includes('Drone tuner'));
+    const a = getComputedStyle(el);
+    const b = getComputedStyle(tuneEl);
+    return {
+      border: a.borderTopColor === b.borderTopColor && a.borderTopWidth === b.borderTopWidth,
+      background: a.backgroundColor === b.backgroundColor,
+      color: a.color === b.color,
+      radius: a.borderRadius === b.borderRadius,
+      minHeight: a.minHeight,
+    };
+  });
+  expect(matched.border).toBe(true);
+  expect(matched.background).toBe(true);
+  expect(matched.color).toBe(true);
+  expect(matched.radius).toBe(true);
+  expect(parseFloat(matched.minHeight)).toBeGreaterThanOrEqual(44);
+
+  const box = await link.boundingBox();
+  expect(box.height).toBeGreaterThanOrEqual(44);
+  expect(box.width).toBeGreaterThanOrEqual(44);
+
+  for (const width of [375, 390, 1024, 1280]) {
+    await page.setViewportSize({ width, height: width < 800 ? 844 : 1000 });
+    await link.scrollIntoViewIfNeeded();
+    const covered = await link.evaluate((el) => {
+      const rect = el.getBoundingClientRect();
+      const points = [
+        [rect.left + rect.width / 2, rect.top + rect.height / 2],
+        [rect.left + 12, rect.top + 12],
+        [rect.right - 12, rect.bottom - 12],
+      ];
+      const coo = document.querySelector('[data-ceilidh-coo], .coo-perch');
+      return points.some(([x, y]) => {
+        const top = document.elementFromPoint(x, y);
+        if (!top) return true;
+        if (coo && (top === coo || coo.contains(top))) return true;
+        return !(el === top || el.contains(top));
+      });
+    });
+    expect(covered, `GIPHY button covered at ${width}px`).toBe(false);
+  }
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('nav a.btn').first().focus();
+  for (let i = 0; i < 6; i++) await page.keyboard.press('Tab');
+  await expect(link).toBeFocused();
+  const ring = await link.evaluate((el) => {
+    const style = getComputedStyle(el);
+    return {
+      visible: el.matches(':focus-visible'),
+      outline: style.outlineColor,
+      width: style.outlineWidth,
+      shadow: style.boxShadow,
+    };
+  });
+  expect(ring.visible).toBe(true);
+  expect(ring.width).toBe('3px');
+  expect(ring.outline).toBe('rgb(240, 178, 122)');
+  expect(ring.shadow).toContain('rgb(29, 53, 87)');
 });
 
 test('links still go to the right pages when javascript is off', async ({ browser, baseURL }) => {

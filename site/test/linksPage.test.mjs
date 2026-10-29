@@ -60,7 +60,7 @@ test('the links page lists the eight buttons in order', () => {
   assert.match(page, /Hiya! Find a ceilidh, bring your crew\. Here's everywhere the Coo hangs out\./);
   assert.doesNotMatch(page, /Base\.astro/);
   assert.doesNotMatch(page, /instagram\.com|mock-flag|fonts\.google|kit\.com/i);
-  assert.match(page, /href="https:\/\/giphy\.com\/channel\/celticcoo" rel="noopener"/);
+  assert.match(page, /href="https:\/\/giphy\.com\/channel\/celticcoo" rel="noopener noreferrer"/);
   assert.doesNotMatch(page, /giphy\.com[^"]*" data-utm|data-utm href="https:\/\/giphy\.com/);
   assert.doesNotMatch(page, /giphy\.com\/channel\/celticcoo"[^>]*target=/);
 
