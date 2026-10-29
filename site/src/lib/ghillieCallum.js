@@ -1,4 +1,4 @@
-// Gillie Callum (Ghillie Chaluim), the traditional Sword Dance tune.
+// Ghillie Callum (Ghillie Chaluim), the traditional Sword Dance tune.
 // Public domain. This is an original chiptune written for this site: a
 // brisk dotted snap in A mixolydian (the bagpipe scale), with the repeated
 // notes and upward leaps of a sword dance. It is not a transcription, and

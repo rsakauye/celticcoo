@@ -4,11 +4,11 @@ const TUNES = [
   {
     name: 'Highland Laddie',
     ariaOn: 'Tuck Ceilidh away and stop Highland Laddie',
-    nextAria: 'Bring out Ceilidh to dance to Gillie Callum',
+    nextAria: 'Bring out Ceilidh to dance to Ghillie Callum',
   },
   {
-    name: 'Gillie Callum',
-    ariaOn: 'Tuck Ceilidh away and stop Gillie Callum',
+    name: 'Ghillie Callum',
+    ariaOn: 'Tuck Ceilidh away and stop Ghillie Callum',
     nextAria: 'Bring out Ceilidh to dance to Seann Triubhas',
   },
   {
