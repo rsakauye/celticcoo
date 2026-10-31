@@ -14,7 +14,7 @@ const links = readFileSync(join(site, 'src/pages/links/index.astro'), 'utf8');
 test('profile addresses live in one module', () => {
   assert.deepEqual(SOCIALS.map((item) => item.id), ['instagram', 'facebook']);
   assert.equal(SOCIALS[0].href, 'https://www.instagram.com/celticcoo/');
-  assert.equal(SOCIALS[1].href, 'https://www.facebook.com/profile.php?id=1347389718466335');
+  assert.equal(SOCIALS[1].href, 'https://www.facebook.com/celticcoo');
   assert.equal(SOCIALS[0].label, 'Instagram');
   assert.equal(SOCIALS[1].label, 'Facebook');
   assert.equal(SOCIALS[0].ariaLabel, 'The Celtic Coo on Instagram');

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 const PROFILES = [
   ['The Celtic Coo on Instagram', 'https://www.instagram.com/celticcoo/'],
-  ['The Celtic Coo on Facebook', 'https://www.facebook.com/profile.php?id=1347389718466335'],
+  ['The Celtic Coo on Facebook', 'https://www.facebook.com/celticcoo'],
 ];
 
 test('footer icons match the footer text and turn gold on hover and focus', async ({ page }) => {

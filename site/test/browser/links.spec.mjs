@@ -13,7 +13,7 @@ const BUTTONS = [
 
 const SOCIAL = [
   ['https://www.instagram.com/celticcoo/', 'Instagram', 'The Celtic Coo on Instagram'],
-  ['https://www.facebook.com/profile.php?id=1347389718466335', 'Facebook', 'The Celtic Coo on Facebook'],
+  ['https://www.facebook.com/celticcoo', 'Facebook', 'The Celtic Coo on Facebook'],
 ];
 
 function watchExternal(page) {
@@ -91,7 +91,7 @@ test('links page loads with its buttons and no outside requests', async ({ page 
 
   const html = await page.content();
   expect(html).toContain('https://www.instagram.com/celticcoo/');
-  expect(html).toContain('https://www.facebook.com/profile.php?id=1347389718466335');
+  expect(html).toContain('https://www.facebook.com/celticcoo');
   expect(html).not.toMatch(/fonts\.google|kit\.com|unpkg|jsdelivr/i);
   expect(html).not.toMatch(/<(?:script|img|link)[^>]+(?:giphy|instagram|facebook)\.com/i);
   await expect(page.locator('a')).toHaveCount(12);
