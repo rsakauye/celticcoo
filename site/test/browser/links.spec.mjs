@@ -11,6 +11,11 @@ const BUTTONS = [
   ['/', 'Visit celticcoo.ca'],
 ];
 
+const SOCIAL = [
+  ['https://www.instagram.com/celticcoo/', 'Instagram', 'The Celtic Coo on Instagram'],
+  ['https://www.facebook.com/profile.php?id=1347389718466335', 'Facebook', 'The Celtic Coo on Facebook'],
+];
+
 function watchExternal(page) {
   const external = [];
   page.on('request', (req) => {
@@ -25,7 +30,7 @@ function watchExternal(page) {
 
 async function expectButtons(page, source) {
   const buttons = page.locator('nav a.btn');
-  await expect(buttons).toHaveCount(8);
+  await expect(buttons).toHaveCount(BUTTONS.length + SOCIAL.length);
   for (let i = 0; i < BUTTONS.length; i++) {
     const [path, label, external] = BUTTONS[i];
     const link = buttons.nth(i);
@@ -46,9 +51,19 @@ async function expectButtons(page, source) {
     expect(url.searchParams.get('utm_campaign')).toBe('links');
     expect(url.hostname === '127.0.0.1' || url.hostname === 'localhost').toBe(true);
   }
+  for (let i = 0; i < SOCIAL.length; i++) {
+    const [href, label, name] = SOCIAL[i];
+    const link = buttons.nth(BUTTONS.length + i);
+    await expect(link).toContainText(label);
+    await expect(link).toHaveAttribute('href', href);
+    await expect(link).toHaveAttribute('aria-label', name);
+    await expect(link).toHaveAttribute('target', '_blank');
+    await expect(link).toHaveAttribute('rel', 'noopener');
+    expect(href).not.toMatch(/utm_/);
+  }
 }
 
-test('links page loads with eight buttons and no outside requests', async ({ page }) => {
+test('links page loads with its buttons and no outside requests', async ({ page }) => {
   const external = watchExternal(page);
   const res = await page.goto('/links/');
   expect(res.status()).toBe(200);
@@ -75,9 +90,11 @@ test('links page loads with eight buttons and no outside requests', async ({ pag
   expect(privacyUrl.searchParams.get('utm_campaign')).toBe('links');
 
   const html = await page.content();
-  expect(html).not.toMatch(/instagram\.com|fonts\.google|kit\.com|unpkg|jsdelivr/i);
-  expect(html).not.toMatch(/<(?:script|img|link)[^>]+giphy\.com/i);
-  await expect(page.locator('a')).toHaveCount(10);
+  expect(html).toContain('https://www.instagram.com/celticcoo/');
+  expect(html).toContain('https://www.facebook.com/profile.php?id=1347389718466335');
+  expect(html).not.toMatch(/fonts\.google|kit\.com|unpkg|jsdelivr/i);
+  expect(html).not.toMatch(/<(?:script|img|link)[^>]+(?:giphy|instagram|facebook)\.com/i);
+  await expect(page.locator('a')).toHaveCount(12);
 
   await page.setViewportSize({ width: 390, height: 844 });
   const overflow = await page.evaluate(() => ({
@@ -90,7 +107,7 @@ test('links page loads with eight buttons and no outside requests', async ({ pag
     const box = el.getBoundingClientRect();
     return { h: box.height, w: box.width };
   }));
-  expect(targets).toHaveLength(10);
+  expect(targets).toHaveLength(12);
   for (const box of targets) {
     expect(box.h).toBeGreaterThanOrEqual(44);
     expect(box.w).toBeGreaterThanOrEqual(44);
@@ -193,9 +210,15 @@ test('links still go to the right pages when javascript is off', async ({ browse
   const res = await page.goto('/links/');
   expect(res.status()).toBe(200);
   const buttons = page.locator('nav a.btn');
-  await expect(buttons).toHaveCount(8);
+  await expect(buttons).toHaveCount(BUTTONS.length + SOCIAL.length);
   for (let i = 0; i < BUTTONS.length; i++) {
     await expect(buttons.nth(i)).toHaveAttribute('href', BUTTONS[i][0]);
+  }
+  for (let i = 0; i < SOCIAL.length; i++) {
+    const link = buttons.nth(BUTTONS.length + i);
+    await expect(link).toHaveAttribute('href', SOCIAL[i][0]);
+    await expect(link).toHaveAttribute('target', '_blank');
+    await expect(link).toHaveAttribute('rel', 'noopener');
   }
   await expect(page.locator('a[href^="mailto:"]')).toHaveAttribute('href', 'mailto:hello@celticcoo.ca');
   await expect(page.locator('footer a', { hasText: 'Privacy' })).toHaveAttribute('href', '/privacy/');
