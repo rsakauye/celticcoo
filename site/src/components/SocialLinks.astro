@@ -1,0 +1,84 @@
+---
+import { SOCIALS } from '../lib/socials.js';
+
+const { variant = 'icons' } = Astro.props;
+---
+{variant === 'buttons' && SOCIALS.map((item) => (
+  <li>
+    <a class="btn" href={item.href} target="_blank" rel="noopener" aria-label={item.ariaLabel}>
+      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
+        <path fill="currentColor" d={item.glyph} />
+      </svg>
+      <span class="lbl">{item.label}</span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <path d="m9 6 6 6-6 6" />
+      </svg>
+    </a>
+  </li>
+))}
+{variant !== 'buttons' && (
+  <nav class="socials" aria-label="Social media">
+    <ul>
+      {SOCIALS.map((item) => (
+        <li>
+          <a href={item.href} target="_blank" rel="noopener" aria-label={item.ariaLabel}>
+            <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
+              <path fill="currentColor" d={item.glyph} />
+            </svg>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+)}
+<style>
+  .socials ul {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    list-style: none;
+    margin: 0 0 0.85rem;
+    padding: 0;
+  }
+  .socials li { display: flex; margin: 0; padding: 0; list-style: none; }
+  .socials a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border-radius: 10px;
+    line-height: 0;
+    text-decoration: none;
+  }
+  .socials svg {
+    display: block;
+    width: 24px;
+    height: 24px;
+  }
+  :global(footer.site) .socials a,
+  :global(footer.site) .socials a:visited {
+    color: inherit;
+  }
+  :global(footer.site) .socials a:hover,
+  :global(footer.site) .socials a:focus,
+  :global(footer.site) .socials a:focus-visible {
+    color: #f0b27a;
+  }
+  :global(html[data-a11y-space=on] footer.site) .socials a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+  }
+</style>

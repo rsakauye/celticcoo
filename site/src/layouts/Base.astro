@@ -1,6 +1,7 @@
 ---
 import NewsletterForm from '../components/NewsletterForm.astro';
 import SiteNav from '../components/SiteNav.astro';
+import SocialLinks from '../components/SocialLinks.astro';
 import { u, SITE_NAME } from '../lib/site.js';
 import { bookingConfig } from '../lib/booking.js';
 import { loadBrand, shareAlt } from '../../../shared/og/index.js';
@@ -105,6 +106,7 @@ const ldJson = JSON.stringify(ld.length === 1 ? ld[0] : ld).replace(/</g, '\\u00
     footer.site a { color:#fff; }
     footer.site .wrap { display:flex; flex-wrap:wrap; gap:1.5rem 3rem; justify-content:space-between; padding-top:1.4rem; padding-bottom:1.6rem; font-size:.92rem; }
     footer.site .muted { color:#c7d8ce; }
+    footer.site .footer-aside { max-width:460px; }
     .sr-only { position:absolute; left:-9999px; }
     /* ---------- Accessibility (WCAG 2.2 AA) + settings menu (public/a11y.js). Choices live in localStorage only. ---------- */
     .skip { position:absolute; left:.5rem; top:.5rem; transform:translateY(-200%); z-index:100; background:#fff; color:#000; padding:.6rem 1rem; border:3px solid #000; border-radius:6px; font-weight:700; text-decoration:underline; }
@@ -232,11 +234,14 @@ const ldJson = JSON.stringify(ld.length === 1 ? ld[0] : ld).replace(/</g, '\\u00
         <b>The Coo's Letter</b> <span class="muted">· a short email every two weeks of what's on</span><br />
         <NewsletterForm compact={true} />
       </div>
-      <div class="muted" style="max-width:460px">
-        Dates come from organizers' and associations' websites and can change. Always confirm with the organizer before you travel.<br />
-        <a href={u('events.ics')}>Calendar (ICS)</a> · <a href={u('rss.xml')}>RSS</a> · <a href={u('book/')}>{bookingConfig.navLabel}</a> · <a href={u('submit/')}>Add an event or shop</a> · <a href={u('about/')}>About</a> · <a href={u('sitemap.xml')}>Sitemap</a> · <a href={u('privacy/')}>Privacy</a> · <a href={u('terms/')}>Terms</a> · <button type="button" class="a11y-link" data-a11y-open aria-haspopup="dialog">Accessibility</button><br />
-        Mascot: Ceilidh the Coo (say "Kaylee"), in the Fraser of Lovat tartan.<br />
-        © {new Date().getFullYear()} The Celtic Coo · CelticCoo.ca
+      <div class="footer-aside">
+        <SocialLinks variant="icons" />
+        <div class="muted">
+          Dates come from organizers' and associations' websites and can change. Always confirm with the organizer before you travel.<br />
+          <a href={u('events.ics')}>Calendar (ICS)</a> · <a href={u('rss.xml')}>RSS</a> · <a href={u('book/')}>{bookingConfig.navLabel}</a> · <a href={u('submit/')}>Add an event or shop</a> · <a href={u('about/')}>About</a> · <a href={u('sitemap.xml')}>Sitemap</a> · <a href={u('privacy/')}>Privacy</a> · <a href={u('terms/')}>Terms</a> · <button type="button" class="a11y-link" data-a11y-open aria-haspopup="dialog">Accessibility</button><br />
+          Mascot: Ceilidh the Coo (say "Kaylee"), in the Fraser of Lovat tartan.<br />
+          © {new Date().getFullYear()} The Celtic Coo · CelticCoo.ca
+        </div>
       </div>
     </div>
   </footer>
