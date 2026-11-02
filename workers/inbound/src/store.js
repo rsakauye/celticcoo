@@ -11,10 +11,10 @@ const INSERT_SQL = `INSERT INTO inbound_emails (
   subject, text_body, attachment_note,
   category, confidence, summary, extracted_json, classifier, classifier_reason,
   forward_status, issue_status, issue_url, issue_number,
-  clarify_status, clarify_draft, clarify_reasons, clarify_lock,
+  clarify_status, clarify_draft, clarify_reasons, draft_skip_reason, clarify_lock,
   trust_score, trust_reasons, missing_fields, red_flags,
   error_code, raw_size
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', NULL, ?, ?, ?, '', ?, ?, ?, ?, ?, ?)`;
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', NULL, ?, ?, ?, ?, '', ?, ?, ?, ?, ?, ?)`;
 
 const UPDATE_SQL = `UPDATE inbound_emails SET
   received_at = ?, message_id = ?, envelope_from = ?, from_header = ?, reply_to = ?,
@@ -24,7 +24,8 @@ const UPDATE_SQL = `UPDATE inbound_emails SET
   trust_score = ?, trust_reasons = ?, missing_fields = ?, red_flags = ?,
   clarify_status = CASE WHEN clarify_status IN ('approved', 'sent', 'discarded') THEN clarify_status ELSE ? END,
   clarify_draft = CASE WHEN clarify_status IN ('approved', 'sent', 'discarded') THEN clarify_draft ELSE ? END,
-  clarify_reasons = CASE WHEN clarify_status IN ('approved', 'sent', 'discarded') THEN clarify_reasons ELSE ? END
+  clarify_reasons = CASE WHEN clarify_status IN ('approved', 'sent', 'discarded') THEN clarify_reasons ELSE ? END,
+  draft_skip_reason = CASE WHEN clarify_status IN ('approved', 'sent', 'discarded') THEN draft_skip_reason ELSE ? END
   WHERE id = ?`;
 
 export async function upsertInbound(db, row) {
@@ -62,6 +63,7 @@ export async function upsertInbound(db, row) {
       row.clarifyStatus || '',
       row.clarifyDraft || '',
       row.clarifyReasons || '',
+      row.draftSkipReason || '',
       existing.id,
     ).run();
     return {
@@ -96,6 +98,7 @@ export async function upsertInbound(db, row) {
       row.clarifyStatus || '',
       row.clarifyDraft || '',
       row.clarifyReasons || '',
+      row.draftSkipReason || '',
       row.trustScore,
       row.trustReasons || '[]',
       row.missingFields || '[]',

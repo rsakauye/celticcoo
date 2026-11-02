@@ -12,18 +12,113 @@ export function acksEnabled(env) {
   return String(env && env.ACK_REPLIES || '').trim().toLowerCase() === 'on';
 }
 
-export function isAutomated(message) {
-  const from = String(message && message.from || '').toLowerCase();
-  if (!from || from.includes('mailer-daemon') || from.includes('postmaster') || from.includes('noreply') || from.includes('no-reply')) {
-    return true;
+// Local parts used by bulk mail and daemons. A normal local part does not
+// match. The check is the local part only, so a display name or a domain
+// that happens to contain these words does not match.
+const AUTO_LOCAL = /^(?:no[-_.]?reply|do[-_.]?not[-_.]?reply|mailer-daemon|postmaster)(?:[.+_-].*)?$/i;
+const PRECEDENCE = new Set(['bulk', 'list', 'junk', 'auto_reply']);
+const SKIP_REASONS = ['list_unsubscribe', 'list_id', 'auto_submitted', 'precedence', 'sender'];
+
+function headerValue(headers, name) {
+  if (!headers || typeof headers.get !== 'function') return '';
+  return String(headers.get(name) || '').trim();
+}
+
+// Untrusted mail headers. Walk each character once so a long header stays cheap.
+const LOCAL_CHARS = new Set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.!#$%&'*+/=?^_`{|}~-");
+
+function isLabelChar(code) {
+  return (code >= 48 && code <= 57)
+    || (code >= 65 && code <= 90)
+    || (code >= 97 && code <= 122)
+    || code === 45;
+}
+
+function isAllLetters(value) {
+  for (let i = 0; i < value.length; i += 1) {
+    const code = value.charCodeAt(i);
+    if (code < 65 || (code > 90 && code < 97) || code > 122) return false;
   }
+  return value.length > 0;
+}
+
+function domainEnd(text, start) {
+  const n = text.length;
+  let i = start;
+  if (i >= n || !isLabelChar(text.charCodeAt(i))) return -1;
+  let labels = 0;
+  while (i < n) {
+    const labelStart = i;
+    while (i < n && isLabelChar(text.charCodeAt(i))) i += 1;
+    if (i === labelStart) return -1;
+    labels += 1;
+    if (i < n && text.charCodeAt(i) === 46) {
+      const next = i + 1;
+      if (next < n && isLabelChar(text.charCodeAt(next))) {
+        i = next;
+        continue;
+      }
+      break;
+    }
+    break;
+  }
+  if (labels < 2) return -1;
+  const domain = text.slice(start, i);
+  const tld = domain.slice(domain.lastIndexOf('.') + 1);
+  if (tld.length < 2 || !isAllLetters(tld)) return -1;
+  return i;
+}
+
+function emailAddresses(value) {
+  const text = String(value || '');
+  const out = [];
+  let from = 0;
+  while (from < text.length) {
+    const at = text.indexOf('@', from);
+    if (at < 0) break;
+    let start = at - 1;
+    while (start >= 0 && LOCAL_CHARS.has(text[start])) start -= 1;
+    start += 1;
+    const end = start < at ? domainEnd(text, at + 1) : -1;
+    if (end > at + 1) out.push(text.slice(start, end).toLowerCase());
+    from = at + 1;
+  }
+  return out;
+}
+
+function localIsAutomated(address) {
+  const at = address.lastIndexOf('@');
+  if (at < 1) return false;
+  return AUTO_LOCAL.test(address.slice(0, at));
+}
+
+// Codes that explain why a clarifying draft was not queued.
+// The header value itself is never returned: List-Unsubscribe often contains
+// an address. `sender` means an automated local part, or no address at all.
+// `extra` covers the parsed From and Reply-To when those are not on message.headers.
+export function automatedReason(message, extra = {}) {
   const headers = message && message.headers;
-  const auto = String(headers && headers.get ? headers.get('auto-submitted') || '' : '').toLowerCase();
-  if (auto && auto !== 'no') return true;
-  const precedence = String(headers && headers.get ? headers.get('precedence') || '' : '').toLowerCase();
-  if (['bulk', 'list', 'junk', 'auto_reply'].includes(precedence)) return true;
-  if (headers && headers.get && headers.get('list-id')) return true;
-  return false;
+  const reasons = [];
+  if (headerValue(headers, 'list-unsubscribe')) reasons.push('list_unsubscribe');
+  if (headerValue(headers, 'list-id')) reasons.push('list_id');
+  const auto = headerValue(headers, 'auto-submitted').toLowerCase().split(/[\s;]+/)[0] || '';
+  if (auto && auto !== 'no') reasons.push('auto_submitted');
+  const precedence = headerValue(headers, 'precedence').toLowerCase();
+  const tokens = precedence.split(/[^a-z_-]+/).filter(Boolean).map((token) => token.replace(/-/g, '_'));
+  if (tokens.some((token) => PRECEDENCE.has(token))) reasons.push('precedence');
+  const addresses = [
+    message && message.from,
+    headerValue(headers, 'from'),
+    headerValue(headers, 'reply-to'),
+    extra.fromHeader,
+    extra.replyTo,
+  ].flatMap(emailAddresses);
+  if (addresses.length === 0 || addresses.some(localIsAutomated)) reasons.push('sender');
+  return SKIP_REASONS.filter((code) => reasons.includes(code)).join(',');
+}
+
+export function isAutomated(message, extra) {
+  return automatedReason(message, extra) !== '';
 }
 
 export function buildAckMime(message) {

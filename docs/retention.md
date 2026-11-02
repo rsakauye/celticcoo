@@ -10,7 +10,7 @@ That var is not set in `wrangler.jsonc` and the deploy workflow does not pass it
 | `inbound_emails` | 12 months | `created_at` |
 | `submission_failures` | 90 days | `created_at` |
 
-`submission_failures` stores a reason code only. It has no name, email, or message. The 90-day count is what removes those codes once deletion is turned on.
+`submission_failures` stores a reason code, Turnstile error codes when a token was rejected, whether a token was present, a truncated user agent, and the country and network number when Cloudflare provides them. It has no name, email, phone, message, token, or IP address. The 90-day count is what removes those rows once deletion is turned on.
 
 The count log is JSON with `message`, `mode` (`dry_run` or `delete`), and the three counts. It does not include row contents.
 
@@ -23,7 +23,7 @@ Handle a deletion request within 30 days of receiving it.
 3. Delete that `submissions` row and any `inbound_emails` row for the same request.
 4. Keep a private note of the date the deletion was finished. The note should not contain the person's details.
 
-`submission_failures` cannot be matched to a person. Those rows expire on the 90-day schedule.
+`submission_failures` has no name, email, message, or IP address. Those rows expire on the 90-day schedule.
 
 ## Opt-out rows
 

@@ -12,8 +12,10 @@
 // this repo. The notice is sent from bookings@celticcoo.ca.
 //
 // TURNSTILE_SECRET is a Pages secret. It is never read from the repo.
-// Rejected attempts are logged as a reason code only. The message body of a
-// rejected or spam attempt is not stored.
+// Rejected attempts are logged with a reason code, whether a Turnstile token
+// was present, Turnstile's error codes, a truncated user agent, and the
+// country and ASN when Cloudflare provides them. The message body, the
+// token, and the IP address are not stored.
 
 import { events, tba, TODAY } from '../../src/lib/data.js';
 import { bookableFromData, handleBookingRequest, BOOKING_FROM, BOOKING_TO_DEFAULT } from '../../src/lib/booking.js';
