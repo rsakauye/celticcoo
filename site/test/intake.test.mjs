@@ -7,7 +7,9 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { handleBookingRequest } from '../src/lib/booking.js';
 import {
+  FAILURE_UA_LIMIT,
   assessRisk,
+  failureContext,
   intakeFromEnv,
   intakeStatus,
   logIntakeFailure,
@@ -46,10 +48,10 @@ function formData(input) {
   return body;
 }
 
-function post(input, { origin = 'https://celticcoo.ca' } = {}) {
+function post(input, { origin = 'https://celticcoo.ca', headers = {} } = {}) {
   return new Request('https://celticcoo.ca/api/book', {
     method: 'POST',
-    headers: { origin, accept: 'application/json' },
+    headers: { origin, accept: 'application/json', ...headers },
     body: formData(input),
   });
 }
@@ -234,6 +236,126 @@ test('a failure log keeps the reason and drops the message, name, and email', as
   assert.equal(missing, false);
 });
 
+test('a failure log records the user agent, token presence, and country without the form or the IP', async () => {
+  const db = fakeDb();
+  const logs = [];
+  const original = console.error;
+  console.error = (line) => logs.push(String(line));
+  const agent = `Mozilla/5.0 person@example.com Chrome/120.0.0.0 203.0.113.8 ${'abcdef '.repeat(40)}`;
+  try {
+    await logIntakeFailure(db, {
+      reason: 'turnstile_rejected',
+      detail: 'invalid-input-response,timeout-or-duplicate',
+      userAgent: agent,
+      tokenPresent: 1,
+      country: 'ca',
+      asn: '13335',
+      token: 'secret-token-value',
+      email: 'person@example.com',
+      ip: '203.0.113.8',
+      message: 'Please call me about the wedding.',
+    });
+  } finally {
+    console.error = original;
+  }
+  assert.equal(db.failures.length, 1);
+  const row = db.failures[0];
+  assert.equal(row[2], 'turnstile_rejected');
+  assert.equal(row[3], 'invalid-input-response,timeout-or-duplicate');
+  assert.equal(row[5].length, FAILURE_UA_LIMIT);
+  assert.match(row[5], /Chrome\/120\.0\.0\.0/);
+  assert.equal(row[5].includes('person@example.com'), false);
+  assert.equal(row[5].includes('203.0.113.8'), false);
+  assert.equal(row[6], 1);
+  assert.equal(row[7], 'CA');
+  assert.equal(row[8], '13335');
+  const stored = JSON.stringify(row);
+  assert.equal(stored.includes('secret-token-value'), false);
+  assert.equal(stored.includes('person@example.com'), false);
+  assert.equal(stored.includes('203.0.113.8'), false);
+  assert.equal(stored.includes('wedding'), false);
+  const line = JSON.parse(logs[0]);
+  assert.equal(line.token_present, 1);
+  assert.equal(line.country, 'CA');
+  assert.equal(line.asn, '13335');
+  assert.equal(line.user_agent.length, FAILURE_UA_LIMIT);
+  assert.equal(JSON.stringify(line).includes('secret-token-value'), false);
+  assert.equal(JSON.stringify(line).includes('person@example.com'), false);
+  assert.equal(JSON.stringify(line).includes('203.0.113.8'), false);
+
+  const dropped = failureContext({
+    headers: new Headers({
+      'user-agent': 'curl/8.0',
+      'cf-connecting-ip': '198.51.100.4',
+      'cf-ipcountry': 'us',
+      'cf-asn': '16509',
+    }),
+    cf: { country: 'gb', asn: 13335, city: 'Calgary', postalCode: 'T1S 1B5' },
+  }, '');
+  assert.equal(dropped.country, 'GB');
+  assert.equal(dropped.asn, '13335');
+  assert.equal(dropped.tokenPresent, 0);
+  assert.equal(dropped.userAgent, 'curl/8.0');
+  assert.equal(JSON.stringify(dropped).includes('198.51.100.4'), false);
+  assert.equal(JSON.stringify(dropped).includes('Calgary'), false);
+  assert.equal(JSON.stringify(dropped).includes('T1S'), false);
+
+  const fromHeaders = failureContext({
+    headers: new Headers({ 'cf-ipcountry': 'ca', 'cf-asn': '64512', 'user-agent': 'bot' }),
+  }, '');
+  assert.deepEqual(fromHeaders, { userAgent: 'bot', tokenPresent: 0, country: 'CA', asn: '64512' });
+
+  const request = new Request('https://celticcoo.ca/api/book', {
+    method: 'POST',
+    headers: {
+      origin: 'https://celticcoo.ca',
+      accept: 'application/json',
+      'user-agent': agent,
+      'cf-connecting-ip': '203.0.113.9',
+    },
+    body: formData(fields({ 'cf-turnstile-response': '' })),
+  });
+  Object.defineProperty(request, 'cf', { value: { country: 'ca', asn: 16509, city: 'Okotoks' } });
+  const openDb = fakeDb();
+  console.error = (line) => logs.push(String(line));
+  try {
+    const missingToken = await handleBookingRequest(request, {
+      catalog,
+      verify: async () => ({ ok: false, reason: 'turnstile_missing', detail: '' }),
+      intake: intakeFromEnv({ INTAKE_DB: openDb }),
+    });
+    assert.equal(missingToken.status, 403);
+    assert.equal(openDb.submissions.length, 0);
+    assert.equal(openDb.failures[0][2], 'turnstile_missing');
+    assert.equal(openDb.failures[0][3], '');
+    assert.equal(openDb.failures[0][6], 0);
+    assert.equal(openDb.failures[0][7], 'CA');
+    assert.equal(openDb.failures[0][8], '16509');
+    assert.equal(openDb.failures[0][5].includes('203.0.113'), false);
+    assert.equal(JSON.stringify(openDb.failures[0]).includes('aileen@example.com'), false);
+    assert.equal(JSON.stringify(openDb.failures[0]).includes('Okotoks'), false);
+    assert.equal(JSON.stringify(openDb.failures[0]).includes('203.0.113.9'), false);
+
+    const rejected = await handleBookingRequest(post(fields(), {
+      headers: { 'user-agent': 'python-requests/2.32', 'cf-connecting-ip': '203.0.113.10' },
+    }), {
+      catalog,
+      verify: async () => ({ ok: false, reason: 'turnstile_rejected', detail: 'invalid-input-response' }),
+      intake: intakeFromEnv({ INTAKE_DB: openDb }),
+    });
+    assert.equal(rejected.status, 403);
+    assert.equal(openDb.failures[1][2], 'turnstile_rejected');
+    assert.equal(openDb.failures[1][3], 'invalid-input-response');
+    assert.equal(openDb.failures[1][6], 1);
+    assert.equal(openDb.failures[1][5], 'python-requests/2.32');
+    assert.equal(JSON.stringify(openDb.failures[1]).includes('token-ok'), false);
+    assert.equal(JSON.stringify(openDb.failures[1]).includes('aileen@example.com'), false);
+    assert.equal(JSON.stringify(openDb.failures[1]).includes('203.0.113.10'), false);
+  } finally {
+    console.error = original;
+  }
+});
+
 test('a verified request is stored, flagged, and still kept when the notice fails', async () => {
   const db = fakeDb();
   const sent = [];
@@ -404,6 +526,13 @@ test('the pages config keeps a placeholder id and the deploy helper does not pri
   assert.match(countsMigration, /adult_confirm/);
   assert.match(countsMigration, /performer_counts_json/);
   assert.match(countsMigration, /ALTER TABLE submissions ADD COLUMN adult_confirm/);
+  const failureMigration = readFileSync(new URL('../migrations/0010_submission_failure_context.sql', import.meta.url), 'utf8');
+  assert.match(failureMigration, /user_agent/);
+  assert.match(failureMigration, /token_present/);
+  assert.match(failureMigration, /country/);
+  assert.match(failureMigration, /asn/);
+  assert.match(failureMigration, /Apply by hand/);
+  assert.doesNotMatch(failureMigration, /@/);
   const form = readFileSync(new URL('../src/pages/book/index.astro', import.meta.url), 'utf8');
   assert.match(migration, /CREATE TABLE submissions/);
   assert.match(migration, /CREATE TABLE submission_failures/);

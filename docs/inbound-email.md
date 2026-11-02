@@ -79,7 +79,7 @@ The booking form calls `decidePerformerVolume` for an optional head count. At or
 
 `CLARIFY_DRAFTS` in `workers/inbound/wrangler.jsonc` is `drafts`. Any other value except `off` means the same thing. There is no setting that sends a reply by itself. Set it to `off` and redeploy to stop new drafts.
 
-A draft is created for an event listing, correction, or booking that is missing a date, a time, a place, or an event name; for a booking that names no performer; for a date that is already past; for two dates that disagree (a correction that states the old date and the new one is not treated as a contradiction); for a link that is not a normal http(s) URL; for an organizer name that does not appear in the link, unless the link is a known ticket or social host; and for a note classified as `other` or a very short partnership note. A group or society directory listing does not need a date. A newsletter question does not get the generic "unclear" draft. A note labelled `other` that still names a performer or a booking phrase gets the booking questions, not the question that asks whether to list an event, correct a listing, or book a performer. That question is only for a note with no clear booking, listing, or correction intent. Spam is skipped. Mail from `noreply`, a list, or an auto-reply is skipped, including an out-of-office line in the subject or the first part of the body. An out-of-office line buried under a real request does not hide that request.
+A draft is created for an event listing, correction, or booking that is missing a date, a time, a place, or an event name; for a booking that names no performer; for a date that is already past; for two dates that disagree (a correction that states the old date and the new one is not treated as a contradiction); for a link that is not a normal http(s) URL; for an organizer name that does not appear in the link, unless the link is a known ticket or social host; and for a note classified as `other` or a very short partnership note. A group or society directory listing does not need a date. A newsletter question does not get the generic "unclear" draft. A note labelled `other` that still names a performer or a booking phrase gets the booking questions, not the question that asks whether to list an event, correct a listing, or book a performer. That question is only for a note with no clear booking, listing, or correction intent. Spam is skipped. Mail from an automated or bulk sender is skipped. That is a `List-Unsubscribe` or `List-Id` header, an `Auto-Submitted` value other than `no`, a `Precedence` of bulk, list, or junk, or a sender address whose local part is `noreply`, `no-reply`, `donotreply`, `mailer-daemon`, or `postmaster`. An out-of-office line in the subject or the first part of the body is also skipped. An out-of-office line buried under a real request does not hide that request.
 
 The draft status on the row is:
 
@@ -89,6 +89,18 @@ The draft status on the row is:
 | `approved` | You approved it, and the send has not finished or did not succeed. Approving again retries the send. |
 | `sent` | Sent once from `hello@celticcoo.ca`. Approving again does not send it again. |
 | `discarded` | Dropped. Nothing was sent. |
+
+`draft_skip_reason` is empty when a draft was queued, or when no automated-sender signal matched. When one of those signals matches, the message is still forwarded and stored, and the column lists the matching codes, separated by commas. The approval queue only includes `pending_approval`, so this mail stays out of it. The header value is not stored.
+
+| Code | Signal |
+|---|---|
+| `list_unsubscribe` | A `List-Unsubscribe` header is present. |
+| `list_id` | A `List-Id` header is present. |
+| `auto_submitted` | `Auto-Submitted` is present and is not `no`. |
+| `precedence` | `Precedence` is bulk, list, junk, or auto-reply. |
+| `sender` | The envelope, From, or Reply-To local part is `noreply`, `no-reply`, `donotreply`, `mailer-daemon`, or `postmaster`, or no sender address was present. |
+
+Apply `site/migrations/0009_draft_skip_reason.sql` by hand before deploying the Worker that writes this column. A deploy does not apply it. Until the column exists, storing a new message fails after the forward.
 
 The GitHub issue, when one is opened, includes the draft text and says that it has not been sent. It does not include the approval link. A booking or other note does not open an issue. The private review note covers those.
 
@@ -124,6 +136,8 @@ unset D1_DATABASE_ID
 That applies every migration in `site/migrations/` that is not already on the database. The command does not print the database id. Do not commit the id.
 
 This repo's GitHub Actions workflow does not apply migrations. Until `0003` is applied, new mail will fail to store and the forward will still have been attempted. Apply it before the deploy that contains this code, or immediately after, and accept that mail in that gap is retried by the sender only if the forward itself failed. Until `0007_review_tokens.sql` is applied, a review note is still emailed, but it has no short link. Apply that file before deploying the Worker that serves `/r/`. Until `0005_inbound_trust.sql` is applied, storing a new message fails after the forward. Apply that file before deploying the trust-score worker. Until `0006_trust_details.sql` is applied, the same store fails once the worker writes the extra columns. Those objects, and `mail_opt_outs`, are already on the live database. Chat approval is described in `docs/chat-approval.md`.
+
+Apply `0009_draft_skip_reason.sql` before deploying the Worker that writes `draft_skip_reason`. Until that column exists, storing a new message fails after the forward. Apply `0010_submission_failure_context.sql` before deploying the booking form that writes the extra failure columns. Until those columns exist, a failed form attempt still returns the same response to the visitor, and the failure row is not stored. Neither file is applied by a deploy or by GitHub Actions.
 
 ### 2. Set the secrets and the database id
 
@@ -233,13 +247,13 @@ Workers AI is a binding. There is no AI token to paste. If the account cannot ru
 ```bash
 read -rsp 'D1 database id: ' D1_DATABASE_ID; echo
 export D1_DATABASE_ID
-node scripts/intake-d1.mjs execute --command "SELECT id, category, confidence, classifier, classifier_reason, clarify_status, forward_status, issue_status, issue_url, created_at FROM inbound_emails ORDER BY created_at DESC LIMIT 20;"
+node scripts/intake-d1.mjs execute --command "SELECT id, category, confidence, classifier, classifier_reason, clarify_status, draft_skip_reason, forward_status, issue_status, issue_url, created_at FROM inbound_emails ORDER BY created_at DESC LIMIT 20;"
 unset D1_DATABASE_ID
 ```
 
 Selecting `envelope_from`, `from_header`, `reply_to`, `subject`, `text_body`, or `summary` can print personal data on your machine. Don't paste that output into chat, a commit, an issue, or a log. `clarify_draft` is the questions, not the inbound message. `classifier_reason` is one of the codes above.
 
-`forward_status` is `sent`, `failed`, or `skipped`. `issue_status` is `skipped`, `filed`, or `failed`. `clarify_status` is empty, `pending_approval`, `approved`, `sent`, or `discarded`.
+`forward_status` is `sent`, `failed`, or `skipped`. `issue_status` is `skipped`, `filed`, or `failed`. `clarify_status` is empty, `pending_approval`, `approved`, `sent`, or `discarded`. `draft_skip_reason` is empty, or a comma-separated list of the automated-sender codes above.
 
 After the next real message, `classifier_reason` should be `ai_ok`, `ai_text`, or `ai_prompt` when the model ran, or a specific failure code such as `ai_failed:run_error` when it did not. The Workers log line `inbound classify` has the same reason.
 
@@ -252,7 +266,7 @@ Leave this off until you want a one-line receipt. The receipt does not quote the
 
 The next deploy from git uses the value in that file. A dashboard edit is overwritten by the next deploy. Receipts use `message.reply` on the inbound message. They do not use the approval link and they do not wait for `REVIEW_SECRET`.
 
-Automated mail (`Auto-Submitted`, list mail, `noreply`, `mailer-daemon`) is not answered, even when the flag is on. That mail also does not get a clarifying draft.
+Automated mail (`List-Unsubscribe`, `List-Id`, `Auto-Submitted` other than `no`, `Precedence` of bulk, list, or junk, and `noreply`, `no-reply`, `donotreply`, or `mailer-daemon` sender addresses) is not answered, even when the flag is on. That mail also does not get a clarifying draft. The reason is stored in `draft_skip_reason`.
 
 ## Roll back
 

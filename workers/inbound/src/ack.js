@@ -12,18 +12,56 @@ export function acksEnabled(env) {
   return String(env && env.ACK_REPLIES || '').trim().toLowerCase() === 'on';
 }
 
-export function isAutomated(message) {
-  const from = String(message && message.from || '').toLowerCase();
-  if (!from || from.includes('mailer-daemon') || from.includes('postmaster') || from.includes('noreply') || from.includes('no-reply')) {
-    return true;
-  }
+// Local parts used by bulk mail and daemons. A normal local part does not
+// match. The check is the local part only, so a display name or a domain
+// that happens to contain these words does not match.
+const AUTO_LOCAL = /^(?:no[-_.]?reply|do[-_.]?not[-_.]?reply|mailer-daemon|postmaster)(?:[.+_-].*)?$/i;
+const PRECEDENCE = new Set(['bulk', 'list', 'junk', 'auto_reply']);
+const SKIP_REASONS = ['list_unsubscribe', 'list_id', 'auto_submitted', 'precedence', 'sender'];
+
+function headerValue(headers, name) {
+  if (!headers || typeof headers.get !== 'function') return '';
+  return String(headers.get(name) || '').trim();
+}
+
+function emailAddresses(value) {
+  const found = String(value || '').match(/[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9.-]+\.[a-z]{2,}/gi);
+  return found ? found.map((item) => item.toLowerCase()) : [];
+}
+
+function localIsAutomated(address) {
+  const at = address.lastIndexOf('@');
+  if (at < 1) return false;
+  return AUTO_LOCAL.test(address.slice(0, at));
+}
+
+// Codes that explain why a clarifying draft was not queued.
+// The header value itself is never returned: List-Unsubscribe often contains
+// an address. `sender` means an automated local part, or no address at all.
+// `extra` covers the parsed From and Reply-To when those are not on message.headers.
+export function automatedReason(message, extra = {}) {
   const headers = message && message.headers;
-  const auto = String(headers && headers.get ? headers.get('auto-submitted') || '' : '').toLowerCase();
-  if (auto && auto !== 'no') return true;
-  const precedence = String(headers && headers.get ? headers.get('precedence') || '' : '').toLowerCase();
-  if (['bulk', 'list', 'junk', 'auto_reply'].includes(precedence)) return true;
-  if (headers && headers.get && headers.get('list-id')) return true;
-  return false;
+  const reasons = [];
+  if (headerValue(headers, 'list-unsubscribe')) reasons.push('list_unsubscribe');
+  if (headerValue(headers, 'list-id')) reasons.push('list_id');
+  const auto = headerValue(headers, 'auto-submitted').toLowerCase().split(/[\s;]+/)[0] || '';
+  if (auto && auto !== 'no') reasons.push('auto_submitted');
+  const precedence = headerValue(headers, 'precedence').toLowerCase();
+  const tokens = precedence.split(/[^a-z_-]+/).filter(Boolean).map((token) => token.replace(/-/g, '_'));
+  if (tokens.some((token) => PRECEDENCE.has(token))) reasons.push('precedence');
+  const addresses = [
+    message && message.from,
+    headerValue(headers, 'from'),
+    headerValue(headers, 'reply-to'),
+    extra.fromHeader,
+    extra.replyTo,
+  ].flatMap(emailAddresses);
+  if (addresses.length === 0 || addresses.some(localIsAutomated)) reasons.push('sender');
+  return SKIP_REASONS.filter((code) => reasons.includes(code)).join(',');
+}
+
+export function isAutomated(message, extra) {
+  return automatedReason(message, extra) !== '';
 }
 
 export function buildAckMime(message) {

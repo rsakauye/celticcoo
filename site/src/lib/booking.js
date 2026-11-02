@@ -8,7 +8,7 @@
 import bookingConfig from '../../../data/booking.json' with { type: 'json' };
 import { caslFooterText } from '../../../shared/casl/notice.js';
 import { decidePerformerVolume } from '../../../shared/triage/breaker.js';
-import { assessRisk, intakeStatus } from './intake.js';
+import { assessRisk, failureContext, intakeStatus } from './intake.js';
 
 export { bookingConfig };
 
@@ -518,9 +518,19 @@ function wantsJson(request) {
   return (request.headers.get('accept') || '').includes('application/json');
 }
 
-async function noteFailure(intake, entry) {
+function formToken(formData) {
+  if (!formData || typeof formData.get !== 'function') return '';
+  const value = formData.get('cf-turnstile-response');
+  return typeof value === 'string' ? value : '';
+}
+
+async function noteFailure(intake, request, entry = {}) {
   if (!intake || typeof intake.log !== 'function') return;
-  try { await intake.log(entry); }
+  const token = typeof entry.token === 'string' ? entry.token : '';
+  const rest = { ...entry };
+  delete rest.token;
+  const context = failureContext(request, token);
+  try { await intake.log({ ...rest, ...context }); }
   catch { console.error(JSON.stringify({ message: 'intake failure log threw', reason: 'log_failed' })); }
 }
 
@@ -538,7 +548,7 @@ export async function handleBookingRequest(request, deps = {}) {
   const vars = { siteName: config.siteName, email: to };
   const wants = wantsJson(request);
   if (!sameOrigin(request)) {
-    await noteFailure(intake, { reason: 'origin', detail: '' });
+    await noteFailure(intake, request, { reason: 'origin', detail: '' });
     if (wants) return jsonResponse(403, { ok: false, code: 'origin' });
     return htmlResponse(403, config, {
       title: 'Could not send',
@@ -548,20 +558,20 @@ export async function handleBookingRequest(request, deps = {}) {
   }
   const length = Number(request.headers.get('content-length') || 0);
   if (length > 200000) {
-    await noteFailure(intake, { reason: 'too_large', detail: '' });
+    await noteFailure(intake, request, { reason: 'too_large', detail: '' });
     if (wants) return jsonResponse(413, { ok: false, code: 'too_large' });
     return htmlResponse(413, config, { title: 'Could not send', heading: 'That note is too long.', paragraphs: ['Shorten the details and try again.'] });
   }
   let formData;
   try { formData = await request.formData(); }
   catch {
-    await noteFailure(intake, { reason: 'unreadable', detail: '' });
+    await noteFailure(intake, request, { reason: 'unreadable', detail: '' });
     if (wants) return jsonResponse(400, { ok: false, errors: { message: MESSAGES.message } });
     return htmlResponse(400, config, { title: 'Could not send', heading: 'We could not read that form.', paragraphs: ['Go back to the form and try again.'] });
   }
   const input = readBookingForm(formData);
   if (input.honeypot) {
-    await noteFailure(intake, { reason: 'honeypot', detail: '' });
+    await noteFailure(intake, request, { reason: 'honeypot', detail: '', token: formToken(formData) });
     if (wants) return jsonResponse(200, { ok: true });
     return htmlResponse(200, config, {
       title: fillTemplate(responses.sentTitle, vars),
@@ -577,7 +587,7 @@ export async function handleBookingRequest(request, deps = {}) {
     catch { verdict = { ok: false, reason: 'turnstile_unavailable', detail: '' }; }
     if (!verdict || verdict.ok !== true) {
       const reason = (verdict && verdict.reason) || 'turnstile_rejected';
-      await noteFailure(intake, { reason, detail: (verdict && verdict.detail) || '' });
+      await noteFailure(intake, request, { reason, detail: (verdict && verdict.detail) || '', token });
       const message = turnstileMessage(reason);
       if (wants) return jsonResponse(403, { ok: false, code: reason, errors: { turnstile: message } });
       return htmlResponse(403, config, {
@@ -592,7 +602,7 @@ export async function handleBookingRequest(request, deps = {}) {
   if (!result.ok) {
     const fields = Object.keys(result.errors).sort().join(',');
     const reason = result.errors.adult_confirm ? 'adult_confirm' : 'validation';
-    await noteFailure(intake, { reason, detail: fields });
+    await noteFailure(intake, request, { reason, detail: fields, token: formToken(formData) });
     if (wants) return jsonResponse(400, { ok: false, errors: result.errors });
     return htmlResponse(400, config, {
       title: 'Check the form',
@@ -635,7 +645,7 @@ export async function handleBookingRequest(request, deps = {}) {
       stored = true;
     } catch (err) {
       const detail = err && err.code === 'not_configured' ? 'not_configured' : 'insert_failed';
-      await noteFailure(intake, { reason: 'store_failed', detail });
+      await noteFailure(intake, request, { reason: 'store_failed', detail, token: formToken(formData) });
       intakeId = '';
     }
   }

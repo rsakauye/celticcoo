@@ -1,6 +1,9 @@
 // Private booking intake: Turnstile decisions, risk flags, and D1 writes.
-// Failure rows store a reason code and a short machine detail only.
-// Never put a name, email, phone, message, token, or secret in a failure row or a log line.
+// Failure rows store a reason code, a short machine detail, and a little
+// request context: a truncated user agent, whether a Turnstile token was
+// present, and Cloudflare's country and ASN when the request has them.
+// Never put a name, email, phone, message, token, IP address, or secret in a
+// failure row or a log line.
 // The trust columns are advisory codes. A Turnstile pass does not send mail by itself.
 
 import celticcooTrust from '../../../shared/trust/sites/celticcoo.js';
@@ -65,6 +68,59 @@ function reasonCode(reason) {
   return /^[a-z0-9_]{1,64}$/.test(code) ? code : 'unknown';
 }
 
+export const FAILURE_UA_LIMIT = 160;
+
+function requestHeader(request, name) {
+  const headers = request && request.headers;
+  if (!headers || typeof headers.get !== 'function') return '';
+  return String(headers.get(name) || '');
+}
+
+export function sanitizeUserAgent(value) {
+  const text = String(value || '')
+    .replace(/[\u0000-\u001f\u007f]/g, ' ')
+    .replace(/\S+@\S+/g, '')
+    .replace(/(^|[^A-Za-z0-9/])(?:\d{1,3}\.){3}\d{1,3}\b/g, '$1')
+    .replace(/\b(?:[0-9a-f]{0,4}:){2,7}[0-9a-f]{0,4}\b/gi, '')
+    .replace(/[^\x20-\x7e]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return text.slice(0, FAILURE_UA_LIMIT);
+}
+
+function safeCountry(value) {
+  const country = String(value || '').trim().toUpperCase();
+  return /^[A-Z]{2}$/.test(country) ? country : '';
+}
+
+function safeAsn(value) {
+  const asn = String(value ?? '').trim();
+  return /^[0-9]{1,10}$/.test(asn) ? asn : '';
+}
+
+// Request context for a failed booking attempt. The Turnstile token is used
+// only to record whether one was sent. The token itself is dropped.
+export function failureContext(request, token = '') {
+  const cf = request && request.cf && typeof request.cf === 'object' ? request.cf : {};
+  const country = safeCountry(cf.country || requestHeader(request, 'cf-ipcountry'));
+  const asnSource = cf.asn != null && cf.asn !== '' ? cf.asn : requestHeader(request, 'cf-asn');
+  return {
+    userAgent: sanitizeUserAgent(requestHeader(request, 'user-agent')),
+    tokenPresent: typeof token === 'string' && token.length > 0 ? 1 : 0,
+    country,
+    asn: safeAsn(asnSource),
+  };
+}
+
+function storedFailureContext(entry) {
+  return {
+    userAgent: sanitizeUserAgent(entry.userAgent),
+    tokenPresent: entry.tokenPresent === 1 || entry.tokenPresent === true ? 1 : 0,
+    country: safeCountry(entry.country),
+    asn: safeAsn(entry.asn),
+  };
+}
+
 function safeDetail(detail) {
   const text = String(detail || '').toLowerCase().replace(/\s+/g, '');
   return /^[a-z0-9_,.-]{0,200}$/.test(text) ? text : '';
@@ -113,18 +169,40 @@ export async function logIntakeFailure(db, entry = {}) {
   const reason = reasonCode(entry.reason);
   const detail = safeDetail(entry.detail);
   const source = reasonCode(entry.source || 'book');
+  const context = storedFailureContext(entry);
+  const logged = {
+    message: 'intake failure',
+    reason,
+    detail,
+    token_present: context.tokenPresent,
+    country: context.country,
+    asn: context.asn,
+    user_agent: context.userAgent,
+  };
   if (!db || typeof db.prepare !== 'function') {
-    console.error(JSON.stringify({ message: 'intake failure', reason, detail, stored: false }));
+    console.error(JSON.stringify({ ...logged, stored: false }));
     return false;
   }
   try {
     await db.prepare(
-      'INSERT INTO submission_failures (id, created_at, reason, detail, source) VALUES (?, ?, ?, ?, ?)',
-    ).bind(crypto.randomUUID(), new Date().toISOString(), reason, detail, source).run();
-    console.error(JSON.stringify({ message: 'intake failure', reason, detail, stored: true }));
+      `INSERT INTO submission_failures (
+        id, created_at, reason, detail, source, user_agent, token_present, country, asn
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).bind(
+      crypto.randomUUID(),
+      new Date().toISOString(),
+      reason,
+      detail,
+      source,
+      context.userAgent,
+      context.tokenPresent,
+      context.country,
+      context.asn,
+    ).run();
+    console.error(JSON.stringify({ ...logged, stored: true }));
     return true;
   } catch {
-    console.error(JSON.stringify({ message: 'intake failure log failed', reason, stored: false }));
+    console.error(JSON.stringify({ ...logged, message: 'intake failure log failed', stored: false }));
     return false;
   }
 }

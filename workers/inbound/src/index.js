@@ -20,7 +20,7 @@
 // There is no addresses field in wrangler.jsonc, so deploying this Worker does
 // not change the Email Routing rule. The owner switches that in the dashboard.
 
-import { isAutomated, maybeAcknowledge } from './ack.js';
+import { automatedReason, maybeAcknowledge } from './ack.js';
 import { classifyMessage, modelName, safeReason } from './classify.js';
 import { planDraft } from './clarify.js';
 import { buildIssue, fileGitHubIssue, issuesRepo, shouldFile, workerToken } from './issue.js';
@@ -157,6 +157,10 @@ async function processHello(message, env, deps, forward) {
     console.error(JSON.stringify({ message: 'inbound trust failed', code: codeOf(err) }));
   }
   const stored = storedTrust(trust);
+  const draftSkipReason = automatedReason(message, {
+    fromHeader: parsed.fromHeader,
+    replyTo: parsed.replyTo,
+  });
   const draft = stopStatus === 'opted_out' ? null : planDraft({
     category: classification.category,
     event: classification.event,
@@ -164,7 +168,7 @@ async function processHello(message, env, deps, forward) {
     text: parsed.text,
     now,
     env,
-    automated: isAutomated(message),
+    automated: draftSkipReason !== '',
   });
   const key = await dedupeKey(message, parsed.subject);
   const errorCode = [forward.error, parsed.parseError, optingOut ? 'opt_out' : ''].filter(Boolean).join(',') || '';
@@ -194,6 +198,7 @@ async function processHello(message, env, deps, forward) {
     clarifyStatus: draft ? draft.status : '',
     clarifyDraft: draft ? draft.draft : '',
     clarifyReasons: draft ? draft.reasons.join(',') : '',
+    draftSkipReason,
     trustScore: stored.score,
     trustReasons: stored.reasons,
     missingFields: stored.missingFields,
@@ -240,6 +245,7 @@ async function processHello(message, env, deps, forward) {
     reason: row.classifierReason,
     reviewStatus,
     trustScore: stored.score,
+    draftSkip: draftSkipReason,
   };
 }
 
@@ -287,6 +293,7 @@ export async function handleInboundEmail(message, env, deps = {}) {
     code: (outcome && outcome.errorCode) || forward.error || '',
     reason: exportReason((outcome && outcome.reason) || ''),
     trust: outcome && Number.isInteger(outcome.trustScore) ? outcome.trustScore : '',
+    draft_skip: (outcome && outcome.draftSkip) || '',
   }, deps);
   if (forward.status !== 'sent' && forward.error !== 'not_forwardable') {
     const error = new Error('inbound forward failed');
