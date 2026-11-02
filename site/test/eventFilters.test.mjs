@@ -8,11 +8,13 @@ import {
   canadianConnection,
   categoryFromTypeParam,
   countryLabel,
+  DEFAULT_COUNTRY,
   emptyMessage,
   eventInList,
   showClearLink,
-  showIntlToggle,
   showProvince,
+  showTripSection,
+  selectedCountry,
   visibleTags,
   eventMatches,
   filtersForList,
@@ -66,19 +68,20 @@ test('Canada is the default list and international events sit apart', () => {
 });
 
 test('a province filter hides events outside Canada until it is cleared', () => {
-  const filters = { ...blankFilters(), region: 'AB', includeIntl: true };
+  const filters = { ...blankFilters(), region: 'AB' };
   assert.equal(eventInList(canada, filters, 'main'), true);
   assert.equal(eventInList(usa, filters, 'main'), false);
   assert.equal(eventInList(usa, filters, 'abroad'), false);
   assert.equal(listHome(usa, filters), 'abroad');
 });
 
-test('include events outside Canada moves them into the main list', () => {
-  const filters = { ...blankFilters(), includeIntl: true };
+test('all countries mixes events into the month list', () => {
+  const filters = { ...blankFilters(), country: 'all' };
   assert.equal(listHome(usa, filters), 'main');
   assert.equal(eventInList(usa, filters, 'main'), true);
   assert.equal(eventInList(worlds, filters, 'abroad'), false);
   assert.equal(filtersForList(filters, 'main').country, '');
+  assert.equal(showTripSection(filters), false);
 });
 
 test('an older country link still opens that country', () => {
@@ -105,7 +108,7 @@ test('province, type, and month round-trip in the query string', () => {
   assert.equal(filtersFromSearch('?type=Parades&country=Canada&region=ON').cat, 'Parades');
   assert.equal(filtersFromSearch('?type=Parades&country=Canada&region=ON').region, 'ON');
   assert.equal(filtersFromSearch('?month=May').month, '');
-  assert.equal(searchFromFilters({ ...blankFilters(), country: 'Canada', freeOnly: false }), '');
+  assert.equal(searchFromFilters({ ...blankFilters(), country: DEFAULT_COUNTRY, freeOnly: false }), '');
 });
 
 test('active chips and the empty state use plain labels', () => {
@@ -116,10 +119,9 @@ test('active chips and the empty state use plain labels', () => {
     month: '2027-01',
     freeOnly: true,
     tags: ['ceilidh'],
-    includeIntl: true,
   };
   const chips = activeChips(filters, { region: { AB: 'Alberta' }, month: { '2027-01': 'January 2027' }, tags: { ceilidh: 'Ceilidh' } });
-  assert.deepEqual(chips.map((c) => c.label), ['Alberta', 'Ceilidhs', 'January 2027', 'Ceilidh', 'Free only', 'Outside Canada included']);
+  assert.deepEqual(chips.map((c) => c.label), ['Alberta', 'Ceilidhs', 'January 2027', 'Ceilidh', 'Free only']);
   assert.equal(resultLabel(1), '1 event');
   assert.equal(resultLabel(23), '23 events');
   const none = emptyMessage(0, 0);
@@ -135,12 +137,20 @@ test('active chips and the empty state use plain labels', () => {
   assert.equal(showClearLink(3, 0), false);
 });
 
-test('a province hides the outside-Canada control', () => {
-  assert.equal(showIntlToggle({ region: '' }), true);
-  assert.equal(showIntlToggle({ region: 'AB', includeIntl: true }), false);
-  assert.equal(showIntlToggle({}), true);
+test('the opening country is one constant, and an old intl link means all countries', () => {
+  assert.ok(DEFAULT_COUNTRY === 'Canada' || DEFAULT_COUNTRY === 'all');
+  assert.equal(selectedCountry(blankFilters()), DEFAULT_COUNTRY);
+  assert.equal(selectedCountry({ country: DEFAULT_COUNTRY }), DEFAULT_COUNTRY);
   assert.equal(showProvince({ region: 'AB' }), true);
-  assert.equal(showProvince(blankFilters()), true);
+  assert.equal(showProvince(blankFilters()), DEFAULT_COUNTRY === 'Canada');
+  assert.equal(showTripSection(blankFilters()), DEFAULT_COUNTRY === 'Canada');
+  const fromIntl = filtersFromSearch('?intl=1');
+  assert.equal(selectedCountry(fromIntl), 'all');
+  assert.equal(searchFromFilters(fromIntl), DEFAULT_COUNTRY === 'all' ? '' : '?country=all');
+  assert.equal(showProvince(fromIntl), false);
+  assert.equal(activeChips(blankFilters()).some((chip) => chip.key === 'country'), false);
+  assert.equal(activeChips({ country: 'UK' }).map((chip) => chip.label).join(','), 'United Kingdom');
+  assert.equal(activeChips({ country: 'all' }).some((chip) => chip.key === 'country'), DEFAULT_COUNTRY !== 'all');
 });
 
 test('a country outside Canada uses ?country= and hides the province select', () => {
@@ -149,7 +159,7 @@ test('a country outside Canada uses ?country= and hides the province select', ()
   assert.equal(countryLabel('UK'), 'United Kingdom');
   assert.equal(countryLabel('USA'), 'United States');
   assert.equal(showProvince(uk), false);
-  assert.equal(showIntlToggle(uk), false);
+  assert.equal(showTripSection(uk), false);
   assert.equal(listHome({ country: 'UK' }, uk), 'main');
   assert.equal(eventInList({ country: 'UK', region: 'Scotland', cat: 'Highland Games', start: '2027-08-26' }, uk, 'main'), true);
   assert.equal(eventInList({ country: 'Canada', region: 'AB', cat: 'Highland Games', start: '2027-06-26' }, uk, 'main'), false);
@@ -165,14 +175,15 @@ test('a country outside Canada uses ?country= and hides the province select', ()
 
   const all = { ...blankFilters(), country: 'all' };
   assert.equal(showProvince(all), false);
-  assert.equal(showIntlToggle(all), false);
+  assert.equal(showTripSection(all), false);
   assert.equal(listHome({ country: 'UK' }, all), 'main');
   assert.equal(listHome({ country: 'Canada' }, all), 'main');
   assert.equal(eventInList({ country: 'Canada', region: 'NS', start: '2027-07-04' }, all, 'main'), true);
   assert.equal(eventInList({ country: 'USA', region: 'California', start: '2027-09-04' }, all, 'main'), true);
   assert.equal(searchFromFilters(all), '?country=all');
-  assert.equal(filtersFromSearch('?country=Canada').country, 'Canada');
+  assert.equal(selectedCountry(filtersFromSearch('?country=Canada')), 'Canada');
   assert.equal(showProvince(filtersFromSearch('?country=Canada')), true);
+  assert.equal(filtersFromSearch('?country=Canada').country, DEFAULT_COUNTRY === 'Canada' ? '' : 'Canada');
 });
 
 test('a tag that repeats the type chip is left off the event page', () => {
@@ -224,7 +235,6 @@ test('the events page offers province, type, month, and a reset', () => {
   assert.match(page, /trip-country/);
   assert.match(page, /id="f-cat"/);
   assert.match(page, /id="f-month"/);
-  assert.match(page, /id="f-intl"/);
   assert.match(page, /id="f-free"/);
   assert.match(page, /Free only/);
   assert.match(page, /Clear all/);
@@ -232,8 +242,10 @@ test('the events page offers province, type, month, and a reset', () => {
   assert.match(page, /How listings work/);
   assert.match(page, /All provinces &amp; territories/);
   assert.match(page, /Canadian events first\. Outside Canada is under Worth the trip\./);
-  assert.match(page, /showIntlToggle/);
+  assert.match(page, /DEFAULT_COUNTRY/);
   assert.match(page, /showClearLink/);
+  assert.doesNotMatch(page, /Include events outside Canada/);
+  assert.doesNotMatch(page, /id="f-intl"/);
   assert.match(page, /#worth-the-trip/);
   assert.doesNotMatch(page, /Clear the province filter/);
   assert.doesNotMatch(page, /CATEGORY_EMOJI\[c\]/);

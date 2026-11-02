@@ -5,7 +5,7 @@ import EventCard from '../../components/EventCard.astro';
 import HidePast from '../../components/HidePast.astro';
 import { events, tba, TODAY, regionName, CATEGORY_EMOJI, FEATURES, TAG_LABEL } from '../../lib/data.js';
 import { bookableFromData } from '../../lib/booking.js';
-import { countryLabel, resultLabel } from '../../lib/eventFilters.js';
+import { countryLabel, DEFAULT_COUNTRY, resultLabel } from '../../lib/eventFilters.js';
 import { u } from '../../lib/site.js';
 const bookableTba = new Map(bookableFromData(events, tba, TODAY).filter((e) => e.tba).map((e) => [e.sourceId, e.id]));
 const PROVINCE_ORDER = ['BC', 'AB', 'SK', 'MB', 'ON', 'QC', 'NB', 'PE', 'NS', 'NL', 'YT', 'NT', 'NU'];
@@ -24,6 +24,8 @@ const tagList = Object.keys(TAG_LABEL).filter((t) => tagCount[t]);
 const monthLabel = (m) => new Date(m + '-15T12:00:00Z').toLocaleDateString('en-CA', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 const canada = events.filter((e) => e.isCanada);
 const intl = events.filter((e) => !e.isCanada);
+const openOnAll = DEFAULT_COUNTRY === 'all';
+const listed = openOnAll ? events : canada;
 const tripCountries = [...new Set(intl.map((e) => e.country))].sort((a, b) => countryLabel(a).localeCompare(countryLabel(b)));
 const chipLabels = {
   region: Object.fromEntries(events.map((e) => [e.region, e.regionLabel])),
@@ -49,7 +51,7 @@ const chipLabels = {
         <div class="f-field">
           <label for="f-country">Country</label>
           <select id="f-country">
-            <option value="">Canada</option>
+            <option value="Canada">Canada</option>
             <option value="all">All countries</option>
             {tripCountries.map((code) => <option value={code}>{countryLabel(code)}</option>)}
           </select>
@@ -76,7 +78,6 @@ const chipLabels = {
           </select>
         </div>
       </div>
-      <label class="f-check" id="f-intl-wrap" for="f-intl"><input type="checkbox" id="f-intl" /> Include events outside Canada</label>
       <details class="f-more" id="f-more">
         <summary>More filters</summary>
         <div class="f-more-body">
@@ -107,7 +108,7 @@ const chipLabels = {
   </details>
 
   {months.map((m) => {
-    const inMonth = canada.filter((e) => e.start_date.startsWith(m));
+    const inMonth = listed.filter((e) => e.start_date.startsWith(m));
     return (
       <section class="month" data-month={m} hidden={inMonth.length === 0}>
         <h2>{monthLabel(m)}</h2>
@@ -121,19 +122,21 @@ const chipLabels = {
     <span>Know one we're missing? <a href={u('submit/')}>Tell us about it</a>.</span>
   </p>
 
-  <section id="worth-the-trip">
-    <h2>Worth the trip: international events</h2>
-    <p class="muted">Outside Canada. When Canadian bands are competing, the card says so.</p>
-    {tripCountries.map((code) => {
-      const rows = intl.filter((e) => e.country === code);
-      return (
-        <section class="trip-country" data-country={code}>
-          <h3 class="trip-h">{countryLabel(code)} <span class="trip-n" data-trip-count>{resultLabel(rows.length)}</span></h3>
-          <div class="grid trip-grid">{rows.map((e) => <EventCard e={e} />)}</div>
-        </section>
-      );
-    })}
-  </section>
+  {openOnAll ? null : (
+    <section id="worth-the-trip">
+      <h2>Worth the trip: international events</h2>
+      <p class="muted">Outside Canada. When Canadian bands are competing, the card says so.</p>
+      {tripCountries.map((code) => {
+        const rows = intl.filter((e) => e.country === code);
+        return (
+          <section class="trip-country" data-country={code}>
+            <h3 class="trip-h">{countryLabel(code)} <span class="trip-n" data-trip-count>{resultLabel(rows.length)}</span></h3>
+            <div class="grid trip-grid">{rows.map((e) => <EventCard e={e} />)}</div>
+          </section>
+        );
+      })}
+    </section>
+  )}
 
   <section id="tba">
     <h2 id="coming-2027">Coming in 2027, dates to be announced</h2>
@@ -157,7 +160,7 @@ const chipLabels = {
   <HidePast />
   <script>
     import {
-      activeChips, blankFilters, emptyMessage, eventInList, filtersFromSearch, listHome, resultLabel, searchFromFilters, showClearLink, showIntlToggle, showProvince,
+      activeChips, blankFilters, DEFAULT_COUNTRY, emptyMessage, eventInList, filtersFromSearch, listHome, resultLabel, searchFromFilters, selectedCountry, showClearLink, showProvince, showTripSection,
     } from '../../lib/eventFilters.js';
     const $ = (id) => document.getElementById(id);
     const country = $('f-country');
@@ -167,7 +170,6 @@ const chipLabels = {
     const feat = $('f-feat');
     const past = $('f-past');
     const free = $('f-free');
-    const intl = $('f-intl');
     const openBtn = $('f-open');
     const panel = $('f-panel');
     const LABELS = JSON.parse($('ev-labels').textContent);
@@ -177,8 +179,8 @@ const chipLabels = {
 
     const hasOption = (select, value) => [...select.options].some((o) => o.value === value);
     function syncControls() {
-      const countryValue = filters.country === 'Canada' ? '' : filters.country;
-      country.value = hasOption(country, countryValue) ? countryValue : '';
+      const chosen = selectedCountry(filters);
+      country.value = hasOption(country, chosen) ? chosen : chosen;
       prov.value = hasOption(prov, filters.region) ? filters.region : '';
       $('f-prov-wrap').hidden = !showProvince(filters);
       cat.value = hasOption(cat, filters.cat) ? filters.cat : '';
@@ -186,8 +188,6 @@ const chipLabels = {
       feat.value = hasOption(feat, filters.feat) ? filters.feat : '';
       free.checked = !!filters.freeOnly;
       past.checked = !!filters.past;
-      intl.checked = !!filters.includeIntl && showIntlToggle(filters);
-      $('f-intl-wrap').hidden = !showIntlToggle(filters);
       tagButtons.forEach((b) => {
         b.setAttribute('aria-pressed', filters.tags.includes(b.dataset.tag) ? 'true' : 'false');
       });
@@ -217,6 +217,7 @@ const chipLabels = {
     }
 
     function placeIntl() {
+      if (!$('worth-the-trip')) return;
       const nodes = [...document.querySelectorAll('article.ev')].filter((el) => el.dataset.country !== 'Canada');
       nodes.sort((a, b) => (a.dataset.start || '').localeCompare(b.dataset.start || '') || a.id.localeCompare(b.id));
       for (const el of nodes) {
@@ -262,13 +263,12 @@ const chipLabels = {
       if (chip.key === 'tag') filters.tags = filters.tags.filter((t) => t !== chip.value);
       if (chip.key === 'free') filters.freeOnly = false;
       if (chip.key === 'past') filters.past = false;
-      if (chip.key === 'intl') filters.includeIntl = false;
       apply();
     }
 
     function focusAfterClear() {
       if (window.matchMedia('(max-width: 640px)').matches) openBtn.focus();
-      else prov.focus();
+      else country.focus();
     }
 
     function clearAll(focus) {
@@ -282,9 +282,7 @@ const chipLabels = {
     }
 
     function apply() {
-      if (filters.country === 'all') filters.region = '';
-      if (!showProvince(filters)) filters.includeIntl = false;
-      if (filters.region) filters.includeIntl = false;
+      if (selectedCountry(filters) === 'all') filters.region = '';
       syncControls();
       placeIntl();
       let n = 0;
@@ -299,19 +297,24 @@ const chipLabels = {
         n += shown;
       });
       let abroadShown = 0;
-      document.querySelectorAll('.trip-country').forEach((sec) => {
-        let shown = 0;
-        sec.querySelectorAll('.ev').forEach((el) => {
-          const ok = showIn(el, 'abroad');
-          el.hidden = !ok;
-          if (ok) shown += 1;
+      const tripRoot = $('worth-the-trip');
+      if (tripRoot && showTripSection(filters)) {
+        document.querySelectorAll('.trip-country').forEach((sec) => {
+          let shown = 0;
+          sec.querySelectorAll('.ev').forEach((el) => {
+            const ok = showIn(el, 'abroad');
+            el.hidden = !ok;
+            if (ok) shown += 1;
+          });
+          sec.hidden = shown === 0;
+          const count = sec.querySelector('[data-trip-count]');
+          if (count) count.textContent = resultLabel(shown);
+          abroadShown += shown;
         });
-        sec.hidden = shown === 0;
-        const count = sec.querySelector('[data-trip-count]');
-        if (count) count.textContent = resultLabel(shown);
-        abroadShown += shown;
-      });
-      $('worth-the-trip').hidden = abroadShown === 0;
+        tripRoot.hidden = abroadShown === 0;
+      } else if (tripRoot) {
+        tripRoot.hidden = true;
+      }
       let tbaShown = 0;
       document.querySelectorAll('#tba-grid .tba-ev').forEach((el) => {
         const ok = eventInList({
@@ -364,19 +367,12 @@ const chipLabels = {
       tagButtons[0] && tagButtons[0].focus();
     });
     country.addEventListener('change', () => {
-      filters.country = country.value;
-      if (!showProvince(filters)) {
-        filters.region = '';
-        filters.includeIntl = false;
-      }
+      filters.country = country.value === DEFAULT_COUNTRY ? '' : country.value;
+      if (selectedCountry(filters) !== 'Canada') filters.region = '';
       apply();
     });
     prov.addEventListener('change', () => {
       filters.region = prov.value;
-      if (prov.value) {
-        filters.includeIntl = false;
-        if (filters.country && filters.country !== 'Canada') filters.country = '';
-      }
       apply();
     });
     cat.addEventListener('change', () => { filters.cat = cat.value; apply(); });
@@ -384,11 +380,6 @@ const chipLabels = {
     feat.addEventListener('change', () => { filters.feat = feat.value; apply(); });
     free.addEventListener('change', () => { filters.freeOnly = free.checked; apply(); });
     past.addEventListener('change', () => { filters.past = past.checked; apply(); });
-    intl.addEventListener('change', () => {
-      filters.includeIntl = intl.checked;
-      if (intl.checked) filters.country = '';
-      apply();
-    });
     $('f-clear').addEventListener('click', (e) => { e.preventDefault(); clearAll(true); });
     $('f-empty-clear').addEventListener('click', () => clearAll(true));
     openBtn.addEventListener('click', () => {

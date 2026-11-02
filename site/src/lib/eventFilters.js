@@ -37,6 +37,10 @@ Object.assign(SLUG_TO_CATEGORY, {
 
 const MONTH_RE = /^\d{4}-\d{2}$/;
 
+// Opening view. 'Canada' lists Canada first and keeps other countries under Worth the trip.
+// 'all' lists every country by month and does not render Worth the trip.
+export const DEFAULT_COUNTRY = 'Canada';
+
 export function blankFilters() {
   return {
     country: '',
@@ -47,8 +51,14 @@ export function blankFilters() {
     freeOnly: false,
     past: false,
     month: '',
-    includeIntl: false,
   };
+}
+
+// An empty country means the opening view. 'Canada' in the URL is that view when Canada is the default.
+export function selectedCountry(filters = {}) {
+  const raw = filters.country || '';
+  if (!raw || raw === DEFAULT_COUNTRY) return DEFAULT_COUNTRY;
+  return raw;
 }
 
 export function slugForCategory(cat) {
@@ -101,9 +111,8 @@ export function eventMatches(el, filters = {}) {
 export function listHome(el, filters = {}) {
   const intl = !!(el && el.country && el.country !== 'Canada');
   if (!intl) return 'main';
-  if (filters.country === 'all') return 'main';
-  if (filters.country && filters.country !== 'Canada') return 'main';
-  if (filters.includeIntl && !filters.region) return 'main';
+  const country = selectedCountry(filters);
+  if (country === 'all' || country !== 'Canada') return 'main';
   return 'abroad';
 }
 
@@ -118,10 +127,10 @@ export function filtersForList(filters = {}, list) {
     month: filters.month || '',
     country: '',
   };
+  const country = selectedCountry(filters);
   if (list === 'abroad') return { ...base, region: '', country: '' };
-  if (filters.country === 'all') return { ...base, country: '' };
-  if (filters.country && filters.country !== 'Canada') return { ...base, country: filters.country };
-  if (filters.includeIntl && !filters.region) return { ...base, country: '' };
+  if (country === 'all') return { ...base, country: '' };
+  if (country !== 'Canada') return { ...base, country };
   return { ...base, country: 'Canada' };
 }
 
@@ -160,8 +169,11 @@ export function filtersFromSearch(search) {
   const raw = String(search || '');
   const params = new URLSearchParams(raw.startsWith('?') ? raw.slice(1) : raw);
   const month = params.get('month') || '';
+  let country = params.get('country') || '';
+  if (params.get('intl') === '1' && !country) country = 'all';
+  if (country === DEFAULT_COUNTRY) country = '';
   return {
-    country: params.get('country') || '',
+    country,
     region: params.get('prov') || params.get('region') || '',
     cat: categoryFromTypeParam(params.get('type') || ''),
     feat: params.get('feature') || '',
@@ -169,7 +181,6 @@ export function filtersFromSearch(search) {
     freeOnly: params.get('free') === '1',
     past: params.get('past') === '1',
     month: MONTH_RE.test(month) ? month : '',
-    includeIntl: params.get('intl') === '1',
   };
 }
 
@@ -186,7 +197,7 @@ export function countryLabel(code) {
 
 export function searchFromFilters(filters = {}) {
   const q = new URLSearchParams();
-  if (filters.country && filters.country !== 'Canada') q.set('country', filters.country);
+  if (filters.country && filters.country !== DEFAULT_COUNTRY) q.set('country', filters.country);
   if (filters.region) q.set('prov', filters.region);
   if (filters.cat) q.set('type', slugForCategory(filters.cat));
   if (filters.month && MONTH_RE.test(filters.month)) q.set('month', filters.month);
@@ -194,7 +205,6 @@ export function searchFromFilters(filters = {}) {
   if (filters.tags && filters.tags.length) q.set('tags', filters.tags.join(','));
   if (filters.freeOnly) q.set('free', '1');
   if (filters.past) q.set('past', '1');
-  if (filters.includeIntl) q.set('intl', '1');
   const s = q.toString();
   return s ? `?${s}` : '';
 }
@@ -205,8 +215,9 @@ export function activeChips(filters = {}, labels = {}) {
   const monthLabel = labels.month || {};
   const featLabel = labels.feat || {};
   const tagLabel = labels.tags || {};
-  if (filters.country && filters.country !== 'Canada') {
-    chips.push({ key: 'country', value: filters.country, label: countryLabel(filters.country) });
+  const chosen = selectedCountry(filters);
+  if (chosen !== DEFAULT_COUNTRY) {
+    chips.push({ key: 'country', value: chosen, label: countryLabel(chosen) });
   }
   if (filters.region) {
     chips.push({ key: 'region', value: filters.region, label: regionLabel[filters.region] || filters.region });
@@ -223,20 +234,17 @@ export function activeChips(filters = {}, labels = {}) {
   }
   if (filters.freeOnly) chips.push({ key: 'free', value: '1', label: 'Free only' });
   if (filters.past) chips.push({ key: 'past', value: '1', label: 'Past events' });
-  if (filters.includeIntl) chips.push({ key: 'intl', value: '1', label: 'Outside Canada included' });
   return chips;
 }
 
-// Province is a place in Canada. All countries, or one country outside Canada, hides it.
+// Province is a place in Canada. Any other country choice hides it.
 export function showProvince(filters = {}) {
-  if (filters.country === 'all') return false;
-  if (filters.country && filters.country !== 'Canada') return false;
-  return true;
+  return selectedCountry(filters) === 'Canada';
 }
 
-// The outside-Canada checkbox repeats a country choice that is not Canada.
-export function showIntlToggle(filters = {}) {
-  return showProvince(filters) && !filters.region;
+// Worth the trip is the Canada-first view. All countries, or one other country, lists by month instead.
+export function showTripSection(filters = {}) {
+  return selectedCountry(filters) === 'Canada';
 }
 
 // The empty state has its own clear button. Hide the bar link when nothing matched.
