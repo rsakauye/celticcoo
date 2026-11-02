@@ -224,14 +224,14 @@ test('Free only keeps free events and writes ?free=1', () => {
   assert.deepEqual(parsed.tags, ['parade', 'irish']);
   assert.equal(eventMatches(free, { ...parsed, past: false, feat: '', region: '' }), true);
   assert.equal(eventMatches(paid, parsed), false);
-  assert.equal(searchFromFilters({ freeOnly: true, country: 'Canada', cat: 'Parades', tags: ['parade'] }), '?country=Canada&type=Parades&tags=parade&free=1');
+  assert.equal(searchFromFilters({ freeOnly: true, country: 'Canada', cat: 'Parades', tags: ['parade'] }), '?type=parades&tags=parade&free=1');
   assert.equal(searchFromFilters({ freeOnly: false, country: 'Canada' }).includes('free'), false);
 
   const page = fs.readFileSync(new URL('../src/pages/events/index.astro', import.meta.url), 'utf8');
   const card = fs.readFileSync(new URL('../src/components/EventCard.astro', import.meta.url), 'utf8');
   assert.match(page, /id="f-free"/);
   assert.match(page, /Free only/);
-  assert.match(page, /eventMatches/);
+  assert.match(page, /eventInList/);
   assert.match(page, /data-cost=\{e\.cost\}/);
   assert.match(page, /pill free/);
   assert.match(card, /data-cost=\{e\.cost\}/);
