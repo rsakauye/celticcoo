@@ -5,7 +5,7 @@ import EventCard from '../../components/EventCard.astro';
 import HidePast from '../../components/HidePast.astro';
 import { events, tba, TODAY, regionName, CATEGORY_EMOJI, FEATURES, TAG_LABEL } from '../../lib/data.js';
 import { bookableFromData } from '../../lib/booking.js';
-import { countryLabel, DEFAULT_COUNTRY, resultLabel } from '../../lib/eventFilters.js';
+import { countryLabel, DEFAULT_COUNTRY, introLine, resultLabel } from '../../lib/eventFilters.js';
 import { u } from '../../lib/site.js';
 const bookableTba = new Map(bookableFromData(events, tba, TODAY).filter((e) => e.tba).map((e) => [e.sourceId, e.id]));
 const PROVINCE_ORDER = ['BC', 'AB', 'SK', 'MB', 'ON', 'QC', 'NB', 'PE', 'NS', 'NL', 'YT', 'NT', 'NU'];
@@ -36,7 +36,7 @@ const chipLabels = {
 ---
 <Base title="Celtic events calendar 2026–27" description="Confirmed Highland Games, pipe bands, ceilidhs, concerts, parades and Celtic festivals. Canadian events first, with events outside Canada listed on their own. Filter by province, type, or month.">
   <h1>Celtic &amp; Highland events, 2026–27</h1>
-  <p>Canadian events first. Outside Canada is under Worth the trip.</p>
+  <p id="f-intro">{introLine({})}</p>
 
   <p class="card" style="background:#fff4e8;border-color:#f1cfae">🏴󠁧󠁢󠁳󠁣󠁴󠁿 <b>St Andrew's Day is Monday, November 30.</b> See <a href={u('st-andrews-day/')}>St Andrew's balls and ceilidhs in Calgary and across Canada</a>, or plan ahead for <a href={u('burns-night/')}>Burns Night</a>.</p>
   <form class="filters card" id="filters" aria-label="Filter events" onsubmit="return false">
@@ -160,7 +160,7 @@ const chipLabels = {
   <HidePast />
   <script>
     import {
-      activeChips, blankFilters, DEFAULT_COUNTRY, emptyMessage, eventInList, filtersFromSearch, listHome, resultLabel, searchFromFilters, selectedCountry, showClearLink, showProvince, showTripSection,
+      activeChips, blankFilters, DEFAULT_COUNTRY, emptyMessage, eventInList, filtersFromSearch, introLine, listHome, resultLabel, searchFromFilters, selectedCountry, showClearLink, showProvince, showTripSection,
     } from '../../lib/eventFilters.js';
     const $ = (id) => document.getElementById(id);
     const country = $('f-country');
@@ -332,6 +332,7 @@ const chipLabels = {
       });
       $('tba').hidden = tbaShown === 0;
       $('f-count').textContent = resultLabel(n);
+      $('f-intro').textContent = introLine(filters);
       const empty = $('f-empty');
       const copy = emptyMessage(n, abroadShown);
       empty.hidden = !copy.show;

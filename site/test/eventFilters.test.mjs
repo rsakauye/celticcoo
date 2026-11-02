@@ -10,6 +10,7 @@ import {
   countryLabel,
   DEFAULT_COUNTRY,
   emptyMessage,
+  introLine,
   eventInList,
   showClearLink,
   showProvince,
@@ -144,6 +145,15 @@ test('the opening country is one constant, and an old intl link means all countr
   assert.equal(showProvince({ region: 'AB' }), true);
   assert.equal(showProvince(blankFilters()), DEFAULT_COUNTRY === 'Canada');
   assert.equal(showTripSection(blankFilters()), DEFAULT_COUNTRY === 'Canada');
+  assert.equal(introLine({ country: 'UK' }), 'Celtic events by month.');
+  assert.equal(introLine({ country: 'USA' }), 'Celtic events by month.');
+  assert.equal(introLine({ country: 'all' }), 'Celtic events by month.');
+  assert.equal(
+    introLine(blankFilters()),
+    DEFAULT_COUNTRY === 'Canada'
+      ? 'Canadian events first. Outside Canada is under Worth the trip.'
+      : 'Celtic events by month.',
+  );
   const fromIntl = filtersFromSearch('?intl=1');
   assert.equal(selectedCountry(fromIntl), 'all');
   assert.equal(searchFromFilters(fromIntl), DEFAULT_COUNTRY === 'all' ? '' : '?country=all');
@@ -241,7 +251,11 @@ test('the events page offers province, type, month, and a reset', () => {
   assert.match(page, /id="worth-the-trip"/);
   assert.match(page, /How listings work/);
   assert.match(page, /All provinces &amp; territories/);
-  assert.match(page, /Canadian events first\. Outside Canada is under Worth the trip\./);
+  assert.match(page, /id="f-intro"/);
+  assert.match(page, /introLine/);
+  const filtersSrc = readFileSync(new URL('../src/lib/eventFilters.js', import.meta.url), 'utf8');
+  assert.match(filtersSrc, /Canadian events first\. Outside Canada is under Worth the trip\./);
+  assert.match(filtersSrc, /Celtic events by month\./);
   assert.match(page, /DEFAULT_COUNTRY/);
   assert.match(page, /showClearLink/);
   assert.doesNotMatch(page, /Include events outside Canada/);

@@ -248,6 +248,11 @@ export function showTripSection(filters = {}) {
   return selectedCountry(filters) === 'Canada';
 }
 
+export function introLine(filters = {}) {
+  if (showTripSection(filters)) return 'Canadian events first. Outside Canada is under Worth the trip.';
+  return 'Celtic events by month.';
+}
+
 // The empty state has its own clear button. Hide the bar link when nothing matched.
 export function showClearLink(resultCount, activeCount) {
   return resultCount > 0 && activeCount > 0;
