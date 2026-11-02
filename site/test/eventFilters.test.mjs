@@ -9,6 +9,9 @@ import {
   categoryFromTypeParam,
   emptyMessage,
   eventInList,
+  showClearLink,
+  showIntlToggle,
+  visibleTags,
   eventMatches,
   filtersForList,
   filtersFromSearch,
@@ -117,9 +120,42 @@ test('active chips and the empty state use plain labels', () => {
   assert.deepEqual(chips.map((c) => c.label), ['Alberta', 'Ceilidhs', 'January 2027', 'Ceilidh', 'Free only', 'Outside Canada included']);
   assert.equal(resultLabel(1), '1 event');
   assert.equal(resultLabel(23), '23 events');
-  assert.equal(emptyMessage(0, 0), 'No events match those filters. Try another province, type, or month.');
-  assert.match(emptyMessage(0, 2), /Worth the trip/);
-  assert.equal(emptyMessage(4, 2), '');
+  const none = emptyMessage(0, 0);
+  assert.equal(none.show, true);
+  assert.equal(none.link, '');
+  assert.match(none.lead, /No events match those filters/);
+  const trip = emptyMessage(0, 2);
+  assert.equal(trip.link, 'Worth the trip');
+  assert.match(trip.lead, /or see /);
+  assert.equal(emptyMessage(4, 2).show, false);
+  assert.equal(showClearLink(0, 2), false);
+  assert.equal(showClearLink(3, 2), true);
+  assert.equal(showClearLink(3, 0), false);
+});
+
+test('a province hides the outside-Canada control', () => {
+  assert.equal(showIntlToggle({ region: '' }), true);
+  assert.equal(showIntlToggle({ region: 'AB', includeIntl: true }), false);
+  assert.equal(showIntlToggle({}), true);
+});
+
+test('a tag that repeats the type chip is left off the event page', () => {
+  const labels = { 'highland-games': 'Highland Games', 'pipe-band': 'Pipe bands', 'family-friendly': 'Family-friendly' };
+  assert.deepEqual(visibleTags({
+    category: 'Highland Games',
+    type: 'Highland Games',
+    tags: ['highland-games'],
+  }, labels), []);
+  assert.deepEqual(visibleTags({
+    category: 'Highland Games',
+    type: 'Highland Games',
+    tags: ['highland-games', 'pipe-band', 'family-friendly'],
+  }, labels), ['pipe-band', 'family-friendly']);
+  assert.deepEqual(visibleTags({
+    category: 'Pipes & drums',
+    type: 'Pipe band major',
+    tags: ['pipe-band'],
+  }, labels), ['pipe-band']);
 });
 
 test('Canadian bands competing is only shown when the row already says so', () => {
@@ -145,8 +181,17 @@ test('the events page offers province, type, month, and a reset', () => {
   assert.match(page, /id="f-free"/);
   assert.match(page, /Free only/);
   assert.match(page, /Clear all/);
-  assert.match(page, /Worth the trip: international events/);
-  assert.match(page, /eventInList/);
-  assert.match(page, /aria-live="polite"/);
-  assert.match(page, /f-open/);
+  assert.match(page, /id="worth-the-trip"/);
+  assert.match(page, /How listings work/);
+  assert.match(page, /All provinces &amp; territories/);
+  assert.match(page, /Canadian events first\. Outside Canada is under Worth the trip\./);
+  assert.match(page, /showIntlToggle/);
+  assert.match(page, /showClearLink/);
+  assert.match(page, /#worth-the-trip/);
+  assert.doesNotMatch(page, /Clear the province filter/);
+  assert.doesNotMatch(page, /CATEGORY_EMOJI\[c\]/);
+  const detail = readFileSync(new URL('../src/pages/events/[id].astro', import.meta.url), 'utf8');
+  assert.match(detail, /visibleTags/);
+  const card = readFileSync(new URL('../src/components/EventCard.astro', import.meta.url), 'utf8');
+  assert.match(card, /class="pill green">\{canadaLink\}/);
 });

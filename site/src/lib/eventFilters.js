@@ -204,12 +204,44 @@ export function activeChips(filters = {}, labels = {}) {
   return chips;
 }
 
+// A province is a place in Canada, so the outside-Canada control is not offered.
+export function showIntlToggle(filters = {}) {
+  return !filters.region;
+}
+
+// The empty state has its own clear button. Hide the bar link when nothing matched.
+export function showClearLink(resultCount, activeCount) {
+  return resultCount > 0 && activeCount > 0;
+}
+
+// Drop a tag whose label repeats the type chip already on the event page.
+export function visibleTags(event, tagLabels = {}) {
+  const tags = Array.isArray(event?.tags) ? event.tags : [];
+  const names = [event?.category, event?.cat, event?.type]
+    .filter((value) => value != null && String(value).trim() !== '')
+    .map((value) => String(value).trim().toLowerCase());
+  return tags.filter((tag) => {
+    const label = String(tagLabels[tag] || tag).trim().toLowerCase();
+    return !names.includes(label);
+  });
+}
+
 export function emptyMessage(mainCount, abroadCount) {
-  if (mainCount > 0) return '';
+  if (mainCount > 0) return { show: false, lead: '', link: '', tail: '' };
   if (abroadCount > 0) {
-    return 'No Canadian events match those filters. Try another province or month, or see Worth the trip below.';
+    return {
+      show: true,
+      lead: 'No Canadian events match those filters. Try another province or month, or see ',
+      link: 'Worth the trip',
+      tail: '.',
+    };
   }
-  return 'No events match those filters. Try another province, type, or month.';
+  return {
+    show: true,
+    lead: 'No events match those filters. Try another province, type, or month.',
+    link: '',
+    tail: '',
+  };
 }
 
 export function resultLabel(count) {

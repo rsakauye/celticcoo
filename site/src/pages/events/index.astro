@@ -33,8 +33,7 @@ const chipLabels = {
 ---
 <Base title="Celtic events calendar 2026–27" description="Confirmed Highland Games, pipe bands, ceilidhs, concerts, parades and Celtic festivals. Canadian events first, with events outside Canada listed on their own. Filter by province, type, or month.">
   <h1>Celtic &amp; Highland events, 2026–27</h1>
-  <p>Canadian events are listed first. Events outside Canada sit under <b>Worth the trip</b>. Dates are confirmed on the organizer's or association's own website, or sent in by the host. A host-submitted date is marked on its listing. A <b>FREE</b> badge means the organizer says admission is free. Subscribe to the whole calendar in Google, Apple or Outlook: <a href={u('events.ics')}><b>events.ics</b></a> (or copy the link into "subscribe by URL"). Each event also has its own .ics file, plus Google Calendar and Outlook links.</p>
-  <p class="muted">"At the games" tags (clan tents, vendor village, heavy events) come from each organizer's own site, usually from their latest year. Check closer to the date.</p>
+  <p>Canadian events first. Outside Canada is under Worth the trip.</p>
 
   <p class="card" style="background:#fff4e8;border-color:#f1cfae">🏴󠁧󠁢󠁳󠁣󠁴󠁿 <b>St Andrew's Day is Monday, November 30.</b> See <a href={u('st-andrews-day/')}>St Andrew's balls and ceilidhs in Calgary and across Canada</a>, or plan ahead for <a href={u('burns-night/')}>Burns Night</a>.</p>
   <form class="filters card" id="filters" aria-label="Filter events" onsubmit="return false">
@@ -49,7 +48,7 @@ const chipLabels = {
         <div class="f-field">
           <label for="f-prov">Province</label>
           <select id="f-prov">
-            <option value="">All provinces</option>
+            <option value="">All provinces &amp; territories</option>
             {provinces.map((code) => <option value={code}>{regionName(code)}</option>)}
           </select>
         </div>
@@ -57,7 +56,7 @@ const chipLabels = {
           <label for="f-cat">Type</label>
           <select id="f-cat">
             <option value="">All types</option>
-            {cats.map((c) => <option value={c}>{CATEGORY_EMOJI[c]} {c}</option>)}
+            {cats.map((c) => <option value={c}>{c}</option>)}
           </select>
         </div>
         <div class="f-field">
@@ -68,8 +67,7 @@ const chipLabels = {
           </select>
         </div>
       </div>
-      <label class="f-check" for="f-intl"><input type="checkbox" id="f-intl" /> Include events outside Canada</label>
-      <p class="muted f-hint" id="f-intl-hint" hidden>Clear the province filter to include events outside Canada.</p>
+      <label class="f-check" id="f-intl-wrap" for="f-intl"><input type="checkbox" id="f-intl" /> Include events outside Canada</label>
       <details class="f-more" id="f-more">
         <summary>More filters</summary>
         <div class="f-more-body">
@@ -93,6 +91,11 @@ const chipLabels = {
       </details>
     </div>
   </form>
+  <details class="how">
+    <summary>How listings work</summary>
+    <p>Dates are confirmed on the organizer's or association's own website, or sent in by the host. A host-submitted date is marked on its listing. A <b>FREE</b> badge means the organizer says admission is free. Subscribe to the whole calendar in Google, Apple or Outlook: <a href={u('events.ics')}><b>events.ics</b></a> (or copy the link into "subscribe by URL"). Each event also has its own .ics file, plus Google Calendar and Outlook links.</p>
+    <p class="muted">"At the games" tags (clan tents, vendor village, heavy events) come from each organizer's own site, usually from their latest year. Check closer to the date.</p>
+  </details>
 
   {months.map((m) => {
     const inMonth = canada.filter((e) => e.start_date.startsWith(m));
@@ -109,7 +112,7 @@ const chipLabels = {
     <span>Know one we're missing? <a href={u('submit/')}>Tell us about it</a>.</span>
   </p>
 
-  <section id="abroad">
+  <section id="worth-the-trip">
     <h2>Worth the trip: international events</h2>
     <p class="muted" id="abroad-lead"><span id="abroad-count">{resultLabel(intl.length)}</span>. Outside Canada. When Canadian bands are competing, the card says so.</p>
     <div class="grid" id="abroad-grid">{intl.map((e) => <EventCard e={e} />)}</div>
@@ -137,7 +140,7 @@ const chipLabels = {
   <HidePast />
   <script>
     import {
-      activeChips, blankFilters, emptyMessage, eventInList, filtersFromSearch, listHome, resultLabel, searchFromFilters,
+      activeChips, blankFilters, emptyMessage, eventInList, filtersFromSearch, listHome, resultLabel, searchFromFilters, showClearLink, showIntlToggle,
     } from '../../lib/eventFilters.js';
     const $ = (id) => document.getElementById(id);
     const prov = $('f-prov');
@@ -162,15 +165,12 @@ const chipLabels = {
       feat.value = hasOption(feat, filters.feat) ? filters.feat : '';
       free.checked = !!filters.freeOnly;
       past.checked = !!filters.past;
-      intl.disabled = !!filters.region;
-      intl.checked = !!filters.includeIntl && !filters.region;
-      if (filters.region) intl.setAttribute('aria-describedby', 'f-intl-hint');
-      else intl.removeAttribute('aria-describedby');
+      intl.checked = !!filters.includeIntl && showIntlToggle(filters);
+      $('f-intl-wrap').hidden = !showIntlToggle(filters);
       tagButtons.forEach((b) => {
         b.setAttribute('aria-pressed', filters.tags.includes(b.dataset.tag) ? 'true' : 'false');
       });
       tagClear.hidden = filters.tags.length === 0;
-      $('f-intl-hint').hidden = !filters.region;
       if (filters.feat || filters.freeOnly || filters.past || filters.tags.length) $('f-more').open = true;
     }
 
@@ -208,7 +208,7 @@ const chipLabels = {
       }
     }
 
-    function renderChips() {
+    function renderChips(resultCount) {
       const host = $('f-chips');
       host.replaceChildren();
       for (const chip of activeChips(filters, LABELS)) {
@@ -228,9 +228,9 @@ const chipLabels = {
       }
       const any = host.childElementCount > 0;
       host.hidden = !any;
-      $('f-clear').hidden = !any;
       const n = host.childElementCount;
       openBtn.textContent = n ? `Filters (${n})` : 'Filters';
+      $('f-clear').hidden = !showClearLink(resultCount, n);
     }
 
     function removeChip(chip) {
@@ -282,7 +282,7 @@ const chipLabels = {
         el.hidden = !ok;
         if (ok) abroadShown += 1;
       });
-      $('abroad').hidden = abroadShown === 0;
+      $('worth-the-trip').hidden = abroadShown === 0;
       $('abroad-count').textContent = resultLabel(abroadShown);
       let tbaShown = 0;
       document.querySelectorAll('#tba-grid .tba-ev').forEach((el) => {
@@ -302,9 +302,20 @@ const chipLabels = {
       $('tba').hidden = tbaShown === 0;
       $('f-count').textContent = resultLabel(n);
       const empty = $('f-empty');
-      empty.hidden = n > 0;
-      $('f-empty-text').textContent = emptyMessage(n, abroadShown);
-      renderChips();
+      const copy = emptyMessage(n, abroadShown);
+      empty.hidden = !copy.show;
+      const text = $('f-empty-text');
+      text.replaceChildren();
+      if (copy.show) {
+        text.append(copy.lead);
+        if (copy.link) {
+          const jump = document.createElement('a');
+          jump.href = '#worth-the-trip';
+          jump.textContent = copy.link;
+          text.append(jump, copy.tail);
+        }
+      }
+      renderChips(n);
       const next = location.pathname + searchFromFilters(filters) + location.hash;
       if (`${location.pathname}${location.search}${location.hash}` !== next) {
         history.replaceState(null, '', next);
@@ -380,10 +391,10 @@ const chipLabels = {
   .f-field label, .tags-label { font-size: .85rem; color: var(--muted); font-weight: 700; }
   .f-field select { display: block; width: 100%; min-height: 44px; margin-top: .2rem; font-size: 1rem; }
   .f-check { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; font-size: 1rem; color: var(--fg); cursor: pointer; }
+  .f-check[hidden] { display: none !important; }
   .f-check input { width: 1.25rem; height: 1.25rem; margin: 0; accent-color: var(--green); }
-  .f-hint { flex-basis: 100%; margin: 0; }
   .f-more { width: 100%; margin-top: .2rem; }
-  .f-more summary { min-height: 44px; line-height: 44px; cursor: pointer; font-weight: 700; color: var(--green); }
+  .f-more summary, .how summary { min-height: 44px; line-height: 44px; cursor: pointer; font-weight: 700; color: var(--green); }
   .f-more-body { padding-top: .4rem; }
   .f-chips { display: flex; flex-wrap: wrap; gap: .4rem; width: 100%; }
   .f-chips[hidden] { display: none !important; }
@@ -412,9 +423,12 @@ const chipLabels = {
   #f-empty { display: flex; flex-wrap: wrap; gap: .6rem .8rem; align-items: center; }
   #f-empty[hidden] { display: none !important; }
   #f-empty .btn { min-height: 44px; }
-  #abroad[hidden], #tba[hidden], .month[hidden], .ev[hidden], .tba-ev[hidden] { display: none !important; }
-  .f-open, :global(.f-chip), .chip, .chip-clear, .f-check, .f-clear, #f-empty .btn, .f-more summary { touch-action: manipulation; }
-  :global(.f-chip:focus-visible), .chip:focus-visible, .chip-clear:focus-visible, .f-more summary:focus-visible { outline: 3px solid var(--ginger); outline-offset: 2px; }
+  #worth-the-trip { scroll-margin-top: 5rem; }
+  #worth-the-trip[hidden], #tba[hidden], .month[hidden], .ev[hidden], .tba-ev[hidden] { display: none !important; }
+  .how { margin: .2rem 0 1rem; }
+  .how p { margin: .35rem 0 0; }
+  .f-open, :global(.f-chip), .chip, .chip-clear, .f-check, .f-clear, #f-empty .btn, .f-more summary, .how summary { touch-action: manipulation; }
+  :global(.f-chip:focus-visible), .chip:focus-visible, .chip-clear:focus-visible, .f-more summary:focus-visible, .how summary:focus-visible { outline: 3px solid var(--ginger); outline-offset: 2px; }
   @media (max-width: 640px) {
     .filters { position: static; }
     .f-open { display: inline-flex; }
