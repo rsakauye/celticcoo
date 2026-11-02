@@ -5,132 +5,429 @@ import EventCard from '../../components/EventCard.astro';
 import HidePast from '../../components/HidePast.astro';
 import { events, tba, TODAY, regionName, CATEGORY_EMOJI, FEATURES, TAG_LABEL } from '../../lib/data.js';
 import { bookableFromData } from '../../lib/booking.js';
+import { resultLabel } from '../../lib/eventFilters.js';
 import { u } from '../../lib/site.js';
 const bookableTba = new Map(bookableFromData(events, tba, TODAY).filter((e) => e.tba).map((e) => [e.sourceId, e.id]));
-const countries = [...new Set(events.map((e) => e.country))].sort((a, b) => (a === 'Canada' ? -1 : b === 'Canada' ? 1 : a.localeCompare(b)));
-const regions = [...new Set(events.map((e) => `${e.country}|${e.region}`))].sort().map((k) => { const [c, r] = k.split('|'); return { c, r, label: regionName(r) }; });
-const cats = [...new Set(events.map((e) => e.category))].sort();
+const PROVINCE_ORDER = ['BC', 'AB', 'SK', 'MB', 'ON', 'QC', 'NB', 'PE', 'NS', 'NL', 'YT', 'NT', 'NU'];
+const provinces = [...new Set(events.filter((e) => e.isCanada).map((e) => e.region))]
+  .sort((a, b) => (PROVINCE_ORDER.indexOf(a) < 0 ? 99 : PROVINCE_ORDER.indexOf(a)) - (PROVINCE_ORDER.indexOf(b) < 0 ? 99 : PROVINCE_ORDER.indexOf(b)));
+const TYPE_ORDER = ['Highland Games', 'Pipes & drums', 'Highland dance', 'Ceilidhs', 'Gaelic language', 'Celtic music', 'Festivals', 'Burns Night', 'Heavy events', 'Parades', 'Cultural celebrations', 'Performances & demos', 'Military tattoo', 'Markets'];
+const cats = [...new Set(events.map((e) => e.category))].sort((a, b) => {
+  const ia = TYPE_ORDER.indexOf(a);
+  const ib = TYPE_ORDER.indexOf(b);
+  return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b);
+});
 const months = [...new Set(events.map((e) => e.start_date.slice(0, 7)))].sort();
-// Tags: picked from a fixed list, each backed by a quote from the organizer's page (tag_quotes).
-const tagCount = {}; events.forEach((e) => (e.tags || []).forEach((t) => { tagCount[t] = (tagCount[t] || 0) + 1; }));
+const tagCount = {};
+events.forEach((e) => (e.tags || []).forEach((t) => { tagCount[t] = (tagCount[t] || 0) + 1; }));
 const tagList = Object.keys(TAG_LABEL).filter((t) => tagCount[t]);
-const tagMap = Object.fromEntries(events.map((e) => [e.id, e.tags || []]));
 const monthLabel = (m) => new Date(m + '-15T12:00:00Z').toLocaleDateString('en-CA', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+const canada = events.filter((e) => e.isCanada);
+const intl = events.filter((e) => !e.isCanada);
+const chipLabels = {
+  region: Object.fromEntries(events.map((e) => [e.region, e.regionLabel])),
+  month: Object.fromEntries(months.map((m) => [m, monthLabel(m)])),
+  feat: Object.fromEntries(Object.entries(FEATURES).map(([k, row]) => [k, row[1]])),
+  tags: TAG_LABEL,
+};
 ---
-<Base title="Celtic events calendar 2026–27" description="Confirmed Highland Games, pipe bands, ceilidhs, concerts, parades and Celtic festivals in Canada and abroad. Filter by province, type, or free admission.">
+<Base title="Celtic events calendar 2026–27" description="Confirmed Highland Games, pipe bands, ceilidhs, concerts, parades and Celtic festivals. Canadian events first, with events outside Canada listed on their own. Filter by province, type, or month.">
   <h1>Celtic &amp; Highland events, 2026–27</h1>
+  <p>Canadian events are listed first. Events outside Canada sit under <b>Worth the trip</b>. Dates are confirmed on the organizer's or association's own website, or sent in by the host. A host-submitted date is marked on its listing. A <b>FREE</b> badge means the organizer says admission is free. Subscribe to the whole calendar in Google, Apple or Outlook: <a href={u('events.ics')}><b>events.ics</b></a> (or copy the link into "subscribe by URL"). Each event also has its own .ics file, plus Google Calendar and Outlook links.</p>
   <p class="muted">"At the games" tags (clan tents, vendor village, heavy events) come from each organizer's own site, usually from their latest year. Check closer to the date.</p>
-  <p>Dates are confirmed on the organizer's or association's own website, or sent in by the host. A host-submitted date is marked on its listing. A <b>FREE</b> badge means the organizer says admission is free. Subscribe to the whole calendar in Google, Apple or Outlook: <a href={u('events.ics')}><b>events.ics</b></a> (or copy the link into "subscribe by URL"). Each event also has its own .ics file, plus Google Calendar and Outlook links.</p>
 
   <p class="card" style="background:#fff4e8;border-color:#f1cfae">🏴󠁧󠁢󠁳󠁣󠁴󠁿 <b>St Andrew's Day is Monday, November 30.</b> See <a href={u('st-andrews-day/')}>St Andrew's balls and ceilidhs in Calgary and across Canada</a>, or plan ahead for <a href={u('burns-night/')}>Burns Night</a>.</p>
-  <form class="filters card" id="filters" onsubmit="return false">
-    <label>Country<br /><select id="f-country"><option value="">All countries</option>{countries.map((c) => <option value={c}>{c}</option>)}</select></label>
-    <label>Province / region<br /><select id="f-region"><option value="">All</option>{regions.map((r) => <option value={r.r} data-country={r.c}>{r.label}{r.c !== 'Canada' ? ` (${r.c})` : ''}</option>)}</select></label>
-    <label>Type<br /><select id="f-cat"><option value="">All types</option>{cats.map((c) => <option value={c}>{CATEGORY_EMOJI[c]} {c}</option>)}</select></label>
-    <label>At the games<br /><select id="f-feat"><option value="">Anything</option>{Object.entries(FEATURES).map(([k, [em, l]]) => <option value={k}>{em} {l}</option>)}</select></label>
-    <label style="align-self:end"><input type="checkbox" id="f-past" /> Show past events</label>
-    <label style="align-self:end"><input type="checkbox" id="f-free" /> Free only</label>
-    <div class="tags" role="group" aria-labelledby="f-tags-label">
-      <span id="f-tags-label" class="tags-label">Tags <span class="muted">(pick any; shows events with at least one)</span></span>
-      <div class="chips">{tagList.map((t) => <button type="button" class="chip" data-tag={t} aria-pressed="false"><span class="chip-mark" aria-hidden="true"></span>{TAG_LABEL[t]} <span class="chip-n">({tagCount[t]})</span></button>)}
-        <button type="button" class="chip-clear" id="f-tags-clear" hidden>Clear tags</button></div>
+  <form class="filters card" id="filters" aria-label="Filter events" onsubmit="return false">
+    <div class="f-top">
+      <button type="button" class="btn ghost f-open" id="f-open" aria-expanded="false" aria-controls="f-panel">Filters</button>
+      <p class="f-count" id="f-count" aria-live="polite" aria-atomic="true">{resultLabel(canada.length)}</p>
+      <a class="f-clear" id="f-clear" href={u('events/')} hidden>Clear all</a>
     </div>
-    <div class="muted" id="f-count" style="align-self:end" aria-live="polite"></div>
+    <div class="f-chips" id="f-chips" aria-label="Active filters" hidden></div>
+    <div class="f-panel" id="f-panel">
+      <div class="f-primary">
+        <div class="f-field">
+          <label for="f-prov">Province</label>
+          <select id="f-prov">
+            <option value="">All provinces</option>
+            {provinces.map((code) => <option value={code}>{regionName(code)}</option>)}
+          </select>
+        </div>
+        <div class="f-field">
+          <label for="f-cat">Type</label>
+          <select id="f-cat">
+            <option value="">All types</option>
+            {cats.map((c) => <option value={c}>{CATEGORY_EMOJI[c]} {c}</option>)}
+          </select>
+        </div>
+        <div class="f-field">
+          <label for="f-month">Month</label>
+          <select id="f-month">
+            <option value="">All months</option>
+            {months.map((m) => <option value={m}>{monthLabel(m)}</option>)}
+          </select>
+        </div>
+      </div>
+      <label class="f-check" for="f-intl"><input type="checkbox" id="f-intl" /> Include events outside Canada</label>
+      <p class="muted f-hint" id="f-intl-hint" hidden>Clear the province filter to include events outside Canada.</p>
+      <details class="f-more" id="f-more">
+        <summary>More filters</summary>
+        <div class="f-more-body">
+          <div class="f-field">
+            <label for="f-feat">At the games</label>
+            <select id="f-feat">
+              <option value="">Anything</option>
+              {Object.entries(FEATURES).map(([k, [em, l]]) => <option value={k}>{em} {l}</option>)}
+            </select>
+          </div>
+          <label class="f-check" for="f-free"><input type="checkbox" id="f-free" /> Free only</label>
+          <label class="f-check" for="f-past"><input type="checkbox" id="f-past" /> Show past events</label>
+          <div class="tags" id="f-tags" role="group" aria-labelledby="f-tags-label">
+            <span id="f-tags-label" class="tags-label">Tags <span class="muted">(pick any; shows events with at least one)</span></span>
+            <div class="chips">
+              {tagList.map((t) => <button type="button" class="chip" data-tag={t} data-label={TAG_LABEL[t]} aria-pressed="false"><span class="chip-mark" aria-hidden="true"></span>{TAG_LABEL[t]} <span class="chip-n">({tagCount[t]})</span></button>)}
+              <button type="button" class="chip-clear" id="f-tags-clear" hidden>Clear tags</button>
+            </div>
+          </div>
+        </div>
+      </details>
+    </div>
   </form>
 
-  {months.map((m) => (
-    <section class="month" data-month={m}>
-      <h2>{monthLabel(m)}</h2>
-      <div class="grid">{events.filter((e) => e.start_date.startsWith(m)).map((e) => <EventCard e={e} />)}</div>
-    </section>
-  ))}
-  <p id="f-empty" class="card" hidden>No events match those filters yet. Know one we're missing? <a href={u('submit/')}>Tell us about it</a>.</p>
+  {months.map((m) => {
+    const inMonth = canada.filter((e) => e.start_date.startsWith(m));
+    return (
+      <section class="month" data-month={m} hidden={inMonth.length === 0}>
+        <h2>{monthLabel(m)}</h2>
+        <div class="grid">{inMonth.map((e) => <EventCard e={e} />)}</div>
+      </section>
+    );
+  })}
+  <p id="f-empty" class="card" hidden>
+    <span id="f-empty-text">No events match those filters. Try another province, type, or month.</span>
+    <button type="button" class="btn ghost" id="f-empty-clear">Clear all filters</button>
+    <span>Know one we're missing? <a href={u('submit/')}>Tell us about it</a>.</span>
+  </p>
 
-  <h2 id="coming-2027">Coming in 2027, dates to be announced</h2>
-  <p class="muted">These Canadian events are expected in 2027, but we haven't confirmed the exact dates yet. They are <b>not</b> in the calendar feed, and they don't have Add to calendar links. Check the organizer's site before making plans.</p>
-  <div class="grid" id="tba-grid">
-    {tba.map((e) => (
-      <article class="card tba-ev" id={e.id} data-cost={e.cost} data-country={e.country} data-region={e.region} data-cat={e.category}>
-        <span class="pill tba">Date TBA</span>
-        {e.cost === 'free' && <span class="pill free" title={e.cost_quote || undefined}>FREE</span>}
-        <h3 style="margin:.3rem 0;font-size:1.08rem">{e.name}</h3>
-        <div class="muted">{e.city ? `${e.city}, ` : ''}{e.regionLabel}</div>
-        <span class="pill green" style="margin-top:.4rem">{CATEGORY_EMOJI[e.category]} {e.category}</span>
-        {e.features.length > 0 && <div>{e.features.map((f) => <a class="pill" style="background:#e3ebf5;color:var(--navy);text-decoration:none" href={e.features_source} rel="noopener" target="_blank">{FEATURES[f][0]} {FEATURES[f][1]}</a>)}</div>}
-        <p style="margin:.4rem 0 0;font-size:.92rem"><a href={e.source_url} rel="noopener" target="_blank">Organizer / source ↗</a></p>
-        <p style="margin:.35rem 0 0;font-size:.92rem"><BookLink eventId={bookableTba.get(e.id) || e.id} name={e.name} /></p>
-      </article>
-    ))}
-  </div>
-  <script type="application/json" id="ev-tags" set:html={JSON.stringify(tagMap)} />
+  <section id="abroad">
+    <h2>Worth the trip: international events</h2>
+    <p class="muted" id="abroad-lead"><span id="abroad-count">{resultLabel(intl.length)}</span>. Outside Canada. When Canadian bands are competing, the card says so.</p>
+    <div class="grid" id="abroad-grid">{intl.map((e) => <EventCard e={e} />)}</div>
+  </section>
+
+  <section id="tba">
+    <h2 id="coming-2027">Coming in 2027, dates to be announced</h2>
+    <p class="muted">These Canadian events are expected in 2027, but we haven't confirmed the exact dates yet. They are <b>not</b> in the calendar feed, and they don't have Add to calendar links. Check the organizer's site before making plans.</p>
+    <div class="grid" id="tba-grid">
+      {tba.map((e) => (
+        <article class="card tba-ev" id={e.id} data-cost={e.cost} data-country={e.country} data-region={e.region} data-cat={e.category} data-features={(e.features || []).join(' ')} data-tags="">
+          <span class="pill tba">Date TBA</span>
+          {e.cost === 'free' && <span class="pill free" title={e.cost_quote || undefined}>FREE</span>}
+          <h3 style="margin:.3rem 0;font-size:1.08rem">{e.name}</h3>
+          <div class="muted">{e.city ? `${e.city}, ` : ''}{e.regionLabel}</div>
+          <span class="pill green" style="margin-top:.4rem">{CATEGORY_EMOJI[e.category]} {e.category}</span>
+          {e.features.length > 0 && <div>{e.features.map((f) => <a class="pill" style="background:#e3ebf5;color:var(--navy);text-decoration:none" href={e.features_source} rel="noopener" target="_blank">{FEATURES[f][0]} {FEATURES[f][1]}</a>)}</div>}
+          <p style="margin:.4rem 0 0;font-size:.92rem"><a href={e.source_url} rel="noopener" target="_blank">Organizer / source ↗</a></p>
+          <p style="margin:.35rem 0 0;font-size:.92rem"><BookLink eventId={bookableTba.get(e.id) || e.id} name={e.name} /></p>
+        </article>
+      ))}
+    </div>
+  </section>
+  <script type="application/json" id="ev-labels" set:html={JSON.stringify(chipLabels)} />
   <HidePast />
   <script>
-    import { eventMatches, filtersFromSearch, searchFromFilters } from '../../lib/eventFilters.js';
+    import {
+      activeChips, blankFilters, emptyMessage, eventInList, filtersFromSearch, listHome, resultLabel, searchFromFilters,
+    } from '../../lib/eventFilters.js';
     const $ = (id) => document.getElementById(id);
-    const country = $('f-country'), region = $('f-region'), cat = $('f-cat'), feat = $('f-feat'), past = $('f-past'), free = $('f-free');
-    const initial = filtersFromSearch(location.search);
-    if (initial.country) country.value = initial.country;
-    if (initial.region) region.value = initial.region;
-    if (initial.cat) cat.value = initial.cat;
-    if (initial.feat) feat.value = initial.feat;
-    free.checked = initial.freeOnly;
-    const TAGS = JSON.parse($('ev-tags').textContent), chips = document.querySelectorAll('.chip'), clear = $('f-tags-clear');
-    document.querySelectorAll('.month .ev').forEach((el) => { el.dataset.tags = (TAGS[el.id] || []).join(' '); });
-    chips.forEach((b) => {
-      b.setAttribute('aria-pressed', initial.tags.includes(b.dataset.tag) ? 'true' : 'false');
-      b.addEventListener('click', () => { b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'); apply(); });
-    });
-    clear.addEventListener('click', () => { chips.forEach((b) => { b.setAttribute('aria-pressed', 'false'); }); apply(); chips[0] && chips[0].focus(); });
-    const selectedTags = () => [...chips].filter((b) => b.getAttribute('aria-pressed') === 'true').map((b) => b.dataset.tag);
+    const prov = $('f-prov');
+    const cat = $('f-cat');
+    const month = $('f-month');
+    const feat = $('f-feat');
+    const past = $('f-past');
+    const free = $('f-free');
+    const intl = $('f-intl');
+    const openBtn = $('f-open');
+    const panel = $('f-panel');
+    const LABELS = JSON.parse($('ev-labels').textContent);
+    const tagButtons = [...document.querySelectorAll('#f-tags .chip')];
+    const tagClear = $('f-tags-clear');
+    let filters = filtersFromSearch(location.search);
+
+    const hasOption = (select, value) => [...select.options].some((o) => o.value === value);
+    function syncControls() {
+      prov.value = hasOption(prov, filters.region) ? filters.region : '';
+      cat.value = hasOption(cat, filters.cat) ? filters.cat : '';
+      month.value = hasOption(month, filters.month) ? filters.month : '';
+      feat.value = hasOption(feat, filters.feat) ? filters.feat : '';
+      free.checked = !!filters.freeOnly;
+      past.checked = !!filters.past;
+      intl.disabled = !!filters.region;
+      intl.checked = !!filters.includeIntl && !filters.region;
+      if (filters.region) intl.setAttribute('aria-describedby', 'f-intl-hint');
+      else intl.removeAttribute('aria-describedby');
+      tagButtons.forEach((b) => {
+        b.setAttribute('aria-pressed', filters.tags.includes(b.dataset.tag) ? 'true' : 'false');
+      });
+      tagClear.hidden = filters.tags.length === 0;
+      $('f-intl-hint').hidden = !filters.region;
+      if (filters.feat || filters.freeOnly || filters.past || filters.tags.length) $('f-more').open = true;
+    }
+
+    function cardData(el) {
+      return {
+        country: el.dataset.country,
+        region: el.dataset.region,
+        cat: el.dataset.cat,
+        features: el.dataset.features || '',
+        past: el.dataset.past,
+        tags: el.dataset.tags || '',
+        cost: el.dataset.cost,
+        start: el.dataset.start || '',
+      };
+    }
+
+    function insertSorted(grid, el) {
+      const start = el.dataset.start || '';
+      const cards = [...grid.querySelectorAll(':scope > .ev')].filter((n) => n !== el);
+      const before = cards.find((n) => (n.dataset.start || '') > start || ((n.dataset.start || '') === start && n.id > el.id));
+      if (before) grid.insertBefore(el, before);
+      else grid.appendChild(el);
+    }
+
+    function placeIntl() {
+      const abroad = $('abroad-grid');
+      const nodes = [...document.querySelectorAll('article.ev')].filter((el) => el.dataset.country !== 'Canada');
+      nodes.sort((a, b) => (a.dataset.start || '').localeCompare(b.dataset.start || '') || a.id.localeCompare(b.id));
+      for (const el of nodes) {
+        const home = listHome(cardData(el), filters);
+        const dest = home === 'main'
+          ? document.querySelector(`.month[data-month="${el.dataset.month}"] .grid`)
+          : abroad;
+        if (dest) insertSorted(dest, el);
+      }
+    }
+
+    function renderChips() {
+      const host = $('f-chips');
+      host.replaceChildren();
+      for (const chip of activeChips(filters, LABELS)) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'f-chip';
+        b.dataset.key = chip.key;
+        b.dataset.value = chip.value;
+        b.setAttribute('aria-label', `Remove ${chip.label}`);
+        b.append(document.createTextNode(chip.label));
+        const mark = document.createElement('span');
+        mark.setAttribute('aria-hidden', 'true');
+        mark.textContent = '×';
+        b.append(mark);
+        b.addEventListener('click', () => removeChip(chip));
+        host.append(b);
+      }
+      const any = host.childElementCount > 0;
+      host.hidden = !any;
+      $('f-clear').hidden = !any;
+      const n = host.childElementCount;
+      openBtn.textContent = n ? `Filters (${n})` : 'Filters';
+    }
+
+    function removeChip(chip) {
+      if (chip.key === 'country') filters.country = '';
+      if (chip.key === 'region') filters.region = '';
+      if (chip.key === 'cat') filters.cat = '';
+      if (chip.key === 'month') filters.month = '';
+      if (chip.key === 'feat') filters.feat = '';
+      if (chip.key === 'tag') filters.tags = filters.tags.filter((t) => t !== chip.value);
+      if (chip.key === 'free') filters.freeOnly = false;
+      if (chip.key === 'past') filters.past = false;
+      if (chip.key === 'intl') filters.includeIntl = false;
+      apply();
+    }
+
+    function focusAfterClear() {
+      if (window.matchMedia('(max-width: 640px)').matches) openBtn.focus();
+      else prov.focus();
+    }
+
+    function clearAll(focus) {
+      filters = blankFilters();
+      apply();
+      if (focus) focusAfterClear();
+    }
+
+    function showIn(el, list) {
+      return eventInList(cardData(el), filters, list);
+    }
+
     function apply() {
-      [...region.options].forEach((o) => { o.hidden = !!(o.value && country.value && o.dataset.country !== country.value); });
-      if (region.selectedOptions[0] && region.selectedOptions[0].hidden) region.value = '';
-      const tg = selectedTags();
-      clear.hidden = tg.length === 0;
-      const filters = { country: country.value, region: region.value, cat: cat.value, feat: feat.value, past: past.checked, tags: tg, freeOnly: free.checked };
+      if (filters.region) filters.includeIntl = false;
+      syncControls();
+      placeIntl();
       let n = 0;
       document.querySelectorAll('.month').forEach((sec) => {
         let shown = 0;
         sec.querySelectorAll('.ev').forEach((el) => {
-          const ok = eventMatches({
-            country: el.dataset.country, region: el.dataset.region, cat: el.dataset.cat,
-            features: el.dataset.features, past: el.dataset.past, tags: el.dataset.tags, cost: el.dataset.cost,
-          }, filters);
-          el.hidden = !ok; if (ok) shown += 1;
+          const ok = showIn(el, 'main');
+          el.hidden = !ok;
+          if (ok) shown += 1;
         });
-        sec.hidden = shown === 0; n += shown;
+        sec.hidden = shown === 0;
+        n += shown;
       });
+      let abroadShown = 0;
+      document.querySelectorAll('#abroad-grid .ev').forEach((el) => {
+        const ok = showIn(el, 'abroad');
+        el.hidden = !ok;
+        if (ok) abroadShown += 1;
+      });
+      $('abroad').hidden = abroadShown === 0;
+      $('abroad-count').textContent = resultLabel(abroadShown);
       let tbaShown = 0;
       document.querySelectorAll('#tba-grid .tba-ev').forEach((el) => {
-        const ok = eventMatches(
-          { cost: el.dataset.cost, country: el.dataset.country, region: el.dataset.region, cat: el.dataset.cat, features: '', past: false, tags: '' },
-          { freeOnly: free.checked, past: true },
-        );
-        el.hidden = !ok; if (ok) tbaShown += 1;
+        const ok = eventInList({
+          country: el.dataset.country,
+          region: el.dataset.region,
+          cat: el.dataset.cat,
+          features: el.dataset.features || '',
+          past: false,
+          tags: el.dataset.tags || '',
+          cost: el.dataset.cost,
+          start: '',
+        }, filters, 'main');
+        el.hidden = !ok;
+        if (ok) tbaShown += 1;
       });
-      const tbaGrid = $('tba-grid');
-      if (tbaGrid) tbaGrid.hidden = tbaShown === 0 && free.checked;
-      $('f-count').textContent = n + (n === 1 ? ' event' : ' events');
-      $('f-empty').hidden = n > 0;
-      history.replaceState(null, '', location.pathname + searchFromFilters(filters) + location.hash);
+      $('tba').hidden = tbaShown === 0;
+      $('f-count').textContent = resultLabel(n);
+      const empty = $('f-empty');
+      empty.hidden = n > 0;
+      $('f-empty-text').textContent = emptyMessage(n, abroadShown);
+      renderChips();
+      const next = location.pathname + searchFromFilters(filters) + location.hash;
+      if (`${location.pathname}${location.search}${location.hash}` !== next) {
+        history.replaceState(null, '', next);
+      }
     }
-    [country, region, cat, feat, past, free].forEach((el) => el.addEventListener('change', apply));
+
+    tagButtons.forEach((b) => {
+      b.addEventListener('click', () => {
+        const on = b.getAttribute('aria-pressed') === 'true';
+        const tag = b.dataset.tag;
+        filters.tags = on ? filters.tags.filter((t) => t !== tag) : [...filters.tags, tag];
+        apply();
+      });
+    });
+    tagClear.addEventListener('click', () => {
+      filters.tags = [];
+      apply();
+      tagButtons[0] && tagButtons[0].focus();
+    });
+    prov.addEventListener('change', () => {
+      filters.region = prov.value;
+      if (prov.value) {
+        filters.includeIntl = false;
+        if (filters.country && filters.country !== 'Canada') filters.country = '';
+      }
+      apply();
+    });
+    cat.addEventListener('change', () => { filters.cat = cat.value; apply(); });
+    month.addEventListener('change', () => { filters.month = month.value; apply(); });
+    feat.addEventListener('change', () => { filters.feat = feat.value; apply(); });
+    free.addEventListener('change', () => { filters.freeOnly = free.checked; apply(); });
+    past.addEventListener('change', () => { filters.past = past.checked; apply(); });
+    intl.addEventListener('change', () => {
+      filters.includeIntl = intl.checked;
+      if (intl.checked) filters.country = '';
+      apply();
+    });
+    $('f-clear').addEventListener('click', (e) => { e.preventDefault(); clearAll(true); });
+    $('f-empty-clear').addEventListener('click', () => clearAll(true));
+    openBtn.addEventListener('click', () => {
+      const open = !panel.classList.contains('is-open');
+      panel.classList.toggle('is-open', open);
+      openBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) {
+        const first = panel.querySelector('select, input, button, summary');
+        if (first) first.focus();
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape' || !panel.classList.contains('is-open')) return;
+      if (!window.matchMedia('(max-width: 640px)').matches) return;
+      panel.classList.remove('is-open');
+      openBtn.setAttribute('aria-expanded', 'false');
+      openBtn.focus();
+    });
+    window.addEventListener('popstate', () => {
+      filters = filtersFromSearch(location.search);
+      apply();
+    });
     apply();
   </script>
 </Base>
 <style>
-  .filters { display:flex; flex-wrap:wrap; gap:.8rem 1.2rem; margin:1rem 0 .5rem; position:sticky; top:0; z-index:5; box-shadow:0 4px 12px rgba(60,30,10,.06); }
-  .filters label { font-size:.85rem; color:var(--muted); }
-  .filters select { min-width:170px; margin-top:.15rem; }
-  .tags { flex-basis:100%; }
-  .tags-label { font-size:.85rem; color:var(--muted); display:block; margin-bottom:.3rem; }
-  .chips { display:flex; flex-wrap:wrap; gap:.4rem; }
-  .chip, .chip-clear { font:500 .88rem system-ui,sans-serif; min-height:32px; padding:.25rem .7rem; border-radius:99px; border:1px solid var(--muted); background:var(--card); color:var(--fg); cursor:pointer; }
-  .chip-n { color:var(--muted); font-size:.8rem; }
-  .chip[aria-pressed="true"] { background:var(--green); border-color:var(--green); color:#fff; font-weight:700; text-decoration:underline; text-underline-offset:3px; }
-  .chip[aria-pressed="true"] .chip-n { color:#fff; }
-  .chip[aria-pressed="true"] .chip-mark::before { content:"✓ "; }
-  .chip-clear { border-style:dashed; }
-  @media (max-width:640px) { .filters { position:static; } }
-  .chip:focus-visible, .chip-clear:focus-visible { outline:3px solid var(--ginger); outline-offset:2px; }
+  .filters { display: flex; flex-wrap: wrap; gap: .35rem .8rem; margin: 1rem 0 .5rem; position: sticky; top: 0; z-index: 5; box-shadow: 0 4px 12px rgba(60, 30, 10, .06); }
+  .f-top { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .8rem; width: 100%; }
+  .f-count { margin: 0 0 0 auto; font-weight: 700; color: var(--green); min-height: 44px; display: inline-flex; align-items: center; }
+  .f-clear { min-height: 44px; display: inline-flex; align-items: center; font-weight: 700; }
+  .f-clear[hidden] { display: none !important; }
+  .f-open { display: none; min-height: 44px; align-items: center; }
+  .f-panel { width: 100%; }
+  .f-primary, .f-more-body { display: flex; flex-wrap: wrap; gap: .8rem 1.2rem; align-items: flex-end; }
+  .f-field { flex: 1 1 12rem; max-width: 22rem; }
+  .f-field label, .tags-label { font-size: .85rem; color: var(--muted); font-weight: 700; }
+  .f-field select { display: block; width: 100%; min-height: 44px; margin-top: .2rem; font-size: 1rem; }
+  .f-check { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; font-size: 1rem; color: var(--fg); cursor: pointer; }
+  .f-check input { width: 1.25rem; height: 1.25rem; margin: 0; accent-color: var(--green); }
+  .f-hint { flex-basis: 100%; margin: 0; }
+  .f-more { width: 100%; margin-top: .2rem; }
+  .f-more summary { min-height: 44px; line-height: 44px; cursor: pointer; font-weight: 700; color: var(--green); }
+  .f-more-body { padding-top: .4rem; }
+  .f-chips { display: flex; flex-wrap: wrap; gap: .4rem; width: 100%; }
+  .f-chips[hidden] { display: none !important; }
+  .chip, .chip-clear, :global(.f-chip) {
+    font: 600 .95rem system-ui, sans-serif;
+    min-height: 44px;
+    padding: .4rem .85rem;
+    border-radius: 99px;
+    border: 1px solid var(--muted);
+    background: var(--card);
+    color: var(--fg);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+  }
+  :global(.f-chip) { background: var(--green); border-color: var(--green); color: #fff; }
+  .chip-n { color: var(--muted); font-size: .8rem; }
+  .chip[aria-pressed="true"] { background: var(--green); border-color: var(--green); color: #fff; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+  .chip[aria-pressed="true"] .chip-n { color: #fff; }
+  .chip[aria-pressed="true"] .chip-mark::before { content: "✓ "; }
+  .chip-clear { border-style: dashed; }
+  .tags { flex-basis: 100%; }
+  .tags-label { display: block; margin-bottom: .3rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+  #f-empty { display: flex; flex-wrap: wrap; gap: .6rem .8rem; align-items: center; }
+  #f-empty[hidden] { display: none !important; }
+  #f-empty .btn { min-height: 44px; }
+  #abroad[hidden], #tba[hidden], .month[hidden], .ev[hidden], .tba-ev[hidden] { display: none !important; }
+  .f-open, :global(.f-chip), .chip, .chip-clear, .f-check, .f-clear, #f-empty .btn, .f-more summary { touch-action: manipulation; }
+  :global(.f-chip:focus-visible), .chip:focus-visible, .chip-clear:focus-visible, .f-more summary:focus-visible { outline: 3px solid var(--ginger); outline-offset: 2px; }
+  @media (max-width: 640px) {
+    .filters { position: static; }
+    .f-open { display: inline-flex; }
+    .f-panel { display: none; }
+    .f-panel.is-open { display: block; }
+    .f-field { flex-basis: 100%; max-width: none; }
+    .f-top { order: 0; }
+    .f-chips { order: 1; }
+    .f-panel { order: 2; }
+  }
+  @media (min-width: 641px) {
+    .f-panel { order: 1; }
+    .f-chips { order: 2; }
+    .f-top { order: 3; }
+  }
 </style>
