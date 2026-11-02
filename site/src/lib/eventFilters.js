@@ -96,10 +96,12 @@ export function eventMatches(el, filters = {}) {
 }
 
 // Where a card lives. International events stay in the trip section unless
-// the reader includes them, or an older country link asks for that country.
+// the reader includes them, asks for every country, or an older country link
+// asks for that country.
 export function listHome(el, filters = {}) {
   const intl = !!(el && el.country && el.country !== 'Canada');
   if (!intl) return 'main';
+  if (filters.country === 'all') return 'main';
   if (filters.country && filters.country !== 'Canada') return 'main';
   if (filters.includeIntl && !filters.region) return 'main';
   return 'abroad';
@@ -117,6 +119,7 @@ export function filtersForList(filters = {}, list) {
     country: '',
   };
   if (list === 'abroad') return { ...base, region: '', country: '' };
+  if (filters.country === 'all') return { ...base, country: '' };
   if (filters.country && filters.country !== 'Canada') return { ...base, country: filters.country };
   if (filters.includeIntl && !filters.region) return { ...base, country: '' };
   return { ...base, country: 'Canada' };
@@ -170,12 +173,23 @@ export function filtersFromSearch(search) {
   };
 }
 
+const COUNTRY_NAMES = {
+  Canada: 'Canada',
+  UK: 'United Kingdom',
+  USA: 'United States',
+};
+
+export function countryLabel(code) {
+  if (code === 'all') return 'All countries';
+  return COUNTRY_NAMES[code] || String(code || '');
+}
+
 export function searchFromFilters(filters = {}) {
   const q = new URLSearchParams();
+  if (filters.country && filters.country !== 'Canada') q.set('country', filters.country);
   if (filters.region) q.set('prov', filters.region);
   if (filters.cat) q.set('type', slugForCategory(filters.cat));
   if (filters.month && MONTH_RE.test(filters.month)) q.set('month', filters.month);
-  if (filters.country && filters.country !== 'Canada') q.set('country', filters.country);
   if (filters.feat) q.set('feature', filters.feat);
   if (filters.tags && filters.tags.length) q.set('tags', filters.tags.join(','));
   if (filters.freeOnly) q.set('free', '1');
@@ -192,7 +206,7 @@ export function activeChips(filters = {}, labels = {}) {
   const featLabel = labels.feat || {};
   const tagLabel = labels.tags || {};
   if (filters.country && filters.country !== 'Canada') {
-    chips.push({ key: 'country', value: filters.country, label: filters.country });
+    chips.push({ key: 'country', value: filters.country, label: countryLabel(filters.country) });
   }
   if (filters.region) {
     chips.push({ key: 'region', value: filters.region, label: regionLabel[filters.region] || filters.region });
@@ -213,9 +227,16 @@ export function activeChips(filters = {}, labels = {}) {
   return chips;
 }
 
-// A province is a place in Canada, so the outside-Canada control is not offered.
+// Province is a place in Canada. All countries, or one country outside Canada, hides it.
+export function showProvince(filters = {}) {
+  if (filters.country === 'all') return false;
+  if (filters.country && filters.country !== 'Canada') return false;
+  return true;
+}
+
+// The outside-Canada checkbox repeats a country choice that is not Canada.
 export function showIntlToggle(filters = {}) {
-  return !filters.region;
+  return showProvince(filters) && !filters.region;
 }
 
 // The empty state has its own clear button. Hide the bar link when nothing matched.

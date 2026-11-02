@@ -5,7 +5,7 @@ import EventCard from '../../components/EventCard.astro';
 import HidePast from '../../components/HidePast.astro';
 import { events, tba, TODAY, regionName, CATEGORY_EMOJI, FEATURES, TAG_LABEL } from '../../lib/data.js';
 import { bookableFromData } from '../../lib/booking.js';
-import { resultLabel } from '../../lib/eventFilters.js';
+import { countryLabel, resultLabel } from '../../lib/eventFilters.js';
 import { u } from '../../lib/site.js';
 const bookableTba = new Map(bookableFromData(events, tba, TODAY).filter((e) => e.tba).map((e) => [e.sourceId, e.id]));
 const PROVINCE_ORDER = ['BC', 'AB', 'SK', 'MB', 'ON', 'QC', 'NB', 'PE', 'NS', 'NL', 'YT', 'NT', 'NU'];
@@ -24,6 +24,7 @@ const tagList = Object.keys(TAG_LABEL).filter((t) => tagCount[t]);
 const monthLabel = (m) => new Date(m + '-15T12:00:00Z').toLocaleDateString('en-CA', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 const canada = events.filter((e) => e.isCanada);
 const intl = events.filter((e) => !e.isCanada);
+const tripCountries = [...new Set(intl.map((e) => e.country))].sort((a, b) => countryLabel(a).localeCompare(countryLabel(b)));
 const chipLabels = {
   region: Object.fromEntries(events.map((e) => [e.region, e.regionLabel])),
   month: Object.fromEntries(months.map((m) => [m, monthLabel(m)])),
@@ -46,6 +47,14 @@ const chipLabels = {
     <div class="f-panel" id="f-panel">
       <div class="f-primary">
         <div class="f-field">
+          <label for="f-country">Country</label>
+          <select id="f-country">
+            <option value="">Canada</option>
+            <option value="all">All countries</option>
+            {tripCountries.map((code) => <option value={code}>{countryLabel(code)}</option>)}
+          </select>
+        </div>
+        <div class="f-field" id="f-prov-wrap">
           <label for="f-prov">Province</label>
           <select id="f-prov">
             <option value="">All provinces &amp; territories</option>
@@ -114,8 +123,16 @@ const chipLabels = {
 
   <section id="worth-the-trip">
     <h2>Worth the trip: international events</h2>
-    <p class="muted" id="abroad-lead"><span id="abroad-count">{resultLabel(intl.length)}</span>. Outside Canada. When Canadian bands are competing, the card says so.</p>
-    <div class="grid" id="abroad-grid">{intl.map((e) => <EventCard e={e} />)}</div>
+    <p class="muted">Outside Canada. When Canadian bands are competing, the card says so.</p>
+    {tripCountries.map((code) => {
+      const rows = intl.filter((e) => e.country === code);
+      return (
+        <section class="trip-country" data-country={code}>
+          <h3 class="trip-h">{countryLabel(code)} <span class="trip-n" data-trip-count>{resultLabel(rows.length)}</span></h3>
+          <div class="grid trip-grid">{rows.map((e) => <EventCard e={e} />)}</div>
+        </section>
+      );
+    })}
   </section>
 
   <section id="tba">
@@ -140,9 +157,10 @@ const chipLabels = {
   <HidePast />
   <script>
     import {
-      activeChips, blankFilters, emptyMessage, eventInList, filtersFromSearch, listHome, resultLabel, searchFromFilters, showClearLink, showIntlToggle,
+      activeChips, blankFilters, emptyMessage, eventInList, filtersFromSearch, listHome, resultLabel, searchFromFilters, showClearLink, showIntlToggle, showProvince,
     } from '../../lib/eventFilters.js';
     const $ = (id) => document.getElementById(id);
+    const country = $('f-country');
     const prov = $('f-prov');
     const cat = $('f-cat');
     const month = $('f-month');
@@ -159,7 +177,10 @@ const chipLabels = {
 
     const hasOption = (select, value) => [...select.options].some((o) => o.value === value);
     function syncControls() {
+      const countryValue = filters.country === 'Canada' ? '' : filters.country;
+      country.value = hasOption(country, countryValue) ? countryValue : '';
       prov.value = hasOption(prov, filters.region) ? filters.region : '';
+      $('f-prov-wrap').hidden = !showProvince(filters);
       cat.value = hasOption(cat, filters.cat) ? filters.cat : '';
       month.value = hasOption(month, filters.month) ? filters.month : '';
       feat.value = hasOption(feat, filters.feat) ? filters.feat : '';
@@ -196,14 +217,13 @@ const chipLabels = {
     }
 
     function placeIntl() {
-      const abroad = $('abroad-grid');
       const nodes = [...document.querySelectorAll('article.ev')].filter((el) => el.dataset.country !== 'Canada');
       nodes.sort((a, b) => (a.dataset.start || '').localeCompare(b.dataset.start || '') || a.id.localeCompare(b.id));
       for (const el of nodes) {
         const home = listHome(cardData(el), filters);
         const dest = home === 'main'
           ? document.querySelector(`.month[data-month="${el.dataset.month}"] .grid`)
-          : abroad;
+          : document.querySelector(`.trip-country[data-country="${CSS.escape(el.dataset.country)}"] .trip-grid`);
         if (dest) insertSorted(dest, el);
       }
     }
@@ -262,6 +282,8 @@ const chipLabels = {
     }
 
     function apply() {
+      if (filters.country === 'all') filters.region = '';
+      if (!showProvince(filters)) filters.includeIntl = false;
       if (filters.region) filters.includeIntl = false;
       syncControls();
       placeIntl();
@@ -277,13 +299,19 @@ const chipLabels = {
         n += shown;
       });
       let abroadShown = 0;
-      document.querySelectorAll('#abroad-grid .ev').forEach((el) => {
-        const ok = showIn(el, 'abroad');
-        el.hidden = !ok;
-        if (ok) abroadShown += 1;
+      document.querySelectorAll('.trip-country').forEach((sec) => {
+        let shown = 0;
+        sec.querySelectorAll('.ev').forEach((el) => {
+          const ok = showIn(el, 'abroad');
+          el.hidden = !ok;
+          if (ok) shown += 1;
+        });
+        sec.hidden = shown === 0;
+        const count = sec.querySelector('[data-trip-count]');
+        if (count) count.textContent = resultLabel(shown);
+        abroadShown += shown;
       });
       $('worth-the-trip').hidden = abroadShown === 0;
-      $('abroad-count').textContent = resultLabel(abroadShown);
       let tbaShown = 0;
       document.querySelectorAll('#tba-grid .tba-ev').forEach((el) => {
         const ok = eventInList({
@@ -334,6 +362,14 @@ const chipLabels = {
       filters.tags = [];
       apply();
       tagButtons[0] && tagButtons[0].focus();
+    });
+    country.addEventListener('change', () => {
+      filters.country = country.value;
+      if (!showProvince(filters)) {
+        filters.region = '';
+        filters.includeIntl = false;
+      }
+      apply();
     });
     prov.addEventListener('change', () => {
       filters.region = prov.value;
@@ -391,7 +427,7 @@ const chipLabels = {
   .f-field label, .tags-label { font-size: .85rem; color: var(--muted); font-weight: 700; }
   .f-field select { display: block; width: 100%; min-height: 44px; margin-top: .2rem; font-size: 1rem; }
   .f-check { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; font-size: 1rem; color: var(--fg); cursor: pointer; }
-  .f-check[hidden] { display: none !important; }
+  .f-field[hidden], .f-check[hidden] { display: none !important; }
   .f-check input { width: 1.25rem; height: 1.25rem; margin: 0; accent-color: var(--green); }
   .f-more { width: 100%; margin-top: .2rem; }
   .f-more summary, .how summary { min-height: 44px; line-height: 44px; cursor: pointer; font-weight: 700; color: var(--green); }
@@ -424,7 +460,9 @@ const chipLabels = {
   #f-empty[hidden] { display: none !important; }
   #f-empty .btn { min-height: 44px; }
   #worth-the-trip { scroll-margin-top: 5rem; }
-  #worth-the-trip[hidden], #tba[hidden], .month[hidden], .ev[hidden], .tba-ev[hidden] { display: none !important; }
+  #worth-the-trip[hidden], .trip-country[hidden], #tba[hidden], .month[hidden], .ev[hidden], .tba-ev[hidden] { display: none !important; }
+  .trip-h { font-size: 1.15rem; margin: 1.15rem 0 .55rem; }
+  .trip-n { font-family: system-ui, sans-serif; font-weight: 600; font-size: .92rem; color: var(--muted); }
   .how { margin: .2rem 0 1rem; }
   .how p { margin: .35rem 0 0; }
   .f-open, :global(.f-chip), .chip, .chip-clear, .f-check, .f-clear, #f-empty .btn, .f-more summary, .how summary { touch-action: manipulation; }

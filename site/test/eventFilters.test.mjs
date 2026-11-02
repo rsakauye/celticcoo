@@ -7,10 +7,12 @@ import {
   blankFilters,
   canadianConnection,
   categoryFromTypeParam,
+  countryLabel,
   emptyMessage,
   eventInList,
   showClearLink,
   showIntlToggle,
+  showProvince,
   visibleTags,
   eventMatches,
   filtersForList,
@@ -137,6 +139,40 @@ test('a province hides the outside-Canada control', () => {
   assert.equal(showIntlToggle({ region: '' }), true);
   assert.equal(showIntlToggle({ region: 'AB', includeIntl: true }), false);
   assert.equal(showIntlToggle({}), true);
+  assert.equal(showProvince({ region: 'AB' }), true);
+  assert.equal(showProvince(blankFilters()), true);
+});
+
+test('a country outside Canada uses ?country= and hides the province select', () => {
+  const uk = filtersFromSearch('?country=UK');
+  assert.equal(uk.country, 'UK');
+  assert.equal(countryLabel('UK'), 'United Kingdom');
+  assert.equal(countryLabel('USA'), 'United States');
+  assert.equal(showProvince(uk), false);
+  assert.equal(showIntlToggle(uk), false);
+  assert.equal(listHome({ country: 'UK' }, uk), 'main');
+  assert.equal(eventInList({ country: 'UK', region: 'Scotland', cat: 'Highland Games', start: '2027-08-26' }, uk, 'main'), true);
+  assert.equal(eventInList({ country: 'Canada', region: 'AB', cat: 'Highland Games', start: '2027-06-26' }, uk, 'main'), false);
+  assert.equal(eventInList({ country: 'USA', region: 'Oregon', start: '2027-06-05' }, uk, 'abroad'), false);
+  assert.equal(searchFromFilters(uk), '?country=UK');
+  assert.equal(activeChips(uk).map((chip) => chip.label).join(','), 'United Kingdom');
+
+  const older = filtersFromSearch('?country=USA&region=Oregon');
+  assert.equal(older.country, 'USA');
+  assert.equal(older.region, 'Oregon');
+  assert.equal(showProvince(older), false);
+  assert.equal(eventInList({ country: 'USA', region: 'Oregon', start: '2027-06-05' }, older, 'main'), true);
+
+  const all = { ...blankFilters(), country: 'all' };
+  assert.equal(showProvince(all), false);
+  assert.equal(showIntlToggle(all), false);
+  assert.equal(listHome({ country: 'UK' }, all), 'main');
+  assert.equal(listHome({ country: 'Canada' }, all), 'main');
+  assert.equal(eventInList({ country: 'Canada', region: 'NS', start: '2027-07-04' }, all, 'main'), true);
+  assert.equal(eventInList({ country: 'USA', region: 'California', start: '2027-09-04' }, all, 'main'), true);
+  assert.equal(searchFromFilters(all), '?country=all');
+  assert.equal(filtersFromSearch('?country=Canada').country, 'Canada');
+  assert.equal(showProvince(filtersFromSearch('?country=Canada')), true);
 });
 
 test('a tag that repeats the type chip is left off the event page', () => {
@@ -181,7 +217,11 @@ test('Canadian bands competing is only shown when the row already says so', () =
 
 test('the events page offers province, type, month, and a reset', () => {
   const page = readFileSync(new URL('../src/pages/events/index.astro', import.meta.url), 'utf8');
+  assert.match(page, /id="f-country"/);
+  assert.match(page, /id="f-prov-wrap"/);
   assert.match(page, /id="f-prov"/);
+  assert.match(page, /showProvince/);
+  assert.match(page, /trip-country/);
   assert.match(page, /id="f-cat"/);
   assert.match(page, /id="f-month"/);
   assert.match(page, /id="f-intl"/);
