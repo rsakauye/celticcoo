@@ -125,6 +125,20 @@ test('automated sender signals are recognized and a gmail writer is not', () => 
   assert.equal(combined, 'list_unsubscribe,list_id,auto_submitted,precedence,sender');
   assert.equal(combined.includes('unsub@example.com'), false);
   assert.equal(combined.includes('noreply@example.com'), false);
+
+  const bangs = '!'.repeat(20000);
+  const started = Date.now();
+  const noisy = automatedReason({
+    from: GMAIL,
+    headers: headers({ from: `${bangs} Ada Morgan <${GMAIL}>` }),
+  });
+  const hidden = automatedReason({
+    from: 'bounce@example.net',
+    headers: headers({ from: `${bangs}<noreply@example.com>` }),
+  });
+  assert.ok(Date.now() - started < 1000);
+  assert.equal(noisy, '');
+  assert.equal(hidden, 'sender');
 });
 
 test('an acknowledgement skips mail that carries a list-unsubscribe header', async () => {

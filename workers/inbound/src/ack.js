@@ -24,9 +24,66 @@ function headerValue(headers, name) {
   return String(headers.get(name) || '').trim();
 }
 
+// Untrusted mail headers. Walk each character once so a long header stays cheap.
+const LOCAL_CHARS = new Set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.!#$%&'*+/=?^_`{|}~-");
+
+function isLabelChar(code) {
+  return (code >= 48 && code <= 57)
+    || (code >= 65 && code <= 90)
+    || (code >= 97 && code <= 122)
+    || code === 45;
+}
+
+function isAllLetters(value) {
+  for (let i = 0; i < value.length; i += 1) {
+    const code = value.charCodeAt(i);
+    if (code < 65 || (code > 90 && code < 97) || code > 122) return false;
+  }
+  return value.length > 0;
+}
+
+function domainEnd(text, start) {
+  const n = text.length;
+  let i = start;
+  if (i >= n || !isLabelChar(text.charCodeAt(i))) return -1;
+  let labels = 0;
+  while (i < n) {
+    const labelStart = i;
+    while (i < n && isLabelChar(text.charCodeAt(i))) i += 1;
+    if (i === labelStart) return -1;
+    labels += 1;
+    if (i < n && text.charCodeAt(i) === 46) {
+      const next = i + 1;
+      if (next < n && isLabelChar(text.charCodeAt(next))) {
+        i = next;
+        continue;
+      }
+      break;
+    }
+    break;
+  }
+  if (labels < 2) return -1;
+  const domain = text.slice(start, i);
+  const tld = domain.slice(domain.lastIndexOf('.') + 1);
+  if (tld.length < 2 || !isAllLetters(tld)) return -1;
+  return i;
+}
+
 function emailAddresses(value) {
-  const found = String(value || '').match(/[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9.-]+\.[a-z]{2,}/gi);
-  return found ? found.map((item) => item.toLowerCase()) : [];
+  const text = String(value || '');
+  const out = [];
+  let from = 0;
+  while (from < text.length) {
+    const at = text.indexOf('@', from);
+    if (at < 0) break;
+    let start = at - 1;
+    while (start >= 0 && LOCAL_CHARS.has(text[start])) start -= 1;
+    start += 1;
+    const end = start < at ? domainEnd(text, at + 1) : -1;
+    if (end > at + 1) out.push(text.slice(start, end).toLowerCase());
+    from = at + 1;
+  }
+  return out;
 }
 
 function localIsAutomated(address) {
