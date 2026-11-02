@@ -170,6 +170,13 @@ test('Canadian bands competing is only shown when the row already says so', () =
   assert.equal(canadianConnection({ country: 'Canada', notes: 'BCPA schedule', source_url: 'https://bcpipers.org/x' }), '');
   assert.equal(canadianConnection({ country: 'UK', notes: '', source_url: 'https://www.cowalgathering.com/' }), '');
   assert.equal(canadianConnection(verified.find((e) => e.name === 'World Pipe Band Championships')), 'Canadian bands competing');
+  const link = (source_url) => canadianConnection({ country: 'USA', notes: '', source_url });
+  assert.equal(link('https://bcpipers.org/x'), 'Canadian bands competing');
+  assert.equal(link('https://www.bcpipers.org/x'), 'Canadian bands competing');
+  assert.equal(link('https://evil.com/bcpipers.org'), '');
+  assert.equal(link('https://bcpipers.org.evil.com/'), '');
+  assert.equal(link('not a url'), '');
+  assert.equal(canadianConnection({ country: 'USA', notes: 'BCPA schedule', source_url: 'https://example.com/bcpipers.org' }), 'Canadian bands competing');
 });
 
 test('the events page offers province, type, month, and a reset', () => {

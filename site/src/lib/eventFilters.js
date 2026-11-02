@@ -130,17 +130,26 @@ export function eventInList(el, filters = {}, list) {
   return eventMatches(el, filtersForList(filters, home));
 }
 
+// The association site, not a path or a lookalike host that merely contains the name.
+function isBcPipersHost(source) {
+  try {
+    const host = new URL(String(source || '')).hostname.toLowerCase();
+    return host === 'bcpipers.org' || host.endsWith('.bcpipers.org');
+  } catch {
+    return false;
+  }
+}
+
 // Plain words for a published international event whose existing notes or
 // source already tie it to a Canadian pipe-band association or band.
 // There is no separate field for this. Canadian events return an empty string.
+// Notes are checked as text. The source link is checked only as a hostname.
 export function canadianConnection(event) {
   if (!event || event.country === 'Canada' || event.isCanada === true) return '';
-  const notes = String(event.notes || '');
-  const source = String(event.source_url || '');
-  const hay = `${notes}\n${source}`.toLowerCase();
-  const band = /(^|[^a-z])sfu([^a-z]|$)/.test(hay) || hay.includes('simon fraser');
-  const bcpa = hay.includes('bcpa') || hay.includes('bcpipers.org');
-  if (band || bcpa) return 'Canadian bands competing';
+  const notes = String(event.notes || '').toLowerCase();
+  const band = /(^|[^a-z])sfu([^a-z]|$)/.test(notes) || notes.includes('simon fraser');
+  const bcpa = notes.includes('bcpa');
+  if (band || bcpa || isBcPipersHost(event.source_url)) return 'Canadian bands competing';
   return '';
 }
 
