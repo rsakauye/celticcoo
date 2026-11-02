@@ -37,8 +37,9 @@ Object.assign(SLUG_TO_CATEGORY, {
 
 const MONTH_RE = /^\d{4}-\d{2}$/;
 
-// Opening view. 'Canada' lists Canada first and keeps other countries under Worth the trip.
-// 'all' lists every country by month and does not render Worth the trip.
+// Canada for now: Canadian events first, and other countries grouped under Worth the trip.
+// When the site goes international, change this one line to 'all'. Events are then listed
+// by month, and Worth the trip is not rendered.
 export const DEFAULT_COUNTRY = 'Canada';
 
 export function blankFilters() {
