@@ -214,12 +214,25 @@ test('pages config binds MAILER and does not use send_email', () => {
   assert.match(top, /permissions:\n  contents: read/);
   assert.doesNotMatch(top, /contents: write/);
   assert.doesNotMatch(top, /issues: write/);
-  assert.match(job, /contents: write/);
+  assert.doesNotMatch(sourceCheck, /contents: write/);
+  assert.match(job, /contents: read/);
   assert.match(job, /issues: write/);
+  assert.doesNotMatch(job, /actions: write/);
+  assert.doesNotMatch(sourceCheck, /git (commit|push|pull)/);
+  assert.match(sourceCheck, /actions\/cache\/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9/);
+  assert.match(sourceCheck, /actions\/cache\/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9/);
+  assert.deepEqual(sourceCheck.match(/source-check-snapshot-\$\{\{ github\.run_id \}\}/g), [
+    'source-check-snapshot-${{ github.run_id }}',
+    'source-check-snapshot-${{ github.run_id }}',
+    'source-check-snapshot-${{ github.run_id }}',
+  ]);
+  assert.match(sourceCheck, /restore-keys:\s*\|\n\s+source-check-snapshot-/);
+  assert.equal((sourceCheck.match(/fail-on-cache-miss:\s*true/g) || []).length, 1);
+  assert.match(sourceCheck, /lookup-only:\s*true/);
   for (const text of [workflow, sourceCheck]) {
     const uses = [...text.matchAll(/^[\s-]*uses:\s*(\S+)/gm)].map((match) => match[1]);
     assert.ok(uses.length > 0);
-    for (const use of uses) assert.match(use, /^[\w.-]+\/[\w.-]+@[0-9a-f]{40}$/);
+    for (const use of uses) assert.match(use, /^[\w.-]+\/[\w.-]+(?:\/[\w.-]+)?@[0-9a-f]{40}$/);
   }
   assert.match(dependabot, /package-ecosystem: npm/);
   assert.match(dependabot, /directory: \/site/);

@@ -16,12 +16,28 @@ permissions:
 jobs:
   check:
     permissions:
-      contents: write
+      contents: read
       issues: write
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The snapshot stays out of git. main only accepts pull requests, and
+      # this job does not push or bypass that rule. Restore the newest cache
+      # whose key starts with the prefix. After a successful check, save a
+      # new key that ends with this run id.
+      # Nothing cached: use data/source_state.json from the checkout when it
+      # is there. No file either: the checker treats the run as a baseline
+      # and does not report significant changes.
+      - name: Restore source snapshot
+        id: snapshot
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: data/source_state.json
+          key: source-check-snapshot-${{ github.run_id }}
+          restore-keys: |
+            source-check-snapshot-
 
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
@@ -35,12 +51,20 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python scripts/check_sources.py --open-issue --report source-check-report.md
 
-      - name: Save snapshot
-        run: |
-          git config user.name "celticcoo-bot"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/source_state.json
-          if git diff --cached --quiet; then echo "No snapshot changes"; exit 0; fi
-          git commit -m "chore: weekly source snapshot $(TZ=America/Edmonton date +%F)"
-          git pull --rebase origin main
-          git push origin HEAD:main
+      - name: Save source snapshot
+        if: success() && steps.snapshot.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: data/source_state.json
+          key: source-check-snapshot-${{ github.run_id }}
+
+      # actions/cache/save warns and still exits 0 when the entry is not stored.
+      # Fail the job in that case so the next run is not left without a snapshot.
+      - name: Confirm the snapshot was stored
+        if: success() && steps.snapshot.outputs.cache-hit != 'true'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          lookup-only: true
+          fail-on-cache-miss: true
+          path: data/source_state.json
+          key: source-check-snapshot-${{ github.run_id }}

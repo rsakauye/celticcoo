@@ -224,6 +224,38 @@ class ReportShape(unittest.TestCase):
         self.assertIn("`404`", checked["report"])
 
 
+class FirstRun(unittest.TestCase):
+    def test_no_prior_snapshot_is_a_baseline(self):
+        # main() passes {} when data/source_state.json is missing. That is the
+        # first cache run with no checkout copy, and it must not flag every date.
+        url = "https://example.test/new"
+        html = "<p>The games are June 5, 2027.</p>"
+        targets = {url: {"labels": ["New"], "events": [
+            {"name": "Games", "start_date": "2027-06-05", "confirmed": True},
+        ]}}
+        checked = cs.run_check(targets, {url: page(html)}, {}, TODAY, NOW)
+        self.assertEqual(checked["significant"], [])
+        self.assertEqual(checked["minor"], [])
+        self.assertEqual(checked["unconfirmed"], [])
+        self.assertIn("First run: saved a baseline snapshot. Future runs compare against it.", checked["report"])
+        self.assertIn("Significant changes: 0.", checked["report"])
+        self.assertNotIn("## Review before publishing", checked["report"])
+        self.assertNotIn("added jun 5 2027", checked["report"])
+        saved = checked["state"]["pages"][url]
+        self.assertEqual(saved["dates_basis"], "ok")
+        self.assertIn("jun 5 2027", saved["dates"])
+
+    def test_missing_start_date_on_the_first_run_is_not_significant(self):
+        url = "https://example.test/fleadh"
+        html = "<p>See you Sunday 8 August 2027.</p>"
+        targets = {url: {"labels": [], "events": [{"name": "Fleadh", "start_date": "2027-08-01", "confirmed": True}]}}
+        checked = cs.run_check(targets, {url: page(html)}, {}, TODAY, NOW)
+        self.assertEqual(checked["significant"], [])
+        self.assertEqual(checked["unconfirmed"], [("Fleadh", url)])
+        self.assertNotIn("## Review before publishing", checked["report"])
+        self.assertNotIn("no longer found", checked["report"])
+
+
 class ManualEventsStayOutOfThePageCheck(unittest.TestCase):
     def test_organizer_submitted_event_is_not_page_checked(self):
         manual = (cs.DATA / "events_manual.json").read_text(encoding="utf-8")

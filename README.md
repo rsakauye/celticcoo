@@ -21,7 +21,7 @@ GitHub Actions and deployed to Cloudflare Pages with wrangler.
 | `data/burns_2027.json` | Burns Night 2027 suppers (/burns-night/). Host-confirmed rows are also in `events_2027.json` (type "Burns Supper"). A Burns Supper in `events_manual.json` is added here at build time. |
 | `data/season_champions.json` | Hand-entered band-level season winners by grade, each with its source link (/results/). No soloists. |
 | `data/sources_and_orgs.csv` | Calendars and associations re-checked weekly. |
-| `data/source_state.json` | Last snapshot from the weekly source check (written by the workflow). |
+| `data/source_state.json` | Snapshot from the weekly source check. Newer snapshots are stored in the Actions cache. This file is the fallback when that cache is empty. |
 | `data/groups_link_status.json` | Latest weekly check of club websites. The checker writes this file. It does not edit `groups_canada.json`. |
 | `link-check/` | Reusable website checker (its own folder and README). Celtic Coo settings are `link-check/sites/celticcoo.json`. |
 | `site/` | Astro site: `/`, `/events/`, `/results/`, `/groups/` plus one profile page per club, `/burns-night/`, `/shops/`, `/fundraising/`, `/what-to-wear/`, `/tartans/`, `/roots/`, `/submit/`, `/about/`, `/newsletter/`, `/book/`, `/events.ics`, `/rss.xml`, `/sitemap.xml`, 404. `/results/` pulls headline + link only from the pipes\|drums and Piping Press RSS feeds at build time. |
@@ -44,7 +44,7 @@ instead. Use the same fields. Set `source_kind` to `organizer`. The build merges
 event list (and, for a Burns Supper, into the Burns Night list with status `confirmed (date from organizer)`,
 which shows the existing "✓ Confirmed by host" badge). A row already in `events_2027.json` with the
 same name and date is kept, so the manual copy does not list it twice. `deploy.yml` only builds the
-site, and the weekly source check only writes `data/source_state.json` and does not read the manual
+site, and the weekly source check does not read or rewrite the manual
 file, so a later research update cannot drop a host-submitted date. Do not put a person's name,
 email, or phone number in this file. `province_or_region` is a code such as `AB` or `ON`; the site
 turns that into the province name.
