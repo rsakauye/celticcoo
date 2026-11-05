@@ -1,8 +1,8 @@
 # Inbound mail for hello@celticcoo.ca
 
-`hello@celticcoo.ca` is handled by the Worker in `workers/inbound/` (`celticcoo-inbound`) when the Email Routing rule for that address sends to the Worker. The Worker forwards a copy first, then stores the message, classifies it, and opens a GitHub issue for an event listing or a correction. A vague or incomplete inquiry can also get a clarifying draft. That draft is not sent to the person who wrote in unless you approve it.
+`hello@celticcoo.ca` is handled by the Worker in `workers/inbound/` (`celticcoo-inbound`) when an Email Routing rule sends that address to the Worker. The same Worker also accepts `intake@in.celticcoo.ca`. That address is the internal pipeline. Issues, drafts, and receipts still say `hello@celticcoo.ca`. The Worker forwards a copy first, then stores the message, classifies it, and opens a GitHub issue for an event listing or a correction. A vague or incomplete inquiry can also get a clarifying draft. That draft is not sent to the person who wrote in unless you approve it.
 
-This repository does not change the live routing rule. The Wrangler config has no `addresses` list and no `routes` list. Wrangler would otherwise create or take over the Email Routing rule, or replace a hostname you attached in the dashboard. Leaving both out keeps those dashboard settings in place on deploy.
+This repository does not change the live routing rules. The Wrangler config has no `addresses` list and no `routes` list. Wrangler would otherwise create or take over an Email Routing rule, or replace a hostname you attached in the dashboard. Leaving both out keeps those dashboard settings in place on deploy. Apex `celticcoo.ca` MX is not changed from this repo.
 
 ## What the Worker does
 
@@ -15,7 +15,26 @@ This repository does not change the live routing rule. The Wrangler config has n
 7. When `CLARIFY_DRAFTS` is `drafts` (the default), a vague, incomplete, or contradictory inquiry gets a short draft that asks only for what is missing. The draft is stored on the same row with status `pending_approval`. A private review note is sent to `FORWARD_TO` when the email binding is available. Nothing is sent to the original sender until you approve that draft.
 8. Does not fetch any URL from the email and does not publish an event. `ACK_REPLIES` is `off`. An automatic receipt is sent only if that value is changed to `on` and the Worker is redeployed. That receipt is separate from clarifying drafts.
 
-Only `hello@celticcoo.ca`, including plus-addresses such as `hello+events@celticcoo.ca`, is stored and classified. Mail to `bookings@celticcoo.ca` is not classified. If Email Routing delivers that address to this Worker and the message is only a stop or unsubscribe, the sender address is added to `mail_opt_outs` and the message is not stored. Any other recipient is forwarded and then ignored, in case a rule is pointed here by mistake.
+`hello@celticcoo.ca` and `intake@in.celticcoo.ca`, including plus-addresses such as `hello+events@celticcoo.ca` and `intake+booking@in.celticcoo.ca`, are stored and classified. Mail to `bookings@celticcoo.ca` is not classified. If Email Routing delivers that address to this Worker and the message is only a stop or unsubscribe, the sender address is added to `mail_opt_outs` and the message is not stored. Any other recipient is forwarded and then ignored, in case a rule is pointed here by mistake.
+
+## Intake address and a Fastmail forward
+
+`intake@in.celticcoo.ca` is not a public mailbox. People still write to `hello@celticcoo.ca`. The subdomain `in.celticcoo.ca` has its own Email Routing setup (MX and SPF) and a rule that sends `intake@` to `celticcoo-inbound`. Both are configured in the Cloudflare dashboard, outside git. This repo does not change apex `celticcoo.ca` MX, the existing `hello@celticcoo.ca` rule, or the outbound `celticcoo-mailer` / `cf-bounce` records. Do not add an `addresses` list to `workers/inbound/wrangler.jsonc`. A deploy would take over routing.
+
+Until the apex mailbox moves, `hello@celticcoo.ca` can still be delivered straight to this Worker. After a Fastmail cutover, `hello@` is delivered to Fastmail, and Fastmail forwards a copy to `intake@in.celticcoo.ca`. The SMTP envelope From on that copy may be the forwarder. The Worker stores that value in `envelope_from`, unchanged.
+
+The person who wrote is taken from headers only. The body is not a source of instructions or of the sender. The order is:
+
+1. `Reply-To`
+2. The `From` header
+3. `X-Original-From`
+4. `X-Forwarded-For`, only when the value is an email address. It is usually an IP address, and an IP is ignored.
+5. `Resent-From`
+6. `X-Forwarded-From`
+
+The first email-shaped value wins. `from_header` stays the `From` header. `reply_to` stays the `Reply-To` header. When `Reply-To` has no email address and the sender was found only on one of the forward headers above, that address is stored in `reply_to` so a later approval can reach the person. No new D1 column is added.
+
+Opt-out checks, the trust-history lookup, the review note's recipient, and an acknowledgement (only when `ACK_REPLIES` is `on`) use that sender. An approved clarifying reply uses the same order on the stored row: `reply_to`, then `from_header`, then `envelope_from`.
 
 The email is untrusted. Instructions inside it are not followed. The model is asked for JSON only, and the result is checked against the category list. A field that is not in that schema is dropped. The clarifying draft is built from fixed questions, not from the model's free text, so the inbound message cannot write the reply.
 
@@ -114,7 +133,7 @@ Opening the link does not send. Link scanners in mail gateways request the URL w
 
 The original forward is left unchanged. Adding the draft to that copy would mean rewriting a message that Email Routing is authenticating. The separate review note is the copy you act on.
 
-The approved reply is sent with the Worker's `send_email` binding (`EMAIL`), from `hello@celticcoo.ca`, to the stored reply-to address or otherwise the envelope sender. The binding is unrestricted in Wrangler for the same reason as the booking mailer: the destination is not known at deploy time, and your inbox must not be committed. The code will only send the review note to `FORWARD_TO`, and the approved reply only to that one stored sender. A draft that still contains an email address or a phone number is refused. A draft that still contains the word TODO, a `{{...}}` slot, or a bracketed placeholder such as `[PLACEHOLDER]` is also refused, on the review page and on the chat approval API. The log line is `inbound reply refused` with code `draft_placeholder`. The draft text is not logged. The footer on a new draft is filled from `shared/casl/notice.js` (sender The Celtic Coo, the Okotoks post-office box, and a reply of only the word unsubscribe, which is the `mail_opt_outs` stop). A draft already stored with the old TODO lines will not send until those lines are removed.
+The approved reply is sent with the Worker's `send_email` binding (`EMAIL`), from `hello@celticcoo.ca`, to the stored reply-to address, otherwise an address in the From header, otherwise the envelope sender. The binding is unrestricted in Wrangler for the same reason as the booking mailer: the destination is not known at deploy time, and your inbox must not be committed. The code will only send the review note to `FORWARD_TO`, and the approved reply only to that one stored sender. A draft that still contains an email address or a phone number is refused. A draft that still contains the word TODO, a `{{...}}` slot, or a bracketed placeholder such as `[PLACEHOLDER]` is also refused, on the review page and on the chat approval API. The log line is `inbound reply refused` with code `draft_placeholder`. The draft text is not logged. The footer on a new draft is filled from `shared/casl/notice.js` (sender The Celtic Coo, the Okotoks post-office box, and a reply of only the word unsubscribe, which is the `mail_opt_outs` stop). A draft already stored with the old TODO lines will not send until those lines are removed.
 
 A reply that is only `stop` or `unsubscribe` is recorded in `mail_opt_outs`. After that, this Worker does not send an acknowledgement or an approved clarifying reply to that address. The approval page says nothing was sent and does not repeat the address. The forward to `FORWARD_TO`, and the booking form notice to the owner, still go out: those are not mail to the person who opted out. The opt-out row is kept for at least 60 days. The retention cron does not delete it, so the stop continues after that. See `docs/breach-checklist.md` for what to do after a suspected breach.
 
@@ -264,7 +283,7 @@ Leave this off until you want a one-line receipt. The receipt does not quote the
 1. In `workers/inbound/wrangler.jsonc`, set `ACK_REPLIES` to `"on"`.
 2. Deploy the Worker again.
 
-The next deploy from git uses the value in that file. A dashboard edit is overwritten by the next deploy. Receipts use `message.reply` on the inbound message. They do not use the approval link and they do not wait for `REVIEW_SECRET`.
+The next deploy from git uses the value in that file. A dashboard edit is overwritten by the next deploy. Receipts do not use the approval link and they do not wait for `REVIEW_SECRET`. The receipt is From `hello@celticcoo.ca`. A direct delivery to `hello@` whose envelope sender is that same person still uses `message.reply`. That API can only answer the envelope sender, and the From domain has to be the domain that received the mail. Mail received at `intake@`, or any message whose original sender is not the envelope sender, is sent with the `EMAIL` binding instead, to the address resolved above.
 
 Automated mail (`List-Unsubscribe`, `List-Id`, `Auto-Submitted` other than `no`, `Precedence` of bulk, list, or junk, and `noreply`, `no-reply`, `donotreply`, or `mailer-daemon` sender addresses) is not answered, even when the flag is on. That mail also does not get a clarifying draft. The reason is stored in `draft_skip_reason`.
 
@@ -276,6 +295,8 @@ Automated mail (`List-Unsubscribe`, `List-Id`, `Auto-Submitted` other than `no`,
 4. Save.
 
 New mail goes straight to that inbox again. The Worker can stay deployed; it receives nothing until a rule points at it. Rows already in `inbound_emails` stay. Do not delete the `celticcoo-intake` database to undo this. Booking requests live in that database too.
+
+The `intake@in.celticcoo.ca` rule is separate. Delete or edit that rule in the dashboard to stop the pipeline copy. Do not change apex MX to do that. The subdomain routing is not in git.
 
 To stop new drafts without moving the mailbox, set `CLARIFY_DRAFTS` to `off` and redeploy. Drafts already waiting can still be approved until you remove `REVIEW_SECRET` or the review hostname. To stop sends and keep drafts, remove the review hostname. A sent reply cannot be unsent from this Worker.
 
@@ -294,4 +315,4 @@ That does not delete D1, and it does not change DNS.
 cd workers/inbound && npm ci && npm test
 ```
 
-The tests cover MIME parsing, the rules fallback (a synthetic vague note and a synthetic Burns booking, not copies of received mail), the lexicon, the seasonal and bulk-organizer guard, the classifier failure reasons, drafting, approval, issue-body redaction, and the forward-first behaviour. `npm test` also runs `shared/triage/test/`. Cloudflare bindings are mocked. They do not call Workers AI, GitHub, or Email Routing. Fixtures use example.com addresses and made-up names.
+The tests cover MIME parsing, the rules fallback (a synthetic vague note and a synthetic Burns booking, not copies of received mail), the lexicon, the seasonal and bulk-organizer guard, the classifier failure reasons, drafting, approval, issue-body redaction, and the forward-first behaviour. They also cover `intake@in.celticcoo.ca`, recipients that are still skipped, and a forwarded message whose original sender is taken from `Reply-To`, `From`, or a forward header. `npm test` also runs `shared/triage/test/`. Cloudflare bindings are mocked. They do not call Workers AI, GitHub, or Email Routing. Fixtures use example.com addresses and made-up names.

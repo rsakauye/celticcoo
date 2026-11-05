@@ -32,13 +32,13 @@ export function envelopeAddress(value) {
   return (angle ? angle[1] : raw).trim().toLowerCase();
 }
 
-function localPart(value, name) {
+function localPart(value, name, domain = 'celticcoo.ca') {
   const email = envelopeAddress(value);
   const at = email.lastIndexOf('@');
   if (at < 1) return false;
   const local = email.slice(0, at);
-  const domain = email.slice(at + 1);
-  if (domain !== 'celticcoo.ca') return false;
+  const host = email.slice(at + 1);
+  if (host !== domain) return false;
   return local.split('+')[0] === name;
 }
 
@@ -46,8 +46,73 @@ export function isHelloRecipient(value) {
   return localPart(value, 'hello');
 }
 
+export function isIntakeRecipient(value) {
+  return localPart(value, 'intake', 'in.celticcoo.ca');
+}
+
+// hello@ stays until the apex mailbox moves. intake@ is the internal pipeline.
+export function isTriageRecipient(value) {
+  return isHelloRecipient(value) || isIntakeRecipient(value);
+}
+
 export function isBookingsRecipient(value) {
   return localPart(value, 'bookings');
+}
+
+// First email-shaped address. Display names and bare IP addresses are ignored.
+const EMAIL_SHAPE = /[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+/i;
+
+export function firstEmail(value) {
+  const raw = String(value ?? '').slice(0, 1000);
+  for (const angle of raw.matchAll(/<([^<>]+)>/g)) {
+    const email = emailShape(angle[1]);
+    if (email) return email;
+  }
+  return emailShape(raw);
+}
+
+function emailShape(value) {
+  const match = String(value).match(EMAIL_SHAPE);
+  if (!match) return '';
+  return oneEmail(match[0].toLowerCase());
+}
+
+function headerGet(message, name) {
+  const headers = message && message.headers;
+  if (!headers || typeof headers.get !== 'function') return '';
+  return headers.get(name) || '';
+}
+
+function preferHeader(parsedValue, headerValue) {
+  if (firstEmail(parsedValue)) return parsedValue;
+  return headerValue || parsedValue || '';
+}
+
+// Headers only. The body is not a source of the sender.
+// Reply-To, then From, then forward headers. X-Forwarded-For is usually an
+// IP; only an email-shaped value is used. The SMTP envelope is stored apart.
+const FORWARD_SENDER_HEADERS = [
+  'x-original-from',
+  'x-forwarded-for',
+  'resent-from',
+  'x-forwarded-from',
+];
+
+export function originalSender(message, parsed = {}) {
+  const source = parsed || {};
+  const direct = [
+    preferHeader(source.replyTo, headerGet(message, 'reply-to')),
+    preferHeader(source.fromHeader, headerGet(message, 'from')),
+  ];
+  for (const value of direct) {
+    const email = firstEmail(value);
+    if (email) return { email, forward: false };
+  }
+  for (const name of FORWARD_SENDER_HEADERS) {
+    const email = firstEmail(headerGet(message, name));
+    if (email) return { email, forward: true };
+  }
+  return { email: '', forward: false };
 }
 
 // Unfilled template markers. The approval path refuses to send these.

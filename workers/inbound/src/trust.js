@@ -4,7 +4,7 @@
 
 import { assessGaps } from './clarify.js';
 import { fenceEmail, modelName, resolveAiRunner } from './classify.js';
-import { codeOf, envelopeAddress, oneEmail } from './text.js';
+import { codeOf, envelopeAddress, oneEmail, originalSender } from './text.js';
 import {
   TRUST_CHECK_SCHEMA,
   TRUST_CHECK_SYSTEM,
@@ -146,7 +146,8 @@ function failedScore() {
 export async function assessTrust({ message, parsed, classification, env, deps = {}, now }) {
   const pack = celticcooTrust;
   const when = now instanceof Date ? now : new Date();
-  const address = oneEmail(parsed && parsed.replyTo) || oneEmail(envelopeAddress(message && message.from));
+  const resolved = originalSender(message, parsed);
+  const address = resolved.email || oneEmail(envelopeAddress(message && message.from));
   const since = new Date(when.getTime() - pack.bulk.windowHours * 60 * 60 * 1000).toISOString();
   const db = env && env.INTAKE_DB;
   let history = { priorEmails: 0, priorApproved: 0, priorDenied: 0, recentEmails: 0, unavailable: !db };

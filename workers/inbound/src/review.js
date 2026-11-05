@@ -26,7 +26,7 @@ import {
   saveClarifyDraft,
   suppressClarify,
 } from './store.js';
-import { codeOf, envelopeAddress, hasUnfilledPlaceholder, oneEmail, oneLine } from './text.js';
+import { codeOf, envelopeAddress, firstEmail, hasUnfilledPlaceholder, oneEmail, oneLine } from './text.js';
 import {
   TOKEN_TTL_SECONDS,
   csrfPairMatches,
@@ -142,9 +142,9 @@ function replySubject(subject) {
 }
 
 export function replyAddress(row) {
-  const replyTo = oneEmail(row && row.reply_to);
-  if (replyTo) return replyTo;
-  return oneEmail(envelopeAddress(row && row.envelope_from));
+  return firstEmail(row && row.reply_to)
+    || firstEmail(row && row.from_header)
+    || oneEmail(envelopeAddress(row && row.envelope_from));
 }
 
 function padTime(ms) {
