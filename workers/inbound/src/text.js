@@ -20,6 +20,17 @@ export function clampText(value, max) {
   return `${s.slice(0, max)}\n[truncated]`;
 }
 
+// Strips reply and forward prefixes so a reply lines up with the note it answers.
+export function normalizeSubject(value) {
+  let s = oneLine(value, 300);
+  for (let i = 0; i < 10; i += 1) {
+    const next = s.replace(/^(?:re|fwd?|aw|sv)\s*:\s*/i, '');
+    if (next === s) break;
+    s = next;
+  }
+  return s.toLowerCase();
+}
+
 export function codeOf(err) {
   const code = err && err.code;
   if (typeof code === 'string' && /^[a-z0-9_]{1,64}$/i.test(code)) return code.toLowerCase();

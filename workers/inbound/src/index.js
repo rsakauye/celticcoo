@@ -32,7 +32,7 @@ import { handleApprovalApi } from './approval.js';
 import { aiNamePass, exportReason, redactOutsideD1Many } from './redact.js';
 import { runRetention } from './retention.js';
 import { handleReviewRequest, sendReviewNote } from './review.js';
-import { markIssue, upsertInbound } from './store.js';
+import { loadThread, markIssue, upsertInbound } from './store.js';
 import { assessTrust, storedTrust } from './trust.js';
 import {
   codeOf,
@@ -179,6 +179,20 @@ async function processHello(message, env, deps, forward) {
     replyTo: parsed.replyTo,
     sender,
   });
+  const key = await dedupeKey(message, parsed.subject);
+  // Earlier notes in the same conversation, so a reply that answers a question
+  // we asked is read together with the note it answers. Only looked up when a
+  // draft could be planned at all.
+  const canDraft = stopStatus !== 'opted_out' && draftSkipReason === '' && classification.category !== 'spam';
+  const thread = canDraft
+    ? await loadThread(env && env.INTAKE_DB, {
+      envelopeTo: oneLine(envelopeAddress(message.to), 200),
+      sender,
+      subject: parsed.subject,
+      dedupeKey: key,
+      now,
+    })
+    : [];
   const draft = stopStatus === 'opted_out' ? null : planDraft({
     category: classification.category,
     event: classification.event,
@@ -187,8 +201,8 @@ async function processHello(message, env, deps, forward) {
     now,
     env,
     automated: draftSkipReason !== '',
+    thread,
   });
-  const key = await dedupeKey(message, parsed.subject);
   const errorCode = [forward.error, parsed.parseError, optingOut ? 'opt_out' : ''].filter(Boolean).join(',') || '';
   const row = {
     id: deps.uuid ? deps.uuid() : crypto.randomUUID(),
