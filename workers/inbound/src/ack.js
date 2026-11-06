@@ -4,7 +4,8 @@
 
 import { caslFooterText } from '../../../shared/casl/notice.js';
 import { optOutStatus } from './optout.js';
-import { envelopeAddress, oneLine } from './text.js';
+import { PUBLIC_MAILBOX } from './redact.js';
+import { envelopeAddress, oneEmail, oneLine } from './text.js';
 
 export const ACK_BODY = `The Celtic Coo received your email. A person will read it. This is an automatic receipt, and this mailbox will not answer the substance of your message on its own.\n\n${caslFooterText()}\n`;
 
@@ -96,6 +97,7 @@ function localIsAutomated(address) {
 // The header value itself is never returned: List-Unsubscribe often contains
 // an address. `sender` means an automated local part, or no address at all.
 // `extra` covers the parsed From and Reply-To when those are not on message.headers.
+// `extra.sender` is the resolved original sender, which may differ from the envelope.
 export function automatedReason(message, extra = {}) {
   const headers = message && message.headers;
   const reasons = [];
@@ -112,6 +114,7 @@ export function automatedReason(message, extra = {}) {
     headerValue(headers, 'reply-to'),
     extra.fromHeader,
     extra.replyTo,
+    extra.sender,
   ].flatMap(emailAddresses);
   if (addresses.length === 0 || addresses.some(localIsAutomated)) reasons.push('sender');
   return SKIP_REASONS.filter((code) => reasons.includes(code)).join(',');
@@ -121,9 +124,24 @@ export function isAutomated(message, extra) {
   return automatedReason(message, extra) !== '';
 }
 
-export function buildAckMime(message) {
-  const from = oneLine(message && message.to, 200);
-  const to = oneLine(message && message.from, 200);
+// message.reply() can only answer the envelope sender, and the From domain
+// has to be the domain that received the mail. A forward, or mail to
+// intake@in.celticcoo.ca, is sent with the EMAIL binding instead.
+function ackTransport(message, sender) {
+  const envelope = oneEmail(envelopeAddress(message && message.from));
+  const target = oneEmail(envelopeAddress(sender));
+  const inbound = envelopeAddress(message && message.to);
+  const at = inbound.lastIndexOf('@');
+  const domain = at >= 0 ? inbound.slice(at + 1) : '';
+  if (target && target === envelope && domain === 'celticcoo.ca') return 'reply';
+  return 'send';
+}
+
+export function buildAckMime(message, sender) {
+  const to = oneLine(sender || (message && message.from), 200);
+  const from = ackTransport(message, to) === 'reply'
+    ? oneLine(message && message.to, 200)
+    : PUBLIC_MAILBOX;
   const lines = [
     `From: ${from}`,
     `To: ${to}`,
@@ -144,17 +162,27 @@ export function buildAckMime(message) {
 export async function maybeAcknowledge(message, env, deps = {}) {
   if (!acksEnabled(env)) return { status: 'skipped' };
   if (!message || typeof message.reply !== 'function') return { status: 'skipped' };
-  if (isAutomated(message)) return { status: 'skipped' };
-  const stopped = await optOutStatus(env && env.INTAKE_DB, envelopeAddress(message && message.from));
+  const sender = oneEmail(deps.sender) || oneEmail(envelopeAddress(message.from));
+  if (!sender) return { status: 'skipped' };
+  if (isAutomated(message, { sender })) return { status: 'skipped' };
+  const stopped = await optOutStatus(env && env.INTAKE_DB, sender);
   if (stopped !== 'allowed') {
     return { status: 'skipped', error: stopped === 'opted_out' ? 'opt_out' : 'opt_out_unknown' };
   }
-  const mime = buildAckMime(message);
+  const mime = buildAckMime(message, sender);
   if (typeof deps.reply === 'function') {
     await deps.reply(message, mime);
     return { status: 'sent' };
   }
   const { EmailMessage } = await import('cloudflare:email');
-  await message.reply(new EmailMessage(message.to, message.from, mime));
+  if (ackTransport(message, sender) === 'reply') {
+    await message.reply(new EmailMessage(message.to, message.from, mime));
+    return { status: 'sent' };
+  }
+  const send = env && env.EMAIL && typeof env.EMAIL.send === 'function'
+    ? env.EMAIL.send.bind(env.EMAIL)
+    : null;
+  if (!send) return { status: 'skipped', error: 'ack_not_configured' };
+  await send(new EmailMessage(PUBLIC_MAILBOX, sender, mime));
   return { status: 'sent' };
 }

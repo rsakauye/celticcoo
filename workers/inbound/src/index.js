@@ -1,4 +1,5 @@
-// Inbound mail for hello@celticcoo.ca.
+// Inbound mail for hello@celticcoo.ca and intake@in.celticcoo.ca.
+// intake@ is the internal pipeline address. Customer-facing copy stays hello@.
 //
 // The forward to env.FORWARD_TO happens before parse, classify, D1, or GitHub.
 // FORWARD_TO is injected at deploy from a secret. It is not in this repo.
@@ -18,7 +19,8 @@
 // A message that is only "stop" or "unsubscribe" is recorded as an opt-out.
 // Further non-transactional mail to that address is not sent.
 // There is no addresses field in wrangler.jsonc, so deploying this Worker does
-// not change the Email Routing rule. The owner switches that in the dashboard.
+// not change Email Routing rules or apex MX. The owner manages routing in the
+// dashboard, including the intake@in.celticcoo.ca rule.
 
 import { automatedReason, maybeAcknowledge } from './ack.js';
 import { classifyMessage, modelName, safeReason } from './classify.js';
@@ -32,7 +34,16 @@ import { runRetention } from './retention.js';
 import { handleReviewRequest, sendReviewNote } from './review.js';
 import { markIssue, upsertInbound } from './store.js';
 import { assessTrust, storedTrust } from './trust.js';
-import { codeOf, envelopeAddress, isBookingsRecipient, isHelloRecipient, oneEmail, oneLine } from './text.js';
+import {
+  codeOf,
+  envelopeAddress,
+  firstEmail,
+  isBookingsRecipient,
+  isTriageRecipient,
+  oneEmail,
+  oneLine,
+  originalSender,
+} from './text.js';
 
 export function forwardDestination(env) {
   return oneEmail(env && env.FORWARD_TO);
@@ -144,8 +155,14 @@ async function processHello(message, env, deps, forward) {
     ? await deps.parse(message, now)
     : await parseInbound(message, now);
   const optingOut = isOptOutMessage(parsed.subject, parsed.text);
-  const sender = oneEmail(parsed.replyTo) || oneEmail(envelopeAddress(message.from));
-  if (optingOut) await rememberOptOut(env, [message.from, parsed.replyTo], createdAt);
+  const resolved = originalSender(message, parsed);
+  const sender = resolved.email || oneEmail(envelopeAddress(message.from));
+  // reply_to keeps the Reply-To header. A forward-header address is stored
+  // there only when Reply-To has no email, so a later approval can still
+  // reach the person. from_header stays the From header.
+  let replyTo = parsed.replyTo || '';
+  if (!firstEmail(replyTo) && resolved.forward && resolved.email) replyTo = resolved.email;
+  if (optingOut) await rememberOptOut(env, [message.from, parsed.replyTo, sender], createdAt);
   const stopStatus = optingOut ? 'opted_out' : await optOutStatus(env && env.INTAKE_DB, sender);
   const classification = typeof deps.classify === 'function'
     ? await deps.classify(parsed, env)
@@ -160,6 +177,7 @@ async function processHello(message, env, deps, forward) {
   const draftSkipReason = automatedReason(message, {
     fromHeader: parsed.fromHeader,
     replyTo: parsed.replyTo,
+    sender,
   });
   const draft = stopStatus === 'opted_out' ? null : planDraft({
     category: classification.category,
@@ -181,7 +199,7 @@ async function processHello(message, env, deps, forward) {
     envelopeFrom: oneLine(envelopeAddress(message.from), 200),
     envelopeTo: oneLine(envelopeAddress(message.to), 200),
     fromHeader: parsed.fromHeader || '',
-    replyTo: parsed.replyTo || '',
+    replyTo,
     subject: parsed.subject || '',
     textBody: parsed.text || '',
     attachmentNote: parsed.attachmentNote || '',
@@ -219,17 +237,17 @@ async function processHello(message, env, deps, forward) {
       category: classification.category,
       reasons: draft.reasons,
       draft: draft.draft,
-      recipient: oneEmail(parsed.replyTo) || oneEmail(envelopeAddress(message.from)),
+      recipient: sender,
       forwardStatus: forward.status,
       subject: parsed.subject || '',
       original: parsed.text || '',
-      senderLabel: parsed.fromHeader || envelopeAddress(message.from),
+      senderLabel: parsed.fromHeader || sender || envelopeAddress(message.from),
     }, deps);
     reviewStatus = review.status;
   }
   if (forward.status === 'sent' && stopStatus === 'allowed') {
     try {
-      await maybeAcknowledge(message, env, deps);
+      await maybeAcknowledge(message, env, { ...deps, sender });
     } catch (err) {
       console.error(JSON.stringify({ message: 'inbound ack failed', code: codeOf(err) }));
     }
@@ -253,7 +271,7 @@ export async function handleInboundEmail(message, env, deps = {}) {
   const forward = await forwardCopy(message, env);
   let outcome = null;
   try {
-    if (!isHelloRecipient(message && message.to)) {
+    if (!isTriageRecipient(message && message.to)) {
       if (isBookingsRecipient(message && message.to)) {
         const now = deps.now ? deps.now() : new Date();
         let parsed = null;
@@ -265,7 +283,8 @@ export async function handleInboundEmail(message, env, deps = {}) {
           parsed = null;
         }
         if (parsed && isOptOutMessage(parsed.subject, parsed.text)) {
-          await rememberOptOut(env, [message.from, parsed.replyTo], now.toISOString());
+          const resolved = originalSender(message, parsed);
+          await rememberOptOut(env, [message.from, parsed.replyTo, resolved.email], now.toISOString());
           outcome = {
             skipped: 'opt_out',
             forwardStatus: forward.status,
