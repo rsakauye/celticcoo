@@ -100,6 +100,19 @@ The booking form calls `decidePerformerVolume` for an optional head count. At or
 
 A draft is created for an event listing, correction, or booking that is missing a date, a time, a place, or an event name; for a booking that names no performer; for a date that is already past; for two dates that disagree (a correction that states the old date and the new one is not treated as a contradiction); for a link that is not a normal http(s) URL; for an organizer name that does not appear in the link, unless the link is a known ticket or social host; and for a note classified as `other` or a very short partnership note. A group or society directory listing does not need a date. A newsletter question does not get the generic "unclear" draft. A note labelled `other` that still names a performer or a booking phrase gets the booking questions, not the question that asks whether to list an event, correct a listing, or book a performer. That question is only for a note with no clear booking, listing, or correction intent. Spam is skipped. Mail from an automated or bulk sender is skipped. That is a `List-Unsubscribe` or `List-Id` header, an `Auto-Submitted` value other than `no`, a `Precedence` of bulk, list, or junk, or a sender address whose local part is `noreply`, `no-reply`, `donotreply`, `mailer-daemon`, or `postmaster`. An out-of-office line in the subject or the first part of the body is also skipped. An out-of-office line buried under a real request does not hide that request.
 
+### Replies in the same conversation
+
+A reply is read together with the earlier notes in its conversation, so an answer to a question we sent does not start over. The Worker looks up earlier `inbound_emails` rows for the same recipient and the same sender, in the last 45 days, whose subject matches once `Re:`, `Fwd:`, and similar prefixes are removed. At most five are used. The message headers that link replies (`In-Reply-To`, `References`) are not stored, so this uses columns that already exist and needs no migration. If the lookup fails, the note is treated on its own, as before.
+
+- A reply that comes out as `other` takes the category of the earlier listing, correction, or booking, unless it is a newsletter question or automated mail.
+- Event fields (title, host, date, city, province, venue, link) and the body text from the earlier notes fill in what the reply lacks. A field in the reply wins.
+- Only a clarify reply that was sent counts as a question asked. A draft that is still pending, or was discarded, asked nothing.
+- A reply that supplies what we asked for ends the thread with no new draft. If something is still missing, only that is asked, never the generic list, correct, or book question.
+- A reply that answers none of the questions we sent does not get the same questions again. It stays in the forwarded copy for a person to read.
+- If we asked about a past date or two conflicting dates and the reply gives a date, the reply's date replaces the earlier ones.
+
+A free-text place such as "at the hall in Town" is not recognised on its own. When the place was the question, the reply is left to a person. The stored category on the row is still what the classifier said. The thread only changes which draft, if any, is queued, so it does not open another GitHub issue.
+
 The draft status on the row is:
 
 | Status | Meaning |

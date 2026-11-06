@@ -223,11 +223,101 @@ export function buildDraft(reasons, category) {
   ].join('\n');
 }
 
-export function planDraft({ category, event, subject, text, now, env, automated }) {
+const ACTIONABLE = new Set(['event_listing_request', 'correction_or_update', 'booking_inquiry']);
+const EVENT_FIELDS = ['title', 'host', 'date', 'city', 'province', 'venue', 'url'];
+const PRIOR_TEXT_LIMIT = 4000;
+
+function priorEvent(row) {
+  try {
+    const value = JSON.parse((row && row.extracted_json) || '{}');
+    return value && typeof value === 'object' ? value : {};
+  } catch {
+    return {};
+  }
+}
+
+function mergeEvent(prior, current) {
+  const merged = {};
+  for (const source of [...prior.map(priorEvent), current || {}]) {
+    for (const field of EVENT_FIELDS) {
+      const value = String(source[field] ?? '').trim();
+      if (value) merged[field] = value;
+    }
+  }
+  return merged;
+}
+
+// The questions the last sent clarify reply asked. A draft that was never sent
+// asked nothing, so only the `sent` status counts.
+function askedReasons(prior) {
+  for (let i = prior.length - 1; i >= 0; i -= 1) {
+    const row = prior[i];
+    if (!row || row.clarify_status !== 'sent') continue;
+    const list = String(row.clarify_reasons || '')
+      .split(',')
+      .map((reason) => reason.trim())
+      .filter((reason) => QUESTIONS[reason]);
+    if (list.length) return list;
+  }
+  return [];
+}
+
+function stripDates(text) {
+  return String(text || '').replace(new RegExp(DATE_RE.source, 'gi'), ' ');
+}
+
+// Reads one message together with the earlier notes in its conversation.
+// `thread` is oldest first. Without it the message stands on its own.
+//
+// - A reply that came out as `other` inherits the earlier listing, correction,
+//   or booking category, unless it looks like a newsletter or automated mail.
+// - Event fields and body text from the earlier notes fill what this one lacks.
+// - If we asked about a date that was past or in conflict and this reply gives
+//   a date, the reply's date replaces the earlier ones.
+export function threadContext({ category, event, subject, text }, thread) {
+  const prior = (Array.isArray(thread) ? thread : []).filter(Boolean);
+  if (!prior.length) return { category, event, text, asked: [], inherited: false };
+
+  const asked = askedReasons(prior);
+  let merged = category;
+  let inherited = false;
+  if (category === 'other') {
+    const signals = textSignals(subject, `${subject || ''}\n${text || ''}`);
+    const earlier = [...prior].reverse().find((row) => ACTIONABLE.has(row.category));
+    if (earlier && !signals.newsletter && !signals.automated) {
+      merged = earlier.category;
+      inherited = true;
+    }
+  }
+
+  const replacesDate = asked.some((reason) => reason === 'contradiction' || reason === 'past_date')
+    && datesIn(text).length > 0;
+  const earlierText = prior.map((row) => {
+    const body = String(row.text_body || '').slice(0, PRIOR_TEXT_LIMIT);
+    return replacesDate ? stripDates(body) : body;
+  });
+  return {
+    category: merged,
+    event: mergeEvent(prior, event),
+    text: [...earlierText, text].filter(Boolean).join('\n\n'),
+    asked,
+    inherited,
+  };
+}
+
+export function planDraft({ category, event, subject, text, now, env, automated, thread }) {
   if (clarifyMode(env) !== 'drafts' || automated || category === 'spam') return null;
-  const reasons = assessGaps({ category, event, subject, text, now });
+  const ctx = threadContext({ category, event, subject, text }, thread);
+  let reasons = assessGaps({ category: ctx.category, event: ctx.event, subject, text: ctx.text, now });
+  // A reply in a thread we already asked questions in, that answers none of
+  // them, adds nothing. Repeating the same questions would be noise, so the
+  // person reads the forwarded copy instead.
+  if (ctx.inherited && ctx.asked.length && reasons.length >= ctx.asked.length
+    && reasons.every((reason) => ctx.asked.includes(reason))) {
+    reasons = [];
+  }
   if (!reasons.length) return null;
-  const draft = buildDraft(reasons, category);
+  const draft = buildDraft(reasons, ctx.category);
   if (!draft || hasPrivateContact(draft)) return null;
   return { status: 'pending_approval', draft, reasons };
 }

@@ -3,7 +3,53 @@
 // A draft that is already approved, sent, or discarded is left alone on that update.
 
 import { newReviewTokenId } from './token.js';
-import { oneLine } from './text.js';
+import { normalizeSubject, oneLine } from './text.js';
+
+// Earlier notes in one conversation: same recipient, same sender, same subject
+// once Re:/Fwd: prefixes are gone. Message-ID threading headers are not stored,
+// so this uses columns that already exist and needs no migration.
+export const THREAD_WINDOW_DAYS = 45;
+export const THREAD_MAX_ROWS = 5;
+const THREAD_SCAN_ROWS = 25;
+
+const THREAD_SQL = `SELECT subject, category, extracted_json, text_body, clarify_status, clarify_reasons, created_at
+FROM inbound_emails
+WHERE envelope_to = ?
+  AND dedupe_key != ?
+  AND created_at >= ?
+  AND created_at <= ?
+  AND (lower(envelope_from) = ? OR instr(lower(reply_to), ?) > 0 OR instr(lower(from_header), ?) > 0)
+ORDER BY created_at DESC
+LIMIT ${THREAD_SCAN_ROWS}`;
+
+// Returns prior rows, oldest first. Any problem returns [] so a failed lookup
+// leaves the plain, single-message behaviour in place. The forward has already
+// happened by the time this runs, so it must never throw.
+export async function loadThread(db, { envelopeTo, sender, subject, dedupeKey, now }) {
+  try {
+    const who = String(sender || '').trim().toLowerCase();
+    const wanted = normalizeSubject(subject);
+    if (!db || typeof db.prepare !== 'function' || !who || !wanted) return [];
+    const stmt = db.prepare(THREAD_SQL).bind(
+      envelopeTo,
+      dedupeKey,
+      new Date(now.getTime() - THREAD_WINDOW_DAYS * 86_400_000).toISOString(),
+      now.toISOString(),
+      who,
+      who,
+      who,
+    );
+    if (typeof stmt.all !== 'function') return [];
+    const found = await stmt.all();
+    const rows = Array.isArray(found && found.results) ? found.results : [];
+    return rows
+      .filter((row) => row && normalizeSubject(row.subject) === wanted)
+      .slice(0, THREAD_MAX_ROWS)
+      .reverse();
+  } catch {
+    return [];
+  }
+}
 
 const INSERT_SQL = `INSERT INTO inbound_emails (
   id, created_at, received_at, dedupe_key, message_id,
