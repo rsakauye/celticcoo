@@ -20,5 +20,23 @@
     "url": "https://ottscot.ca/"
    }
   ]
+ },
+ {
+  "name": "Gathering of the Clans",
+  "start_date": "2027-07-01",
+  "end_date": "2027-07-01",
+  "city": "Pugwash",
+  "province_or_region": "NS",
+  "country": "Canada",
+  "type": "Highland Games",
+  "source_url": "https://www.facebook.com/groups/63536113029",
+  "source_kind": "organizer",
+  "notes": "Annual Gathering of the Clans & Canada Day Festival; starts 7:30 a.m. (from the organizer); free Canada Day parade and fireworks, admission fees may apply to the main festival grounds.",
+  "added_date": "2026-11-06",
+  "organizer": [
+   {
+    "name": "Village of Pugwash"
+   }
+  ]
  }
 ]
