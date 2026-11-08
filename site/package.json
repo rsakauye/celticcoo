@@ -12,11 +12,8 @@
   },
   "dependencies": {
     "@resvg/resvg-js": "^2.6.2",
-    "astro": "^5.14.0",
+    "astro": "^7.4.7",
     "opentype.js": "^2.0.0"
-  },
-  "overrides": {
-    "vite": "^6.4.5"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1"
