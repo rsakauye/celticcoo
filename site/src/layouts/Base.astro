@@ -25,8 +25,8 @@ const shareBrand = loadBrand(`${process.cwd()}/../shared/og/og-brand-tokens.json
 const imageAlt = ogImageAlt || shareAlt({}, shareBrand);
 const ld = [];
 if (relPath === '') {
-  ld.push({ '@context': 'https://schema.org', '@type': 'Organization', '@id': `${ORIGIN}/#org`, name: SITE_NAME, url: `${ORIGIN}/`, logo: `${ORIGIN}/og.png`, address: { '@type': 'PostalAddress', postOfficeBoxNumber: '1604', addressLocality: 'Okotoks', addressRegion: 'AB', postalCode: 'T1S 1B5', addressCountry: 'CA' } });
-  ld.push({ '@context': 'https://schema.org', '@type': 'WebSite', '@id': `${ORIGIN}/#website`, name: SITE_NAME, url: `${ORIGIN}/`, inLanguage: 'en-CA', publisher: { '@id': `${ORIGIN}/#org` } });
+  ld.push({ '@context': 'https://schema.org', '@type': 'Organization', '@id': `${ORIGIN}/#org`, name: SITE_NAME, url: `${ORIGIN}/`, logo: `${ORIGIN}/og.png`, sameAs: ['https://www.instagram.com/celticcoo/', 'https://www.facebook.com/celticcoo'], address: { '@type': 'PostalAddress', postOfficeBoxNumber: '1604', addressLocality: 'Okotoks', addressRegion: 'AB', postalCode: 'T1S 1B5', addressCountry: 'CA' } });
+  ld.push({ '@context': 'https://schema.org', '@type': 'WebSite', '@id': `${ORIGIN}/#website`, name: SITE_NAME, alternateName: ['Celtic Coo', 'CelticCoo.ca', 'CelticCoo'], url: `${ORIGIN}/`, inLanguage: 'en-CA', publisher: { '@id': `${ORIGIN}/#org` } });
 } else if (!noindex) {
   const crumbs = [[SITE_NAME, ''], ...(breadcrumbs || []), [crumb || title, relPath]];
   ld.push({ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: crumbs.map(([name, p], i) => ({ '@type': 'ListItem', position: i + 1, name, item: `${ORIGIN}/${p}` })) });

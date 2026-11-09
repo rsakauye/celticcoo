@@ -1,4 +1,6 @@
-# The Celtic Coo · CelticCoo.ca
+# Source code for CelticCoo.ca
+
+**Looking for The Celtic Coo? Visit [celticcoo.ca](https://celticcoo.ca).** This repository is only the website's source code.
 
 A Canada-first hub for Celtic and Gaelic culture: an events calendar (Highland Games, pipe bands,
 Highland dance, ceilidhs, concerts, parades, cultural celebrations, Gaelic, festivals), a directory of Celtic shops and makers, and a newsletter.
