@@ -56,6 +56,9 @@ export function mountDrum(root) {
   const statusEl = q('[data-status]');
   const errorEl = q('[data-error]');
   const live = q('[data-live]');
+  const beatCue = q('[data-beatcue]');
+  const beatText = q('[data-beat-text]');
+  const beatCells = [...root.querySelectorAll('[data-beat]')];
   const worklet = root.dataset.worklet;
 
   const state = {
@@ -75,6 +78,7 @@ export function mountDrum(root) {
     calibration: null,
     bars: 0,
     lastAnnounce: 0,
+    beatQueue: [],
   };
 
   function setError(text) {
@@ -167,13 +171,38 @@ export function mountDrum(root) {
         const r = rudiment();
         state.scorer.expect(gridTimes(state.nextBeat, bpm(), r.perBeat, 1 / BEATS_PER_BAR));
       }
+      state.beatQueue.push({ at: state.nextBeat, beat: state.beatIndex % BEATS_PER_BAR, countIn });
       state.beatIndex += 1;
       state.nextBeat += beatSeconds(bpm());
       if (!countIn && (state.beatIndex - COUNT_IN_BEATS) % BEATS_PER_BAR === 0) onBar();
     }
 
+    paintBeat(now);
     const missed = state.scorer.sweep(now);
     if (missed.length) paintSummary();
+  }
+
+  // The beat cue never flashes. One small marker steps along four cells and a line of
+  // text names the beat, so the metronome has a visual that stays inside the WCAG
+  // three-flashes rule. Nothing is animated, so reduced motion needs no special case.
+  // It is hidden from screen readers because the status line already speaks.
+  function paintBeat(now) {
+    let due = null;
+    while (state.beatQueue.length && state.beatQueue[0].at <= now) due = state.beatQueue.shift();
+    if (!due) return;
+    beatCells.forEach((cell, i) => {
+      if (i === due.beat) cell.setAttribute('data-on', '1');
+      else cell.removeAttribute('data-on');
+    });
+    if (beatText) {
+      beatText.textContent = `${due.countIn ? 'Count-in' : 'Beat'} ${due.beat + 1} of ${BEATS_PER_BAR}`;
+    }
+  }
+
+  function clearBeat() {
+    state.beatQueue = [];
+    beatCells.forEach((cell) => cell.removeAttribute('data-on'));
+    if (beatText) beatText.textContent = '';
   }
 
   function onBar() {
@@ -346,6 +375,7 @@ export function mountDrum(root) {
     state.beatIndex = 0;
     state.bars = 0;
     state.lastAnnounce = 0;
+    state.beatQueue = [];
     state.nextBeat = state.ctx.currentTime + 0.3;
     state.countInEnd = state.nextBeat + COUNT_IN_BEATS * beatSeconds(bpm()) - OK_MS / 1000;
     state.running = true;
@@ -403,15 +433,13 @@ export function mountDrum(root) {
 
   function syncButtons() {
     const active = state.running && !state.calibration;
-    if (startBtn) {
-      startBtn.textContent = active && state.micOn ? 'Stop' : 'Start with microphone';
-      startBtn.setAttribute('aria-pressed', active && state.micOn ? 'true' : 'false');
-    }
-    if (padBtn) {
-      padBtn.textContent = active && !state.micOn ? 'Stop' : 'Practise with the pad';
-      padBtn.setAttribute('aria-pressed', active && !state.micOn ? 'true' : 'false');
-    }
+    // The label swaps between Start and Stop. It is the only state signal. A pressed-state
+    // attribute on top would make a screen reader say "Stop, toggle button, pressed".
+    if (startBtn) startBtn.textContent = active && state.micOn ? 'Stop' : 'Start with microphone';
+    if (padBtn) padBtn.textContent = active && !state.micOn ? 'Stop' : 'Practise with the pad';
     if (calibrateBtn) calibrateBtn.disabled = state.running;
+    if (beatCue) beatCue.hidden = !active;
+    if (!active) clearBeat();
     root.dataset.padMode = active && !state.micOn ? '1' : '0';
   }
 
@@ -436,19 +464,40 @@ export function mountDrum(root) {
     if (state.running && !state.micOn && state.ctx) onOnset(state.ctx.currentTime);
   }
   if (padTarget) {
+    // Pointer events cover mouse, pen and touch once. preventDefault stops the browser
+    // sending a second, compatibility mouse event after a touch. touch-action: none on
+    // the pad (see the page CSS) stops a tap from scrolling or zooming the page.
     padTarget.addEventListener('pointerdown', (event) => {
       event.preventDefault();
       tap();
     });
-  }
-  window.addEventListener('keydown', (event) => {
-    if (event.code !== 'Space' || event.repeat) return;
-    const tag = event.target && event.target.tagName;
-    if (tag === 'INPUT' || tag === 'SELECT' || tag === 'BUTTON' || tag === 'TEXTAREA') return;
-    if (state.running && !state.micOn) {
+    // Keyboard: Enter on the focused pad is a stroke. Space is handled below for every focus.
+    padTarget.addEventListener('keydown', (event) => {
+      if (event.code !== 'Enter' || event.repeat) return;
       event.preventDefault();
       tap();
-    }
+    });
+  }
+
+  // In pad mode the space bar is the stand-in stick, wherever focus is. A focused button
+  // would otherwise click itself when Space is released, and Start or Stop would flip
+  // mid-session. So the key is claimed on keydown, and its keyup is cancelled too: some
+  // browsers fire the click on keyup. Text fields, sliders and menus keep their own Space.
+  let spaceClaimed = false;
+  window.addEventListener('keydown', (event) => {
+    if (event.code !== 'Space') return;
+    const tag = event.target && event.target.tagName;
+    if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+    if (!(state.running && !state.micOn)) return;
+    event.preventDefault();
+    if (event.repeat) return;
+    spaceClaimed = true;
+    tap();
+  });
+  window.addEventListener('keyup', (event) => {
+    if (event.code !== 'Space' || !spaceClaimed) return;
+    spaceClaimed = false;
+    event.preventDefault();
   });
 
   function nudgeBpm(delta) {

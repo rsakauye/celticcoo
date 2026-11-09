@@ -1,6 +1,6 @@
 import { mkdirSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
-import { PLAY_BLURB } from '../../src/lib/nav.js';
+import { DRUM_BLURB, TUNER_BLURB } from '../../src/lib/nav.js';
 
 const MARK = 'rgb(240, 178, 122)';
 
@@ -83,17 +83,18 @@ test.describe('desktop menu', () => {
     await expect(events).toBeFocused();
   });
 
-  test('Play lists only the drone tuner and its blurb', async ({ page }) => {
+  test('Tools lists the drone tuner and drum practice, each with its blurb', async ({ page }) => {
     await expect(page.locator('[data-site-nav]')).not.toContainText(/coming soon/i);
     await expect(page.locator('header.site .btn')).toHaveCount(1);
     await expect(page.locator('[data-nav-cta]')).toHaveText('Add yours');
     await expect(page.locator('[data-nav-about]')).toHaveText('About');
-    const play = page.locator('[data-nav-group="play"] [data-nav-group-btn]');
-    await play.click();
-    await expect(page.locator('#nav-play a')).toHaveCount(1);
-    await expect(page.locator('#nav-play a')).toHaveText('Drone tuner');
-    await expect(page.locator('#nav-play-blurb')).toHaveText(PLAY_BLURB);
-    await page.locator('#nav-play a').click();
+    const tools = page.locator('[data-nav-group="tools"] [data-nav-group-btn]');
+    await tools.click();
+    await expect(page.locator('#nav-tools a')).toHaveCount(2);
+    await expect(page.locator('#nav-tools a')).toHaveText(['Drone tuner', 'Drum practice']);
+    await expect(page.locator('#nav-blurb-tools-0')).toHaveText(TUNER_BLURB);
+    await expect(page.locator('#nav-blurb-tools-1')).toHaveText(DRUM_BLURB);
+    await page.locator('#nav-tools a').first().click();
     await expect(page).toHaveURL(/\/tune\/$/);
     await expect(page.locator('.scale-labels')).toContainText('Flat');
     await expect(page.locator('.scale-labels')).toContainText('Sharp');
@@ -151,7 +152,7 @@ test.describe('narrow menu', () => {
     expect(cta.y + cta.height).toBeLessThanOrEqual(viewport.height + 1);
 
     await expect(page.locator('[data-nav-about]')).toBeInViewport();
-    await expect(page.locator('#nav-play-blurb')).toBeInViewport();
+    await expect(page.locator('#nav-blurb-tools-1')).toBeInViewport();
     const padding = await page.locator('.nav-cta').evaluate((el) => getComputedStyle(el).paddingBottom);
     expect(padding).toMatch(/px$/);
     const css = await page.evaluate(() => [...document.styleSheets].map((sheet) => {
@@ -195,9 +196,11 @@ test('without JavaScript the menu is a plain list of links', async ({ browser })
   const nav = page.locator('[data-site-nav]');
   await expect(nav.getByRole('link', { name: 'Upcoming events' })).toBeVisible();
   await expect(nav.getByRole('link', { name: 'Drone tuner' })).toBeVisible();
+  await expect(nav.getByRole('link', { name: 'Drum practice' })).toBeVisible();
   await expect(nav.getByRole('link', { name: 'About', exact: true })).toBeVisible();
   await expect(nav.getByRole('link', { name: 'Add yours' })).toBeVisible();
-  await expect(page.locator('#nav-play-blurb')).toHaveText(PLAY_BLURB);
+  await expect(page.locator('#nav-blurb-tools-0')).toHaveText(TUNER_BLURB);
+  await expect(page.locator('#nav-blurb-tools-1')).toHaveText(DRUM_BLURB);
   await expect(page.locator('html')).not.toHaveClass(/nav-js/);
   await context.close();
 });

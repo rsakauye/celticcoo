@@ -5,7 +5,7 @@ import { BPM_MAX, BPM_MIN, DEFAULT_BPM, OFFSET_MAX_MS, OFFSET_MIN_MS, RUDIMENTS,
 const avatar = u('img/ceilidh-avatar-52.png');
 const worklet = u('drum-worklet.js');
 ---
-<Base title="Drum practice" noindex={true} hideCornerCoo={true} description="An on-device practice pad coach with an adjustable metronome. The microphone stays on your phone. Nothing is sent or saved.">
+<Base title="Drum practice" hideCornerCoo={true} description="An on-device practice pad coach with an adjustable metronome. The microphone stays on your phone. Nothing is sent or saved.">
   <div class="drum" data-drum data-worklet={worklet}>
     <p class="kicker">A wee practice pad coach</p>
     <h1>Drum practice</h1>
@@ -35,9 +35,9 @@ const worklet = u('drum-worklet.js');
         </div>
       </div>
 
-      <div class="actions">
-        <button type="button" class="btn" data-start aria-pressed="false">Start with microphone</button>
-        <button type="button" class="btn ghost" data-pad aria-pressed="false">Practise with the pad</button>
+      <div class="actions actions-main">
+        <button type="button" class="btn" data-start>Start with microphone</button>
+        <button type="button" class="btn ghost" data-pad>Practise with the pad</button>
       </div>
       <p class="err" data-error role="alert" hidden></p>
       <p class="status" data-status role="status">Ready. Wired headphones keep the click out of the microphone.</p>
@@ -45,6 +45,12 @@ const worklet = u('drum-worklet.js');
 
     <section class="card meter-card" aria-labelledby="meter-title">
       <h2 id="meter-title">How you are landing</h2>
+      <div class="beat-cue" data-beatcue hidden aria-hidden="true">
+        <p class="beat-text" data-beat-text></p>
+        <ol class="beats">
+          <li data-beat></li><li data-beat></li><li data-beat></li><li data-beat></li>
+        </ol>
+      </div>
       <div class="meter" data-meter data-grade="none" aria-hidden="true">
         <div class="zones">
           <span class="z ok"></span><span class="z good"></span><span class="z perfect"></span><span class="z good"></span><span class="z ok"></span>
@@ -56,7 +62,7 @@ const worklet = u('drum-worklet.js');
       <p class="last slot" data-last>Waiting for a stroke</p>
       <p class="count" data-count>0 perfect · 0 good · 0 ok · 0 missed · 0 extra</p>
       <p class="advice" data-advice>Play a few more bars and the page will tell you which way you lean.</p>
-      <button type="button" class="pad" data-tap aria-label="Tap pad. Use this instead of the microphone, or press space.">Tap pad <span>or press space</span></button>
+      <button type="button" class="pad" data-tap aria-label="Tap pad. Use this instead of the microphone. Press Enter or space to tap.">Tap pad <span>or press space</span></button>
     </section>
 
     <section class="card block" aria-labelledby="tune-title">
@@ -98,40 +104,54 @@ const worklet = u('drum-worklet.js');
 </script>
 
 <style>
-  .drum { max-width: 760px; }
+  /* Colours come from the site theme tokens (see Base.astro), so the high-contrast and
+     colour-blind modes re-theme this page with no extra rules. The zone fills are mixes of
+     those tokens. Colour is never the only signal: each grade also has its own tick shape
+     and its own word in the readout. */
+  .drum {
+    max-width: 760px;
+    --z-ok-a: color-mix(in srgb, var(--ginger2) 45%, var(--card));
+    --z-ok-b: color-mix(in srgb, var(--ginger2) 18%, var(--card));
+    --z-good: color-mix(in srgb, var(--green2) 18%, var(--card));
+    --z-perfect: color-mix(in srgb, var(--green2) 45%, var(--card));
+  }
   .drum h1 { font-size: clamp(1.6rem, 6.2vw, 2.15rem); margin: 0 0 .4rem; }
   .kicker { color: var(--ginger); font-weight: 700; font-style: italic; margin: 0 0 .2rem; }
-  .lede { margin: 0 0 .9rem; color: #4a3a2e; }
+  .lede { margin: 0 0 .9rem; color: var(--fg); }
   .card { margin-top: 1rem; }
   .head { display: flex; align-items: center; gap: .6rem; }
   .head h2 { margin: 0; }
   .sprite { image-rendering: pixelated; width: 52px; height: 52px; }
   .field { display: grid; gap: .25rem; font-weight: 700; margin-top: .6rem; }
   .field output { font-weight: 400; color: var(--muted); margin-left: .4rem; }
-  .field select, .field input[type="range"] { width: 100%; min-height: 44px; }
-  .field select { font: inherit; padding: .4rem .5rem; border: 1px solid #cdbda3; border-radius: 8px; background: #fff; }
-  .strokes { font: 700 1.3rem ui-monospace, Menlo, Consolas, monospace; letter-spacing: .12em; color: var(--green); margin: .5rem 0 .1rem; }
+  .field select, .field input[type="range"] { width: 100%; min-height: 48px; }
+  .field select { font: inherit; padding: .4rem .5rem; border: 1px solid var(--muted); border-radius: 8px; background: var(--card); color: var(--fg); }
+  /* The longest sticking has to fit a 375px screen, so it can wrap anywhere and shrinks a little. */
+  .strokes { font: 700 clamp(1.05rem, 5.2vw, 1.3rem) ui-monospace, Menlo, Consolas, monospace; letter-spacing: .08em; overflow-wrap: anywhere; color: var(--green); margin: .5rem 0 .1rem; }
   .bpm { display: grid; grid-template-columns: 1fr auto; gap: .6rem; align-items: end; }
   .nudge { display: flex; gap: .4rem; }
-  .nudge .btn { min-width: 3rem; min-height: 44px; }
+  .nudge .btn { min-width: 3rem; min-height: 48px; }
   .actions { display: flex; flex-wrap: wrap; gap: .5rem; margin: .9rem 0 .4rem; }
-  .actions .btn { min-height: 44px; }
+  .actions .btn { min-height: 48px; }
   .btn[disabled] { opacity: .5; cursor: not-allowed; }
-  .err { color: #8d2a2a; font-weight: 700; }
+  .err { color: var(--ginger); font-weight: 700; }
   .status { color: var(--muted); margin: .3rem 0 0; }
   .muted { color: var(--muted); font-size: .92rem; margin: .3rem 0; }
 
   .meter { position: relative; height: 3rem; margin-top: .6rem; border-radius: 10px; overflow: hidden; border: 2px solid var(--green); }
   .zones { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; }
-  .zones .z.ok { background: #f1cfae; }
-  .zones .z.good { background: #dcebe2; }
-  .zones .z.perfect { background: #9fd0b2; }
+  .zones .z.ok { background: repeating-linear-gradient(135deg, var(--z-ok-a), var(--z-ok-a) 6px, var(--z-ok-b) 6px, var(--z-ok-b) 12px); }
+  .zones .z.good { background: var(--z-good); }
+  .zones .z.perfect { background: var(--z-perfect); }
   .centre { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: var(--green); }
   .ticks { position: absolute; inset: 0; }
   .tick { position: absolute; top: 4px; bottom: 4px; width: 6px; margin-left: -3px; background: var(--ginger); border-radius: 1px; }
-  .tick.perfect { background: #1f7a3a; }
-  .tick.good { background: var(--green2); }
-  .tick.stray { background: #8d2a2a; opacity: .7; }
+  /* Each grade has its own height and fill, so the meter reads without colour:
+     perfect is full height, good a little shorter, ok shorter again, an extra hit is a dashed outline. */
+  .tick.perfect { background: var(--green); }
+  .tick.good { background: var(--green2); top: 12px; bottom: 12px; }
+  .tick.ok { top: 20px; bottom: 20px; }
+  .tick.stray { background: transparent; border: 2px dashed var(--navy); width: 8px; margin-left: -4px; }
   .tick:last-child { outline: 2px solid var(--navy); }
   .labels { display: flex; justify-content: space-between; font-size: .85rem; color: var(--muted); margin: .25rem 0 0; }
   .last { font-weight: 700; font-size: 1.15rem; margin: .6rem 0 .2rem; min-height: 1.6em; }
@@ -147,12 +167,96 @@ const worklet = u('drum-worklet.js');
     background: var(--cream);
     color: var(--green);
     font: 700 1.3rem system-ui, sans-serif;
-    touch-action: manipulation;
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
     cursor: pointer;
   }
   .pad span { display: block; font-weight: 400; font-size: .9rem; color: var(--muted); }
   .drum[data-pad-mode="1"] .pad { display: block; }
   .block { margin-top: 1rem; }
   .block h2 { margin-top: 0; }
-  .privacy { background: #f3ecdf; }
+  .privacy { background: var(--cream); }
+
+  /* Beat cue: a small marker steps across four cells and a line of text names the beat.
+     Nothing blinks or animates, and the area that changes is tiny, so it stays well inside
+     the WCAG three-flashes rule. The first cell is square to mark the downbeat without colour. */
+  .beat-cue { display: flex; align-items: center; gap: .9rem; margin-top: .6rem; }
+  .beat-cue[hidden] { display: none; }
+  .beat-text { margin: 0; font-weight: 700; min-width: 9.5rem; }
+  .beats { display: flex; gap: .4rem; list-style: none; margin: 0; padding: 0; }
+  .beats li { width: 1.5rem; height: 1.5rem; border: 2px solid var(--green); border-radius: 50%; background: transparent; }
+  .beats li:first-child { border-radius: 4px; }
+  .beats li[data-on] { background: var(--green); }
+
+  /* Phones: Start and the pad sit on the bottom edge, in thumb reach, like the tuner. */
+  @media (max-width: 719px) {
+    .actions-main {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 40;
+      margin: 0;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: .4rem;
+      padding: .5rem 1.1rem calc(.5rem + env(safe-area-inset-bottom, 0px));
+      background: var(--bg);
+      border-top: 1px solid var(--line);
+      box-shadow: 0 -8px 18px rgba(42, 29, 20, .08);
+    }
+    .actions-main .btn { width: 100%; min-height: 48px; padding: .4rem .3rem; line-height: 1.2; text-align: center; }
+    .drum[data-pad-mode="1"] .pad {
+      position: fixed;
+      left: 1.1rem;
+      right: 1.1rem;
+      bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
+      z-index: 39;
+      width: auto;
+      margin: 0;
+      box-shadow: 0 6px 18px rgba(42, 29, 20, .2);
+    }
+    :global(body:has([data-drum])) { padding-bottom: calc(5.2rem + env(safe-area-inset-bottom, 0px)) !important; }
+    :global(body:has([data-drum][data-pad-mode="1"])) { padding-bottom: calc(11.5rem + env(safe-area-inset-bottom, 0px)) !important; }
+  }
+
+  /* Small phone held sideways: the bar becomes a rail on the right so it does not eat the height. */
+  @media (max-width: 719px) and (max-height: 500px) and (orientation: landscape) {
+    .actions-main {
+      top: 0;
+      left: auto;
+      bottom: 0;
+      right: 0;
+      width: calc(9rem + env(safe-area-inset-right, 0px));
+      grid-template-columns: minmax(0, 1fr);
+      align-content: start;
+      overflow-y: auto;
+      padding: .6rem calc(.6rem + env(safe-area-inset-right, 0px)) .6rem .6rem;
+      border-top: 0;
+      border-left: 1px solid var(--line);
+      box-shadow: -8px 0 18px rgba(42, 29, 20, .08);
+    }
+    .drum[data-pad-mode="1"] .pad {
+      z-index: 41; /* the rail is z-index 40 and runs the full height, so the pad must sit above it */
+      left: auto;
+      right: calc(.6rem + env(safe-area-inset-right, 0px));
+      bottom: .6rem;
+      width: 7.8rem;
+      min-height: 5rem;
+      font-size: 1.05rem;
+    }
+    :global(body:has([data-drum])),
+    :global(body:has([data-drum][data-pad-mode="1"])) {
+      padding-bottom: 0 !important;
+      padding-right: calc(9rem + env(safe-area-inset-right, 0px));
+    }
+  }
+
+  /* Site accessibility modes. Most of the page follows the tokens; these are the few spots that need more. */
+  :global(html[data-a11y-contrast=high]) .meter { border-color: #000; }
+  :global(html[data-a11y-contrast=high]) .centre { background: #000; }
+  :global(html[data-a11y-contrast=high]) .privacy { background: #fff; }
+  :global(html[data-a11y-contrast=high]) .field select { border-color: #000; }
+  :global(html[data-a11y-contrast=high]) .beats li { border-color: #000; }
+  :global(html[data-a11y-contrast=high]) .beats li[data-on] { background: #000; }
 </style>
