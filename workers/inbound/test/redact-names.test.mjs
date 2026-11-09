@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { DEFAULT_MODEL } from '../src/classify.js';
 import {
   aiNamePass,
   parseNamePass,
@@ -41,16 +42,21 @@ test('a failed name pass replaces the whole value', async () => {
 
 test('the Workers AI name pass fails closed on FAIL or a bad payload', async () => {
   await assert.rejects(
-    () => aiNamePass('Jordan Blake', async () => ({ response: 'FAIL' }), '@cf/meta/llama-3.1-8b-instruct'),
+    () => aiNamePass('Jordan Blake', async () => ({ response: 'FAIL' }), DEFAULT_MODEL),
     (err) => err.code === 'name_pass_failed',
   );
   assert.deepEqual(parseNamePass({ response: '{"names":["Riley Quinn"]}' }), { names: ['Riley Quinn'] });
+  assert.deepEqual(
+    parseNamePass({ response: '<think>Riley Quinn</think>{"names":["Riley Quinn"]}' }),
+    { names: ['Riley Quinn'] },
+  );
   const calls = [];
   const found = await aiNamePass('note', async (model, payload) => {
     calls.push({ model, payload });
     return { response: { names: [] } };
-  }, '@cf/meta/llama-3.1-8b-instruct');
+  }, DEFAULT_MODEL);
   assert.deepEqual(found, { names: [] });
-  assert.equal(calls[0].model, '@cf/meta/llama-3.1-8b-instruct');
+  assert.equal(calls[0].model, DEFAULT_MODEL);
+  assert.equal(calls[0].payload.chat_template_kwargs.enable_thinking, false);
   assert.match(calls[0].payload.messages[1].content, /<untrusted>/);
 });

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  CLASSIFIER_SCHEMA,
   DEFAULT_MODEL,
   classifyMessage,
   inspectAiResult,
@@ -48,12 +49,14 @@ const OK = {
   summary: 'A short note.',
 };
 
-test('the default model is the hosted fp8 id, and the retired id is rewritten', () => {
-  assert.equal(DEFAULT_MODEL, '@cf/meta/llama-3.1-8b-instruct-fp8');
+test('the default model is gemma 4, and retired llama ids are rewritten', () => {
+  assert.equal(DEFAULT_MODEL, '@cf/google/gemma-4-26b-a4b-it');
   assert.equal(modelName({}), DEFAULT_MODEL);
   assert.equal(modelName({ AI_MODEL: '@cf/meta/llama-3.1-8b-instruct' }), DEFAULT_MODEL);
   assert.equal(modelName({ AI_MODEL: '@cf/meta/llama-3.1-8b-instruct-fast' }), DEFAULT_MODEL);
-  assert.equal(modelName({ AI_MODEL: '@cf/meta/llama-3.2-3b-instruct' }), '@cf/meta/llama-3.2-3b-instruct');
+  assert.equal(modelName({ AI_MODEL: '@cf/meta/llama-3.1-8b-instruct-fp8' }), DEFAULT_MODEL);
+  assert.equal(modelName({ AI_MODEL: '@cf/meta/llama-3.2-1b-instruct' }), DEFAULT_MODEL);
+  assert.equal(modelName({ AI_MODEL: '@cf/meta/llama-3.2-3b-instruct' }), DEFAULT_MODEL);
 });
 
 test('response shapes parse when the category is in the allowed list', () => {
@@ -80,6 +83,18 @@ test('response shapes parse when the category is in the allowed list', () => {
   ]);
 });
 
+test('a thought block before the JSON object is ignored', () => {
+  const wrapped = `<think>Could be spam. {"category":"spam"}</think>\n${JSON.stringify(OK)}`;
+  assert.equal(parseAiResult({ response: wrapped }).category, 'other');
+  const channel = `<|channel>thought\nnotes {draft}\n<channel|>${JSON.stringify({ ...OK, category: 'booking inquiry' })}`;
+  assert.equal(parseAiResult({
+    choices: [{ message: { content: channel } }],
+  }).category, 'booking_inquiry');
+  assert.equal(parseAiResult({
+    choices: [{ message: { content: { ...OK, category: 'spam', summary: 'Sales.' } } }],
+  }).category, 'spam');
+});
+
 test('a bad category is rejected and a non-JSON reply is a parse error', () => {
   assert.equal(inspectAiResult({ response: { category: 'newsletter', confidence: 0.9, summary: 'Nope.' } }).failure, 'invalid_category');
   assert.equal(inspectAiResult({ response: 'not json at all' }).failure, 'parse_error');
@@ -96,6 +111,9 @@ test('fenced JSON is kept, and an invalid category falls back to rules', async (
   assert.equal(fencedResult.category, 'booking_inquiry');
   assert.equal(fencedResult.reason, 'ai_ok');
   assert.equal(fenced.payloads[0].payload.response_format.type, 'json_schema');
+  assert.equal(fenced.payloads[0].payload.response_format.json_schema.name, 'classification');
+  assert.equal(fenced.payloads[0].payload.response_format.json_schema.schema, CLASSIFIER_SCHEMA);
+  assert.equal(fenced.payloads[0].payload.chat_template_kwargs.enable_thinking, false);
   assert.equal(fenced.payloads[0].payload.max_tokens, 512);
   assert.equal(Object.hasOwn(fenced.payloads[0].payload, 'temperature'), false);
   assert.equal(fenced.payloads[0].model, DEFAULT_MODEL);
@@ -137,6 +155,14 @@ test('a thrown run, a removed model, and a timeout record a short reason', async
   assert.match(removed.logs.at(-1), /"reason":"ai_model"/);
   assertNoPrivate(removed.logs);
 
+  const gone = await logsOf(() => {
+    const err = new Error('gone');
+    err.code = 5028;
+    throw err;
+  });
+  assert.equal((await gone.result).reason, 'ai_model');
+  assertNoPrivate(gone.logs);
+
   const timed = await logsOf(() => new Promise(() => {}), { timeoutMs: 30 });
   const timedResult = await timed.result;
   assert.equal(timedResult.reason, 'ai_failed:timeout');
@@ -158,6 +184,7 @@ test('a prompt-required error retries once with prompt and without messages', as
   assert.equal(result.reason, 'ai_prompt');
   assert.equal(recovered.payloads.length, 3);
   assert.equal(recovered.payloads[2].payload.messages, undefined);
+  assert.equal(recovered.payloads[2].payload.chat_template_kwargs.enable_thinking, false);
   assert.match(recovered.payloads[2].payload.prompt, /untrusted-email/);
   assert.equal(recovered.payloads[2].payload.prompt.includes(SENDER), true);
   assertNoPrivate(recovered.logs);

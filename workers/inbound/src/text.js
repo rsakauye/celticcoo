@@ -1,6 +1,15 @@
 // Small string guards shared by the inbound mail worker.
 // Nothing here reads the network or the database.
 
+// Gemma 4 thinking is on unless the request turns it off. A finished thought
+// can contain braces. Drop that block so the JSON answer after it still parses.
+export function stripModelThinking(value) {
+  let raw = String(value ?? '');
+  raw = raw.replace(/<think\b[^>]*>[\s\S]*?<\/think>/gi, '');
+  raw = raw.replace(/<\|channel\|?>\s*thought\b[\s\S]*?<\|?channel\|?>/gi, '');
+  return raw;
+}
+
 export function oneLine(value, max) {
   const s = String(value ?? '').replace(/[\r\n\u0000-\u001F]+/g, ' ').replace(/\s+/g, ' ').trim();
   if (!s) return '';

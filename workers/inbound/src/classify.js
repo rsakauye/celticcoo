@@ -11,23 +11,29 @@
 import { analyzeMessage, compileSite, DATE_RE } from '../../../shared/triage/engine.js';
 import celticcoo from '../../../shared/triage/sites/celticcoo.js';
 import { fold } from '../../../shared/triage/text.js';
-import { oneLine } from './text.js';
+import { oneLine, stripModelThinking } from './text.js';
 import { redactContact, redactNames } from './redact.js';
 
 export { DATE_RE };
 
 export const CATEGORIES = celticcoo.categories;
 
-// The unquantized id was removed from the Workers AI catalog (deprecated
-// 30 May 2026). fp8 is the hosted replacement of the same 8B model.
-// Its binding example takes messages. Its published schema also requires
-// prompt, allows response_format, and types response as a string.
-export const DEFAULT_MODEL = '@cf/meta/llama-3.1-8b-instruct-fp8';
+// The unquantized Llama 3.1 id left the catalog on 30 May 2026.
+// fp8, Llama 3.2 1B, and Llama 3.2 3B leave on 20 November 2026
+// (HTTP 410, error 5028). Gemma 4 26B A4B is the hosted replacement.
+// Its input is messages or prompt. Thinking defaults on, so requests
+// send enable_thinking false. JSON schema mode needs a name and a schema.
+// The sync output is choices[0].message.content. A response string is
+// still accepted.
+export const DEFAULT_MODEL = '@cf/google/gemma-4-26b-a4b-it';
 
 const RETIRED_MODELS = new Set([
   '@cf/meta/llama-3.1-8b-instruct',
   '@cf/meta/llama-3.1-8b-instruct-awq',
   '@cf/meta/llama-3.1-8b-instruct-fast',
+  '@cf/meta/llama-3.1-8b-instruct-fp8',
+  '@cf/meta/llama-3.2-1b-instruct',
+  '@cf/meta/llama-3.2-3b-instruct',
 ]);
 
 export const AI_RUN_TIMEOUT_MS = 8_000;
@@ -245,7 +251,7 @@ function extractFromBraces(raw) {
 }
 
 function extractJsonValue(text) {
-  let raw = String(text).replace(/^\uFEFF/, '').trim();
+  let raw = stripModelThinking(String(text)).replace(/^\uFEFF/, '').trim();
   if (!raw) return undefined;
   const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
   if (fenced) raw = fenced[1].trim();
@@ -277,6 +283,7 @@ function unwrapAiPayload(result) {
   const choice = Array.isArray(result.choices) ? result.choices[0] : null;
   const message = choice && (choice.message || choice.delta);
   if (message && typeof message === 'object') {
+    if (message.content && typeof message.content === 'object' && !Array.isArray(message.content)) return message.content;
     const text = contentText(message.content);
     if (text.trim()) return text;
   }
@@ -313,9 +320,9 @@ function judgeClassification(raw) {
   return { classification };
 }
 
-// Workers AI returns { response: string } for this model. JSON mode may
-// return an object instead. A chat-shaped body and a fenced or prose-wrapped
-// string are accepted. The category still has to be one of CATEGORIES.
+// Gemma returns a chat completion. Older models return { response: string }.
+// JSON mode may return an object. A fenced, prose-wrapped, or thought-wrapped
+// string is accepted. The category still has to be one of CATEGORIES.
 export function inspectAiResult(result) {
   if (result == null) return { failure: 'parse_error' };
   const payload = unwrapAiPayload(result);
@@ -450,7 +457,7 @@ export function failureReason(err) {
   if (/\b(?:3036|5035)\b|neuron|free allocation|workers paid plan/i.test(blob)) return 'ai_quota';
   if (/\b3040\b|out of capacity|\b429\b|rate limit/i.test(blob)) return 'ai_capacity';
   if (/timeout|timed out|\babort/i.test(blob)) return 'ai_failed:timeout';
-  if (/\b6002\b|model (?:schema )?not found|no such model|unknown model|model (?:is )?not available|no longer available|\bdeprecated\b|model (?:has been |was )?removed|no route for that uri/i.test(blob)) return 'ai_model';
+  if (/\b(?:6002|5028)\b|model (?:schema )?not found|no such model|unknown model|model (?:is )?not available|no longer available|\bdeprecated\b|model (?:has been |was )?removed|no route for that uri/i.test(blob)) return 'ai_model';
   if (/json.?mode|response_format|schema|temperature|max_tokens/i.test(message)) return 'ai_request';
   if (typeof err?.code === 'string' && /^[a-z0-9_.:-]{1,40}$/i.test(err.code)) {
     const safe = err.code.toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
@@ -534,19 +541,29 @@ function attemptPayload(prompt, mode) {
     },
     { role: 'user', content: prompt.user },
   ];
+  // enable_thinking defaults to true on this model and can spend the token
+  // budget before the JSON object. The published json_schema object requires
+  // a name, with the classifier schema nested under schema.
+  const body = {
+    max_tokens: MAX_TOKENS,
+    chat_template_kwargs: { enable_thinking: false },
+  };
   if (mode === 'prompt') {
     return {
+      ...body,
       prompt: `${messages[0].content}\n\n${messages[1].content}`,
-      max_tokens: MAX_TOKENS,
     };
   }
-  if (mode === 'text') return { messages, max_tokens: MAX_TOKENS };
+  if (mode === 'text') return { ...body, messages };
   return {
+    ...body,
     messages,
-    max_tokens: MAX_TOKENS,
     response_format: {
       type: 'json_schema',
-      json_schema: CLASSIFIER_SCHEMA,
+      json_schema: {
+        name: 'classification',
+        schema: CLASSIFIER_SCHEMA,
+      },
     },
   };
 }
