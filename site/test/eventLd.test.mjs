@@ -166,3 +166,47 @@ test('the record stays an Event with the required properties', () => {
   assert.equal(ld.location['@type'], 'Place');
   assert.equal(ld.location.address.addressCountry, 'CA');
 });
+
+test('location name is the venue when the record has one, and the city when it does not', () => {
+  const withVenue = eventJsonLd({
+    ...base,
+    city: 'Calgary',
+    region: 'AB',
+    venue: 'Spruce Meadows',
+    street_address: '100 Example Road',
+    postal_code: 'T0T 0T0',
+  });
+  assert.equal(withVenue.location['@type'], 'Place');
+  assert.equal(withVenue.location.name, 'Spruce Meadows');
+  assert.equal(withVenue.location.address['@type'], 'PostalAddress');
+  assert.equal(withVenue.location.address.streetAddress, '100 Example Road');
+  assert.equal(withVenue.location.address.postalCode, 'T0T 0T0');
+  assert.equal(withVenue.location.address.addressLocality, 'Calgary');
+  assert.equal(withVenue.location.address.addressRegion, 'AB');
+  assert.equal(withVenue.location.address.addressCountry, 'CA');
+  assert.equal(withVenue.startDate, base.start_date);
+  assert.equal(withVenue.endDate, base.end_date);
+  assert.equal(withVenue.eventStatus, 'https://schema.org/EventScheduled');
+  assert.equal(withVenue.eventAttendanceMode, 'https://schema.org/OfflineEventAttendanceMode');
+  assert.equal(withVenue.sameAs, base.source_url);
+  assert.deepEqual(withVenue.image, EVENT_IMAGE_FALLBACK);
+
+  const cityOnly = eventJsonLd({ ...base, city: 'Calgary', region: 'AB' });
+  assert.equal(cityOnly.location.name, 'Calgary');
+  assert.equal('streetAddress' in cityOnly.location.address, false);
+  assert.equal('postalCode' in cityOnly.location.address, false);
+  assert.equal(cityOnly.location.address.addressLocality, 'Calgary');
+  assert.equal(cityOnly.location.address.addressRegion, 'AB');
+
+  const blank = eventJsonLd({
+    ...base,
+    venue: '   ',
+    street_address: '',
+    postal_code: '  ',
+    notes: '100 Example Road',
+    note: 'Topaz Park',
+  });
+  assert.equal(blank.location.name, base.city);
+  assert.equal('streetAddress' in blank.location.address, false);
+  assert.equal('postalCode' in blank.location.address, false);
+});

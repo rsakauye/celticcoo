@@ -75,6 +75,32 @@ function dated(value) {
   return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value) ? value : '';
 }
 
+function placeText(value) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+// location.name is venue when that string is set, otherwise the city.
+// streetAddress and postalCode are copied only from street_address and postal_code.
+// Blank strings are left off. Notes are not an address.
+function eventLocation(event) {
+  const venue = placeText(event?.venue);
+  const address = {
+    '@type': 'PostalAddress',
+    addressLocality: event.city,
+    addressRegion: event.region,
+    ...(COUNTRY_CODE[event.country] ? { addressCountry: COUNTRY_CODE[event.country] } : {}),
+  };
+  const street = placeText(event?.street_address);
+  const postal = placeText(event?.postal_code);
+  if (street) address.streetAddress = street;
+  if (postal) address.postalCode = postal;
+  return {
+    '@type': 'Place',
+    name: venue || event.city,
+    address,
+  };
+}
+
 function currencyFor(event) {
   const fromCountry = CURRENCY_BY_COUNTRY[event?.country];
   if (fromCountry) return fromCountry;
@@ -135,16 +161,7 @@ export function eventJsonLd(event) {
     endDate: event.end_date || event.start_date,
     eventStatus: 'https://schema.org/EventScheduled',
     eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-    location: {
-      '@type': 'Place',
-      name: event.city,
-      address: {
-        '@type': 'PostalAddress',
-        addressLocality: event.city,
-        addressRegion: event.region,
-        ...(COUNTRY_CODE[event.country] ? { addressCountry: COUNTRY_CODE[event.country] } : {}),
-      },
-    },
+    location: eventLocation(event),
     description: [event.type, event.cost === 'free' ? 'Free admission' : '', event.note].filter(Boolean).join('. '),
     url: `${ORIGIN}/events/${event.id}/`,
     sameAs: event.source_url,

@@ -6,8 +6,9 @@ import NewsletterForm from '../../components/NewsletterForm.astro';
 import BookLink from '../../components/BookLink.astro';
 import { bookingConfig } from '../../lib/booking.js';
 import EventCard from '../../components/EventCard.astro';
-import { events, CATEGORY_EMOJI, COUNTRY_FLAG, FEATURES, sourceLinkLabel, dateConfirmLine, TAG_LABEL } from '../../lib/data.js';
+import { events, groups, CATEGORY_EMOJI, COUNTRY_FLAG, FEATURES, sourceLinkLabel, dateConfirmLine, TAG_LABEL } from '../../lib/data.js';
 import { eventJsonLd } from '../../lib/eventLd.js';
+import { eventPlaceLine, eventNearby } from '../../lib/eventPage.js';
 import { canadianConnection, searchFromFilters, visibleTags } from '../../lib/eventFilters.js';
 import { u } from '../../lib/site.js';
 export function getStaticPaths() {
@@ -15,6 +16,8 @@ export function getStaticPaths() {
 }
 const { e } = Astro.props;
 const place = [e.city, e.regionLabel, e.country !== 'Canada' && e.country !== e.regionLabel ? e.country : ''].filter(Boolean).join(', ');
+const placeLine = eventPlaceLine(e);
+const nearby = eventNearby(e, groups.map((g) => g.province));
 const pageTitle = `${e.name}: ${e.when}, ${e.city}`;
 const description = e.source_kind === 'organizer'
   ? `${e.name} (${e.type}) in ${place}, ${e.when}. Date from the host.`
@@ -36,8 +39,8 @@ const sameType = events.filter((x) => x.id !== e.id && x.category === e.category
 <Base title={pageTitle} crumb={e.name} breadcrumbs={[['Events', 'events/']]} description={description} jsonld={eventLd}>
   <p class="muted"><a href={u('events/')}>Events</a> › <a href={placeHref}>{e.regionLabel}</a></p>
   <h1>{e.name}</h1>
+  {placeLine && <p class="place">{COUNTRY_FLAG[e.country] || ''} {placeLine}</p>}
   <p class="when">{e.when}</p>
-  <p>{COUNTRY_FLAG[e.country] || ''} {place}</p>
   {canadaLink && <p class="ev-can">{canadaLink}</p>}
   <p><span class="pill green">{CATEGORY_EMOJI[e.category]} {e.category}</span>{e.cost === 'free' && <span class="pill free" title={e.cost_quote || undefined}>FREE</span>}{e.type !== e.category && <span class="pill">{e.type}</span>}{e.source_kind === 'organizer' && <span class="pill">Date from organizer</span>}</p>
   {e.summary && <p class="ev-sum">{e.summary} <span class="muted">(From the {summaryFrom}.)</span></p>}
@@ -69,6 +72,13 @@ const sameType = events.filter((x) => x.id !== e.id && x.category === e.category
   {e.offers && e.offers.price !== undefined && e.offers.priceCurrency && !(e.cost === 'free' && Number(e.offers.price) === 0) && <p class="muted">{Number(e.offers.price) === 0 ? 'Admission is free.' : `Lowest published ticket price: ${e.offers.price} ${e.offers.priceCurrency}.`}</p>}
   <p class="muted">{dateConfirmLine(e.source_kind)} Dates and details can change, so check with the organizer before you travel. The links above add this event. Subscribe to every confirmed event with <a href={u('events.ics')}>events.ics</a>.</p>
   <p class="muted">Going? See <a href={u('what-to-wear/')}>what to wear</a>, find <a href={u('groups/')}>clubs &amp; lessons</a> or <a href={u('shops/')}>Celtic shops</a>{e.category === 'Burns Night' && <>, or read our <a href={u('burns-night/')}>Burns Night guide</a></>}.</p>
+  <section class="nearby" aria-labelledby="nearby-heading">
+    <h2 id="nearby-heading">Nearby</h2>
+    <ul>
+      <li><a href={u(nearby.groupsPath)}>{nearby.groupsLabel}</a></li>
+      {nearby.guides.map((guide) => <li><a href={u(guide.href)}>{guide.label}</a></li>)}
+    </ul>
+  </section>
   {near.length > 0 && <section><h2>More in {e.regionLabel}</h2><div class="grid">{near.map((x) => <EventCard e={x} />)}</div></section>}
   {sameType.length > 0 && <section><h2>More {e.category.toLowerCase()} events</h2><div class="grid">{sameType.map((x) => <EventCard e={x} />)}</div></section>}
   <p><a href={u('events/')}>← All Celtic &amp; Highland events</a></p>
@@ -80,6 +90,11 @@ const sameType = events.filter((x) => x.id !== e.id && x.category === e.category
   .book-cta { background:#fff4e8; border-color:#f1cfae; margin:1rem 0; }
   .book-cta p { margin:.1rem 0 .7rem; }
   .tag { text-decoration:underline; text-underline-offset:2px; }
+  .place { margin: .15rem 0 .2rem; }
+  .nearby { margin: 1rem 0; }
+  .nearby h2 { margin: .1rem 0 .35rem; font-size: 1.25rem; }
+  .nearby ul { margin: 0; padding-left: 1.2rem; }
+  .nearby li { margin: .15rem 0; }
   .when { font-weight:700; color:var(--ginger); font-size:1.15rem; margin:.2rem 0; }
   .ev-can { margin:.2rem 0 .6rem; color:var(--green); font-weight:700; }
 </style>
