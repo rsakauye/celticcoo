@@ -50,3 +50,10 @@ https://:project.pages.dev/*
 
 https://:version.:project.pages.dev/*
   X-Robots-Tag: noindex
+
+# Drum practice and the tuner use the microphone. Only this site may ask for it.
+/drum/*
+  Permissions-Policy: microphone=(self)
+
+/tune/*
+  Permissions-Policy: microphone=(self)
