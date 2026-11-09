@@ -122,7 +122,7 @@ test('missing fields and red flags are advisory codes and never a copy of the me
   assert.deepEqual(flagged.missingFields, ['date', 'time', 'venue', 'booking', 'event']);
   assert.equal(flagged.redFlags.bot_instruction_attempt, true);
   assert.equal(JSON.stringify(flagged.reasons).includes('cheque'), false);
-  assert.equal(JSON.stringify(flagged.reasons).includes('example.com'), false);
+  assert.doesNotMatch(JSON.stringify(flagged.reasons), /example\.com/);
 
   const form = scoreTrust({
     channel: 'form',
