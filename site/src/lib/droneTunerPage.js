@@ -20,6 +20,7 @@ import {
   lockReference,
   outputGain,
   slideAdvice,
+  STEPS,
 } from './droneTuner.js';
 
 const PITCH_SECONDS = 0.48;
@@ -56,6 +57,12 @@ export function mountTuner(root) {
   const demoPanel = q('[data-demo-panel]');
   const presetButtons = [...root.querySelectorAll('[data-preset]')];
   const stepButtons = [...root.querySelectorAll('[data-step]')];
+  const stepNum = q('[data-step-num]');
+  const stepTitle = q('[data-step-title]');
+  const stepBody = q('[data-step-body]');
+  const lowAErr = q('[data-low-a-err]');
+  const prevBtn = q('[data-step-prev]');
+  const nextBtn = q('[data-step-next]');
 
   let ctx = null;
   let bus = null;
@@ -282,8 +289,7 @@ export function mountTuner(root) {
       try { gone.master.disconnect(); } catch (e) { /* already stopped */ }
     }, 60);
     if (earBtn) {
-      earBtn.setAttribute('aria-pressed', 'false');
-      earBtn.textContent = 'By-ear mode';
+      earBtn.textContent = 'Tune by ear';
     }
   }
 
@@ -345,11 +351,9 @@ export function mountTuner(root) {
     resetRings();
     if (demoPanel) demoPanel.hidden = false;
     if (demoBtn) {
-      demoBtn.setAttribute('aria-pressed', 'true');
       demoBtn.textContent = 'Stop demo';
     }
     if (startBtn) {
-      startBtn.setAttribute('aria-pressed', 'false');
       startBtn.textContent = 'Start tuning';
     }
     if (centsEl) centsEl.textContent = 'Listening…';
@@ -362,8 +366,7 @@ export function mountTuner(root) {
     if (mode === 'demo') mode = 'idle';
     if (demoPanel) demoPanel.hidden = true;
     if (demoBtn) {
-      demoBtn.setAttribute('aria-pressed', 'false');
-      demoBtn.textContent = 'Try demo mode';
+      demoBtn.textContent = 'Try demo';
     }
     renderIdle();
   }
@@ -466,8 +469,7 @@ export function mountTuner(root) {
     stopDemo();
     if (demoPanel) demoPanel.hidden = true;
     if (demoBtn) {
-      demoBtn.setAttribute('aria-pressed', 'false');
-      demoBtn.textContent = 'Try demo mode';
+      demoBtn.textContent = 'Try demo';
     }
     if (startBtn) startBtn.textContent = 'Waiting for the microphone…';
     try {
@@ -481,7 +483,6 @@ export function mountTuner(root) {
       mode = 'mic';
       resetRings();
       if (startBtn) {
-        startBtn.setAttribute('aria-pressed', 'true');
         startBtn.textContent = 'Stop tuning';
       }
       if (centsEl) centsEl.textContent = 'Listening…';
@@ -489,7 +490,6 @@ export function mountTuner(root) {
     } catch (err) {
       mode = byEar ? mode : 'idle';
       if (startBtn) {
-        startBtn.setAttribute('aria-pressed', 'false');
         startBtn.textContent = 'Start tuning';
       }
       const denied = err && (err.name === 'NotAllowedError' || err.name === 'SecurityError');
@@ -505,7 +505,6 @@ export function mountTuner(root) {
     stopMic();
     if (mode === 'mic') mode = 'idle';
     if (startBtn) {
-      startBtn.setAttribute('aria-pressed', 'false');
       startBtn.textContent = 'Start tuning';
     }
     window.clearInterval(captureTimer);
@@ -547,8 +546,7 @@ export function mountTuner(root) {
     master.gain.linearRampToValueAtTime(1, now + 0.05);
     byEar = { master, tenor, bass };
     if (earBtn) {
-      earBtn.setAttribute('aria-pressed', 'true');
-      earBtn.textContent = 'Stop by-ear';
+      earBtn.textContent = 'Stop by ear';
     }
     announce('By-ear reference is playing. Tenor at low A over 2, bass at low A over 4. One earbud leaves room to hear the pipes.');
     if (micStream) {
@@ -762,13 +760,22 @@ export function mountTuner(root) {
     beginCaptureWindow();
   }
 
-  function showStep(next) {
-    step = Math.max(0, Math.min(stepButtons.length - 1, next));
+  function showStep(to, { speak = false } = {}) {
+    const last = Math.max(0, Math.min(stepButtons.length, STEPS.length) - 1);
+    step = Math.max(0, Math.min(last, to));
     stepButtons.forEach((button, index) => {
       const on = index === step;
       button.setAttribute('aria-current', on ? 'step' : 'false');
       button.classList.toggle('is-current', on);
     });
+    const info = STEPS[step];
+    if (stepNum) stepNum.textContent = String(step + 1);
+    if (stepTitle && info) stepTitle.textContent = info.title;
+    if (stepBody && info) stepBody.textContent = info.body;
+    // aria-disabled, not disabled: a disabled button drops keyboard focus.
+    if (prevBtn) prevBtn.setAttribute('aria-disabled', step === 0 ? 'true' : 'false');
+    if (nextBtn) nextBtn.setAttribute('aria-disabled', step === last ? 'true' : 'false');
+    if (speak && info) announce(`Step ${step + 1} of ${last + 1}. ${info.title}. ${info.body}`);
   }
 
   if (startBtn) startBtn.addEventListener('click', onStart);
@@ -791,12 +798,14 @@ export function mountTuner(root) {
   if (lowAInput) {
     lowAInput.addEventListener('change', () => {
       const hz = Number(lowAInput.value);
-      if (hz < 430 || hz > 510) {
+      if (!Number.isFinite(hz) || hz < 430 || hz > 510) {
         lowAInput.setAttribute('aria-invalid', 'true');
+        if (lowAErr) lowAErr.hidden = false;
         lowAInput.value = String(lowA);
         return;
       }
       lowAInput.removeAttribute('aria-invalid');
+      if (lowAErr) lowAErr.hidden = true;
       setLowA(Math.round(hz * 10) / 10);
     });
   }
@@ -804,12 +813,13 @@ export function mountTuner(root) {
     button.addEventListener('click', () => setLowA(Number(button.dataset.preset)));
   }
   stepButtons.forEach((button, index) => {
-    button.addEventListener('click', () => showStep(index));
+    button.addEventListener('click', () => showStep(index, { speak: true }));
   });
-  const prev = q('[data-step-prev]');
-  const next = q('[data-step-next]');
-  if (prev) prev.addEventListener('click', () => showStep(step - 1));
-  if (next) next.addEventListener('click', () => showStep(step + 1));
+  if (prevBtn) prevBtn.addEventListener('click', () => { if (step > 0) showStep(step - 1, { speak: true }); });
+  if (nextBtn) nextBtn.addEventListener('click', () => {
+    if (nextBtn.getAttribute('aria-disabled') !== 'true') showStep(step + 1, { speak: true });
+  });
+  mountTabs(root);
 
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && ctx && (mode !== 'idle' || byEar)) ctx.resume();
@@ -823,6 +833,39 @@ export function mountTuner(root) {
   renderDetuneLabel();
   renderIdle();
   showStep(0);
+}
+
+// Tabs under the readout. One panel shows at a time, so the page stays about
+// one screen tall. Arrow keys, Home and End move between tabs (WAI-ARIA tabs).
+export function mountTabs(root) {
+  const list = root.querySelector('[data-tabs]');
+  if (!list) return;
+  const tabs = [...list.querySelectorAll('[role="tab"]')];
+  const panels = tabs.map((tab) => root.querySelector(`#${tab.getAttribute('aria-controls')}`));
+
+  function select(index, focus) {
+    tabs.forEach((tab, i) => {
+      const on = i === index;
+      tab.setAttribute('aria-selected', on ? 'true' : 'false');
+      tab.tabIndex = on ? 0 : -1;
+      if (panels[i]) panels[i].hidden = !on;
+    });
+    if (focus) tabs[index].focus();
+  }
+
+  tabs.forEach((tab, i) => {
+    tab.addEventListener('click', () => select(i, false));
+    tab.addEventListener('keydown', (event) => {
+      let to = null;
+      if (event.key === 'ArrowRight') to = (i + 1) % tabs.length;
+      else if (event.key === 'ArrowLeft') to = (i - 1 + tabs.length) % tabs.length;
+      else if (event.key === 'Home') to = 0;
+      else if (event.key === 'End') to = tabs.length - 1;
+      if (to === null) return;
+      event.preventDefault();
+      select(to, true);
+    });
+  });
 }
 
 function createRing(capacity) {

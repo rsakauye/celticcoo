@@ -313,6 +313,13 @@ test('the tuner page is linked from Play, still noindex, and off the sitemap', (
   assert.match(page, /ctx\.resume\(\)/);
   assert.match(page, /webkitAudioContext/);
   assert.match(page, /By-ear/);
+  // Mobile-first layout: options sit in tabs, not a long page of cards.
+  assert.match(page, /role="tablist"/);
+  assert.match(page, /role="tabpanel"/);
+  assert.match(page, /ArrowRight/);
+  assert.match(page, /translate3d\(-640px, 0, 0\)/);
+  assert.match(page, /aria-disabled/);
+  assert.doesNotMatch(astro, /data-ear aria-pressed|data-start aria-pressed|data-demo aria-pressed/);
   assert.match(page, /echoCancellation/);
   assert.doesNotMatch(page, /CeilidhCoo/);
   assert.doesNotMatch(page, /https?:\/\//);
