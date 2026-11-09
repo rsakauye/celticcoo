@@ -4,6 +4,8 @@
   try {
   var d = document.documentElement, me = document.currentScript, KEY = 'a11y';
   var FONT = (me && me.getAttribute('data-font')) || '/fonts/atkinson.css';
+  if (!/^\/(?!\/)[\w.\/-]*$/.test(FONT)) FONT = '/fonts/atkinson.css'; // same-site path only
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   var T = (me && me.getAttribute('data-title')) || 'Accessibility';
   function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { return {}; } }
   function save(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} }
@@ -58,10 +60,10 @@
   function build() {
     var st = document.createElement("style"); st.textContent = css; document.head.insertBefore(st, document.head.firstChild); // first, so page skins win
     dlg = document.createElement('dialog'); dlg.id = 'a11y-dlg'; dlg.setAttribute('aria-labelledby', 'a11y-t'); dlg.setAttribute('aria-describedby', 'a11y-s');
-    var h = '<div class="a11y-in"><p class="a11y-kick" aria-hidden="true">Options &#9656;</p><h2 id="a11y-t">' + T + '</h2><p class="a11y-sub" id="a11y-s">Changes apply right away and are saved in this browser only.</p>'
+    var h = '<div class="a11y-in"><p class="a11y-kick" aria-hidden="true">Options &#9656;</p><h2 id="a11y-t">' + esc(T) + '</h2><p class="a11y-sub" id="a11y-s">Changes apply right away and are saved in this browser only.</p>'
       + '<fieldset><legend>Text size</legend><div class="a11y-seg">'
       + [['s', 'S', 'Small'], ['m', 'M', 'Medium'], ['l', 'L', 'Large'], ['xl', 'XL', 'Extra large']].map(function (o) { return '<label><input type="radio" name="a11y-size" value="' + o[0] + '"><span>' + o[1] + '<em class="a11y-sr"> ' + o[2].toLowerCase() + '</em></span></label>'; }).join('') + '</div></fieldset>';
-    SW.forEach(function (s) { h += '<div class="a11y-row"><span><span id="a11y-l-' + s[0] + '">' + s[1] + '</span><small id="a11y-h-' + s[0] + '">' + s[2] + '</small></span><button type="button" role="switch" data-k="' + s[0] + '" aria-labelledby="a11y-l-' + s[0] + '" aria-describedby="a11y-h-' + s[0] + '"></button></div>'; });
+    SW.forEach(function (s) { h += '<div class="a11y-row"><span><span id="a11y-l-' + s[0] + '">' + esc(s[1]) + '</span><small id="a11y-h-' + s[0] + '">' + esc(s[2]) + '</small></span><button type="button" role="switch" data-k="' + s[0] + '" aria-labelledby="a11y-l-' + s[0] + '" aria-describedby="a11y-h-' + s[0] + '"></button></div>'; });
     h += '<div class="a11y-act"><span class="a11y-hint" aria-hidden="true"><kbd>Tab</kbd> move &middot; <kbd>Space</kbd> toggle &middot; <kbd>Esc</kbd> back</span><button type="button" class="a11y-reset">Reset to defaults</button><button type="button" class="a11y-done">Done</button></div></div>';
     dlg.innerHTML = h; document.body.appendChild(dlg);
     dlg.addEventListener('change', function (e) { if (e.target.name === 'a11y-size') { var s = load(); s.size = e.target.value; save(s); apply('size', e.target.value); } });

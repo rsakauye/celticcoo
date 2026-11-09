@@ -6,9 +6,11 @@ const FEEDS = [
 ];
 // We don't show individual names of minors. Skip headlines that look like they're about junior/youth solo results.
 const MINOR_HINT = /\b(junior|juvenile|youth|novice|under[- ]?\d+|u\d{2}|kids?|child|children|students?|school|beginner|chanter|grade [45]|teen)/i;
-const decode = (s) => s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1').replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n))
-  .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16))).replace(/&amp;/g, '&').replace(/&quot;/g, '"')
-  .replace(/&apos;|&#039;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/<[^>]+>/g, '').trim();
+const stripTags = (s) => { let prev; do { prev = s; s = s.replace(/<[^>]*>/g, ''); } while (s !== prev); return s.replace(/[<>]/g, ''); };
+// Decode entities with &amp; last (so "&amp;lt;" stays "&lt;"), then strip any tags, including ones the decoding produced.
+const decode = (s) => stripTags(s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1').replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n))
+  .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16))).replace(/&quot;/g, '"')
+  .replace(/&apos;|&#039;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')).trim();
 const tag = (xml, t) => { const m = xml.match(new RegExp(`<${t}[^>]*>([\\s\\S]*?)</${t}>`, 'i')); return m ? decode(m[1]) : ''; };
 
 let cache;
