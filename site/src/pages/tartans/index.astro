@@ -38,17 +38,51 @@ const clanData = CLANS.map((c) => {
     (function () {
       var data = JSON.parse(document.getElementById('t-data').textContent);
       var $ = function (id) { return document.getElementById(id); };
-      var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
       function norm(s) { return s.toLowerCase().replace(/^mc/, 'mac').replace(/[^a-z]/g, ''); }
+      function para(htmlClass, margin) {
+        var p = document.createElement('p');
+        if (htmlClass) p.className = htmlClass;
+        p.style.margin = margin;
+        return p;
+      }
+      function extLink(href, label, className) {
+        var a = document.createElement('a');
+        if (className) a.className = className;
+        a.href = href;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.textContent = label;
+        return a;
+      }
       function find() {
-        var raw = $('t-name').value.trim(); if (!raw) { $('t-out').innerHTML = ''; return; }
+        var out = $('t-out');
+        out.replaceChildren();
+        var raw = $('t-name').value.trim();
+        if (!raw) return;
         var k = norm(raw), hit = data.find(function (c) { return c.key === k; });
         var name = hit ? hit.name : raw.replace(/[^\p{L}' -]/gu, '').slice(0, 40);
         var az = 'https://www.tartanregister.gov.uk/az.aspx?searchString=' + encodeURIComponent(name);
-        var html = '<p style="margin:0 0 .4rem"><a class="btn ghost" href="' + az + '" target="_blank" rel="noopener">See ' + esc(name) + ' tartans on the Scottish Register ↗</a></p>';
-        if (hit && hit.society) html += '<p style="margin:.3rem 0">🛡️ Clan society in Canada: <a href="' + esc(hit.society.url) + '" target="_blank" rel="noopener">' + esc(hit.society.name) + ' ↗</a></p>';
-        if (!hit) html += '<p class="muted" style="margin:.3rem 0">Not a clan name we know. Your surname may be a sept (associated family) of a clan, so a clan society can tell you. Try <a href="https://www.tartanregister.gov.uk/search.aspx" target="_blank" rel="noopener">the Register\'s full search ↗</a>.</p>';
-        $('t-out').innerHTML = html;
+        var p1 = para('', '0 0 .4rem');
+        p1.appendChild(extLink(az, 'See ' + name + ' tartans on the Scottish Register ↗', 'btn ghost'));
+        out.appendChild(p1);
+        if (hit && hit.society) {
+          var p2 = para('', '.3rem 0');
+          p2.appendChild(document.createTextNode('🛡️ Clan society in Canada: '));
+          var socUrl = String(hit.society.url || '');
+          if (/^https?:\/\//i.test(socUrl)) {
+            p2.appendChild(extLink(socUrl, hit.society.name + ' ↗'));
+          } else {
+            p2.appendChild(document.createTextNode(hit.society.name));
+          }
+          out.appendChild(p2);
+        }
+        if (!hit) {
+          var p3 = para('muted', '.3rem 0');
+          p3.appendChild(document.createTextNode('Not a clan name we know. Your surname may be a sept (associated family) of a clan, so a clan society can tell you. Try '));
+          p3.appendChild(extLink('https://www.tartanregister.gov.uk/search.aspx', "the Register's full search ↗"));
+          p3.appendChild(document.createTextNode('.'));
+          out.appendChild(p3);
+        }
       }
       $('t-go').addEventListener('click', find);
     })();
