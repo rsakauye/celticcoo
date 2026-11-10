@@ -1,0 +1,158 @@
+---
+import Base from '../../layouts/Base.astro';
+import { u } from '../../lib/site.js';
+import { BPM_MAX, BPM_MIN, DEFAULT_BPM, OFFSET_MAX_MS, OFFSET_MIN_MS, RUDIMENTS, SENSITIVITY_DEFAULT } from '../../lib/drumPractice.js';
+const avatar = u('img/ceilidh-avatar-52.png');
+const worklet = u('drum-worklet.js');
+---
+<Base title="Drum practice" noindex={true} hideCornerCoo={true} description="An on-device practice pad coach with an adjustable metronome. The microphone stays on your phone. Nothing is sent or saved.">
+  <div class="drum" data-drum data-worklet={worklet}>
+    <p class="kicker">A wee practice pad coach</p>
+    <h1>Drum practice</h1>
+    <p class="lede">Set a tempo, pick a rudiment, and play on your pad. The page listens, and shows whether each stroke landed early, late, or on the beat. The microphone stays in the room.</p>
+
+    <section class="card controls" aria-labelledby="set-title">
+      <div class="head">
+        <img src={avatar} alt="" width="52" height="52" class="sprite" />
+        <h2 id="set-title">Set up</h2>
+      </div>
+
+      <label class="field" for="rudiment">Rudiment
+        <select id="rudiment" data-rudiment aria-describedby="rudiment-note">
+          {RUDIMENTS.map((r) => <option value={r.id}>{r.title}</option>)}
+        </select>
+      </label>
+      <p class="strokes" aria-label="Sticking" data-strokes></p>
+      <p id="rudiment-note" class="muted" data-rudiment-note></p>
+
+      <div class="bpm">
+        <label class="field" for="bpm">Tempo <output data-bpm-out for="bpm">{DEFAULT_BPM} BPM</output>
+          <input id="bpm" data-bpm type="range" min={BPM_MIN} max={BPM_MAX} step="1" value={DEFAULT_BPM} />
+        </label>
+        <div class="nudge" role="group" aria-label="Fine tempo">
+          <button type="button" class="btn ghost" data-bpm-down aria-label="One beat per minute slower">−1</button>
+          <button type="button" class="btn ghost" data-bpm-up aria-label="One beat per minute faster">+1</button>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn" data-start aria-pressed="false">Start with microphone</button>
+        <button type="button" class="btn ghost" data-pad aria-pressed="false">Practise with the pad</button>
+      </div>
+      <p class="err" data-error role="alert" hidden></p>
+      <p class="status" data-status role="status">Ready. Wired headphones keep the click out of the microphone.</p>
+    </section>
+
+    <section class="card meter-card" aria-labelledby="meter-title">
+      <h2 id="meter-title">How you are landing</h2>
+      <div class="meter" data-meter data-grade="none" aria-hidden="true">
+        <div class="zones">
+          <span class="z ok"></span><span class="z good"></span><span class="z perfect"></span><span class="z good"></span><span class="z ok"></span>
+        </div>
+        <div class="centre"></div>
+        <div class="ticks" data-ticks></div>
+      </div>
+      <p class="labels" aria-hidden="true"><span>Early</span><span>On the beat</span><span>Late</span></p>
+      <p class="last slot" data-last>Waiting for a stroke</p>
+      <p class="count" data-count>0 perfect · 0 good · 0 ok · 0 missed · 0 extra</p>
+      <p class="advice" data-advice>Play a few more bars and the page will tell you which way you lean.</p>
+      <button type="button" class="pad" data-tap aria-label="Tap pad. Use this instead of the microphone, or press space.">Tap pad <span>or press space</span></button>
+    </section>
+
+    <section class="card block" aria-labelledby="tune-title">
+      <h2 id="tune-title">Listening settings</h2>
+      <label class="field" for="offset">Latency offset <output data-offset-out for="offset">0 ms</output>
+        <input id="offset" data-offset type="range" min={OFFSET_MIN_MS} max={OFFSET_MAX_MS} step="1" value="0" />
+      </label>
+      <p class="muted">Phones add a delay between a stroke and the page hearing it. Positive numbers say the page hears you late. Measure it, or nudge it until a steady player reads about zero.</p>
+      <div class="actions">
+        <button type="button" class="btn ghost" data-calibrate>Measure latency</button>
+      </div>
+      <p class="muted">Measuring plays eight clicks through the speaker and listens for them. Take headphones off and keep the room quiet.</p>
+      <label class="field" for="sens">Pad sensitivity
+        <input id="sens" data-sens type="range" min="0" max="100" value={SENSITIVITY_DEFAULT} />
+      </label>
+      <p class="muted">Raise it for a soft practice pad. Lower it if the page counts extra hits from the room.</p>
+      <label class="field" for="level">Click volume
+        <input id="level" data-level type="range" min="0" max="100" value="60" />
+      </label>
+    </section>
+
+    <section class="card block">
+      <h2>What it can and cannot hear</h2>
+      <p>The microphone hears that a stroke happened, and how hard. It cannot tell your left hand from your right, so sticking is shown for you to follow, and only timing is scored.</p>
+      <p>A speaker click can leak into the microphone and score for you. Use wired headphones or one earbud while you play. Bluetooth headphones add their own delay, so nudge the offset by ear.</p>
+    </section>
+
+    <section class="card privacy">
+      <h2>Privacy</h2>
+      <p>Microphone audio is analyzed on your device only. Nothing is recorded, sent, or saved, and the microphone switches off when you stop or leave the page. Echo cancellation, noise suppression, and automatic gain stay off, so the phone does not treat a drum like a voice.</p>
+    </section>
+    <p class="sr-only" data-live aria-live="polite"></p>
+  </div>
+</Base>
+
+<script>
+  import { mountDrum } from '../../lib/drumPracticePage.js';
+  mountDrum(document.querySelector('[data-drum]'));
+</script>
+
+<style>
+  .drum { max-width: 760px; }
+  .drum h1 { font-size: clamp(1.6rem, 6.2vw, 2.15rem); margin: 0 0 .4rem; }
+  .kicker { color: var(--ginger); font-weight: 700; font-style: italic; margin: 0 0 .2rem; }
+  .lede { margin: 0 0 .9rem; color: #4a3a2e; }
+  .card { margin-top: 1rem; }
+  .head { display: flex; align-items: center; gap: .6rem; }
+  .head h2 { margin: 0; }
+  .sprite { image-rendering: pixelated; width: 52px; height: 52px; }
+  .field { display: grid; gap: .25rem; font-weight: 700; margin-top: .6rem; }
+  .field output { font-weight: 400; color: var(--muted); margin-left: .4rem; }
+  .field select, .field input[type="range"] { width: 100%; min-height: 44px; }
+  .field select { font: inherit; padding: .4rem .5rem; border: 1px solid #cdbda3; border-radius: 8px; background: #fff; }
+  .strokes { font: 700 1.3rem ui-monospace, Menlo, Consolas, monospace; letter-spacing: .12em; color: var(--green); margin: .5rem 0 .1rem; }
+  .bpm { display: grid; grid-template-columns: 1fr auto; gap: .6rem; align-items: end; }
+  .nudge { display: flex; gap: .4rem; }
+  .nudge .btn { min-width: 3rem; min-height: 44px; }
+  .actions { display: flex; flex-wrap: wrap; gap: .5rem; margin: .9rem 0 .4rem; }
+  .actions .btn { min-height: 44px; }
+  .btn[disabled] { opacity: .5; cursor: not-allowed; }
+  .err { color: #8d2a2a; font-weight: 700; }
+  .status { color: var(--muted); margin: .3rem 0 0; }
+  .muted { color: var(--muted); font-size: .92rem; margin: .3rem 0; }
+
+  .meter { position: relative; height: 3rem; margin-top: .6rem; border-radius: 10px; overflow: hidden; border: 2px solid var(--green); }
+  .zones { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; }
+  .zones .z.ok { background: #f1cfae; }
+  .zones .z.good { background: #dcebe2; }
+  .zones .z.perfect { background: #9fd0b2; }
+  .centre { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: var(--green); }
+  .ticks { position: absolute; inset: 0; }
+  .tick { position: absolute; top: 4px; bottom: 4px; width: 6px; margin-left: -3px; background: var(--ginger); border-radius: 1px; }
+  .tick.perfect { background: #1f7a3a; }
+  .tick.good { background: var(--green2); }
+  .tick.stray { background: #8d2a2a; opacity: .7; }
+  .tick:last-child { outline: 2px solid var(--navy); }
+  .labels { display: flex; justify-content: space-between; font-size: .85rem; color: var(--muted); margin: .25rem 0 0; }
+  .last { font-weight: 700; font-size: 1.15rem; margin: .6rem 0 .2rem; min-height: 1.6em; }
+  .count { margin: 0; color: var(--muted); font-size: .92rem; }
+  .advice { margin: .5rem 0 0; }
+  .pad {
+    display: none;
+    width: 100%;
+    margin-top: .9rem;
+    min-height: 5.5rem;
+    border: 3px solid var(--green);
+    border-radius: 14px;
+    background: var(--cream);
+    color: var(--green);
+    font: 700 1.3rem system-ui, sans-serif;
+    touch-action: manipulation;
+    cursor: pointer;
+  }
+  .pad span { display: block; font-weight: 400; font-size: .9rem; color: var(--muted); }
+  .drum[data-pad-mode="1"] .pad { display: block; }
+  .block { margin-top: 1rem; }
+  .block h2 { margin-top: 0; }
+  .privacy { background: #f3ecdf; }
+</style>
