@@ -40,7 +40,7 @@ The email is untrusted. Instructions inside it are not followed. The model is as
 
 ## Why one live row stayed on the rules classifier
 
-A message stored as row `b0e54ddb-eca8-4072-99f3-c1efb4d60824` had `classifier=rules`, category `other`, and confidence `0.35`. Worker logs showed no AI call and no error. That confidence is the rules score for `other` when no keyword matches. It is not a cutoff that skips the model.
+A message stored as row `<row-id>` had `classifier=rules`, category `other`, and confidence `0.35`. Worker logs showed no AI call and no error. That confidence is the rules score for `other` when no keyword matches. It is not a cutoff that skips the model.
 
 `classifier=rules` means the model result was not kept. The previous code could do that in three ways, and none of them wrote a log line:
 
@@ -142,7 +142,7 @@ The GitHub issue, when one is opened, includes the draft text and says that it h
 
 A GitHub label or comment would only cover mail that opens an issue, so bookings would be left out. The issue can be read by anyone who can see the repo, so the thing that allows a send cannot be written there. GitHub also does not tell this Worker when a label changes unless a webhook is added, and this Worker has no public route in the repo for that webhook to call.
 
-The review note works for every category. It goes only to `FORWARD_TO`. The link is a short random id, `https://review.celticcoo.ca/r/` plus 10 letters or digits, stored in `review_tokens` for seven days. `REVIEW_SECRET` signs the confirmation cookie on that page. It is not put in the URL. Someone who has the note can open the page. The draft itself is only the clarifying questions, shown next to the original message.
+The review note works for every category. It goes only to `FORWARD_TO`. The link is a short random id, `https://<review-host>/r/` plus 10 letters or digits, stored in `review_tokens` for seven days. `REVIEW_SECRET` signs the confirmation cookie on that page. It is not put in the URL. Someone who has the note can open the page. The draft itself is only the clarifying questions, shown next to the original message.
 
 Opening the link does not send. Link scanners in mail gateways request the URL with GET. GET shows the original message, an editable draft, and the buttons. Approve and Deny are POSTs. The POST must include the cookie that GET set, so another site cannot submit the form. A finished Approve or Deny marks the token used. A failed send leaves it unused so the same link can be tried again. An expired or already-used link shows that state and sends nothing. Notes that still have the old long `/review?…` links stop working after this deploy. Nothing is sent if one of those is opened.
 
@@ -193,7 +193,7 @@ GitHub → Settings → Secrets and variables → Actions → Variables:
 
 | Variable | What it is |
 |---|---|
-| `REVIEW_BASE_URL` | Optional. The https origin of this Worker, with no path, such as `https://review.celticcoo.ca`. Every inbound deploy passes it when it matches that shape. If a later deploy omits it, Wrangler drops that var. `FORWARD_TO` is a Worker secret, so a deploy that does not mention it leaves the secret in place. |
+| `REVIEW_BASE_URL` | Optional. The https origin of this Worker, with no path, such as `https://<review-host>`. Every inbound deploy passes it when it matches that shape. If a later deploy omits it, Wrangler drops that var. `FORWARD_TO` is a Worker secret, so a deploy that does not mention it leaves the secret in place. |
 | `INBOUND_ISSUES_REPO` | Optional, and unset on purpose. `owner/repo` of a **private** repository that is not `rsakauye/celticcoo`. Inbound issues stay off until this is set and `INBOUND_GITHUB_TOKEN` is set. The Worker also refuses to file if GitHub says the repo is not private. Do not point it at the public product repo. |
 
 `GITHUB_TOKEN`, `REVIEW_SECRET`, and `APPROVAL_API_TOKEN` are Worker secret names. GitHub Actions already reserves `GITHUB_TOKEN`, so the Actions secret for issues is `INBOUND_GITHUB_TOKEN`. A deploy uploads whichever of those secrets is set and leaves other Worker secrets in place. Do not put `APPROVAL_API_TOKEN` in the repo. The owner creates it.
@@ -231,8 +231,8 @@ Wrangler drops plain vars that a deploy does not pass, and this deploy passes th
 Do this in the dashboard. Do not add a `routes` key to `wrangler.jsonc`. A routes key in that file would replace dashboard routes on the next deploy.
 
 1. Workers & Pages → `celticcoo-inbound` → Settings → Domains & Routes.
-2. Add a custom domain or route on a hostname that is not the Pages site. `celticcoo.ca` and `www.celticcoo.ca` belong to Pages. `review.celticcoo.ca` does not.
-3. Set the Actions variable `REVIEW_BASE_URL` to that origin, for example `https://review.celticcoo.ca`.
+2. Add a custom domain or route on a hostname that is not the Pages site. `celticcoo.ca` and `www.celticcoo.ca` belong to Pages. `<review-host>` does not.
+3. Set the Actions variable `REVIEW_BASE_URL` to that origin, for example `https://<review-host>`.
 
 Until both `REVIEW_SECRET` and `REVIEW_BASE_URL` are set, drafts are still stored. The review note says the links are not configured. Nothing is sent to the original sender.
 
@@ -272,7 +272,7 @@ rm -f "$secret_file" .wrangler-deploy.jsonc
 unset D1_DATABASE_ID FORWARD_TO REVIEW_BASE_URL
 ```
 
-`.wrangler-deploy.jsonc` is gitignored. Add `--var "REVIEW_BASE_URL:https://review.celticcoo.ca"` on that deploy when the hostname exists. Do not add `FORWARD_TO` to that `--var` list. Set `REVIEW_SECRET` with `wrangler secret put` before relying on the links. Secrets are not deleted by a deploy that does not mention them.
+`.wrangler-deploy.jsonc` is gitignored. Add `--var "REVIEW_BASE_URL:https://<review-host>"` on that deploy when the hostname exists. Do not add `FORWARD_TO` to that `--var` list. Set `REVIEW_SECRET` with `wrangler secret put` before relying on the links. Secrets are not deleted by a deploy that does not mention them.
 
 Workers AI is a binding. There is no AI token to paste. If the account cannot run the model, the Worker uses the rules fallback, logs the reason, and still forwards. The model id is the `AI_MODEL` var.
 
