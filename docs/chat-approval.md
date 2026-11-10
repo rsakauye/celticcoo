@@ -27,7 +27,7 @@ Deploy does not apply D1 migrations. Apply `site/migrations/0005_inbound_trust.s
 
 ## Calls
 
-All three routes are on the review hostname, for example `https://review.celticcoo.ca`. Send `Authorization: Bearer <APPROVAL_API_TOKEN>`. The compare hashes both values and then compares the digests, so it does not stop early on a shorter token.
+All three routes are on the review hostname, for example `https://<review-host>`. Send `Authorization: Bearer <APPROVAL_API_TOKEN>`. The compare hashes both values and then compares the digests, so it does not stop early on a shorter token.
 
 There is no browser session. A missing or wrong token is 401. More than 60 calls in 60 seconds is 429. Each call writes one `approval_audit` row: the time, the action, the inbound id, and a short outcome code. The actor is `chat` when the token matched, and `rejected` when it did not. The row does not contain the message, the draft, or the token.
 
