@@ -573,6 +573,9 @@ export function mountTuner(root) {
   function setLowA(hz) {
     if (!Number.isFinite(hz)) return;
     lowA = hz;
+    // Any valid value, from the box or a preset, clears an earlier error.
+    if (lowAInput) lowAInput.removeAttribute('aria-invalid');
+    if (lowAErr) lowAErr.hidden = true;
     if (lowAInput) lowAInput.value = String(Math.round(hz * 10) / 10);
     for (const button of presetButtons) {
       const match = Number(button.dataset.preset) === Math.round(hz);

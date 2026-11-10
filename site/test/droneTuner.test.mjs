@@ -335,3 +335,21 @@ test('the tuner page is linked from Tools, still noindex, and off the sitemap', 
   assert.doesNotMatch(lib, /https?:\/\//);
   assert.doesNotMatch(lib, /localStorage|sessionStorage|indexedDB|MediaRecorder|sendBeacon/);
 });
+
+test('a valid Low A, from the box or a preset, clears an earlier range error', () => {
+  const client = readFileSync(join(site, 'src/lib/droneTunerPage.js'), 'utf8');
+  const body = client.match(/function setLowA\(hz\) \{[\s\S]*?\n  \}\n/);
+  assert.ok(body, 'setLowA is present');
+  assert.match(body[0], /removeAttribute\('aria-invalid'\)/);
+  assert.match(body[0], /lowAErr\.hidden = true/);
+});
+
+test('the tabs use the cream token, and a small phone on its side gets a rail, not a bottom bar', () => {
+  const astro = readFileSync(join(site, 'src/pages/tune/index.astro'), 'utf8');
+  assert.doesNotMatch(astro, /#f3ecdf/i);
+  assert.match(astro, /\.tabs \{[^}]*background: var\(--cream\)/);
+  const rail = astro.match(/@media \(max-width: 719px\) and \(max-height: 500px\) and \(orientation: landscape\) \{[\s\S]*?\n  \}\n/);
+  assert.ok(rail, 'the phone landscape rule is present');
+  assert.match(rail[0], /\.tune-actions \{[^}]*right: 0/);
+  assert.match(rail[0], /padding-right: calc\(9rem/);
+});
