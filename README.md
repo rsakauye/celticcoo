@@ -1,5 +1,7 @@
 # Source code for CelticCoo.ca
 
+[![celticcoo.ca](https://img.shields.io/badge/celticcoo.ca-live-000000?style=flat-square)](https://celticcoo.ca) [![Astro](https://img.shields.io/badge/Astro-FF5D01?style=flat-square&logo=astro&logoColor=white)](https://astro.build) [![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://www.cloudflare.com)
+
 **Looking for The Celtic Coo? Visit [celticcoo.ca](https://celticcoo.ca).** This repository is only the website's source code.
 
 A Canada-first hub for Celtic and Gaelic culture: an events calendar (Highland Games, pipe bands,

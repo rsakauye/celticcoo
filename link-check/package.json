@@ -1,6 +1,7 @@
 {
   "name": "link-check",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "version": "1.0.0",
   "description": "Site-agnostic weekly checker for a directory of public website URLs. Site-specific paths, fields, schedule, and user agent live in a config file.",
