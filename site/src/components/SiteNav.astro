@@ -10,7 +10,7 @@ const current = (href) => path === u(href);
     {NAV_GROUPS.map((group) => {
       const groupCurrent = group.items.some((item) => current(item.href));
       return (
-        <div class:list={['nav-group', group.id === 'play' && 'nav-play', groupCurrent && 'is-current']} data-nav-group={group.id}>
+        <div class:list={['nav-group', group.id === 'tools' && 'nav-tools', groupCurrent && 'is-current']} data-nav-group={group.id}>
           <button
             type="button"
             class="nav-group-btn"
@@ -27,10 +27,10 @@ const current = (href) => path === u(href);
           <p class="nav-label" id={`nav-${group.id}-label`}>{group.label}</p>
           <div class="nav-panel" id={`nav-${group.id}`} data-nav-panel role="group" aria-labelledby={`nav-${group.id}-btn nav-${group.id}-label`}>
             <ul>
-              {group.items.map((item) => (
+              {group.items.map((item, index) => (
                 <li>
-                  <a href={u(item.href)} aria-current={current(item.href) ? 'page' : undefined} aria-describedby={item.blurb ? 'nav-play-blurb' : undefined}>{item.label}</a>
-                  {item.blurb && <p class="nav-blurb" id="nav-play-blurb">{item.blurb}</p>}
+                  <a href={u(item.href)} aria-current={current(item.href) ? 'page' : undefined} aria-describedby={item.blurb ? `nav-blurb-${group.id}-${index}` : undefined}>{item.label}</a>
+                  {item.blurb && <p class="nav-blurb" id={`nav-blurb-${group.id}-${index}`}>{item.blurb}</p>}
                 </li>
               ))}
             </ul>
