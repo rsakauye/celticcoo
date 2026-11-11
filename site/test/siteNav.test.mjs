@@ -3,21 +3,23 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { NAV_ABOUT, NAV_CTA, NAV_GROUPS, PLAY_BLURB } from '../src/lib/nav.js';
+import { DRUM_BLURB, NAV_ABOUT, NAV_CTA, NAV_GROUPS, TUNER_BLURB } from '../src/lib/nav.js';
 
 const site = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 test('header groups match the approved labels and live routes', () => {
-  assert.deepEqual(NAV_GROUPS.map((group) => group.label), ['Events', 'Community', 'Heritage', 'Play']);
+  assert.deepEqual(NAV_GROUPS.map((group) => group.label), ['Events', 'Community', 'Heritage', 'Tools']);
   assert.deepEqual(NAV_GROUPS[0].items.map((item) => item.label), ['Upcoming events', 'Results', 'Burns Night']);
   assert.deepEqual(NAV_GROUPS[1].items.map((item) => item.label), ['Clubs & lessons', 'Book performers', 'Shops', 'Fundraising']);
   assert.deepEqual(NAV_GROUPS[2].items.map((item) => item.label), ['Find your tartan', 'Trace your roots', 'What to wear']);
-  assert.deepEqual(NAV_GROUPS[3].items.map((item) => [item.label, item.href]), [['Drone tuner', 'tune/']]);
-  assert.equal(NAV_GROUPS[3].items[0].blurb, PLAY_BLURB);
+  assert.deepEqual(NAV_GROUPS[3].items.map((item) => [item.label, item.href]), [['Drone tuner', 'tune/'], ['Drum practice', 'drum/']]);
+  assert.equal(NAV_GROUPS[3].items[0].blurb, TUNER_BLURB);
+  assert.equal(NAV_GROUPS[3].items[1].blurb, DRUM_BLURB);
   assert.equal(NAV_ABOUT.label, 'About');
   assert.equal(NAV_ABOUT.href, 'about/');
   assert.deepEqual(NAV_CTA, { href: 'submit/', label: 'Add yours' });
-  assert.doesNotMatch(PLAY_BLURB, /coming soon/i);
+  assert.doesNotMatch(TUNER_BLURB, /coming soon/i);
+  assert.doesNotMatch(DRUM_BLURB, /coming soon/i);
 
   const pages = [
     ...NAV_GROUPS.flatMap((group) => group.items.map((item) => item.href)),

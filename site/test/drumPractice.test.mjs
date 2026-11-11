@@ -250,3 +250,64 @@ test('microphone stays raw and never records', () => {
     assert.doesNotMatch(text, /MediaRecorder|fetch\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage|sessionStorage|indexedDB|document\.cookie/, file);
   }
 });
+
+const drumPage = () => readFileSync(join(site, 'src/pages/drum/index.astro'), 'utf8');
+const drumClient = () => readFileSync(join(site, 'src/lib/drumPracticePage.js'), 'utf8');
+
+test('the drum page is public: indexable, in the sitemap, and listed under Tools next to the tuner', () => {
+  assert.doesNotMatch(drumPage(), /noindex/);
+  assert.match(readFileSync(join(site, 'src/pages/sitemap.xml.js'), 'utf8'), /'drum\/': \[P\('drum\/index\.astro'\)\]/);
+  const nav = readFileSync(join(site, 'src/lib/nav.js'), 'utf8');
+  assert.match(nav, /id: 'tools'[\s\S]*label: 'Tools'/);
+  assert.match(nav, /href: 'tune\/', label: 'Drone tuner'/);
+  assert.match(nav, /href: 'drum\/', label: 'Drum practice'/);
+});
+
+test('start and pad buttons swap their label and do not also claim aria-pressed', () => {
+  assert.doesNotMatch(drumPage(), /aria-pressed/);
+  assert.doesNotMatch(drumClient(), /aria-pressed/);
+  assert.match(drumClient(), /startBtn\.textContent = active && state\.micOn \? 'Stop'/);
+});
+
+test('space is the stand-in stick: claimed on keydown, cancelled on keyup, and Enter taps the focused pad', () => {
+  const client = drumClient();
+  // A focused button is no longer exempt, so Space cannot click Start or Stop mid-session.
+  assert.doesNotMatch(client, /tag === 'BUTTON'/);
+  assert.match(client, /tag === 'INPUT' \|\| tag === 'SELECT' \|\| tag === 'TEXTAREA'/);
+  assert.match(client, /state\.running && !state\.micOn/);
+  assert.match(client, /addEventListener\('keyup'[\s\S]*?event\.preventDefault\(\)/);
+  assert.match(client, /padTarget\.addEventListener\('keydown'[\s\S]*?event\.code !== 'Enter'/);
+  assert.match(drumPage(), /touch-action: none/);
+});
+
+test('the page uses theme tokens, not hardcoded colours, outside the high-contrast overrides', () => {
+  const style = drumPage().split('<style>')[1];
+  const loose = style.split('\n').filter((line) => !line.includes('data-a11y-contrast=high'));
+  for (const line of loose) assert.doesNotMatch(line, /#[0-9a-f]{3,8}\b/i, line.trim());
+});
+
+test('each grade has a shape as well as a colour, and a beat cue that does not flash', () => {
+  const page = drumPage();
+  for (const grade of ['perfect', 'good', 'ok', 'stray']) assert.match(page, new RegExp(`\\.tick\\.${grade}\\b`));
+  assert.match(page, /\.tick\.stray \{[^}]*dashed/);
+  assert.match(page, /data-beatcue hidden aria-hidden="true"/);
+  assert.match(page, /data-beat-text/);
+  assert.doesNotMatch(page, /@keyframes|animation:/);
+  assert.match(drumClient(), /Count-in|'Beat'/);
+});
+
+test('touch targets are at least 48px and the sticking can wrap on a 375px phone', () => {
+  const page = drumPage();
+  assert.doesNotMatch(page, /min-height: 44px/);
+  assert.match(page, /\.actions \.btn \{ min-height: 48px; \}/);
+  assert.match(page, /\.nudge \.btn \{[^}]*min-height: 48px/);
+  assert.match(page, /\.strokes \{[^}]*overflow-wrap: anywhere/);
+  assert.match(page, /@media \(max-width: 719px\) \{\s*\.actions-main \{\s*position: fixed;/);
+});
+
+test('on a phone held sideways the pad sits above the full-height rail', () => {
+  const rail = drumPage().match(/@media \(max-width: 719px\) and \(max-height: 500px\) and \(orientation: landscape\) \{[\s\S]*?\n  \}\n/);
+  assert.ok(rail, 'the landscape rule is present');
+  assert.match(rail[0], /\.actions-main \{[^}]*top: 0[^}]*right: 0/);
+  assert.match(rail[0], /\.pad \{[^}]*z-index: 41/);
+});

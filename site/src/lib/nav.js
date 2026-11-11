@@ -1,8 +1,9 @@
 // Main header groups. Home is the logo. About is a plain link.
-// The only filled control is Add yours. Play lists live tools only.
+// The only filled control is Add yours. Tools lists live tools only.
 import bookingConfig from '../../../data/booking.json' with { type: 'json' };
 
-export const PLAY_BLURB = 'Tune your pipe drones right from your phone. Tap to start, play your drones, and the tuner shows you if you\'re flat, sharp or right on. Nothing is recorded or saved.';
+export const TUNER_BLURB = 'Tune your pipe drones right from your phone. Tap to start, play your drones, and the tuner shows you if you\'re flat, sharp or right on. Nothing is recorded or saved.';
+export const DRUM_BLURB = 'Practise your pad with a steady click. The page listens and shows whether each stroke landed early, late or on the beat. Nothing is recorded or saved.';
 
 export const NAV_GROUPS = [
   {
@@ -34,10 +35,11 @@ export const NAV_GROUPS = [
     ],
   },
   {
-    id: 'play',
-    label: 'Play',
+    id: 'tools',
+    label: 'Tools',
     items: [
-      { href: 'tune/', label: 'Drone tuner', blurb: PLAY_BLURB },
+      { href: 'tune/', label: 'Drone tuner', blurb: TUNER_BLURB },
+      { href: 'drum/', label: 'Drum practice', blurb: DRUM_BLURB },
     ],
   },
 ];

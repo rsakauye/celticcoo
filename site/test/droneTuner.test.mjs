@@ -262,7 +262,7 @@ test('demo detune is the same cents the meter measures, and the mic is unprocess
   assert.deepEqual(STEPS.map((step) => step.id), ['ref', 'tenor1', 'tenor2', 'bass']);
 });
 
-test('the tuner page is linked from Play, still noindex, and off the sitemap', () => {
+test('the tuner page is linked from Tools, still noindex, and off the sitemap', () => {
   const astro = readFileSync(join(site, 'src/pages/tune/index.astro'), 'utf8');
   const client = readFileSync(join(site, 'src/lib/droneTunerPage.js'), 'utf8');
   const page = `${astro}\n${client}`;
