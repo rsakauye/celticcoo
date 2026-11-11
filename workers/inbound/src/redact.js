@@ -4,7 +4,7 @@
 import { stripModelThinking } from './text.js';
 
 const EMAIL = /\b[A-Z0-9._%+-]{1,64}@(?:[A-Z0-9-]{1,63}\.){1,8}[A-Z]{2,24}\b/gi;
-const OBFUSCATED = /\b[A-Z0-9._%+-]{1,64}(?:\s*[([]\s*at\s*[)\]]\s*|\s+at\s+)(?:[A-Z0-9-]+\s*(?:[([]\s*dot\s*[)\]]\s*|\s+dot\s+|\.))+[A-Z]{2,24}\b/gi;
+const OBFUSCATED = /\b[A-Z0-9._%+-]{1,64}(?:\s*[([]\s*at\s*[)\]]\s*|\s+at\s+)(?:[A-Z0-9-]{1,63}(?:\s*[([]\s*dot\s*[)\]]\s*|\s+dot\s+|\s*\.)){1,8}[A-Z]{2,24}\b/gi;
 const PHONE = /(?<!\d)(?:\+\d{1,3}[\s.-]*)?(?:\(?\d{3}\)?[\s.-]*)\d{3}[\s.-]*\d{4}(?!\d)/g;
 const TEL = /\btel:\+?[\d().\s-]{7,20}/gi;
 
