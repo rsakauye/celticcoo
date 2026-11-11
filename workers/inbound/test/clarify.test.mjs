@@ -927,7 +927,9 @@ test('config keeps drafts-only, acknowledgements off, and the owner inbox out of
   const docs = readFileSync(join(here, '../../../docs/inbound-email.md'), 'utf8');
   assert.match(docs, /REVIEW_SECRET/);
   assert.match(docs, /REVIEW_BASE_URL/);
-  assert.match(docs, /b0e54ddb-eca8-4072-99f3-c1efb4d60824/);
+  // The database id is a deploy secret. The docs name the secret and never hold a real id.
+  assert.match(docs, /D1_DATABASE_ID/);
+  assert.doesNotMatch(docs, /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
   assert.match(docs, /ai_unavailable/);
   const workflow = readFileSync(join(here, '../../../.github/workflows/deploy.yml'), 'utf8');
   assert.match(workflow, /REVIEW_SECRET/);
