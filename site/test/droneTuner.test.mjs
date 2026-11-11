@@ -348,8 +348,25 @@ test('the tabs use the cream token, and a small phone on its side gets a rail, n
   const astro = readFileSync(join(site, 'src/pages/tune/index.astro'), 'utf8');
   assert.doesNotMatch(astro, /#f3ecdf/i);
   assert.match(astro, /\.tabs \{[^}]*background: var\(--cream\)/);
-  const rail = astro.match(/@media \(max-width: 719px\) and \(max-height: 500px\) and \(orientation: landscape\) \{[\s\S]*?\n  \}\n/);
+  const rail = astro.match(/\/\* Phone held sideways \(any width[\s\S]*?@media \(max-height: 500px\) and \(orientation: landscape\) \{[\s\S]*?\n  \}\n/);
   assert.ok(rail, 'the phone landscape rule is present');
   assert.match(rail[0], /\.tune-actions \{[^}]*right: 0/);
   assert.match(rail[0], /padding-right: calc\(9rem/);
+  assert.match(rail[0], /position: fixed/);
+});
+
+test('a phone held sideways gets the 1x sprite, so the readout stays on screen', () => {
+  const astro = readFileSync(join(site, 'src/pages/tune/index.astro'), 'utf8');
+  const land = astro.match(/\/\* Phone held sideways: keep[\s\S]*?\n  \}\n/);
+  assert.ok(land, 'the landscape readout rule is present');
+  assert.match(land[0], /--frame: 64px/);
+  assert.match(land[0], /tune-fling-1x/);
+});
+
+test('the tuner names its meter colours once, as tokens', () => {
+  const astro = readFileSync(join(site, 'src/pages/tune/index.astro'), 'utf8');
+  const styles = astro.slice(astro.indexOf('<style>'));
+  for (const hex of ['#8d2a2a', '#7a4e0d', '#1a120c', '#b7dfc8', '#4a3a2e', '#f3ecdf']) {
+    assert.ok(styles.split(hex).length - 1 <= 1, `${hex} is written at most once`);
+  }
 });
