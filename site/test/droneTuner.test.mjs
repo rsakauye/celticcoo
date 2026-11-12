@@ -5,17 +5,23 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   AMBER_CENTS,
+  ANTICIPATE_CENTS,
   DEFAULT_LOW_A,
   DEFAULT_OUTPUT_LEVEL,
   DEMO_START_CENTS,
+  DROP_GRACE_MS,
   GREEN_CENTS,
   MIC_CONSTRAINTS,
+  PERFECT_CENTS,
+  PERFECT_HOLD_MS,
   PRESETS,
   STEPS,
   beatAdvice,
   centsBetween,
   clampLowA,
   cooMood,
+  cooPose,
+  createLockHold,
   createPitchTracker,
   describeReading,
   detectPitch,
@@ -23,6 +29,7 @@ import {
   droneTargets,
   estimateBeatRate,
   formatCents,
+  isLocked,
   lockReference,
   meterZone,
   outputGain,
@@ -137,8 +144,16 @@ test('reference volume defaults near maximum and stays inside the limiter range'
   assert.equal(outputGain(Number.NaN), 0);
 });
 
-test('Ceilidh dances when a drone is locked and winces when it is far off or beating hard', () => {
-  assert.equal(cooMood({ cents: 1.2, stable: true, beatHz: 0, confidence: 0.9 }), 'dance');
+test('Ceilidh dances once the lock has held, and winces when a drone is far off or beating hard', () => {
+  // In tune is not enough on its own any more: the lock has to have held first.
+  assert.equal(cooMood({ cents: 1.2, stable: true, beatHz: 0, confidence: 0.9 }), 'listen');
+  assert.equal(cooMood({ cents: 1.2, stable: true, beatHz: 0, confidence: 0.9, held: true }), 'dance');
+  // Inside the grace period she keeps dancing through a small dip.
+  assert.equal(cooMood({ cents: 5, stable: false, beatHz: 0, confidence: 0.9, held: true }), 'dance');
+  // The wince always wins, held or not.
+  assert.equal(cooMood({ cents: 30, stable: true, beatHz: 0, confidence: 0.9, held: true }), 'wince');
+  assert.equal(cooMood({ cents: 2, stable: true, beatHz: 4, confidence: 0.9, held: true }), 'wince');
+  assert.equal(cooMood({ cents: null, confidence: 0, held: true }), 'wait');
   assert.equal(cooMood({ cents: 1.2, stable: false, beatHz: 0, confidence: 0.9 }), 'listen');
   assert.equal(cooMood({ cents: 8, stable: true, beatHz: 0.4, confidence: 0.9 }), 'listen');
   assert.equal(cooMood({ cents: 30, stable: true, beatHz: 0, confidence: 0.9 }), 'wince');
@@ -147,6 +162,65 @@ test('Ceilidh dances when a drone is locked and winces when it is far off or bea
   assert.equal(cooMood({ cents: null, confidence: 0 }), 'wait');
   assert.match(beatAdvice({ hz: 3.5, confidence: 0.8, locked: false }), /slowing/);
   assert.match(beatAdvice({ hz: 0, confidence: 0.8, locked: true }), /no wobble/i);
+});
+
+test('the circle dance waits for a 1.5 second lock and forgives a 250 ms dip', () => {
+  assert.equal(GREEN_CENTS, 3);
+  assert.equal(PERFECT_CENTS, GREEN_CENTS);
+  assert.equal(ANTICIPATE_CENTS, AMBER_CENTS);
+  assert.equal(PERFECT_HOLD_MS, 1500);
+  assert.equal(DROP_GRACE_MS, 250);
+
+  assert.equal(isLocked({ cents: 3, stable: true, beatHz: 0, confidence: 0.9 }), true);
+  assert.equal(isLocked({ cents: -3.1, stable: true, beatHz: 0, confidence: 0.9 }), false);
+  assert.equal(isLocked({ cents: 1, stable: false, beatHz: 0, confidence: 0.9 }), false);
+  assert.equal(isLocked({ cents: 1, stable: true, beatHz: 2.5, confidence: 0.9 }), false);
+  assert.equal(isLocked({ cents: 1, stable: true, beatHz: null, confidence: 0 }), false);
+  assert.equal(isLocked({ cents: null, stable: true, confidence: 0.9 }), false);
+
+  const hold = createLockHold();
+  assert.equal(hold.update(true, 1000), false);
+  assert.equal(hold.update(true, 2499), false, 'not yet 1.5 s');
+  assert.equal(hold.update(true, 2500), true, '1.5 s of lock starts the dance');
+  assert.equal(hold.held, true);
+  // A dip of 250 ms or less does not stop her.
+  assert.equal(hold.update(false, 2600), true);
+  assert.equal(hold.update(false, 2850), true, 'still inside the grace period');
+  assert.equal(hold.update(true, 2900), true, 'back in the lock');
+  // A longer dip does, and the hold starts again from nothing.
+  assert.equal(hold.update(false, 3000), true);
+  assert.equal(hold.update(false, 3251), false, 'past the grace period');
+  assert.equal(hold.update(true, 3300), false);
+  assert.equal(hold.update(true, 4799), false);
+  assert.equal(hold.update(true, 4800), true);
+
+  // Before the hold is met, any break restarts the count.
+  const early = createLockHold();
+  early.update(true, 0);
+  early.update(true, 1400);
+  early.update(false, 1450);
+  assert.equal(early.update(true, 1500), false);
+  assert.equal(early.update(true, 2999), false);
+  assert.equal(early.update(true, 3000), true);
+  early.reset();
+  assert.equal(early.held, false);
+  assert.equal(early.update(true, 3100), false);
+
+  // The length of the hold is a setting, not a number buried in the code.
+  const quick = createLockHold({ holdMs: 200, graceMs: 50 });
+  quick.update(true, 0);
+  assert.equal(quick.update(true, 200), true);
+  assert.equal(quick.update(false, 210), true);
+  assert.equal(quick.update(false, 261), false);
+});
+
+test('the sprite pose follows the mood: idle, a lean when close, the circle when held', () => {
+  assert.equal(cooPose('wait', null), 'idle');
+  assert.equal(cooPose('listen', 18), 'idle');
+  assert.equal(cooPose('listen', 10), 'anticipate');
+  assert.equal(cooPose('listen', -2), 'anticipate');
+  assert.equal(cooPose('dance', 1), 'circle');
+  assert.equal(cooPose('wince', 40), 'idle');
 });
 
 test('a 2 second low A locks the reference and drones do not', () => {
@@ -280,7 +354,9 @@ test('the tuner page is linked from Tools, still noindex, and off the sitemap', 
   assert.match(page, /defaultTartan\(\)/);
   assert.match(page, /data-ceilidh-dance/);
   assert.match(page, /data-ceilidh-ears/);
-  assert.match(page, /steps\(10,\s*end\)/);
+  assert.match(page, /defaultTartan\(\)\.tuner/);
+  assert.match(page, /steps\(12,\s*end\)/);
+  assert.doesNotMatch(page, /tune-fling|steps\(10/);
   assert.match(page, /steps\(4,\s*end\)/);
   assert.match(page, /tune-wince-2x/);
   assert.match(page, /translate3d\(-512px, 0, 0\)/);
@@ -317,7 +393,19 @@ test('the tuner page is linked from Tools, still noindex, and off the sitemap', 
   assert.match(page, /role="tablist"/);
   assert.match(page, /role="tabpanel"/);
   assert.match(page, /ArrowRight/);
-  assert.match(page, /translate3d\(-640px, 0, 0\)/);
+  // The turn is frames 2 to 13 of the 14-frame sheet, at 1x, 2x and 3x.
+  assert.match(page, /@keyframes tune-circle-1x \{\s*from \{ transform: translate3d\(-128px, 0, 0\); \}\s*to \{ transform: translate3d\(-896px, 0, 0\); \}/);
+  assert.match(page, /@keyframes tune-circle-2x \{\s*from \{ transform: translate3d\(-256px, 0, 0\); \}\s*to \{ transform: translate3d\(-1792px, 0, 0\); \}/);
+  assert.match(page, /@keyframes tune-circle-3x \{\s*from \{ transform: translate3d\(-384px, 0, 0\); \}\s*to \{ transform: translate3d\(-2688px, 0, 0\); \}/);
+  const sheet = readFileSync(join(site, 'public/img/ceilidh-tuner-dance-sheet.png'));
+  assert.equal(sheet.readUInt32BE(16), 896);
+  assert.equal(sheet.readUInt32BE(20), 64);
+  assert.match(astro, /width="896" height="64" data-ceilidh-dance/);
+  // The sprite is decoration: the mood line beside it carries the words.
+  assert.match(astro, /data-tune-coo data-mood="wait" data-pose="idle" aria-hidden="true"/);
+  assert.match(client, /createLockHold\(\)/);
+  assert.match(client, /lockHold\.update\(isLocked\(heard\), performance\.now\(\)\)/);
+  assert.match(client, /mascot\.dataset\.pose = cooPose\(mood, heard\.cents\)/);
   assert.match(page, /aria-disabled/);
   assert.doesNotMatch(astro, /data-ear aria-pressed|data-start aria-pressed|data-demo aria-pressed/);
   assert.match(page, /echoCancellation/);
@@ -360,7 +448,17 @@ test('a phone held sideways gets the 1x sprite, so the readout stays on screen',
   const land = astro.match(/\/\* Phone held sideways: keep[\s\S]*?\n  \}\n/);
   assert.ok(land, 'the landscape readout rule is present');
   assert.match(land[0], /--frame: 64px/);
-  assert.match(land[0], /tune-fling-1x/);
+  assert.match(land[0], /tune-circle-1x/);
+});
+
+test('reduced motion swaps the turn for stills, from the system setting or the site switch', () => {
+  const astro = readFileSync(join(site, 'src/pages/tune/index.astro'), 'utf8');
+  const media = astro.match(/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\n  \}\n/);
+  assert.ok(media, 'the reduced-motion rule is present');
+  assert.match(media[0], /\[data-pose="anticipate"\] \.tune-strip \{ transform: none; \}/);
+  assert.match(media[0], /\[data-pose="circle"\] \.tune-strip \{\s*animation: none !important;\s*transform: translate3d\(calc\(var\(--frame\) \* -3\), 0, 0\);/);
+  assert.match(astro, /html\[data-a11y-motion=reduce\]\) \.tune-coo\[data-pose="anticipate"\] \.tune-strip \{ transform: none; \}/);
+  assert.match(astro, /html\[data-a11y-motion=reduce\]\) \.tune-coo\[data-pose="circle"\] \.tune-strip \{\s*animation: none !important;\s*transform: translate3d\(calc\(var\(--frame\) \* -3\), 0, 0\);/);
 });
 
 test('the tuner names its meter colours once, as tokens', () => {

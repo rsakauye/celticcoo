@@ -4,6 +4,7 @@ import { u } from '../../lib/site.js';
 import { BPM_MAX, BPM_MIN, DEFAULT_BPM, OFFSET_MAX_MS, OFFSET_MIN_MS, RUDIMENTS, SENSITIVITY_DEFAULT } from '../../lib/drumPractice.js';
 const avatar = u('img/ceilidh-avatar-52.png');
 const worklet = u('drum-worklet.js');
+const marchArt = u('img/drum-march/');
 ---
 <Base title="Drum practice" hideCornerCoo={true} description="An on-device practice pad coach with an adjustable metronome. The microphone stays on your phone. Nothing is sent or saved.">
   <div class="drum" data-drum data-worklet={worklet}>
@@ -45,6 +46,9 @@ const worklet = u('drum-worklet.js');
 
     <section class="card meter-card" aria-labelledby="meter-title">
       <h2 id="meter-title">How you are landing</h2>
+      <!-- Ceilidh's march: a step for each stroke that lands, a stumble for a miss or an extra
+           hit. Decoration only. The meter and the lines below say the same thing in words. -->
+      <canvas class="march" data-march data-art={marchArt} width="256" height="96" aria-hidden="true"></canvas>
       <div class="beat-cue" data-beatcue hidden aria-hidden="true">
         <p class="beat-text" data-beat-text></p>
         <ol class="beats">
@@ -138,6 +142,21 @@ const worklet = u('drum-worklet.js');
   .status { color: var(--muted); margin: .3rem 0 0; }
   .muted { color: var(--muted); font-size: .92rem; margin: .3rem 0; }
 
+  /* The march is drawn at art size (256×96) and scaled up here, so its box is fixed before
+     any art loads and nothing below it moves. Capped at 2x. */
+  .march {
+    display: block;
+    width: min(100%, 512px);
+    height: auto;
+    aspect-ratio: 8 / 3;
+    margin: .6rem auto 0;
+    border: 2px solid var(--green);
+    border-radius: 10px;
+    background: var(--cream);
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+  }
   .meter { position: relative; height: 3rem; margin-top: .6rem; border-radius: 10px; overflow: hidden; border: 2px solid var(--green); }
   .zones { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; }
   .zones .z.ok { background: repeating-linear-gradient(135deg, var(--z-ok-a), var(--z-ok-a) 6px, var(--z-ok-b) 6px, var(--z-ok-b) 12px); }
@@ -254,6 +273,7 @@ const worklet = u('drum-worklet.js');
 
   /* Site accessibility modes. Most of the page follows the tokens; these are the few spots that need more. */
   :global(html[data-a11y-contrast=high]) .meter { border-color: #000; }
+  :global(html[data-a11y-contrast=high]) .march { border-color: #000; }
   :global(html[data-a11y-contrast=high]) .centre { background: #000; }
   :global(html[data-a11y-contrast=high]) .privacy { background: #fff; }
   :global(html[data-a11y-contrast=high]) .field select { border-color: #000; }

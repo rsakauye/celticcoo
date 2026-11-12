@@ -7,6 +7,9 @@ export const CEILIDH_TARTAN = {
   fling_frames: 10,
   ears: 'tartans/fraser-of-lovat/ceilidh-coo-ears-covered-strip.png',
   ears_frames: 4,
+  // The tuner's own sheet, one row: idle, anticipate, then a 12-frame turn.
+  tuner: 'img/ceilidh-tuner-dance-sheet.png',
+  tuner_frames: 14,
 };
 
 export function defaultTartan() {

@@ -20,7 +20,10 @@ import {
   leanAdvice,
   rudimentById,
   sensitivityToRatio,
+  sticking,
 } from './drumPractice.js';
+import { LOOKAHEAD_BEATS, createMarch } from './drumMarch.js';
+import { mountMarchView, reducedMotion } from './drumMarchView.js';
 
 const LOOKAHEAD = 0.15;
 const TICK_MS = 25;
@@ -60,6 +63,10 @@ export function mountDrum(root) {
   const beatText = q('[data-beat-text]');
   const beatCells = [...root.querySelectorAll('[data-beat]')];
   const worklet = root.dataset.worklet;
+  // Ceilidh's march. It is an extra view of the same scored hits: the scorer, the
+  // detector and the timing windows are not touched by it.
+  const march = createMarch();
+  const marchView = mountMarchView(q('[data-march]'));
 
   const state = {
     ctx: null,
@@ -79,6 +86,9 @@ export function mountDrum(root) {
     bars: 0,
     lastAnnounce: 0,
     beatQueue: [],
+    expected: 0,
+    stick: 0,
+    frame: 0,
   };
 
   function setError(text) {
@@ -169,7 +179,13 @@ export function mountDrum(root) {
       click(state.nextBeat, state.beatIndex % BEATS_PER_BAR === 0);
       if (!countIn) {
         const r = rudiment();
-        state.scorer.expect(gridTimes(state.nextBeat, bpm(), r.perBeat, 1 / BEATS_PER_BAR));
+        const times = gridTimes(state.nextBeat, bpm(), r.perBeat, 1 / BEATS_PER_BAR);
+        state.scorer.expect(times);
+        // The hand shown comes from the written sticking. The microphone cannot tell hands apart.
+        const hands = sticking(r);
+        march.expect(times.map((at, i) => ({ index: state.expected + i, at, ...hands[(state.stick + i) % hands.length] })));
+        state.expected += times.length;
+        state.stick += times.length;
       }
       state.beatQueue.push({ at: state.nextBeat, beat: state.beatIndex % BEATS_PER_BAR, countIn });
       state.beatIndex += 1;
@@ -179,7 +195,48 @@ export function mountDrum(root) {
 
     paintBeat(now);
     const missed = state.scorer.sweep(now);
-    if (missed.length) paintSummary();
+    if (missed.length) {
+      march.miss(missed, now);
+      paintSummary();
+    }
+  }
+
+  // ---- March --------------------------------------------------------------
+
+  // Strokes on the next beats that the scheduler has not handed to the scorer yet. They
+  // are worked out afresh on every frame, so a tempo or rudiment change moves them at once.
+  function comingStrokes() {
+    const r = rudiment();
+    const hands = sticking(r);
+    const beat = beatSeconds(bpm());
+    const out = [];
+    let n = state.stick;
+    for (let b = 0; b <= LOOKAHEAD_BEATS; b += 1) {
+      if (state.beatIndex + b < COUNT_IN_BEATS) continue;
+      for (const at of gridTimes(state.nextBeat + b * beat, bpm(), r.perBeat, 1 / BEATS_PER_BAR)) {
+        out.push({ at, ...hands[n % hands.length] });
+        n += 1;
+      }
+    }
+    return out;
+  }
+
+  function paintMarch() {
+    state.frame = 0;
+    if (!marchView || !state.ctx || !state.running || state.calibration) return;
+    march.setReducedMotion(reducedMotion());
+    marchView.draw(march.frame(state.ctx.currentTime, {
+      lead: LOOKAHEAD_BEATS * beatSeconds(bpm()),
+      preview: comingStrokes(),
+    }));
+    state.frame = window.requestAnimationFrame(paintMarch);
+  }
+
+  function restMarch() {
+    if (state.frame) window.cancelAnimationFrame(state.frame);
+    state.frame = 0;
+    march.reset();
+    if (marchView) marchView.draw(march.frame(0));
   }
 
   // The beat cue never flashes. One small marker steps along four cells and a line of
@@ -224,6 +281,7 @@ export function mountDrum(root) {
     if (!state.running || !state.scorer) return;
     if (time < state.countInEnd) return;
     const result = state.scorer.hit(time);
+    march.hit(result, state.ctx.currentTime, beatSeconds(bpm()) / rudiment().perBeat);
     paintHit(result);
     paintSummary();
   }
@@ -341,6 +399,7 @@ export function mountDrum(root) {
     state.timer = 0;
     state.running = false;
     state.calibration = null;
+    restMarch();
     try {
       if (state.node) state.node.port.onmessage = null;
       if (state.source) state.source.disconnect();
@@ -376,6 +435,9 @@ export function mountDrum(root) {
     state.bars = 0;
     state.lastAnnounce = 0;
     state.beatQueue = [];
+    state.expected = 0;
+    state.stick = 0;
+    march.reset();
     state.nextBeat = state.ctx.currentTime + 0.3;
     state.countInEnd = state.nextBeat + COUNT_IN_BEATS * beatSeconds(bpm()) - OK_MS / 1000;
     state.running = true;
@@ -383,6 +445,7 @@ export function mountDrum(root) {
     paintSummary();
     state.timer = window.setInterval(tick, TICK_MS);
     tick();
+    paintMarch();
     syncButtons();
     setStatus(useMic ? 'Listening. Four clicks to count you in.' : 'Pad mode. Tap the pad or press space. Four clicks to count you in.');
     announce('Count-in started.');
@@ -508,7 +571,10 @@ export function mountDrum(root) {
   if (bpmDown) bpmDown.addEventListener('click', () => nudgeBpm(-1));
   if (bpmUp) bpmUp.addEventListener('click', () => nudgeBpm(1));
   if (rudimentSelect) {
-    rudimentSelect.addEventListener('change', showRudiment);
+    rudimentSelect.addEventListener('change', () => {
+      state.stick = 0; // a new rudiment starts its sticking from the first stroke
+      showRudiment();
+    });
   }
   if (offsetInput) {
     offsetInput.addEventListener('input', () => {
