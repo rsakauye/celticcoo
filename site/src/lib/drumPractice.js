@@ -81,6 +81,16 @@ export function rudimentById(id) {
   return RUDIMENTS.find((r) => r.id === id) || RUDIMENTS[0];
 }
 
+/**
+ * The sticking of a rudiment, one entry per stroke: which hand, and whether it is accented.
+ * Only the paradiddle has accents today: the first stroke of each group of four.
+ */
+export function sticking(rudiment) {
+  const hands = String((rudiment && rudiment.strokes) || '').split(/\s+/).filter((h) => h === 'R' || h === 'L');
+  const accents = rudiment && rudiment.id === 'paradiddle';
+  return hands.map((hand, i) => ({ hand, accent: Boolean(accents) && i % 4 === 0 }));
+}
+
 /** Times of every expected stroke, `bars` bars long, starting at `start`. */
 export function gridTimes(start, bpm, perBeat, bars) {
   const step = beatSeconds(bpm) / perBeat;

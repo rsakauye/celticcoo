@@ -15,6 +15,13 @@ export const AMBER_CENTS = 10;
 export const METER_CENTS = 50;
 export const WINCE_CENTS = 25;
 export const HEAVY_BEAT_HZ = 2.5;
+// Ceilidh's circle dance. She leans in once the reading is within ANTICIPATE_CENTS, and
+// starts turning only after the lock has held for PERFECT_HOLD_MS. Once she is turning,
+// a dip out of the lock shorter than DROP_GRACE_MS does not stop her.
+export const PERFECT_CENTS = GREEN_CENTS;
+export const ANTICIPATE_CENTS = AMBER_CENTS;
+export const PERFECT_HOLD_MS = 1500;
+export const DROP_GRACE_MS = 250;
 export const DEMO_START_CENTS = 28;
 
 // Required false, not "ideal": the phone must not retune a drone the way it
@@ -155,12 +162,68 @@ export function describeReading(hz, lowA, { includeChanter = false } = {}) {
   };
 }
 
-export function cooMood({ cents, stable = false, beatHz = null, confidence = 0 } = {}) {
+function heavyBeats(beatHz) {
+  return Number.isFinite(beatHz) && beatHz >= HEAVY_BEAT_HZ;
+}
+
+/** True while the drone is locked: inside the green window, steady, and not beating hard. */
+export function isLocked({ cents, stable = false, beatHz = null, confidence = 0 } = {}) {
+  if (!Number.isFinite(cents) || !(confidence > 0)) return false;
+  return Math.abs(cents) <= PERFECT_CENTS && Boolean(stable) && !heavyBeats(beatHz);
+}
+
+/**
+ * Times how long the lock has held. Feed it `update(locked, nowMs)` on every reading.
+ * `held` turns true after `holdMs` of unbroken lock, and stays true through a break
+ * shorter than `graceMs`. Before the hold is met, any break restarts the count.
+ */
+export function createLockHold({ holdMs = PERFECT_HOLD_MS, graceMs = DROP_GRACE_MS } = {}) {
+  let since = null;
+  let lostAt = null;
+  let held = false;
+  function reset() {
+    since = null;
+    lostAt = null;
+    held = false;
+  }
+  return {
+    reset,
+    get held() {
+      return held;
+    },
+    update(locked, nowMs) {
+      if (!Number.isFinite(nowMs)) return held;
+      if (locked) {
+        lostAt = null;
+        if (since === null) since = nowMs;
+        if (nowMs - since >= holdMs) held = true;
+      } else if (held) {
+        if (lostAt === null) lostAt = nowMs;
+        if (nowMs - lostAt > graceMs) reset();
+      } else {
+        since = null;
+      }
+      return held;
+    },
+  };
+}
+
+/**
+ * `held` comes from createLockHold. Being in tune is no longer enough to dance:
+ * the lock has to have held first. The wince is unchanged and always wins.
+ */
+export function cooMood({ cents, stable = false, beatHz = null, confidence = 0, held = false } = {}) {
   if (!Number.isFinite(cents) || !(confidence > 0)) return 'wait';
-  const heavy = Number.isFinite(beatHz) && beatHz >= HEAVY_BEAT_HZ;
-  if (Math.abs(cents) > WINCE_CENTS || heavy) return 'wince';
-  if (Math.abs(cents) <= GREEN_CENTS && stable && !heavy) return 'dance';
+  if (Math.abs(cents) > WINCE_CENTS || heavyBeats(beatHz)) return 'wince';
+  if (held) return 'dance';
   return 'listen';
+}
+
+/** Which still or loop the tuner sprite shows for a mood: 'idle', 'anticipate' or 'circle'. */
+export function cooPose(mood, cents) {
+  if (mood === 'dance') return 'circle';
+  if (mood === 'listen' && Number.isFinite(cents) && Math.abs(cents) <= ANTICIPATE_CENTS) return 'anticipate';
+  return 'idle';
 }
 
 export function clampLowA(hz) {

@@ -29,6 +29,8 @@ test('Ceilidh wears Fraser of Lovat and nothing else', () => {
   assert.equal(CEILIDH_TARTAN.name, 'Fraser of Lovat');
   assert.equal(CEILIDH_TARTAN.fling, 'img/ceilidh-fling-strip.png');
   assert.equal(CEILIDH_TARTAN.ears, 'tartans/fraser-of-lovat/ceilidh-coo-ears-covered-strip.png');
+  assert.equal(CEILIDH_TARTAN.tuner, 'img/ceilidh-tuner-dance-sheet.png');
+  assert.equal(CEILIDH_TARTAN.tuner_frames, 14);
   assert.equal(Object.keys(CEILIDH_TARTAN).some((key) => /storage|choice|enabled/i.test(key)), false);
 
   const folders = readdirSync(join(site, 'public/tartans'), { withFileTypes: true })
@@ -50,7 +52,7 @@ test('the corner coo, the tuner, and the hero render Fraser of Lovat with no pic
 
   assert.match(coo, /defaultTartan\(\)\.fling/);
   assert.match(html, /data-ceilidh-dance/);
-  assert.match(tune, /defaultTartan\(\)\.fling/);
+  assert.match(tune, /defaultTartan\(\)\.tuner/);
   assert.match(tune, /defaultTartan\(\)\.ears/);
   assert.match(tune, /data-ceilidh-dance/);
   assert.match(tune, /data-ceilidh-ears/);

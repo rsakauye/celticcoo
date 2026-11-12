@@ -8,6 +8,8 @@ import {
   MIC_CONSTRAINTS,
   beatAdvice,
   cooMood,
+  cooPose,
+  createLockHold,
   createPitchTracker,
   DEFAULT_OUTPUT_LEVEL,
   describeReading,
@@ -17,6 +19,7 @@ import {
   estimateBeatRate,
   formatCents,
   formatHz,
+  isLocked,
   lockReference,
   outputGain,
   slideAdvice,
@@ -93,6 +96,7 @@ export function mountTuner(root) {
   let lastBeat = null;
   let lastReading = null;
   let lastTracked = null;
+  const lockHold = createLockHold();
   let capturing = null;
   let captureTimer = 0;
   let micPending = false;
@@ -591,7 +595,11 @@ export function mountTuner(root) {
   }
 
   function renderIdle() {
-    if (mascot) mascot.dataset.mood = 'wait';
+    lockHold.reset();
+    if (mascot) {
+      mascot.dataset.mood = 'wait';
+      mascot.dataset.pose = 'idle';
+    }
     if (moodEl) moodEl.textContent = 'Ceilidh is waiting for a drone.';
     if (centsEl) centsEl.textContent = 'No pitch yet';
     if (hzEl) hzEl.textContent = '—';
@@ -624,13 +632,21 @@ export function mountTuner(root) {
     lastReading = reading;
     const beatHz = lastBeat ? (lastBeat.locked ? 0 : lastBeat.hz) : null;
     const confidence = reading ? (tracked.confidence || 0.8) : 0;
-    const mood = cooMood({
+    const heard = {
       cents: reading ? reading.cents : null,
       stable: Boolean(tracked && tracked.stable && reading),
       beatHz: lastBeat && lastBeat.confidence >= 0.35 ? beatHz : null,
       confidence,
-    });
-    if (mascot) mascot.dataset.mood = reading ? mood : 'wait';
+    };
+    // She turns only once the lock has held for PERFECT_HOLD_MS. Microphone, demo and
+    // by-ear readings all come through here, so they share the one timer.
+    const held = lockHold.update(isLocked(heard), performance.now());
+    const mood = cooMood({ ...heard, held });
+    if (mood === 'wince' || mood === 'wait') lockHold.reset();
+    if (mascot) {
+      mascot.dataset.mood = mood;
+      mascot.dataset.pose = cooPose(mood, heard.cents);
+    }
     if (moodEl) moodEl.textContent = reading ? moodCopy(mood) : moodCopy('wait');
     if (!reading) {
       if (centsEl) centsEl.textContent = 'Listening…';

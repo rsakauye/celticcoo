@@ -245,7 +245,7 @@ test('microphone stays raw and never records', () => {
   assert.equal(MIC_CONSTRAINTS.audio.echoCancellation, false);
   assert.equal(MIC_CONSTRAINTS.audio.noiseSuppression, false);
   assert.equal(MIC_CONSTRAINTS.audio.autoGainControl, false);
-  for (const file of ['src/lib/drumPractice.js', 'src/lib/drumPracticePage.js', 'public/drum-worklet.js']) {
+  for (const file of ['src/lib/drumPractice.js', 'src/lib/drumPracticePage.js', 'src/lib/drumMarch.js', 'src/lib/drumMarchView.js', 'public/drum-worklet.js']) {
     const text = readFileSync(join(site, file), 'utf8');
     assert.doesNotMatch(text, /MediaRecorder|fetch\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage|sessionStorage|indexedDB|document\.cookie/, file);
   }

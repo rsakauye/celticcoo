@@ -3,7 +3,7 @@ import Base from '../../layouts/Base.astro';
 import { u } from '../../lib/site.js';
 import { defaultTartan } from '../../lib/ceilidhTartans.js';
 import { DEFAULT_LOW_A, DEFAULT_OUTPUT_LEVEL, PRESETS, STEPS } from '../../lib/droneTuner.js';
-const strip = u(defaultTartan().fling);
+const strip = u(defaultTartan().tuner);
 const ears = u(defaultTartan().ears);
 const TABS = [
   { id: 'steps', label: 'Steps' },
@@ -48,10 +48,10 @@ const TABS = [
         <p class="scale-labels" aria-hidden="true"><span>Flat</span><span>In tune</span><span>Sharp</span></p>
       </div>
 
-      <div class="tune-coo" data-tune-coo data-mood="wait">
+      <div class="tune-coo" data-tune-coo data-mood="wait" data-pose="idle" aria-hidden="true">
         <div class="tune-window">
           <div class="tune-strip">
-            <img src={strip} alt="" width="640" height="64" data-ceilidh-dance />
+            <img src={strip} alt="" width="896" height="64" data-ceilidh-dance />
           </div>
           <div class="tune-wince">
             <img src={ears} alt="" width="256" height="64" data-ceilidh-ears />
@@ -229,7 +229,7 @@ const TABS = [
     margin: 0 auto;
     overflow: hidden;
   }
-  .tune-strip { width: calc(var(--frame) * 10); height: var(--frame); }
+  .tune-strip { width: calc(var(--frame) * 14); height: var(--frame); }
   .tune-wince {
     position: absolute;
     top: 0;
@@ -246,12 +246,15 @@ const TABS = [
     image-rendering: crisp-edges;
     image-rendering: pixelated;
   }
-  /* Dance stays on the 10-frame strip. The wince is its own 4-frame strip
-     (120 ms each), slid with translate3d and explicit from/to keyframes.
-     iOS WebKit does not paint a steps() background-position animation.
-     The sprite is drawn at whole multiples of its 64px frame (1x, 2x, 3x)
-     so the pixels stay square. */
-  .tune-coo[data-mood="dance"] .tune-strip { animation: tune-fling-1x 1s steps(10, end) infinite; }
+  /* One 14-frame sheet: idle, anticipate, then a 12-frame turn (100 ms a frame).
+     Idle and anticipate are stills. The turn starts only after the lock has held
+     (PERFECT_HOLD_MS in droneTuner.js), and always from its first frame.
+     The wince is its own 4-frame strip (120 ms each). Both are slid with translate3d
+     and explicit from/to keyframes: iOS WebKit does not paint a steps()
+     background-position animation. The sprite is drawn at whole multiples of its
+     64px frame (1x, 2x, 3x) so the pixels stay square. */
+  .tune-coo[data-pose="anticipate"] .tune-strip { transform: translate3d(calc(var(--frame) * -1), 0, 0); }
+  .tune-coo[data-pose="circle"] .tune-strip { animation: tune-circle-1x 1.2s steps(12, end) infinite; }
   .tune-coo[data-mood="wince"] .tune-strip { visibility: hidden; }
   .tune-coo[data-mood="wince"] .tune-wince {
     visibility: visible;
@@ -396,17 +399,18 @@ const TABS = [
   .help p { margin: .3rem 0; }
   .privacy-line { margin: .6rem 0 0; text-align: center; }
 
-  @keyframes tune-fling-1x {
-    from { transform: translate3d(0, 0, 0); }
-    to { transform: translate3d(-640px, 0, 0); }
+  /* The turn is frames 2 to 13 of the sheet. */
+  @keyframes tune-circle-1x {
+    from { transform: translate3d(-128px, 0, 0); }
+    to { transform: translate3d(-896px, 0, 0); }
   }
-  @keyframes tune-fling-2x {
-    from { transform: translate3d(0, 0, 0); }
-    to { transform: translate3d(-1280px, 0, 0); }
+  @keyframes tune-circle-2x {
+    from { transform: translate3d(-256px, 0, 0); }
+    to { transform: translate3d(-1792px, 0, 0); }
   }
-  @keyframes tune-fling-3x {
-    from { transform: translate3d(0, 0, 0); }
-    to { transform: translate3d(-1920px, 0, 0); }
+  @keyframes tune-circle-3x {
+    from { transform: translate3d(-384px, 0, 0); }
+    to { transform: translate3d(-2688px, 0, 0); }
   }
   @keyframes tune-wince-1x {
     from { transform: translate3d(0, 0, 0); }
@@ -449,7 +453,7 @@ const TABS = [
   @media (min-width: 480px) {
     .kicker { display: block; }
     .stage, .tune-coo { --frame: 128px; }
-    .tune-coo[data-mood="dance"] .tune-strip { animation-name: tune-fling-2x; }
+    .tune-coo[data-pose="circle"] .tune-strip { animation-name: tune-circle-2x; }
     .tune-coo[data-mood="wince"] .tune-wince { animation-name: tune-wince-2x; }
     .tune-scale { height: 4.4rem; }
   }
@@ -466,7 +470,7 @@ const TABS = [
       align-items: start;
       column-gap: 1.2rem;
     }
-    .tune-coo[data-mood="dance"] .tune-strip { animation-name: tune-fling-3x; }
+    .tune-coo[data-pose="circle"] .tune-strip { animation-name: tune-circle-3x; }
     .tune-coo[data-mood="wince"] .tune-wince { animation-name: tune-wince-3x; }
     .custom-row { grid-template-columns: auto 7rem auto; }
     .custom-row .btn { grid-column: auto; }
@@ -484,7 +488,7 @@ const TABS = [
         "coo nums beat";
     }
     .stage, .tune-coo { --frame: 64px; }
-    .tune-coo[data-mood="dance"] .tune-strip { animation-name: tune-fling-1x; }
+    .tune-coo[data-pose="circle"] .tune-strip { animation-name: tune-circle-1x; }
     .tune-coo[data-mood="wince"] .tune-wince { animation-name: tune-wince-1x; }
     .tune-scale { height: 3.2rem; }
     .tune-cents { font-size: 1.6rem; }
@@ -521,10 +525,13 @@ const TABS = [
     }
   }
 
+  /* Reduced motion: no turn and no lean. Idle while waiting or listening, and the
+     front-kick still (sheet frame 3) once the lock has held. */
   @media (prefers-reduced-motion: reduce) {
-    .tune-coo[data-mood="dance"] .tune-strip {
+    .tune-coo[data-pose="anticipate"] .tune-strip { transform: none; }
+    .tune-coo[data-pose="circle"] .tune-strip {
       animation: none !important;
-      transform: translate3d(calc(var(--frame) * -2), 0, 0);
+      transform: translate3d(calc(var(--frame) * -3), 0, 0);
     }
     .tune-coo[data-mood="wince"] .tune-wince {
       animation: none !important;
@@ -532,9 +539,10 @@ const TABS = [
     }
     .strobe-move, .needle { animation: none !important; transition: none !important; }
   }
-  :global(html[data-a11y-motion=reduce]) .tune-coo[data-mood="dance"] .tune-strip {
+  :global(html[data-a11y-motion=reduce]) .tune-coo[data-pose="anticipate"] .tune-strip { transform: none; }
+  :global(html[data-a11y-motion=reduce]) .tune-coo[data-pose="circle"] .tune-strip {
     animation: none !important;
-    transform: translate3d(calc(var(--frame) * -2), 0, 0);
+    transform: translate3d(calc(var(--frame) * -3), 0, 0);
   }
   :global(html[data-a11y-motion=reduce]) .tune-coo[data-mood="wince"] .tune-wince {
     animation: none !important;
