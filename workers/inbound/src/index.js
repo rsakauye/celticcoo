@@ -1,5 +1,6 @@
-// Inbound mail for hello@celticcoo.ca and intake@in.celticcoo.ca.
-// intake@ is the internal pipeline address. Customer-facing copy stays hello@.
+// Inbound mail for hello@celticcoo.ca, intake@in.celticcoo.com, and
+// intake@in.celticcoo.ca. intake@ is the internal pipeline address.
+// Customer-facing copy stays hello@.
 //
 // The forward to env.FORWARD_TO happens before parse, classify, D1, or GitHub.
 // FORWARD_TO is injected at deploy from a secret. It is not in this repo.
@@ -20,7 +21,8 @@
 // Further non-transactional mail to that address is not sent.
 // There is no addresses field in wrangler.jsonc, so deploying this Worker does
 // not change Email Routing rules or apex MX. The owner manages routing in the
-// dashboard, including the intake@in.celticcoo.ca rule.
+// dashboard, including the intake@in.celticcoo.com and
+// intake@in.celticcoo.ca rules.
 
 import { automatedReason, maybeAcknowledge } from './ack.js';
 import { classifyMessage, modelName, safeReason } from './classify.js';
