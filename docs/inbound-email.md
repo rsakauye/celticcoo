@@ -1,6 +1,6 @@
 # Inbound mail for hello@celticcoo.ca
 
-`hello@celticcoo.ca` is handled by the Worker in `workers/inbound/` (`celticcoo-inbound`) when an Email Routing rule sends that address to the Worker. The same Worker also accepts `intake@in.celticcoo.ca`. That address is the internal pipeline. Issues, drafts, and receipts still say `hello@celticcoo.ca`. The Worker forwards a copy first, then stores the message, classifies it, and opens a GitHub issue for an event listing or a correction. A vague or incomplete inquiry can also get a clarifying draft. That draft is not sent to the person who wrote in unless you approve it.
+`hello@celticcoo.ca` is handled by the Worker in `workers/inbound/` (`celticcoo-inbound`) when an Email Routing rule sends that address to the Worker. The same Worker also accepts `intake@in.celticcoo.com` and `intake@in.celticcoo.ca`. `intake@in.celticcoo.com` is the internal pipeline address. Issues, drafts, and receipts still say `hello@celticcoo.ca`. The Worker forwards a copy first, then stores the message, classifies it, and opens a GitHub issue for an event listing or a correction. A vague or incomplete inquiry can also get a clarifying draft. That draft is not sent to the person who wrote in unless you approve it.
 
 This repository does not change the live routing rules. The Wrangler config has no `addresses` list and no `routes` list. Wrangler would otherwise create or take over an Email Routing rule, or replace a hostname you attached in the dashboard. Leaving both out keeps those dashboard settings in place on deploy. Apex `celticcoo.ca` MX is not changed from this repo.
 
@@ -15,13 +15,15 @@ This repository does not change the live routing rules. The Wrangler config has 
 7. When `CLARIFY_DRAFTS` is `drafts` (the default), a vague, incomplete, or contradictory inquiry gets a short draft that asks only for what is missing. The draft is stored on the same row with status `pending_approval`. A private review note is sent to `FORWARD_TO` when the email binding is available. Nothing is sent to the original sender until you approve that draft.
 8. Does not fetch any URL from the email and does not publish an event. `ACK_REPLIES` is `off`. An automatic receipt is sent only if that value is changed to `on` and the Worker is redeployed. That receipt is separate from clarifying drafts.
 
-`hello@celticcoo.ca` and `intake@in.celticcoo.ca`, including plus-addresses such as `hello+events@celticcoo.ca` and `intake+booking@in.celticcoo.ca`, are stored and classified. Mail to `bookings@celticcoo.ca` is not classified. If Email Routing delivers that address to this Worker and the message is only a stop or unsubscribe, the sender address is added to `mail_opt_outs` and the message is not stored. Any other recipient is forwarded and then ignored, in case a rule is pointed here by mistake.
+`hello@celticcoo.ca`, `intake@in.celticcoo.com`, and `intake@in.celticcoo.ca`, including plus-addresses such as `hello+events@celticcoo.ca`, `intake+booking@in.celticcoo.com`, and `intake+booking@in.celticcoo.ca`, are stored and classified. Mail to `bookings@celticcoo.ca` is not classified. If Email Routing delivers that address to this Worker and the message is only a stop or unsubscribe, the sender address is added to `mail_opt_outs` and the message is not stored. Any other recipient is forwarded and then ignored, in case a rule is pointed here by mistake.
 
 ## Intake address and a Fastmail forward
 
-`intake@in.celticcoo.ca` is not a public mailbox. People still write to `hello@celticcoo.ca`. The subdomain `in.celticcoo.ca` has its own Email Routing setup (MX and SPF) and a rule that sends `intake@` to `celticcoo-inbound`. Both are configured in the Cloudflare dashboard, outside git. This repo does not change apex `celticcoo.ca` MX, the existing `hello@celticcoo.ca` rule, or the outbound `celticcoo-mailer` / `cf-bounce` records. Do not add an `addresses` list to `workers/inbound/wrangler.jsonc`. A deploy would take over routing.
+`intake@in.celticcoo.com` is not a public mailbox. People still write to `hello@celticcoo.ca`. The Worker still accepts `intake@in.celticcoo.ca` as well, so mail already pointed at the old address is not dropped during the move.
 
-Until the apex mailbox moves, `hello@celticcoo.ca` can still be delivered straight to this Worker. After a Fastmail cutover, `hello@` is delivered to Fastmail, and Fastmail forwards a copy to `intake@in.celticcoo.ca`. The SMTP envelope From on that copy may be the forwarder. The Worker stores that value in `envelope_from`, unchanged.
+Fastmail hosts `celticcoo.ca` and treats its subdomains as local, so a copy of `hello@` to `intake@in.celticcoo.ca` is delivered inside Fastmail and bounces with "550 User unknown" instead of going to Cloudflare. `in.celticcoo.com` is a domain Fastmail does not host. The subdomain `in.celticcoo.com` has its own Email Routing setup (MX and SPF) and a rule that sends `intake@` to `celticcoo-inbound`. Those are configured in the Cloudflare dashboard, outside git. This repo does not change apex `celticcoo.ca` MX, apex `celticcoo.com` MX, the existing `hello@celticcoo.ca` rule, or the outbound `celticcoo-mailer` / `cf-bounce` records. Do not add an `addresses` list to `workers/inbound/wrangler.jsonc`. A deploy would take over routing.
+
+Until the apex mailbox moves, `hello@celticcoo.ca` can still be delivered straight to this Worker. After a Fastmail cutover, `hello@` is delivered to Fastmail, and Fastmail forwards a copy to `intake@in.celticcoo.com`. The SMTP envelope From on that copy may be the forwarder. The Worker stores that value in `envelope_from`, unchanged.
 
 The person who wrote is taken from headers only. The body is not a source of instructions or of the sender. The order is:
 
@@ -311,7 +313,7 @@ Automated mail (`List-Unsubscribe`, `List-Id`, `Auto-Submitted` other than `no`,
 
 New mail goes straight to that inbox again. The Worker can stay deployed; it receives nothing until a rule points at it. Rows already in `inbound_emails` stay. Do not delete the `celticcoo-intake` database to undo this. Booking requests live in that database too.
 
-The `intake@in.celticcoo.ca` rule is separate. Delete or edit that rule in the dashboard to stop the pipeline copy. Do not change apex MX to do that. The subdomain routing is not in git.
+The `intake@in.celticcoo.com` rule is separate, as is the older `intake@in.celticcoo.ca` rule if it is still enabled. Delete or edit those rules in the dashboard to stop the pipeline copy. Do not change apex MX to do that. The subdomain routing is not in git.
 
 To stop new drafts without moving the mailbox, set `CLARIFY_DRAFTS` to `off` and redeploy. Drafts already waiting can still be approved until you remove `REVIEW_SECRET` or the review hostname. To stop sends and keep drafts, remove the review hostname. A sent reply cannot be unsent from this Worker.
 
@@ -330,4 +332,4 @@ That does not delete D1, and it does not change DNS.
 cd workers/inbound && npm ci && npm test
 ```
 
-The tests cover MIME parsing, the rules fallback (a synthetic vague note and a synthetic Burns booking, not copies of received mail), the lexicon, the seasonal and bulk-organizer guard, the classifier failure reasons, drafting, approval, issue-body redaction, and the forward-first behaviour. They also cover `intake@in.celticcoo.ca`, recipients that are still skipped, and a forwarded message whose original sender is taken from `Reply-To`, `From`, or a forward header. `npm test` also runs `shared/triage/test/`. Cloudflare bindings are mocked. They do not call Workers AI, GitHub, or Email Routing. Fixtures use example.com addresses and made-up names.
+The tests cover MIME parsing, the rules fallback (a synthetic vague note and a synthetic Burns booking, not copies of received mail), the lexicon, the seasonal and bulk-organizer guard, the classifier failure reasons, drafting, approval, issue-body redaction, and the forward-first behaviour. They also cover `intake@in.celticcoo.com` and `intake@in.celticcoo.ca`, recipients that are still skipped, and a forwarded message whose original sender is taken from `Reply-To`, `From`, or a forward header. `npm test` also runs `shared/triage/test/`. Cloudflare bindings are mocked. They do not call Workers AI, GitHub, or Email Routing. Fixtures use example.com addresses and made-up names.

@@ -4,8 +4,9 @@
   //
   // There is no "addresses" list on purpose. Wrangler would otherwise create
   // or take over an Email Routing rule on deploy. The owner points
-  // hello@celticcoo.ca and intake@in.celticcoo.ca at this Worker in the
-  // dashboard. Omitting addresses leaves those rules and the apex MX alone.
+  // hello@celticcoo.ca, intake@in.celticcoo.com, and intake@in.celticcoo.ca
+  // at this Worker in the dashboard. Omitting addresses leaves those rules
+  // and the apex MX alone.
   //
   // FORWARD_TO is not named here. A personal inbox must not be committed.
   // Deploy uploads it as a Worker secret from the GitHub secret of the same

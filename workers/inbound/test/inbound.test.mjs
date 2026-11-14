@@ -586,8 +586,11 @@ test('mail that is not for hello@ or intake@ is forwarded and not stored', async
   const recipients = [
     'other@celticcoo.ca',
     'intake@celticcoo.ca',
+    'intake@celticcoo.com',
     'notes@in.celticcoo.ca',
+    'notes@in.celticcoo.com',
     'hello@in.celticcoo.ca',
+    'hello@in.celticcoo.com',
   ];
   for (const to of recipients) {
     const db = memoryDb();
@@ -629,6 +632,7 @@ test('intake@in.celticcoo.ca is triaged and public issue copy stays hello@', asy
   const body = JSON.parse(issueCall.init.body);
   assert.match(body.body, /hello@celticcoo.ca/);
   assert.doesNotMatch(`${body.title}\n${body.body}`, /intake@in\.celticcoo\.ca/);
+  assert.doesNotMatch(`${body.title}\n${body.body}`, /intake@in\.celticcoo\.com/);
 
   const plus = fake({
     to: 'Intake+Desk@In.Celticcoo.ca',
@@ -657,6 +661,51 @@ test('intake@in.celticcoo.ca is triaged and public issue copy stays hello@', asy
   assert.equal(helloResult.outcome.skipped, undefined);
   const helloInsert = helloDb.calls.find((call) => /INSERT INTO inbound_emails/i.test(call.sql));
   assert.equal(helloInsert.args[6], 'hello+events@celticcoo.ca');
+});
+
+test('intake@in.celticcoo.com is triaged and public issue copy stays hello@', async () => {
+  const db = memoryDb();
+  const github = { calls: [] };
+  const raw = mime({ subject: 'Please list our Burns Supper', text: burnsText })
+    .replace('To: hello@celticcoo.ca', 'To: intake@in.celticcoo.com');
+  const message = fake({
+    to: 'intake@in.celticcoo.com',
+    raw,
+    subject: 'Please list our Burns Supper',
+    messageId: '<intake-com-burns@example.com>',
+  });
+  message.headers.set('message-id', '<intake-com-burns@example.com>');
+  const result = await handleInboundEmail(message, {
+    FORWARD_TO: OWNER,
+    INTAKE_DB: db,
+    GITHUB_TOKEN: 'github_pat_test_token_value_123456',
+    INBOUND_ISSUES_REPO: PRIVATE_REPO,
+  }, { fetch: githubFetch(github) });
+  assert.equal(result.outcome.skipped, undefined);
+  assert.equal(result.outcome.category, 'event_listing_request');
+  assert.equal(result.outcome.issueStatus, 'filed');
+  assert.equal(message.calls.forward.length, 1);
+  const insert = db.calls.find((call) => /INSERT INTO inbound_emails/i.test(call.sql));
+  assert.equal(insert.args[6], 'intake@in.celticcoo.com');
+  const issueCall = github.calls.find((call) => call.url.endsWith('/issues'));
+  const body = JSON.parse(issueCall.init.body);
+  assert.match(body.body, /hello@celticcoo.ca/);
+  assert.doesNotMatch(`${body.title}\n${body.body}`, /intake@in\.celticcoo\.com/);
+  assert.doesNotMatch(`${body.title}\n${body.body}`, /intake@in\.celticcoo\.ca/);
+
+  const plus = fake({
+    to: 'Intake+Desk@In.Celticcoo.com',
+    raw: mime({ subject: 'A short note', text: 'Thanks, the site looks good.' })
+      .replace('To: hello@celticcoo.ca', 'To: Intake+Desk@In.Celticcoo.com'),
+    subject: 'A short note',
+    messageId: '<intake-com-plus@example.com>',
+  });
+  plus.headers.set('message-id', '<intake-com-plus@example.com>');
+  const plusDb = memoryDb();
+  const plusResult = await handleInboundEmail(plus, { FORWARD_TO: OWNER, INTAKE_DB: plusDb });
+  assert.equal(plusResult.outcome.skipped, undefined);
+  const plusInsert = plusDb.calls.find((call) => /INSERT INTO inbound_emails/i.test(call.sql));
+  assert.equal(plusInsert.args[6], 'intake+desk@in.celticcoo.com');
 });
 
 const FORWARDER = 'forwarder@example.com';
@@ -733,6 +782,7 @@ test('a forwarded message prefers Reply-To, then From, then forward headers', as
   assert.match(replyFirst.mimeSent, new RegExp(`^To: ${REPLY}`, 'm'));
   assert.match(replyFirst.mimeSent, /^From: hello@celticcoo.ca/m);
   assert.doesNotMatch(replyFirst.mimeSent, /intake@in\.celticcoo\.ca/);
+  assert.doesNotMatch(replyFirst.mimeSent, /intake@in\.celticcoo\.com/);
   assert.equal(replyFirst.insert.args[5], FORWARDER);
   assert.match(replyFirst.insert.args[7], new RegExp(SENDER));
   assert.match(replyFirst.insert.args[8], new RegExp(REPLY));

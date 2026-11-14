@@ -126,7 +126,8 @@ export function isAutomated(message, extra) {
 
 // message.reply() can only answer the envelope sender, and the From domain
 // has to be the domain that received the mail. A forward, or mail to
-// intake@in.celticcoo.ca, is sent with the EMAIL binding instead.
+// intake@in.celticcoo.com or intake@in.celticcoo.ca, is sent with the
+// EMAIL binding instead.
 function ackTransport(message, sender) {
   const envelope = oneEmail(envelopeAddress(message && message.from));
   const target = oneEmail(envelopeAddress(sender));
