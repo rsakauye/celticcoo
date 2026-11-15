@@ -54,7 +54,7 @@ The rules-vs-model chooser:
 | setup_times | Line with move-in, load-in, set-up | |
 | teardown_times | Line with move-out, tear-down | |
 | booth_options | 10x10, booth sizes, table only, tent space | |
-| booth_cost | First amount on a fee, cost, booth, or stall line | Private. |
+| booth_cost | First amount on a fee, cost, booth, or stall line, including a per-unit rate such as /day, per day, /weekend, or per event | Private. |
 | currency, currency_source | See below | |
 | fees_deposits | Deposit, refund, commission lines | Private. |
 | power_tables | Power, electricity, tables, chairs | |
@@ -97,7 +97,8 @@ The approved reply is sent with `sendApprovedReply` through the Cloudflare Email
 
 ### Safety
 
-- No draft for no-reply, do-not-reply, mailer-daemon, or postmaster senders, or for mail with `List-Unsubscribe`, `List-Id`, `Auto-Submitted`, or bulk, list, or junk precedence. The reason code is stored on `draft_skip_reason`. The private record is still kept.
+- No draft for no-reply, do-not-reply, mailer-daemon, or postmaster senders, or for mail with `List-Id`, `Auto-Submitted`, or bulk, list, or junk precedence. The reason code is stored on `draft_skip_reason`. The private record is still kept.
+- A `List-Unsubscribe` header alone does not skip an exhibitor reply draft. Real vendor calls often arrive as newsletters. That header still skips drafts for every other category. `List-Id`, `Auto-Submitted`, precedence, and no-reply senders still skip exhibitor drafts. Drafts still go to approval only. `EXHIBITOR_AUTO_SEND` stays off, and nothing is sent on its own.
 - One reply per thread. If an earlier row in the 45-day thread already has a sent or approved reply, or an exhibitor draft still waiting, no new draft is queued and `draft_skip_reason` is `thread_replied`. A follow-up that the classifier calls `other` is read as part of the vendor thread.
 - The send lock and `already_sent` still block a double send of the same draft.
 - `mail_opt_outs` is honoured. If the list cannot be read, nothing is sent.

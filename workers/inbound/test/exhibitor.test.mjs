@@ -13,6 +13,7 @@ import {
   autoSendMode,
   buildExhibitorDraft,
   detectCurrency,
+  exhibitorDraftSkipReason,
   exhibitorMissingFields,
   extractExhibitor,
   threadAlreadyAnswered,
@@ -268,6 +269,42 @@ test('missing vendor facts become deadline, apply_link, booth_cost, setup codes'
   assert.deepEqual(record.missing_fields, ['deadline', 'apply_link', 'booth_cost', 'setup']);
 });
 
+test('booth_cost keeps a per-unit rate from the email and from the model', () => {
+  const cases = [
+    ['Our call for vendors is open. Booth fee is $150/day. Apply at https://example.org/apply', '$150/day'],
+    ['Call for vendors. Booths are $150 per day at the Games.', '$150 per day'],
+    ['Now accepting vendors. Stall fee is $400/weekend.', '$400/weekend'],
+    ['Invitation to exhibit. Booth cost is $75 per event.', '$75 per event'],
+    ['Call for vendors. Market stalls are $60 per table. Set-up is 8 am.', '$60 per table'],
+    ['Call for vendors. Booth fee is $150 for a 10x10 space.', '$150'],
+  ];
+  for (const [body, cost] of cases) {
+    assert.equal(extractExhibitor({ subject: 'Call for vendors', text: body }).booth_cost, cost, body);
+  }
+  assert.equal(extractExhibitor({ subject: 'Call for vendors', text: 'Call for vendors. Booth fee is $150 a day.' }).booth_cost, '$150 a day');
+  assert.equal(extractExhibitor({ subject: 'Call for vendors', text: 'Call for vendors. Booth fee is $150 / day.' }).booth_cost, '$150/day');
+  // A model value that still has the unit wins over a bare extracted amount.
+  const fromModel = extractExhibitor({
+    subject: 'Call for vendors',
+    text: 'Our call for vendors is open. Booth fee is $150 for a 10x10 space.',
+    ai: { booth_cost: '$150/day' },
+  });
+  assert.equal(fromModel.booth_cost, '$150/day');
+  const power = extractExhibitor({
+    subject: 'Call for vendors',
+    text: 'Our call for vendors is open. Booth fee is $150. Power is $25/day. Tables are not provided.',
+  });
+  assert.equal(power.booth_cost, '$150');
+  assert.match(power.power_tables, /\$25\/day/);
+});
+
+test('List-Unsubscribe alone is not an exhibitor draft skip', () => {
+  assert.equal(exhibitorDraftSkipReason('list_unsubscribe'), '');
+  assert.equal(exhibitorDraftSkipReason('list_unsubscribe,list_id'), 'list_id');
+  assert.equal(exhibitorDraftSkipReason('sender'), 'sender');
+  assert.equal(exhibitorDraftSkipReason(''), '');
+});
+
 test('currency comes from the event location, CAD only for Canada or unclear', () => {
   assert.deepEqual(detectCurrency({ text: 'Booth $150', province: 'Alberta' }), { currency: 'CAD', source: 'location', country: 'Canada', flag: '' });
   assert.equal(detectCurrency({ text: 'Booths are $150 at the Games in Missoula, Montana' }).currency, 'USD');
@@ -449,22 +486,49 @@ test('end to end: a second note in the same thread queues no second reply', sqli
   assert.equal(sent.length, 0);
 });
 
-test('end to end: no-reply, list mail, and CLARIFY_DRAFTS=off queue nothing', sqlite, async () => {
+test('end to end: no-reply, list-id, and CLARIFY_DRAFTS=off queue nothing', sqlite, async () => {
   const noReply = migrated();
   await receive(noReply, GAMES_PACK, { from: 'no-reply@example.org' });
   assert.equal(noReply.prepare('SELECT clarify_status FROM inbound_emails').get().clarify_status, '');
 
-  const list = migrated();
-  await receive(list, GAMES_PACK, { headers: { 'list-unsubscribe': '<https://example.org/u>' } });
-  const listed = list.prepare('SELECT clarify_status, draft_skip_reason FROM inbound_emails').get();
-  assert.equal(listed.clarify_status, '');
-  assert.match(listed.draft_skip_reason, /list_unsubscribe/);
+  const listed = migrated();
+  await receive(listed, GAMES_PACK, { headers: { 'list-id': '<vendors.example.org>' } });
+  const row = listed.prepare('SELECT clarify_status, draft_skip_reason FROM inbound_emails').get();
+  assert.equal(row.clarify_status, '');
+  assert.match(row.draft_skip_reason, /list_id/);
   // The private record is still kept for the queue owner.
-  assert.equal(list.prepare('SELECT COUNT(*) AS n FROM exhibitor_invitations').get().n, 1);
+  assert.equal(listed.prepare('SELECT COUNT(*) AS n FROM exhibitor_invitations').get().n, 1);
 
   const off = migrated();
   await receive(off, GAMES_PACK, {}, { CLARIFY_DRAFTS: 'off' });
   assert.equal(off.prepare('SELECT clarify_status FROM inbound_emails').get().clarify_status, '');
+});
+
+test('end to end: List-Unsubscribe alone still queues an exhibitor draft for approval', sqlite, async () => {
+  const db = migrated();
+  const { sent, result } = await receive(db, GAMES_PACK, { headers: { 'list-unsubscribe': '<https://example.org/u>' } });
+  assert.equal(result.outcome.category, 'exhibitor_invitation');
+  assert.equal(result.outcome.autoSend, '');
+  const row = db.prepare('SELECT clarify_status, draft_skip_reason, clarify_draft FROM inbound_emails').get();
+  assert.equal(row.clarify_status, 'pending_approval');
+  assert.equal(row.draft_skip_reason, '');
+  assert.match(row.clarify_draft, /Thanks for sending your call for vendors/);
+  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM exhibitor_invitations').get().n, 1);
+  // Nothing goes to the organizer. The review note is the only outbound mail.
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].to, OWNER);
+  assert.equal(sent.some((mail) => mail.to === ORGANIZER), false);
+});
+
+test('end to end: a per-day booth fee is stored with the unit', sqlite, async () => {
+  const db = migrated();
+  const pack = {
+    subject: GAMES_PACK.subject,
+    text: GAMES_PACK.text.replace('Booth fee is $150 for a 10x10 space.', 'Booth fee is $150/day for a 10x10 space.'),
+  };
+  await receive(db, pack);
+  const record = db.prepare('SELECT booth_cost FROM exhibitor_invitations').get();
+  assert.equal(record.booth_cost, '$150/day');
 });
 
 test('end to end: approval refuses for opt-out, pause, a missing guard, and the 40 a day cap', sqlite, async () => {
@@ -563,6 +627,11 @@ test('the exhibitor doc names the owner, the flag, and no private details', () =
   assert.match(doc, /Akindo/);
   assert.match(doc, /Steward/);
   assert.match(doc, /0011_exhibitor_category\.sql/);
+  assert.match(doc, /List-Unsubscribe/);
+  assert.match(doc, /TRELLO_LIST_ID/);
+  assert.match(doc, /Worker secret/);
+  assert.match(doc, /EXHIBITOR_TRELLO/);
+  assert.match(doc, /per-unit rate/);
   // Only The Celtic Coo's own mailboxes are named.
   const others = doc.replace(/\b[a-z]+@(?:in\.)?celticcoo\.(?:ca|com)\b/g, '');
   assert.equal(hasPrivateContact(others), false);
