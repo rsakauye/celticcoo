@@ -68,7 +68,7 @@ export function isHelloRecipient(value) {
 
 export function isIntakeRecipient(value) {
   return localPart(value, 'intake', 'in.celticcoo.ca')
-    || localPart(value, 'intake', 'in.celticcoo.com');
+    || localPart(value, 'intake', 'in.thecelticcoo.com');
 }
 
 // hello@ stays until the apex mailbox moves. intake@ is the internal pipeline.

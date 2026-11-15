@@ -4,7 +4,7 @@
   //
   // There is no "addresses" list on purpose. Wrangler would otherwise create
   // or take over an Email Routing rule on deploy. The owner points
-  // hello@celticcoo.ca, intake@in.celticcoo.com, and intake@in.celticcoo.ca
+  // hello@celticcoo.ca, intake@in.thecelticcoo.com, and intake@in.celticcoo.ca
   // at this Worker in the dashboard. Omitting addresses leaves those rules
   // and the apex MX alone.
   //

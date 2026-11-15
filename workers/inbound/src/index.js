@@ -1,4 +1,4 @@
-// Inbound mail for hello@celticcoo.ca, intake@in.celticcoo.com, and
+// Inbound mail for hello@celticcoo.ca, intake@in.thecelticcoo.com, and
 // intake@in.celticcoo.ca. intake@ is the internal pipeline address.
 // Customer-facing copy stays hello@.
 //
@@ -21,7 +21,7 @@
 // Further non-transactional mail to that address is not sent.
 // There is no addresses field in wrangler.jsonc, so deploying this Worker does
 // not change Email Routing rules or apex MX. The owner manages routing in the
-// dashboard, including the intake@in.celticcoo.com and
+// dashboard, including the intake@in.thecelticcoo.com and
 // intake@in.celticcoo.ca rules.
 
 import { automatedReason, maybeAcknowledge } from './ack.js';

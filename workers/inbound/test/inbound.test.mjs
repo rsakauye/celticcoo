@@ -587,10 +587,12 @@ test('mail that is not for hello@ or intake@ is forwarded and not stored', async
     'other@celticcoo.ca',
     'intake@celticcoo.ca',
     'intake@celticcoo.com',
+    'intake@thecelticcoo.com',
+    'intake@in.celticcoo.com',
     'notes@in.celticcoo.ca',
-    'notes@in.celticcoo.com',
+    'notes@in.thecelticcoo.com',
     'hello@in.celticcoo.ca',
-    'hello@in.celticcoo.com',
+    'hello@in.thecelticcoo.com',
   ];
   for (const to of recipients) {
     const db = memoryDb();
@@ -632,7 +634,7 @@ test('intake@in.celticcoo.ca is triaged and public issue copy stays hello@', asy
   const body = JSON.parse(issueCall.init.body);
   assert.match(body.body, /hello@celticcoo.ca/);
   assert.doesNotMatch(`${body.title}\n${body.body}`, /intake@in\.celticcoo\.ca/);
-  assert.doesNotMatch(`${body.title}\n${body.body}`, /intake@in\.celticcoo\.com/);
+  assert.doesNotMatch(`${body.title}\n${body.body}`, /intake@in\.(the)?celticcoo\.com/);
 
   const plus = fake({
     to: 'Intake+Desk@In.Celticcoo.ca',
@@ -663,13 +665,13 @@ test('intake@in.celticcoo.ca is triaged and public issue copy stays hello@', asy
   assert.equal(helloInsert.args[6], 'hello+events@celticcoo.ca');
 });
 
-test('intake@in.celticcoo.com is triaged and public issue copy stays hello@', async () => {
+test('intake@in.thecelticcoo.com is triaged and public issue copy stays hello@', async () => {
   const db = memoryDb();
   const github = { calls: [] };
   const raw = mime({ subject: 'Please list our Burns Supper', text: burnsText })
-    .replace('To: hello@celticcoo.ca', 'To: intake@in.celticcoo.com');
+    .replace('To: hello@celticcoo.ca', 'To: intake@in.thecelticcoo.com');
   const message = fake({
-    to: 'intake@in.celticcoo.com',
+    to: 'intake@in.thecelticcoo.com',
     raw,
     subject: 'Please list our Burns Supper',
     messageId: '<intake-com-burns@example.com>',
@@ -686,17 +688,17 @@ test('intake@in.celticcoo.com is triaged and public issue copy stays hello@', as
   assert.equal(result.outcome.issueStatus, 'filed');
   assert.equal(message.calls.forward.length, 1);
   const insert = db.calls.find((call) => /INSERT INTO inbound_emails/i.test(call.sql));
-  assert.equal(insert.args[6], 'intake@in.celticcoo.com');
+  assert.equal(insert.args[6], 'intake@in.thecelticcoo.com');
   const issueCall = github.calls.find((call) => call.url.endsWith('/issues'));
   const body = JSON.parse(issueCall.init.body);
   assert.match(body.body, /hello@celticcoo.ca/);
-  assert.doesNotMatch(`${body.title}\n${body.body}`, /intake@in\.celticcoo\.com/);
+  assert.doesNotMatch(`${body.title}\n${body.body}`, /intake@in\.(the)?celticcoo\.com/);
   assert.doesNotMatch(`${body.title}\n${body.body}`, /intake@in\.celticcoo\.ca/);
 
   const plus = fake({
-    to: 'Intake+Desk@In.Celticcoo.com',
+    to: 'Intake+Desk@In.TheCelticCoo.com',
     raw: mime({ subject: 'A short note', text: 'Thanks, the site looks good.' })
-      .replace('To: hello@celticcoo.ca', 'To: Intake+Desk@In.Celticcoo.com'),
+      .replace('To: hello@celticcoo.ca', 'To: Intake+Desk@In.TheCelticCoo.com'),
     subject: 'A short note',
     messageId: '<intake-com-plus@example.com>',
   });
@@ -705,7 +707,7 @@ test('intake@in.celticcoo.com is triaged and public issue copy stays hello@', as
   const plusResult = await handleInboundEmail(plus, { FORWARD_TO: OWNER, INTAKE_DB: plusDb });
   assert.equal(plusResult.outcome.skipped, undefined);
   const plusInsert = plusDb.calls.find((call) => /INSERT INTO inbound_emails/i.test(call.sql));
-  assert.equal(plusInsert.args[6], 'intake+desk@in.celticcoo.com');
+  assert.equal(plusInsert.args[6], 'intake+desk@in.thecelticcoo.com');
 });
 
 const FORWARDER = 'forwarder@example.com';
@@ -782,7 +784,7 @@ test('a forwarded message prefers Reply-To, then From, then forward headers', as
   assert.match(replyFirst.mimeSent, new RegExp(`^To: ${REPLY}`, 'm'));
   assert.match(replyFirst.mimeSent, /^From: hello@celticcoo.ca/m);
   assert.doesNotMatch(replyFirst.mimeSent, /intake@in\.celticcoo\.ca/);
-  assert.doesNotMatch(replyFirst.mimeSent, /intake@in\.celticcoo\.com/);
+  assert.doesNotMatch(replyFirst.mimeSent, /intake@in\.(the)?celticcoo\.com/);
   assert.equal(replyFirst.insert.args[5], FORWARDER);
   assert.match(replyFirst.insert.args[7], new RegExp(SENDER));
   assert.match(replyFirst.insert.args[8], new RegExp(REPLY));
