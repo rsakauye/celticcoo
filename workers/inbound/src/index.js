@@ -27,13 +27,20 @@
 import { automatedReason, maybeAcknowledge } from './ack.js';
 import { classifyMessage, modelName, safeReason } from './classify.js';
 import { planDraft } from './clarify.js';
+import {
+  EXHIBITOR_CATEGORY,
+  autoSendMode,
+  exhibitorView,
+  extractExhibitor,
+  saveExhibitor,
+} from './exhibitor.js';
 import { buildIssue, fileGitHubIssue, issuesRepo, shouldFile, workerToken } from './issue.js';
 import { isOptOutMessage, optOutStatus, recordOptOut } from './optout.js';
 import { dedupeKey, parseInbound } from './parse.js';
 import { handleApprovalApi } from './approval.js';
 import { aiNamePass, exportReason, redactOutsideD1Many } from './redact.js';
 import { runRetention } from './retention.js';
-import { handleReviewRequest, sendReviewNote } from './review.js';
+import { applyReview, handleReviewRequest, sendReviewNote } from './review.js';
 import { loadThread, markIssue, upsertInbound } from './store.js';
 import { assessTrust, storedTrust } from './trust.js';
 import {
@@ -176,7 +183,7 @@ async function processHello(message, env, deps, forward) {
     console.error(JSON.stringify({ message: 'inbound trust failed', code: codeOf(err) }));
   }
   const stored = storedTrust(trust);
-  const draftSkipReason = automatedReason(message, {
+  let draftSkipReason = automatedReason(message, {
     fromHeader: parsed.fromHeader,
     replyTo: parsed.replyTo,
     sender,
@@ -195,7 +202,7 @@ async function processHello(message, env, deps, forward) {
       now,
     })
     : [];
-  const draft = stopStatus === 'opted_out' ? null : planDraft({
+  let draft = stopStatus === 'opted_out' ? null : planDraft({
     category: classification.category,
     event: classification.event,
     subject: parsed.subject,
@@ -205,6 +212,27 @@ async function processHello(message, env, deps, forward) {
     automated: draftSkipReason !== '',
     thread,
   });
+  if (draft && draft.skip) {
+    draftSkipReason = draftSkipReason || draft.skip;
+    draft = null;
+  }
+  // Exhibitor and vendor calls get a private structured record. The contact
+  // details on it never go to an issue or a public page.
+  const exhibitor = classification.category === EXHIBITOR_CATEGORY
+    ? extractExhibitor({
+      subject: parsed.subject,
+      text: parsed.text,
+      event: classification.event,
+      ai: classification.exhibitor,
+      fromHeader: parsed.fromHeader,
+      replyTo,
+      sender,
+    })
+    : null;
+  if (exhibitor) {
+    const fields = JSON.parse(stored.missingFields || '[]');
+    stored.missingFields = JSON.stringify([...new Set([...fields, ...exhibitor.missing_fields])]);
+  }
   const errorCode = [forward.error, parsed.parseError, optingOut ? 'opt_out' : ''].filter(Boolean).join(',') || '';
   const row = {
     id: deps.uuid ? deps.uuid() : crypto.randomUUID(),
@@ -242,7 +270,27 @@ async function processHello(message, env, deps, forward) {
     errorCode: oneLine(errorCode, 80),
     rawSize: Number(message.rawSize) || 0,
   };
-  const saved = await upsertInbound(env && env.INTAKE_DB, row);
+  let saved;
+  try {
+    saved = await upsertInbound(env && env.INTAKE_DB, row);
+  } catch (err) {
+    // Until 0011_exhibitor_category.sql is applied, the category check
+    // rejects exhibitor_invitation. Store the row as other so it is kept.
+    if (row.category !== EXHIBITOR_CATEGORY) throw err;
+    row.category = 'other';
+    row.classifierReason = safeReason(`${row.classifierReason}:exhibitor_fallback`);
+    saved = await upsertInbound(env && env.INTAKE_DB, row);
+  }
+  if (exhibitor) {
+    await saveExhibitor(env && env.INTAKE_DB, {
+      inboundEmailId: saved.id,
+      messageId: row.messageId,
+      now,
+      record: exhibitor,
+      confidence: classification.confidence,
+      classifier: row.classifier,
+    });
+  }
   const issue = optingOut
     ? { issueStatus: 'skipped', issueUrl: '', errorCode: 'opt_out' }
     : await fileIfNeeded({ saved, classification, parsed, draft, forward, env, deps });
@@ -258,8 +306,26 @@ async function processHello(message, env, deps, forward) {
       subject: parsed.subject || '',
       original: parsed.text || '',
       senderLabel: parsed.fromHeader || sender || envelopeAddress(message.from),
+      exhibitor: exhibitor ? exhibitorView({ ...exhibitor, status: 'new', confidence: classification.confidence, classifier: row.classifier, missing_fields: JSON.stringify(exhibitor.missing_fields), review_flags: JSON.stringify(exhibitor.review_flags) }) : null,
     }, deps);
     reviewStatus = review.status;
+  }
+  // EXHIBITOR_AUTO_SEND is off by default and stays off for the first week.
+  // When it is on, the same approval path sends, behind the send guard
+  // (kill switch, hold, 40 a day cap), the opt-out list, the automated-mail
+  // skip, and one reply per thread. Off means a person approves every reply.
+  let autoSend = '';
+  if (draft && exhibitor && autoSendMode(env) === 'on' && stopStatus === 'allowed' && draftSkipReason === '') {
+    try {
+      const result = await applyReview({
+        env,
+        fields: { action: 'approve', inboundId: saved.id, draft: null, mode: 'auto' },
+        deps,
+      });
+      autoSend = result.code;
+    } catch (err) {
+      autoSend = codeOf(err);
+    }
   }
   if (forward.status === 'sent' && stopStatus === 'allowed') {
     try {
@@ -280,6 +346,7 @@ async function processHello(message, env, deps, forward) {
     reviewStatus,
     trustScore: stored.score,
     draftSkip: draftSkipReason,
+    autoSend,
   };
 }
 
@@ -340,7 +407,7 @@ export async function handleInboundEmail(message, env, deps = {}) {
 
 export function handleFetch(request, env, deps) {
   const url = new URL(request.url);
-  if (url.pathname === '/api/queue' || url.pathname.startsWith('/api/drafts/')) {
+  if (url.pathname === '/api/queue' || url.pathname.startsWith('/api/drafts/') || url.pathname.startsWith('/api/exhibitors/')) {
     return handleApprovalApi(request, env, deps);
   }
   return handleReviewRequest(request, env, deps);

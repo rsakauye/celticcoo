@@ -216,7 +216,7 @@ export function storedTrust(score) {
   return {
     score: safe,
     reasons: JSON.stringify(reasons.map(reasonCode).filter(Boolean)),
-    missingFields: JSON.stringify(fields.filter((field) => /^(date|time|venue|booking|event)$/.test(field))),
+    missingFields: JSON.stringify(fields.filter((field) => /^(date|time|venue|booking|event|deadline|apply_link|booth_cost|setup)$/.test(field))),
     redFlags: JSON.stringify({
       minor_mentioned: Boolean(flags.minor_mentioned),
       links_present: Boolean(flags.links_present),

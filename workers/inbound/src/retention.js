@@ -66,12 +66,28 @@ export async function runRetention(db, env, now = new Date(), log = console.log)
       return { mode, error: 'retention_failed', counts };
     }
   }
+  // exhibitor_invitations follows the inbound 12-month window. A missing
+  // table (migration not applied yet) is skipped, not a retention failure.
+  let exhibitorCount = null;
+  try {
+    exhibitorCount = await countOf(db, 'SELECT COUNT(*) AS n FROM exhibitor_invitations WHERE created_at < ?', emailCutoff);
+  } catch {
+    exhibitorCount = null;
+  }
+  if (mode === 'delete' && exhibitorCount) {
+    try {
+      await db.prepare('DELETE FROM exhibitor_invitations WHERE created_at < ?').bind(emailCutoff).run();
+    } catch {
+      log(JSON.stringify({ message: 'retention failed', code: 'exhibitor_retention_failed', mode }));
+    }
+  }
   log(JSON.stringify({
     message: 'retention',
     mode,
+    exhibitor_invitations: exhibitorCount == null ? 'skipped' : exhibitorCount,
     submissions: counts.submissions,
     inbound_emails: counts.inbound_emails,
     submission_failures: counts.submission_failures,
   }));
-  return { mode, counts };
+  return { mode, counts, exhibitorInvitations: exhibitorCount };
 }

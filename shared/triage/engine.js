@@ -120,6 +120,19 @@ function confidenceFor(category, best, second, hits, scoring, signals) {
   return round3(clamp(raw, 0.45, scoring.maxConfidence));
 }
 
+// Site-pack gates. A gated category keeps its score only when every
+// requireEach group has a role that matched, and no blockedBy role matched.
+export function applyGates(scores, roles, gates) {
+  for (const [category, gate] of Object.entries(gates || {})) {
+    if (!gate || !scores[category]) continue;
+    const groups = Array.isArray(gate.requireEach) ? gate.requireEach : [];
+    const missing = groups.some((group) => !(group || []).some((role) => roles.has(role)));
+    const blocked = (gate.blockedBy || []).some((role) => roles.has(role));
+    if (missing || blocked) scores[category] = 0;
+  }
+  return scores;
+}
+
 function pickCategory(scores, scoring) {
   const ranked = Object.entries(scores).filter(([, score]) => score > 0).sort((a, b) => b[1] - a[1]);
   const [bestName, bestScore] = ranked[0] || ['other', 0];
@@ -286,6 +299,7 @@ export function analyzeMessage(input, site) {
   const subjectHits = scoreText(compiled.compiledPhrases, subject, scoring.subjectWeight || 2, {}, scores, roles);
   const bodyHits = scoreText(compiled.compiledPhrases, stripped.body, 1, {}, scores, roles);
   scoreText(compiled.compiledPhrases, stripped.footer, 1, { spamOnly: true, collectRoles: false }, scores, roles);
+  applyGates(scores, roles, compiled.gates);
   const head = `${subject}\n${stripped.body.slice(0, 280)}`;
   const automated = phrasePattern(compiled.automatedForms || [])?.test(fold(head)) || false;
   const newsletter = roles.has('newsletter');
@@ -301,6 +315,9 @@ export function analyzeMessage(input, site) {
     eventType: roles.has('event'),
     listing: roles.has('listing'),
     booking: roles.has('booking'),
+    exhibitInvite: roles.has('exhibit_invite'),
+    exhibit: roles.has('exhibit') || roles.has('exhibit_logistics'),
+    sellViaCoo: roles.has('sell_via_coo'),
   };
   let chosen = automated
     ? { category: 'other', best: 0, second: 0 }

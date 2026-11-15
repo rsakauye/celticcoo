@@ -84,9 +84,19 @@
   "triggers": {
     "crons": ["15 8 * * *"]
   },
+  // EXHIBITOR_AUTO_SEND stays "off". Every exhibitor reply is approved by a
+  // person in chat or on the review page. Russell's call (14 Nov 2026): off
+  // for at least the first week, then a separate yes before "on".
+  // EXHIBITOR_TRELLO stays "off". The Trello card hook for "interested" rows
+  // also needs TRELLO_API_KEY and TRELLO_TOKEN (Worker secrets) and
+  // TRELLO_LIST_ID (Steward's list), all three as Worker secrets. None of
+  // those are set or named here. Do not add them to vars.
+  // See docs/exhibitor-invitations.md.
   "vars": {
     "ACK_REPLIES": "off",
     "CLARIFY_DRAFTS": "drafts",
+    "EXHIBITOR_AUTO_SEND": "off",
+    "EXHIBITOR_TRELLO": "off",
     "AI_MODEL": "@cf/google/gemma-4-26b-a4b-it"
   }
 }

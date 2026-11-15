@@ -4,6 +4,8 @@
 // A trust score is not read here. No score can approve a draft by itself.
 
 import { applyReview } from './review.js';
+import { EXHIBITOR_CATEGORY, STATUSES, exhibitorView, loadExhibitor, setExhibitorStatus } from './exhibitor.js';
+import { createInterestedCard } from './trello.js';
 import { codeOf, oneLine } from './text.js';
 
 const QUEUE_LIMIT = 20;
@@ -99,7 +101,7 @@ function missingOf(value) {
   try {
     const parsed = JSON.parse(String(value || '[]'));
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((field) => /^(date|time|venue|booking|event)$/.test(String(field)));
+    return parsed.filter((field) => /^(date|time|venue|booking|event|deadline|apply_link|booth_cost|setup)$/.test(String(field)));
   } catch {
     return [];
   }
@@ -136,8 +138,15 @@ function queueItem(row) {
   };
 }
 
+const UUID = '([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})';
+
 function routeOf(pathname, method) {
   if (pathname === '/api/queue' && method === 'GET') return { action: 'queue' };
+  const status = new RegExp(`^/api/exhibitors/${UUID}/status$`, 'i').exec(pathname);
+  if (status) {
+    if (method !== 'POST') return { action: 'method', id: status[1], intended: 'exhibitor_status' };
+    return { action: 'exhibitor_status', id: status[1].toLowerCase() };
+  }
   const match = /^\/api\/drafts\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/(approve|deny)$/i.exec(pathname);
   if (!match) return null;
   if (method !== 'POST') return { action: 'method', id: match[1], intended: match[2] };
@@ -181,12 +190,15 @@ function outcomeOf(result) {
   if (result.code === 'draft_placeholder') return 'draft_placeholder';
   if (result.code === 'clarify_draft_blocked') return 'blocked';
   if (result.code === 'not_found') return 'not_found';
+  if (GUARD_CODES.has(result.code)) return result.code;
   return 'error';
 }
 
+const GUARD_CODES = new Set(['guard_paused', 'outbound_cap', 'guard_unavailable', 'outbound_unknown', 'clarify_off', 'guard_hold', 'volume_unknown']);
+
 export async function handleApprovalApi(request, env, deps = {}) {
   const url = new URL(request.url);
-  const onApi = url.pathname === '/api/queue' || url.pathname.startsWith('/api/drafts/');
+  const onApi = url.pathname === '/api/queue' || url.pathname.startsWith('/api/drafts/') || url.pathname.startsWith('/api/exhibitors/');
   if (!onApi) return json(404, { ok: false, error: 'not_found' });
   const db = env && env.INTAKE_DB;
   if (!db || typeof db.prepare !== 'function') return json(503, { ok: false, error: 'not_configured' });
@@ -255,8 +267,47 @@ export async function handleApprovalApi(request, env, deps = {}) {
       await record('error', 'queue_failed');
       return json(503, { ok: false, error: 'queue_failed' });
     }
+    const drafts = [];
+    for (const row of rows) {
+      const item = queueItem(row);
+      // Exhibitor rows carry the private field table for the queue owner.
+      if (row.category === EXHIBITOR_CATEGORY) item.exhibitor = exhibitorView(await loadExhibitor(db, row.id));
+      drafts.push(item);
+    }
     await record('ok');
-    return json(200, { ok: true, drafts: rows.map(queueItem) });
+    return json(200, { ok: true, drafts });
+  }
+
+  if (route.action === 'exhibitor_status') {
+    let status = '';
+    try {
+      const raw = await request.text();
+      if (raw.length > BODY_LIMIT) throw new Error('too_large');
+      const body = JSON.parse(raw || '{}');
+      status = body && typeof body.status === 'string' ? body.status.trim().toLowerCase() : '';
+    } catch {
+      status = '';
+    }
+    if (!STATUSES.includes(status) || status === 'new') {
+      await record('bad_status');
+      return json(400, { ok: false, error: 'bad_status' });
+    }
+    const current = await loadExhibitor(db, route.id);
+    if (!current) {
+      await record('not_found');
+      return json(404, { ok: false, error: 'not_found' });
+    }
+    const changed = await setExhibitorStatus(db, route.id, status, now);
+    if (!changed) {
+      await record('error', 'status_failed');
+      return json(503, { ok: false, error: 'status_failed' });
+    }
+    let trello = { status: 'skipped', reason: '' };
+    if (status === 'interested' && current.status !== 'interested') {
+      trello = await createInterestedCard(env, exhibitorView({ ...current, status }), route.id, deps);
+    }
+    await record('ok', `status:${status}:trello_${trello.status}`);
+    return json(200, { ok: true, id: route.id, status, trello: trello.status });
   }
 
   const fields = await readJson(request);
@@ -311,6 +362,7 @@ export async function handleApprovalApi(request, env, deps = {}) {
   if (outcome === 'busy') return json(409, { ok: false, error: 'busy' });
   if (outcome === 'draft_placeholder') return json(400, { ok: false, error: 'draft_placeholder' });
   if (outcome === 'blocked') return json(400, { ok: false, error: 'clarify_draft_blocked' });
+  if (GUARD_CODES.has(outcome)) return json(result.http || 409, { ok: false, error: outcome });
   return json(result.http || 502, { ok: false, error: 'not_sent' });
 }
 
