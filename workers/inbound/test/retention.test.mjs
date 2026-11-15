@@ -49,7 +49,9 @@ test('retention logs counts and does not delete unless the flag is on', async ()
   const live = countDb();
   const deleted = await runRetention(live, { RETENTION_PURGE: 'on' }, NOW, () => {});
   assert.equal(deleted.mode, 'delete');
-  assert.equal(live.calls.filter((call) => call.op === 'run').length, 3);
+  // Three inbound tables, then exhibitor_invitations on the same 12-month window.
+  assert.equal(live.calls.filter((call) => call.op === 'run').length, 4);
+  assert.match(live.calls.filter((call) => call.op === 'run')[3].sql, /DELETE FROM exhibitor_invitations/);
   assert.match(live.calls.find((call) => call.op === 'run').sql, /DELETE FROM submissions/);
   assert.equal(live.calls.some((call) => /mail_opt_outs/i.test(call.sql)), false);
   const retentionSource = readFileSync(join(here, '../src/retention.js'), 'utf8');

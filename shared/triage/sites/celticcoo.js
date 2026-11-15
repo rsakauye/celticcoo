@@ -2,13 +2,18 @@
 // hard-code Highland Games, Kit, or Alberta. Copy this file for another
 // site and replace the phrases, places, categories, and seasons.
 
-/** @typedef {'event_listing_request'|'booking_inquiry'|'correction_or_update'|'partnership_or_press'|'spam'|'other'} Category */
+/** @typedef {'event_listing_request'|'booking_inquiry'|'correction_or_update'|'partnership_or_press'|'exhibitor_invitation'|'spam'|'other'} Category */
 
+// exhibitor_invitation is an organizer inviting The Celtic Coo to exhibit or
+// vend at their event. It is not a shop asking to sell through Coo, and it is
+// not a hire request. The inbound_emails category check must list it too
+// (site/migrations/0011_exhibitor_category.sql).
 export const categories = [
   'event_listing_request',
   'booking_inquiry',
   'correction_or_update',
   'partnership_or_press',
+  'exhibitor_invitation',
   'spam',
   'other',
 ];
@@ -119,6 +124,42 @@ export const phrases = [
 
   { id: 'press', category: 'partnership_or_press', weight: 4.5, role: 'press', forms: ['partnership', 'sponsorship', 'sponsor', 'press request', 'journalist', 'interview', 'media kit', 'collaborate', 'collaboration', 'press release'] },
 
+  // Exhibitor and vendor calls. Invitation and application phrases carry the
+  // weight. Booth, stall, and logistics words only add to it. The gate below
+  // needs one invitation phrase and one exhibit word, so a lone "vendor" or a
+  // booth fee on its own never picks this label.
+  { id: 'exhibit-invite', category: 'exhibitor_invitation', weight: 5, role: 'exhibit_invite', forms: [
+    'call for vendors', 'call for exhibitors', 'call for artisans', 'call for makers', 'vendor call', 'exhibitor call',
+    'vendor application', 'vendor applications', 'exhibitor application', 'exhibitor applications', 'artisan application', 'artisan applications',
+    'vendor package', 'vendor packages', 'exhibitor package', 'vendor pack', 'exhibitor pack', 'vendor info pack', 'vendor information package',
+    'vendor registration', 'exhibitor registration', 'vendor form', 'exhibitor form',
+    'invite you to exhibit', 'invite you to vend', 'invite you to be a vendor', 'invite you to join us as a vendor', 'invitation to exhibit', 'invitation to vend',
+    'would love to have you as a vendor', 'would love to have you exhibit',
+    'apply to be a vendor', 'apply to vend', 'apply to exhibit', 'apply for a booth', 'apply for a stall', 'apply for vendor space',
+    'vendors wanted', 'exhibitors wanted', 'artisans wanted', 'now accepting vendors', 'now accepting exhibitors', 'accepting vendor applications', 'accepting vendors',
+    'seeking vendors', 'looking for vendors', 'looking for exhibitors', 'vendor opportunity', 'vendor opportunities', 'exhibitor opportunity',
+  ] },
+  { id: 'exhibit-word', category: 'exhibitor_invitation', weight: 1.5, role: 'exhibit', forms: [
+    'booth', 'booths', 'stall', 'stalls', 'vendor', 'vendors', 'exhibitor', 'exhibitors', 'exhibit', 'artisan', 'artisans',
+    'vendor space', 'vendor table', 'vendor tables', 'tent space', 'market stall', 'craft table', 'vendor village', 'vendor market', 'artisan market',
+  ] },
+  { id: 'exhibit-logistics', category: 'exhibitor_invitation', weight: 1.5, role: 'exhibit_logistics', forms: [
+    'booth fee', 'booth fees', 'stall fee', 'stall fees', 'vendor fee', 'vendor fees', 'table fee', 'table fees', 'space cost', 'booth cost', 'booth rental',
+    'move-in', 'move in', 'load-in', 'load in', 'set-up time', 'setup time', 'set up time', 'tear-down', 'teardown', 'tear down', 'move-out', 'move out',
+    'power available', 'power is available', 'electricity', 'electrical hookup', 'power hookup', 'tables and chairs', 'tables provided', 'chairs provided',
+    'vendor permit', 'vendor permits', 'liability insurance', 'certificate of insurance', 'proof of insurance', 'business licence', 'business license', 'health permit',
+  ] },
+  // The other direction: a maker or shop that wants to sell through Coo, join
+  // a directory, or take space at an event Coo runs. Weight 0. It only blocks
+  // exhibitor_invitation through the gate.
+  { id: 'sell-via-coo', category: '', weight: 0, role: 'sell_via_coo', forms: [
+    'sell through the celtic coo', 'sell through your site', 'sell through your shop', 'sell through you', 'sell on your site', 'sell on your website', 'sell in your shop',
+    'sell my', 'sell our products', 'stock our', 'stock my', 'carry our products', 'carry my products', 'wholesale', 'consignment',
+    'list my shop', 'list our shop', 'list my products', 'list our products', 'join your directory', 'your vendor directory', 'your marketplace',
+    'booth at your event', 'stall at your event', 'table at your event', 'space at your event', 'vendor at your event', 'vend at your event',
+    'booth at your market', 'stall at your market', 'booth at the celtic coo', 'become a vendor on', 'become a seller',
+  ] },
+
   { id: 'spam-seo', category: 'spam', weight: 5, role: 'spam', forms: ['seo', 'seo services', 'search engine optimization', 'guest post', 'guest posts', 'guest posting', 'backlink', 'backlinks', 'link building', 'link exchange'] },
   { id: 'spam-pitch', category: 'spam', weight: 4, role: 'spam', forms: ['buy now', 'click here', 'viagra', 'crypto airdrop', 'bitcoin doubling', 'wire transfer', 'you have won', 'digital marketing agency', 'increase your traffic', 'boost your ranking'] },
   { id: 'spam-footer', category: 'spam', weight: 4, role: 'spam', forms: ['unsubscribe from this list', 'unsubscribe from this newsletter', 'view in your browser', 'view this email in', 'you are receiving this', 'youre receiving this', 'manage your preferences', 'this message was sent'] },
@@ -138,9 +179,20 @@ export const directoryForms = [
   'groups page', 'group listing', 'directory',
 ];
 
+// A category is scored only when the roles below are present. requireEach is
+// a list of groups. Each group needs at least one role. blockedBy zeroes the
+// score when any listed role is present.
+export const gates = {
+  exhibitor_invitation: {
+    requireEach: [['exhibit_invite'], ['exhibit', 'exhibit_logistics']],
+    blockedBy: ['sell_via_coo'],
+  },
+};
+
 const celticcoo = {
   id: 'celticcoo',
   categories,
+  gates,
   scoring,
   guard,
   provinces,

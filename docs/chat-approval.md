@@ -59,3 +59,7 @@ The module is `shared/trust/`. The Celtic Coo weights, seasons, and phrase group
 | Turnstile | Booking form submissions only. A saved submission has already passed Turnstile, so the reason code is `turnstile_pass`. If the form was stored without a verifier configured, the code is `turnstile_unavailable`. A rejected check is not stored as a submission. It stays a `submission_failures` row, with the reason code, whether a token was present, any Turnstile error codes, a truncated user agent, and the country and ASN when Cloudflare provides them. It is not listed in the approval queue. Mail omits Turnstile. |
 
 Reason codes are JSON on the row. They are codes and weights, not a copy of the message. A high score, a clear Turnstile result, and an empty red-flag list still do not send. The worker sends a clarifying reply only after a person approves it.
+
+## Exhibitor invitations
+
+Queue items with category `exhibitor_invitation` also carry an `exhibitor` object: the private field table, confidence, classifier, `missing_fields` (adds `deadline`, `apply_link`, `booth_cost`, `setup`), `review_flags` such as `currency_unclear`, and `queue_owner` (Akindo). `POST /api/exhibitors/<id>/status` sets the row status with the same bearer token, rate limit, and audit. Approving one of these drafts goes through the send guard first and can answer `guard_paused`, `outbound_cap`, or `guard_unavailable` with nothing sent. See `docs/exhibitor-invitations.md`.

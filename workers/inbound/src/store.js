@@ -178,7 +178,7 @@ export async function markIssue(db, id, issueStatus, issueUrl, issueNumber, erro
 export async function loadInbound(db, id) {
   if (!db || typeof db.prepare !== 'function') return null;
   return db.prepare(
-    `SELECT id, subject, reply_to, envelope_from, from_header, text_body, category,
+    `SELECT id, subject, message_id, reply_to, envelope_from, from_header, text_body, category,
             clarify_status, clarify_draft, clarify_reasons
      FROM inbound_emails WHERE id = ?`,
   ).bind(id).first();

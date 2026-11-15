@@ -5,6 +5,7 @@
 import { DATE_RE, publicUrl, textSignals } from './classify.js';
 import { caslFooterText } from '../../../shared/casl/notice.js';
 import { hasPrivateContact, PUBLIC_MAILBOX } from './redact.js';
+import { EXHIBITOR_CATEGORY, planExhibitorDraft } from './exhibitor.js';
 
 const TIME_RE = /\b(?:[01]?\d|2[0-3]):[0-5]\d\b|\b(?:1[0-2]|0?[1-9])\s*(?:a\.?m\.?|p\.?m\.?)\b/i;
 const LINK_RE = /https?:\/\/[^\s<>"')\]]+/gi;
@@ -223,7 +224,7 @@ export function buildDraft(reasons, category) {
   ].join('\n');
 }
 
-const ACTIONABLE = new Set(['event_listing_request', 'correction_or_update', 'booking_inquiry']);
+const ACTIONABLE = new Set(['event_listing_request', 'correction_or_update', 'booking_inquiry', EXHIBITOR_CATEGORY]);
 const EVENT_FIELDS = ['title', 'host', 'date', 'city', 'province', 'venue', 'url'];
 const PRIOR_TEXT_LIMIT = 4000;
 
@@ -308,6 +309,12 @@ export function threadContext({ category, event, subject, text }, thread) {
 export function planDraft({ category, event, subject, text, now, env, automated, thread }) {
   if (clarifyMode(env) !== 'drafts' || automated || category === 'spam') return null;
   const ctx = threadContext({ category, event, subject, text }, thread);
+  // An exhibitor invitation, or a follow-up in one, gets Hemingway's vendor
+  // reply instead of the fixed questions. One reply per thread. The result
+  // may be { skip: 'thread_replied' }, which the caller stores as the reason.
+  if (ctx.category === EXHIBITOR_CATEGORY) {
+    return planExhibitorDraft({ env, automated, thread, mode: clarifyMode(env) });
+  }
   let reasons = assessGaps({ category: ctx.category, event: ctx.event, subject, text: ctx.text, now });
   // A reply in a thread we already asked questions in, that answers none of
   // them, adds nothing. Repeating the same questions would be noise, so the

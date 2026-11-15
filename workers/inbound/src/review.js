@@ -1,6 +1,10 @@
 // Approval for a clarifying draft.
-// The email handler never calls sendApprovedReply. Only a POST to /r/<id>,
+// The email handler never calls sendApprovedReply directly. A POST to /r/<id>,
 // with a still-unused token, a signed CSRF cookie, and confirm=yes, can send.
+// The one other caller is the exhibitor auto-send path in index.js, which runs
+// only when EXHIBITOR_AUTO_SEND is exactly "on" (default off) and goes through
+// applyReview with mode auto, so the send guard, opt-out list, and send lock
+// all still apply.
 // GET shows the page and does not send. Mail scanners that prefetch links
 // therefore cannot approve a reply.
 //
@@ -12,6 +16,15 @@ import { questionFor } from './clarify.js';
 import { COO_MARK } from './coo-mark.js';
 import { caslFooterText } from '../../../shared/casl/notice.js';
 import { optOutStatus } from './optout.js';
+import {
+  EXHIBITOR_CATEGORY,
+  HEMINGWAY_SUBJECT,
+  REVIEW_FIELDS,
+  exhibitorView,
+  loadExhibitor,
+  setExhibitorStatus,
+} from './exhibitor.js';
+import { recordOutbound, sendGate } from './guard.js';
 import { hasPrivateContact, PUBLIC_MAILBOX } from './redact.js';
 import {
   claimClarifySend,
@@ -54,6 +67,7 @@ const CATEGORY_LABEL = {
   booking_inquiry: 'Booking',
   correction_or_update: 'Correction',
   partnership_or_press: 'Press or partnership',
+  exhibitor_invitation: 'Exhibitor or vendor invitation',
   spam: 'Spam',
   other: 'Other',
 };
@@ -89,6 +103,9 @@ const PAGE_CSS = `
   button.primary { background: var(--ginger); color: #fff; border: 0; }
   button.primary:hover { background: #8a4118; }
   button.ghost { background: transparent; color: var(--green); border: 2px solid var(--green); }
+  table.details { border-collapse: collapse; width: 100%; }
+  table.details th { text-align: left; padding: 0.25rem 0.8rem 0.25rem 0; color: var(--muted); font-weight: 600; vertical-align: top; width: 11rem; }
+  table.details td { padding: 0.25rem 0; }
   .banner { background: #fde7d6; border-radius: 10px; padding: 0.7rem 0.9rem; margin: 0 0 1rem; }
   :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; box-shadow: 0 0 0 5px var(--focus-halo); }
   @media (max-width: 800px) {
@@ -176,7 +193,16 @@ function quotePlain(value, limit) {
   return lines.join('\n');
 }
 
-export async function sendApprovedReply(env, { to, subject, text }, deps = {}) {
+// Threading headers for an approved reply. Only a single, well-formed
+// Message-ID from the stored row is used. Anything else is dropped, so a
+// stored header cannot add lines to the outgoing message.
+export function threadHeaders(messageId) {
+  const id = String(messageId || '').trim();
+  if (!/^<[^<>\s@]{1,240}@[^<>\s@]{1,240}>$/.test(id)) return null;
+  return { 'In-Reply-To': id, References: id };
+}
+
+export async function sendApprovedReply(env, { to, subject, text, inReplyTo }, deps = {}) {
   const recipient = oneEmail(to);
   if (!recipient || recipient.toLowerCase() === HELLO_FROM) {
     const err = new Error('missing recipient');
@@ -219,13 +245,30 @@ export async function sendApprovedReply(env, { to, subject, text }, deps = {}) {
     err.code = 'clarify_not_configured';
     throw err;
   }
-  await send({
+  const message = {
     to: recipient,
     from: { email: HELLO_FROM, name: 'The Celtic Coo' },
     replyTo: { email: HELLO_FROM, name: 'The Celtic Coo' },
     subject: replySubject(subject),
     text: body,
-  });
+  };
+  const headers = threadHeaders(inReplyTo);
+  if (headers) message.headers = headers;
+  await send(message);
+}
+
+function detailLines(exhibitor) {
+  const view = exhibitor && exhibitor.fields ? exhibitor : null;
+  if (!view) return [];
+  const out = ['Vendor call details (private, do not share):'];
+  for (const [key, label] of REVIEW_FIELDS) {
+    if (view.fields[key]) out.push(`${label}: ${view.fields[key]}`);
+  }
+  out.push(`Confidence: ${view.confidence} (${view.classifier})`);
+  if (view.missing_fields.length) out.push(`Missing: ${view.missing_fields.join(', ')}`);
+  if (view.review_flags.length) out.push(`Check: ${view.review_flags.join(', ')}`);
+  out.push(`Queue owner: ${view.queue_owner}`, '');
+  return out;
 }
 
 export function buildReviewNote({
@@ -237,6 +280,7 @@ export function buildReviewNote({
   subject,
   original,
   senderLabel,
+  exhibitor,
 }) {
   const summary = reviewSummary(category, reasons || []);
   const lines = [
@@ -244,6 +288,7 @@ export function buildReviewNote({
     '',
     summary,
     '',
+    ...detailLines(exhibitor),
     `From: ${senderLabel || recipient || '(no reply address stored)'}`,
     `Subject: ${oneLine(subject, 180) || '(no subject)'}`,
     '',
@@ -377,12 +422,31 @@ function reasonList(row) {
   return String(row && row.clarify_reasons || '').split(',').filter(Boolean);
 }
 
-function reviewForm(row, tokenId, csrf, banner) {
+function detailsCard(exhibitor) {
+  if (!exhibitor || !exhibitor.fields) return '';
+  const rows = REVIEW_FIELDS
+    .filter(([key]) => exhibitor.fields[key])
+    .map(([key, label]) => `<tr><th scope="row">${escapeHtml(label)}</th><td>${escapeHtml(exhibitor.fields[key])}</td></tr>`);
+  rows.push(`<tr><th scope="row">Confidence</th><td>${escapeHtml(`${exhibitor.confidence} (${exhibitor.classifier})`)}</td></tr>`);
+  if (exhibitor.missing_fields.length) rows.push(`<tr><th scope="row">Missing</th><td>${escapeHtml(exhibitor.missing_fields.join(', '))}</td></tr>`);
+  if (exhibitor.review_flags.length) rows.push(`<tr><th scope="row">Check</th><td>${escapeHtml(exhibitor.review_flags.join(', '))}</td></tr>`);
+  rows.push(`<tr><th scope="row">Queue owner</th><td>${escapeHtml(exhibitor.queue_owner)}</td></tr>`);
+  return [
+    '<section class="card" style="margin-bottom:1rem">',
+    '<h2>Vendor call details</h2>',
+    '<p class="muted">Private. These stay in the intake database and are never published.</p>',
+    `<table class="details">${rows.join('')}</table>`,
+    '</section>',
+  ].join('\n');
+}
+
+function reviewForm(row, tokenId, csrf, banner, exhibitor) {
   const summary = reviewSummary(row.category, reasonList(row));
   const original = originalText(row);
   return [
     banner ? `<p class="banner">${escapeHtml(banner)}</p>` : '',
     `<p class="summary">${escapeHtml(summary)}</p>`,
+    detailsCard(exhibitor),
     '<div class="cols">',
     '<section class="card">',
     '<h2>Original message</h2>',
@@ -484,6 +548,7 @@ export async function applyReview({ env, fields, deps = {} }) {
       if (again && again.clarify_status === 'discarded') return { http: 200, code: 'discarded', row: again };
       return { http: 409, code: 'busy', row: again || row };
     }
+    if (row.category === EXHIBITOR_CATEGORY || reasonList(row).includes(EXHIBITOR_CATEGORY)) await setExhibitorStatus(db, fields.inboundId, 'reviewed');
     return { http: 200, code: 'discarded', row };
   }
   if (row.clarify_status === 'sent') return { http: 200, code: 'already_sent', row };
@@ -507,6 +572,16 @@ export async function applyReview({ env, fields, deps = {} }) {
     catch { return { http: 502, code: 'clarify_send_failed', row }; }
   }
   const now = deps.now ? deps.now() : new Date();
+  const exhibitor = row.category === EXHIBITOR_CATEGORY || reasonList(row).includes(EXHIBITOR_CATEGORY);
+  // Exhibitor replies go through the send guard: the intake_control kill
+  // switch and the 40 a day outbound cap. A missing table fails closed.
+  if (exhibitor) {
+    const gate = await sendGate(env, { now, mode: fields.mode === 'auto' ? 'auto' : 'approved' });
+    if (!gate.ok) {
+      logReplyRefused(gate.reason);
+      return { http: gate.reason === 'guard_unavailable' || gate.reason === 'outbound_unknown' ? 503 : 409, code: gate.reason, row };
+    }
+  }
   const lock = padTime(now.getTime());
   const stale = padTime(now.getTime() - LOCK_MS);
   const claimed = await claimClarifySend(db, fields.inboundId, lock, stale);
@@ -518,10 +593,18 @@ export async function applyReview({ env, fields, deps = {} }) {
   try {
     await sendApprovedReply(env, {
       to: replyAddress(row),
-      subject: row.subject,
+      subject: row.subject || (exhibitor ? HEMINGWAY_SUBJECT : ''),
       text,
+      inReplyTo: row.message_id,
     }, deps);
     await markClarifySent(db, fields.inboundId, lock);
+    await recordOutbound(db, {
+      kind: exhibitor ? 'exhibitor_reply' : 'clarify',
+      inboundEmailId: fields.inboundId,
+      actor: fields.mode === 'auto' ? 'auto' : 'person',
+      now,
+    });
+    if (exhibitor) await setExhibitorStatus(db, fields.inboundId, 'replied', now);
     console.log(JSON.stringify({ message: 'inbound clarify sent', id: fields.inboundId }));
     return { http: 200, code: 'sent', row: { ...row, clarify_status: 'sent', clarify_draft: text } };
   } catch (err) {
@@ -549,6 +632,9 @@ function resultPage(result) {
     return page(400, 'Not sent', `<p class="card">${escapeHtml(result.problem || 'The reply was not sent.')}</p>`);
   }
   if (result.code === 'opt_out') return page(200, 'Not sent', '<p class="card">Nothing was sent. They asked to stop receiving email.</p>');
+  if (result.code === 'guard_paused') return page(409, 'Not sent', '<p class="card">Outbound mail is paused by the kill switch. Nothing was sent.</p>');
+  if (result.code === 'outbound_cap') return page(409, 'Not sent', '<p class="card">Today\'s outbound limit has been reached. Nothing was sent. Try again tomorrow.</p>');
+  if (result.code === 'guard_unavailable' || result.code === 'outbound_unknown') return page(503, 'Not sent', '<p class="card">The send guard could not be checked. Nothing was sent.</p>');
   if (result.code === 'opt_out_unknown') return page(503, 'Not sent', '<p class="card">The reply was not sent. The stop-mail list could not be checked. Nothing was sent.</p>');
   return page(result.http || 502, 'Not sent', '<p class="card">The reply was not sent. Open the review link again to retry. Nothing went out.</p>');
 }
@@ -589,7 +675,10 @@ export async function handleReviewRequest(request, env, deps = {}) {
     const secret = reviewSecret(env);
     if (!secret) return page(503, 'Not ready', '<p class="card">Review is not configured. Nothing was sent.</p>');
     const csrf = await issueCsrf(secret, tokenId);
-    return page(200, 'Review a reply', reviewForm(row, tokenId, csrf), { 'set-cookie': csrfCookie(csrf) });
+    const details = row.category === EXHIBITOR_CATEGORY
+      ? exhibitorView(await loadExhibitor(env.INTAKE_DB, token.inbound_email_id))
+      : null;
+    return page(200, 'Review a reply', reviewForm(row, tokenId, csrf, '', details), { 'set-cookie': csrfCookie(csrf) });
   }
   if (token.used_at) return page(200, 'Link used', '<p class="card">This review link was already used. Nothing else was sent.</p>');
   const secret = reviewSecret(env);
