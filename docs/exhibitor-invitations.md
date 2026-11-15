@@ -119,8 +119,10 @@ The approved reply is sent with `sendApprovedReply` through the Cloudflare Email
 `workers/inbound/src/trello.js` makes a card when a row is first set to `interested`. It does nothing unless all of these exist:
 
 - `EXHIBITOR_TRELLO` = `on` (a var, `off` in the config today)
-- `TRELLO_API_KEY` and `TRELLO_TOKEN`: Worker secrets, not in git, not set yet
-- `TRELLO_LIST_ID`: the id of Steward's list, a deploy var, not set yet
+- `TRELLO_API_KEY` and `TRELLO_TOKEN`: Worker secrets, not in git
+- `TRELLO_LIST_ID`: the id of Steward's list, also a Worker secret, so board and list ids stay out of this public repo
+
+Secrets live on the Worker, not in git, and survive deploys. With all three in place, turning the hook on is one change: set `EXHIBITOR_TRELLO` to `on` in `workers/inbound/wrangler.jsonc` in a pull request, with Russell's yes, and let the merge deploy it. Changing it in the dashboard alone would be overwritten by the next deploy.
 
 The card has the event name, dates, place, apply-by date, application link, and the intake row id. It has no organizer name, email, phone, or booth cost.
 

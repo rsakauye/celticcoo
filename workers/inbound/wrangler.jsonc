@@ -88,7 +88,8 @@
   // for at least the first week, then a separate yes before "on".
   // EXHIBITOR_TRELLO stays "off". The Trello card hook for "interested" rows
   // also needs TRELLO_API_KEY and TRELLO_TOKEN (Worker secrets) and
-  // TRELLO_LIST_ID (Steward's list). None of those are set or named here.
+  // TRELLO_LIST_ID (Steward's list), all three as Worker secrets. None of
+  // those are set or named here. Do not add them to vars.
   // See docs/exhibitor-invitations.md.
   "vars": {
     "ACK_REPLIES": "off",

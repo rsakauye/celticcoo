@@ -4,9 +4,10 @@
 //
 //   TRELLO_API_KEY   Worker secret (wrangler secret put). Not in git.
 //   TRELLO_TOKEN     Worker secret. Not in git.
-//   TRELLO_LIST_ID   Deploy var naming Steward's list. Not in git yet.
+//   TRELLO_LIST_ID   Worker secret naming Steward's list. Not in git, so
+//                    board and list ids stay out of this public repo.
 //
-// None of these are set in this repo. The card carries public event facts
+// None of these are set in this repo. Do not add TRELLO_LIST_ID to vars. The card carries public event facts
 // only: no organizer name, email, or phone, and no booth cost, because the
 // card is outside the private intake database.
 
