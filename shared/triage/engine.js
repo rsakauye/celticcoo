@@ -133,6 +133,29 @@ export function applyGates(scores, roles, gates) {
   return scores;
 }
 
+function preferenceKept(rule, roles) {
+  const any = Array.isArray(rule.unlessRoles) ? rule.unlessRoles : [];
+  if (any.some((role) => roles.has(role))) return true;
+  const all = Array.isArray(rule.unlessAllRoles) ? rule.unlessAllRoles : [];
+  return all.length > 0 && all.every((role) => roles.has(role));
+}
+
+// A gated category that cleared the floor can drop a rival score. The rival
+// stays when its unless roles matched, so a real listing ask or a performer
+// hire is not swallowed by a vendor call.
+export function applyPreferences(scores, roles, gates, scoring) {
+  const floor = Number(scoring && scoring.minScore) || 0;
+  for (const [category, gate] of Object.entries(gates || {})) {
+    if (!gate || !Array.isArray(gate.preferOver)) continue;
+    if ((scores[category] || 0) < floor) continue;
+    for (const rule of gate.preferOver) {
+      if (!rule || !rule.category || preferenceKept(rule, roles)) continue;
+      scores[rule.category] = 0;
+    }
+  }
+  return scores;
+}
+
 function pickCategory(scores, scoring) {
   const ranked = Object.entries(scores).filter(([, score]) => score > 0).sort((a, b) => b[1] - a[1]);
   const [bestName, bestScore] = ranked[0] || ['other', 0];
@@ -300,6 +323,7 @@ export function analyzeMessage(input, site) {
   const bodyHits = scoreText(compiled.compiledPhrases, stripped.body, 1, {}, scores, roles);
   scoreText(compiled.compiledPhrases, stripped.footer, 1, { spamOnly: true, collectRoles: false }, scores, roles);
   applyGates(scores, roles, compiled.gates);
+  applyPreferences(scores, roles, compiled.gates, scoring);
   const head = `${subject}\n${stripped.body.slice(0, 280)}`;
   const automated = phrasePattern(compiled.automatedForms || [])?.test(fold(head)) || false;
   const newsletter = roles.has('newsletter');
@@ -314,7 +338,9 @@ export function analyzeMessage(input, site) {
     performer: roles.has('performer'),
     eventType: roles.has('event'),
     listing: roles.has('listing'),
+    listingAsk: roles.has('listing_ask'),
     booking: roles.has('booking'),
+    hire: roles.has('hire'),
     exhibitInvite: roles.has('exhibit_invite'),
     exhibit: roles.has('exhibit') || roles.has('exhibit_logistics'),
     sellViaCoo: roles.has('sell_via_coo'),

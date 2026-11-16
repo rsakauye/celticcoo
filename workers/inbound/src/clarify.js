@@ -2,7 +2,7 @@
 // The draft is a fixed set of questions. It does not quote the inbound mail.
 // Nothing here sends. CLARIFY_DRAFTS defaults to drafts. There is no auto-send mode.
 
-import { DATE_RE, publicUrl, textSignals } from './classify.js';
+import { DATE_RE, classifyByRules, publicUrl, textSignals } from './classify.js';
 import { caslFooterText } from '../../../shared/casl/notice.js';
 import { hasPrivateContact, PUBLIC_MAILBOX } from './redact.js';
 import { EXHIBITOR_CATEGORY, planExhibitorDraft } from './exhibitor.js';
@@ -306,8 +306,24 @@ export function threadContext({ category, event, subject, text }, thread) {
   };
 }
 
+// A mailbox test is marked as such. "test the sound" and "latest" are not.
+function isMarkedTest(subject, text) {
+  const sub = String(subject || '').trim();
+  if (/^(?:\[test\]|test)\b(?:\s*[-:–—]\s*\S|\s*$)/i.test(sub)) return true;
+  if (/^test\s+(?:email|message|mail)\b/i.test(sub)) return true;
+  const body = String(text || '').replace(/^\uFEFF/, '');
+  if (/^(?:\[test\]|test)\s*$/im.test(body.trim())) return true;
+  if (/^this is (?:only )?a test(?:\s+(?:email|message|mail))?\b/i.test(body.trim())) return true;
+  if (/^test\s+(?:email|message|mail)\b/im.test(body)) return true;
+  return false;
+}
+
 export function planDraft({ category, event, subject, text, now, env, automated, thread }) {
   if (clarifyMode(env) !== 'drafts' || automated || category === 'spam') return null;
+  // TEST notes and mail the rules already call spam do not get a reply draft.
+  // The category is unchanged. Nothing here sends.
+  if (isMarkedTest(subject, text)) return { skip: 'test' };
+  if (classifyByRules({ subject, text }).category === 'spam') return { skip: 'spam' };
   const ctx = threadContext({ category, event, subject, text }, thread);
   // An exhibitor invitation, or a follow-up in one, gets Hemingway's vendor
   // reply instead of the fixed questions. One reply per thread. The result

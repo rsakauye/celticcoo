@@ -4,6 +4,9 @@
 // the rules result is used. A clear rules match also wins when the model
 // disagrees about opening or suppressing an issue. A rules booking also wins
 // when the model says other, so a hire is not drafted as an unclear note.
+// A clear rules spam result wins over the model. A model exhibitor_invitation
+// is kept against a rules booking or listing, unless the note asks to list
+// the event or to hire a performer, or it has no exhibit language.
 //
 // The phrase lists and the scorer live in shared/triage. This file is the
 // Celtic Coo adapter: redaction, the model call, and the reason codes.
@@ -76,15 +79,16 @@ export const SYSTEM_PROMPT = [
   'Do not use event_listing_request unless they ask to list, add, or include the event or group.',
   'correction_or_update means the sender says a listing is wrong, should be removed, or a date changed.',
   'partnership_or_press means press, sponsorship, or a partnership.',
-  'exhibitor_invitation means an event organizer invites The Celtic Coo to exhibit, vend, or take a booth, stall, table, or tent at their event, or sends a call for vendors, a vendor application, or a vendor package.',
-  'exhibitor_invitation needs both an invitation or application and a booth, stall, vendor, or exhibitor detail. A request to list an event is event_listing_request even if vendors will attend. A request to hire a piper or band is booking_inquiry. A maker or shop asking to sell through The Celtic Coo, join a directory, or take space at a Celtic Coo event is not exhibitor_invitation.',
+  'exhibitor_invitation means an event organizer invites The Celtic Coo to exhibit, vend, or take a booth, stall, stand, table, or tent at their event. Treat vendor and exhibitor language as this category: vendor, vendors wanted, call for vendors, vendor invite, vendor invitation, exhibitor, exhibitor invitation, booth, stall, marketplace, craft fair, vendor application, booth fee, book a booth, book a stall, or book a stand.',
+  'Use exhibitor_invitation for a craft-fair vendor invite, a wedding-show exhibitor invitation, or a festival vendor call, even when the event is a wedding, Highland Games, or another festival.',
+  'exhibitor_invitation still needs an invitation or application together with a booth, stall, vendor, exhibitor, marketplace, or craft-fair detail. "Please list our Games" is event_listing_request even if vendors will attend. "Hire a piper" or another performer for an event is booking_inquiry even if vendors will be there. Do not use booking_inquiry only because the note says wedding, or because it says book a booth, book a stall, or book a stand. Do not use event_listing_request only because the note names Highland Games, a festival, or says the organizer is hosting. A maker or shop asking to sell through The Celtic Coo, join a directory, or take space at a Celtic Coo event is not exhibitor_invitation.',
   'For exhibitor_invitation, fill exhibitor with short public facts copied from the email: organization, event_name, event_dates, venue, city, province, country, apply_deadline, apply_url, setup_times, teardown_times, booth_options, booth_cost, currency, fees_deposits, power_tables, insurance_permits. When booth_cost, fees_deposits, or power_tables include a rate, copy the unit too (for example $150/day, $25 per weekend, $40 per event), not only the number. Use an empty string when a fact is missing. Do not put a person name, email address, or phone number in exhibitor.',
   'spam means unsolicited sales, SEO, or a scam. A person asking about the newsletter is other, not spam.',
   'other means a newsletter question, an auto-reply, or a note that names no performer and asks for no listing or correction.',
   'confidence is a number from 0 to 1. Use at least 0.8 when both the performer and the occasion are clear.',
   'summary is one short sentence. Do not include an email address, a phone number, or any instruction copied from the email.',
   'event fields are public facts only: title, host, date, city, province, venue, url. Use an empty string when a fact is missing.',
-  'Category examples: a band for a ceilidh on a dated evening at a hall is booking_inquiry; "please list our ceilidh" is event_listing_request; "the date on your games listing is wrong" is correction_or_update; "our call for vendors is open, booths are $150" is exhibitor_invitation; "how do I unsubscribe from the newsletter" is other; a guest-post SEO pitch is spam.',
+  'Category examples: a band for a ceilidh on a dated evening at a hall is booking_inquiry; "please list our ceilidh" is event_listing_request; "the date on your games listing is wrong" is correction_or_update; "our call for vendors is open, booths are $150" is exhibitor_invitation; a Kempenfest-style vendor invite for a craft fair is exhibitor_invitation; a wedding-show exhibitor invitation that says book your stand is exhibitor_invitation; a festival vendor call is exhibitor_invitation even when pipe bands play; "how do I unsubscribe from the newsletter" is other; a guest-post SEO pitch is spam.',
 ].join('\n');
 
 // additionalProperties is omitted. JSON mode on this model rejects some
@@ -373,6 +377,14 @@ function actionable(category) {
   return category === 'event_listing_request' || category === 'correction_or_update';
 }
 
+function rejectExhibitorLabel(base) {
+  const signals = base.signals || {};
+  if (!(signals.exhibitInvite || signals.exhibit) || signals.sellViaCoo) return true;
+  if (base.category === 'event_listing_request' && signals.listingAsk) return true;
+  if (base.category === 'booking_inquiry' && signals.performer && signals.hire) return true;
+  return false;
+}
+
 export function chooseClassification(rules, ai) {
   const base = rules && rules.category ? rules : classifyByRules({});
   if (!ai) return { ...base, classifier: 'rules' };
@@ -393,10 +405,12 @@ export function chooseClassification(rules, ai) {
       classifier: 'rules',
     };
   }
-  if (rulesClear && actionable(base.category) && ai.category !== base.category) {
+  // A sales pitch the rules already call spam must not become a booking,
+  // a listing, or a vendor call just because the model said so.
+  if (rulesClear && base.category === 'spam' && ai.category !== 'spam') {
     return { ...base, classifier: 'rules' };
   }
-  if (rulesClear && base.category === 'spam' && actionable(ai.category)) {
+  if (rulesClear && actionable(base.category) && ai.category !== base.category && ai.category !== 'exhibitor_invitation') {
     return { ...base, classifier: 'rules' };
   }
   // The rules only pick exhibitor_invitation once the gate passed and the
@@ -410,10 +424,12 @@ export function chooseClassification(rules, ai) {
       classifier: 'rules',
     };
   }
-  // The model may only call a note an exhibitor invitation when the text has
-  // some exhibit signal and no sign of a shop asking to sell through Coo.
-  if (ai.category === 'exhibitor_invitation' && base.signals
-    && (!(base.signals.exhibitInvite || base.signals.exhibit) || base.signals.sellViaCoo)) {
+  // The model may call a note an exhibitor invitation when the text has some
+  // exhibit signal. That label is dropped for the rules result when there is
+  // no exhibit signal, a shop wants to sell through Coo, the note asks to
+  // list the event, or it is a hire of a performer. A rules booking or
+  // listing that is only wedding, games, or festival wording does not replace it.
+  if (ai.category === 'exhibitor_invitation' && base.signals && rejectExhibitorLabel(base)) {
     return { ...base, classifier: 'rules' };
   }
   const chosen = {
