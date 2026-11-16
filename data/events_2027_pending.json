@@ -155,15 +155,15 @@
  },
  {
   "name": "Royal National Mod 2027",
-  "start_date": "October 2027",
-  "end_date": "",
+  "start_date": "2027-10-08",
+  "end_date": "2027-10-16",
   "city": "Stornoway",
   "province_or_region": "Scotland",
   "country": "UK",
   "type": "Gaelic festival",
   "source_url": "https://www.ancomunn.co.uk/nationalmod/moddetail/mod-says-ceud-mile-taing-to-glasgow-as-record-breaking-festival-closes",
-  "source_kind": "official (host only)",
-  "notes": "Western Isles host. Oct 8-16, 2027 is reported but not yet on An Comunn's own page; venues not confirmed"
+  "source_kind": "official",
+  "notes": "Western Isles host, based in Stornoway. An Comunn's own pages confirm 8-16 October 2027. Venues are not yet listed."
  },
  {
   "name": "Festival Interceltique de Lorient",
