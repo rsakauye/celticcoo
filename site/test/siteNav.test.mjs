@@ -10,7 +10,7 @@ const site = join(dirname(fileURLToPath(import.meta.url)), '..');
 test('header groups match the approved labels and live routes', () => {
   assert.deepEqual(NAV_GROUPS.map((group) => group.label), ['Events', 'Community', 'Heritage', 'Tools']);
   assert.deepEqual(NAV_GROUPS[0].items.map((item) => item.label), ['Upcoming events', 'Results', 'Burns Night']);
-  assert.deepEqual(NAV_GROUPS[1].items.map((item) => item.label), ['Clubs & lessons', 'Book performers', 'Shops', 'Fundraising']);
+  assert.deepEqual(NAV_GROUPS[1].items.map((item) => item.label), ['Clubs & lessons', 'Book performers', 'Performers', 'Shops', 'Fundraising']);
   assert.deepEqual(NAV_GROUPS[2].items.map((item) => item.label), ['Find your tartan', 'Trace your roots', 'What to wear']);
   assert.deepEqual(NAV_GROUPS[3].items.map((item) => [item.label, item.href]), [['Drone tuner', 'tune/'], ['Drum practice', 'drum/']]);
   assert.equal(NAV_GROUPS[3].items[0].blurb, TUNER_BLURB);

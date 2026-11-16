@@ -1,6 +1,7 @@
 // Main header groups. Home is the logo. About is a plain link.
 // The only filled control is Add yours. Tools lists live tools only.
 import bookingConfig from '../../../data/booking.json' with { type: 'json' };
+import listingConfig from '../../../data/listings.json' with { type: 'json' };
 
 export const TUNER_BLURB = 'Tune your pipe drones right from your phone. Tap to start, play your drones, and the tuner shows you if you\'re flat, sharp or right on. Nothing is recorded or saved.';
 export const DRUM_BLURB = 'Practise your pad with a steady click. The page listens and shows whether each stroke landed early, late or on the beat. Nothing is recorded or saved.';
@@ -21,6 +22,7 @@ export const NAV_GROUPS = [
     items: [
       { href: 'groups/', label: 'Clubs & lessons' },
       { href: 'book/', label: bookingConfig.navLabel },
+      { href: 'performers/', label: listingConfig.copy.navLabel },
       { href: 'shops/', label: 'Shops' },
       { href: 'fundraising/', label: 'Fundraising' },
     ],

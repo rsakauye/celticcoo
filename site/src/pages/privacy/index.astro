@@ -41,6 +41,10 @@ import { u, MAILING_ADDRESS } from '../../lib/site.js';
     <h2 id="submissions">When you send us an event, shop or correction</h2>
     <p>Our <a href={u('submit/')}>Add yours</a> page lets you send us an event, a shop listing or a correction by email. We use what you send to check and publish the listing. We publish the event or business details, such as the name, dates, location and website. We don't publish your personal name or email address unless you ask us to. We keep your email so we can follow up about the listing. If we add an online submission form later, the same rules will apply.</p>
 
+    <h2 id="listings">When you list a performer or a group</h2>
+    <p>The performer and club forms on the <a href={u('submit/')}>Add yours</a> page ask for the public listing details, plus a little private information: your name, your email, how you're connected to the act or group, and your answers to the checkboxes. We keep this in a private database. A person reviews every listing before it goes on the site, and nothing is public until then.</p>
+    <p>Only the listing details are published. Your name and role are never shown. A performer's booking email is shown only if they tick the box to show it. A group's contact email is shown only if the group adds one. The forms are for adults, and we never list anyone under 18 by name or photo. If we write back, a person sends the email from <a href="mailto:hello@celticcoo.ca">hello@celticcoo.ca</a>. If you tick the Coo's Letter box, we add you to the newsletter, and Kit sends a confirmation email first.</p>
+
     <h2 id="email">When you email us</h2>
     <p>When you email <a href="mailto:hello@celticcoo.ca">hello@celticcoo.ca</a>, a copy goes to a private inbox we control. We also keep the sender, subject and text in a private database so nothing gets lost. Attachments aren't stored.</p>
     <p>An automated tool run by Cloudflare sorts each email, for example event, correction or booking. It doesn't make decisions about you.</p>
@@ -69,6 +73,8 @@ import { u, MAILING_ADDRESS } from '../../lib/site.js';
       <!-- Restore when the purge job is live: Failed or spam form attempts: a short reason code only, deleted after 90 days. -->
       <li>Newsletter: until you unsubscribe. Kit may keep a record that you unsubscribed, so you aren't emailed again.</li>
       <li>Event and shop listings: while they're useful on the site.</li>
+      <li>Performer and group listings: while they're listed. You can ask us to change or remove yours at any time.</li>
+      <!-- Restore when the purge job is live: Listings we turn down or close: deleted 90 days later, with your private details. -->
     </ul>
     <!-- Restore when the purge job is live: You can ask us to delete your information sooner. We'll do it within 30 days. -->
 

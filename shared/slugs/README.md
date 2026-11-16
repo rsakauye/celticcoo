@@ -48,7 +48,7 @@ const redirects = redirectLines(records.map((record, i) => ({ ...record, slug: s
 /g/K7mp /groups/example/ 301
 ```
 
-Put that list in the site's `_redirects` file. Lookup is case-insensitive because every variant is written out. The code itself is stored in lowercase and is not derived from the name.
+Put that list in the site's `_redirects` file, above the `# Hand-written redirects below.` line. Hand-written redirects (like `/clubs` to `/groups/`) go below that line and are not part of the generated list. Lookup is case-insensitive because every variant is written out. The code itself is stored in lowercase and is not derived from the name.
 
 ## Another site
 

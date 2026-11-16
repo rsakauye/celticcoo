@@ -1,13 +1,25 @@
 ---
 import Base from '../../layouts/Base.astro';
+import ListingForm from '../../components/ListingForm.astro';
 import { u, CONTACT_EMAIL, SUBMIT_FORM_URL } from '../../lib/site.js';
 import { bookingConfig } from '../../lib/booking.js';
+import { COPY, LIMITS } from '../../lib/listing.js';
 // TODO: replace the mailto with a real form (Tally / Google Form / Cloudflare worker) once an inbox exists.
 const mail = (subject, body) => `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 const eventBody = 'Event name:\nStart date (YYYY-MM-DD):\nEnd date:\nCity and province:\nType (Highland Games, pipe band, dance, ceilidh, parade, performance or demo, cultural celebration, festival, other):\nIs admission free, paid, or not stated? Paste the line from the page that says so:\nOfficial website or page that shows the date:\nYour name and role (organizer, volunteer, fan):\n';
 const shopBody = 'Shop or maker name:\nCity and province:\nWhat you sell or make:\nWebsite:\nAre you at any Highland Games this year? Which ones?\nYour name and role:\n';
+const rawTurnstile = String(import.meta.env.PUBLIC_TURNSTILE_SITEKEY || '').trim();
+const turnstileSitekey = /^[A-Za-z0-9_-]{10,100}$/.test(rawTurnstile) ? rawTurnstile : '';
+const S = COPY.submitIntro;
+const listingMessages = JSON.stringify({
+  errors: COPY.errors,
+  sending: COPY.form.sending,
+  fallback: COPY.form.fallback.replace('{email}', CONTACT_EMAIL),
+  wordCap: LIMITS.blurbWords,
+  maxLinks: LIMITS.maxLinks,
+}).replace(/</g, '\\u003c');
 ---
-<Base title="Add an event or list your shop" description="Tell The Celtic Coo about a Celtic event, Highland Games, or a Celtic shop or maker in Canada. Listings are free.">
+<Base title="Add an event or list your shop" description="Tell The Celtic Coo about a Celtic event, Highland Games, a Celtic shop or maker, a performer, or a club in Canada. Listings are free.">
   <h1>Add an event or list your shop</h1>
   <p>The Celtic Coo is free to list on. We check every date against the organizer's own site before it goes on the calendar, so please include a link that shows it.</p>
   <p>Looking for a piper, a band or a dancer instead? <a href={u('book/')}>{bookingConfig.heading}</a>. That request does not add the event to the calendar.</p>
@@ -27,10 +39,168 @@ const shopBody = 'Shop or maker name:\nCity and province:\nWhat you sell or make
         : <a class="btn" href={mail('Shop listing for The Celtic Coo', shopBody)}>Email us your shop</a>}
     </div>
     <div class="card">
+      <h2 style="margin-top:0">🎶 {COPY.performerForm.heading}</h2>
+      <p>{S.performersCard}</p>
+      <a class="btn" href="#performers">{S.performersButton}</a>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">🥁 {COPY.groupForm.heading}</h2>
+      <p>{S.groupsCard}</p>
+      <a class="btn" href="#groups">{S.groupsButton}</a>
+    </div>
+    <div class="card">
       <h2 style="margin-top:0">✏️ Fix something</h2>
-      <p>Spotted a wrong date, a moved venue, or a shop that has closed? Let us know and we'll correct it.</p>
+      <p>Spotted a wrong date, a moved venue, or a shop that has closed? Let us know and we'll correct it. If your listing needs a change or should come down, tell us here too.</p>
       <a class="btn ghost" href={mail('Correction for The Celtic Coo', 'Page or listing:\nWhat should change:\nSource link:\n')}>Send a correction</a>
     </div>
   </div>
   {!SUBMIT_FORM_URL && <p class="muted" style="margin-top:1.5rem">Or write to <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. An online form is on the way.</p>}
+
+  <noscript>
+    <p class="card" style="margin-top:1.5rem">Scripts are off in this browser. The person check on the forms below needs scripts, so you may need to email <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> instead.</p>
+  </noscript>
+
+  <ListingForm kind="performer" turnstileSitekey={turnstileSitekey} contactEmail={CONTACT_EMAIL} />
+  <ListingForm kind="group" turnstileSitekey={turnstileSitekey} contactEmail={CONTACT_EMAIL} />
+
+  <script type="application/json" id="listing-messages" set:html={listingMessages}></script>
+  <script is:inline define:vars={{ turnstileSitekey }}>
+    (function () {
+      var MSG = JSON.parse(document.getElementById('listing-messages').textContent);
+      var E = MSG.errors;
+      function words(text) {
+        return String(text || '').split(/\s+/).filter(function (w) { return /[0-9A-Za-z\u00C0-\u024F]/.test(w); }).length;
+      }
+      function okUrl(value) {
+        if (!value) return true;
+        try {
+          var url = new URL(value);
+          return (url.protocol === 'https:' || url.protocol === 'http:') && url.hostname.indexOf('.') > 0 && !url.username && !url.password;
+        } catch (e) { return false; }
+      }
+      var forms = Array.prototype.slice.call(document.querySelectorAll('form[data-listing]'));
+      forms.forEach(function (form) {
+        var section = form.closest('section');
+        var box = section.querySelector('[data-errors]');
+        var thanks = section.querySelector('[data-thanks]');
+        var fallback = form.querySelector('[data-fallback]');
+        var submit = form.querySelector('button[type="submit"]');
+        var blurb = form.querySelector('[data-word-cap]');
+        var counter = blurb ? document.getElementById(blurb.id + '-count') : null;
+        function countWords() {
+          if (!blurb || !counter) return;
+          var n = words(blurb.value);
+          counter.textContent = n + ' of ' + MSG.wordCap + ' words';
+          counter.classList.toggle('over', n > MSG.wordCap);
+        }
+        if (blurb) { blurb.addEventListener('input', countWords); countWords(); }
+        function clientErrors() {
+          var kind = form.getAttribute('data-listing');
+          var errors = {};
+          var val = function (name) { var el = form.elements[name]; return el && el.value ? String(el.value).trim() : ''; };
+          var checked = function (name) { return form.querySelectorAll('input[name="' + name + '"]:checked').length; };
+          if (!val('name')) errors.name = E.name;
+          if (!val('city')) errors.city = E.city;
+          if (!val('submitter_name')) errors.submitter_name = E.submitter_name;
+          if (!val('role')) errors.role = E.role;
+          var email = form.querySelector('input[name="email"]');
+          if (!email.value.trim() || (email.validity && !email.validity.valid)) errors.email = E.email;
+          if (!checked('adult_confirm')) errors.adult_confirm = E.adult_confirm;
+          if (!checked('terms_confirm')) errors.terms_confirm = E.terms_confirm;
+          if (kind === 'performer') {
+            if (!checked('acts')) errors.acts = E.acts;
+            if (!checked('size')) errors.size = E.size;
+            if (!checked('travel')) errors.travel = E.travel;
+            if (!blurb.value.trim()) errors.blurb = E.blurb;
+            else if (words(blurb.value) > MSG.wordCap) errors.blurb = E.blurb_words;
+            var links = Array.prototype.slice.call(form.querySelectorAll('input[name="links"]'));
+            if (links.some(function (el) { return !okUrl(el.value.trim()); })) errors.links = E.links;
+            if (!okUrl(val('media'))) errors.media = E.media;
+          } else {
+            if (!val('group_kind')) errors.kind = E.kind;
+            if (!val('website') || !okUrl(val('website'))) errors.website = E.website;
+            if (!checked('lessons')) errors.lessons = E.lessons;
+            var contact = form.querySelector('input[name="contact"]');
+            if (contact.value.trim() && contact.validity && !contact.validity.valid) errors.contact = E.contact;
+          }
+          if (turnstileSitekey) {
+            var token = form.querySelector('input[name="cf-turnstile-response"]');
+            if (!token || !token.value || token.value.length > 2048) errors.turnstile = E.turnstile;
+          }
+          return errors;
+        }
+        function showErrors(errors) {
+          var keys = Object.keys(errors || {});
+          form.querySelectorAll('[data-err-for]').forEach(function (p) {
+            var key = p.getAttribute('data-err-for');
+            p.hidden = !errors[key];
+            p.textContent = errors[key] || '';
+          });
+          form.querySelectorAll('[aria-invalid]').forEach(function (el) { el.removeAttribute('aria-invalid'); });
+          keys.forEach(function (key) {
+            var p = form.querySelector('[data-err-for="' + key + '"]');
+            var wrap = p && p.closest('fieldset[data-group]');
+            var field = wrap || (p && p.previousElementSibling && p.previousElementSibling.matches('input,select,textarea') ? p.previousElementSibling : null);
+            if (!field && p) { var prev = p.previousElementSibling; while (prev && !prev.matches('input,select,textarea,details')) prev = prev.previousElementSibling; field = prev; }
+            if (field && field.setAttribute) field.setAttribute('aria-invalid', 'true');
+          });
+          var list = box.querySelector('ul');
+          list.textContent = '';
+          keys.forEach(function (key) { var li = document.createElement('li'); li.textContent = errors[key]; list.appendChild(li); });
+          box.hidden = keys.length === 0;
+          if (keys.length) box.focus();
+        }
+        form.addEventListener('submit', function (ev) {
+          ev.preventDefault();
+          fallback.hidden = true;
+          if (form.querySelector('input[name="listing_hp"]').value.trim()) { form.hidden = true; thanks.hidden = false; return; }
+          var errors = clientErrors();
+          if (Object.keys(errors).length) { showErrors(errors); return; }
+          showErrors({});
+          submit.disabled = true;
+          var previous = submit.textContent;
+          submit.textContent = MSG.sending;
+          fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' } })
+            .then(function (res) { return res.json().then(function (data) { return { res: res, data: data }; }, function () { return { res: res, data: null }; }); })
+            .then(function (out) {
+              if (out.res.ok && out.data && out.data.ok) {
+                form.hidden = true;
+                box.hidden = true;
+                thanks.hidden = false;
+                thanks.querySelector('p').focus();
+              } else if (out.data && out.data.errors) {
+                showErrors(out.data.errors);
+              } else {
+                fallback.textContent = (out.data && out.data.message) || MSG.fallback;
+                fallback.hidden = false;
+              }
+            })
+            .catch(function () { fallback.textContent = MSG.fallback; fallback.hidden = false; })
+            .then(function () {
+              submit.disabled = false;
+              submit.textContent = previous;
+              var api = window.turnstile;
+              var id = form.getAttribute('data-turnstile-id');
+              if (id && api && typeof api.reset === 'function') api.reset(id);
+            });
+        });
+      });
+      if (turnstileSitekey && forms.length) {
+        window.onListingTurnstileLoad = function () {
+          var api = window.turnstile;
+          if (!api || typeof api.render !== 'function') return;
+          forms.forEach(function (form) {
+            var el = form.querySelector('[data-listing-turnstile]');
+            if (!el || form.getAttribute('data-turnstile-id')) return;
+            var id = api.render(el, { sitekey: turnstileSitekey, action: 'listing', theme: 'light' });
+            if (id) form.setAttribute('data-turnstile-id', id);
+          });
+        };
+        var s = document.createElement('script');
+        s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onListingTurnstileLoad';
+        s.async = true;
+        document.head.appendChild(s);
+      }
+    })();
+  </script>
 </Base>

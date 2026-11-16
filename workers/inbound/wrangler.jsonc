@@ -97,6 +97,7 @@
     "CLARIFY_DRAFTS": "drafts",
     "EXHIBITOR_AUTO_SEND": "off",
     "EXHIBITOR_TRELLO": "off",
+    "LISTING_DIGEST": "on",
     "AI_MODEL": "@cf/google/gemma-4-26b-a4b-it"
   }
 }

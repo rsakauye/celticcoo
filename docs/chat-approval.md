@@ -63,3 +63,7 @@ Reason codes are JSON on the row. They are codes and weights, not a copy of the 
 ## Exhibitor invitations
 
 Queue items with category `exhibitor_invitation` also carry an `exhibitor` object: the private field table, confidence, classifier, `missing_fields` (adds `deadline`, `apply_link`, `booth_cost`, `setup`), `review_flags` such as `currency_unclear`, and `queue_owner` (Akindo). `POST /api/exhibitors/<id>/status` sets the row status with the same bearer token, rate limit, and audit. Approving one of these drafts goes through the send guard first and can answer `guard_paused`, `outbound_cap`, or `guard_unavailable` with nothing sent. See `docs/exhibitor-invitations.md`.
+
+## Free listings
+
+`GET /api/listings` lists performer and club listings waiting for review, with the same bearer token, without the submitter's name or email. It is read-only. Approving, asking for info, rejecting, and sending the reply happen only on the signed queue page at `/listings`. See `docs/listings.md`.

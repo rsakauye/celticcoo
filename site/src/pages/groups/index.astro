@@ -47,11 +47,11 @@ const kinds = [...new Set(groups.map((g) => g.kind))].sort();
       </a>
     ))}
   </div>
-  <p id="g-empty" class="card" hidden><span id="g-empty-text">No groups match yet.</span> <button type="button" class="btn ghost small" id="g-empty-clear" hidden>Clear search</button> Know one? <a href={u('submit/')}>Tell us about it</a>.</p>
+  <p id="g-empty" class="card" hidden><span id="g-empty-text">No groups match yet.</span> <button type="button" class="btn ghost small" id="g-empty-clear" hidden>Clear search</button> Know one? <a href={u('submit/#groups')}>Tell us about it</a>.</p>
 
   <aside class="card" style="margin-top:2rem">
     <b>Want to try heavy events?</b> The <a href="https://www.csaf.ca/page/contact-us" rel="noopener" target="_blank">CSAF lists practice contacts ↗</a> across Canada, including Calgary and Edmonton. Whisky societies are for adults of legal drinking age only.<br /><br />
-    <b>Run a band, dance school, society, session or class?</b> Listings are free. <a href={u('submit/')}>Add or update your group</a>. We list organizations only, never members' or students' names.
+    <b>Run a band, dance school, society, session or class?</b> Listings are free. <a href={u('submit/#groups')}>Add or update your group</a>. We list organizations only, never members' or students' names.
   </aside>
   <script>
     import { visibleMatches, filtersFromSearch, searchFromFilters } from '../../lib/groupFilters.js';
