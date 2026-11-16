@@ -26,7 +26,7 @@ The inbound Worker's existing cron (`15 8 * * *` UTC) also:
 - closes `needs_info` rows 14 days after the question with no answer (`closed`, reason `no_reply`);
 - deletes `rejected` and `closed` rows 90 days after their last change, private fields included, only when `RETENTION_PURGE` is `on` (otherwise it logs a count);
 - sends the receipt to new submitters only when `ACK_REPLIES` is `on` (it is `off`), through the send guard;
-- emails `FORWARD_TO` a signed queue link when something is waiting, only when `LISTING_DIGEST` is `on`. That var is not in `wrangler.jsonc`, so it is off.
+- emails `FORWARD_TO` a signed queue link when something is waiting, only when `LISTING_DIGEST` is `on`. It is set to `on` in `workers/inbound/wrangler.jsonc` (approved by Russell, Nov 15, 2026), so the deploy carries it.
 
 ## Images
 
@@ -44,5 +44,5 @@ Individual listings are adults only (18+). There is no under-18 or guardian fiel
 
 1. Apply `site/migrations/0014_listings.sql` to the live intake database (`node scripts/apply-intake-migration.mjs`, or the same `wrangler d1 migrations apply`).
 2. Merge, then let the deploy workflow publish the site and the inbound Worker.
-3. Set the Worker var `LISTING_DIGEST` to `on` so the daily email to `FORWARD_TO` brings the signed queue link. Without it, the queue page has no way in. Chat can still read the queue through `GET /api/listings`.
+3. Done: `LISTING_DIGEST` is `on` in `wrangler.jsonc`, so the daily email to `FORWARD_TO` brings the signed queue link. Without it, the queue page has no way in. Chat can still read the queue through `GET /api/listings`.
 4. Optional, later: `ACK_REPLIES` `on` for receipts (also affects mail receipts), and `RETENTION_PURGE` `on` for deletions.

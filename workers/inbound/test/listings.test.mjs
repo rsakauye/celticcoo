@@ -190,7 +190,10 @@ test('the receipt stays off while ACK_REPLIES is off', async () => {
   assert.match(mail.sent[0].text, /Foothills Piper/);
   const vars = readFileSync(join(here, '../wrangler.jsonc'), 'utf8');
   assert.match(vars, /"ACK_REPLIES": "off"/);
-  assert.doesNotMatch(vars, /LISTING_DIGEST/);
+  assert.match(vars, /"LISTING_DIGEST": "on"/);
+  assert.doesNotMatch(vars, /"RETENTION_PURGE":/);
+  assert.match(vars, /"EXHIBITOR_AUTO_SEND": "off"/);
+  assert.match(vars, /"EXHIBITOR_TRELLO": "off"/);
 });
 
 test('duplicate hints match listings and groups already on /groups, and links are only format-checked', async () => {

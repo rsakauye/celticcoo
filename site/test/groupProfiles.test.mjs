@@ -60,7 +60,9 @@ test('short club slugs drop fillers and suffixes, and a published slug never cha
   const manual = new Map([['RSCDS Calgary Branch', 'rscds-calgary']]);
   const regenerated = assignClubSlugs(groupsRaw.map((g) => (manual.has(g.name) ? g : { ...g, slug: '' })));
   assert.deepEqual(regenerated, snapshot.map((row) => row[1]));
-  const redirects = readFileSync(new URL('../public/_redirects', import.meta.url), 'utf8').trim().split('\n').filter((line) => line && !line.startsWith('#'));
+  const redirectsFile = readFileSync(new URL('../public/_redirects', import.meta.url), 'utf8');
+  const generatedPart = redirectsFile.split('# Hand-written redirects below.')[0];
+  const redirects = generatedPart.trim().split('\n').filter((line) => line && !line.startsWith('#'));
   const expected = redirectLines(groupsRaw.map((g) => ({ slug: g.slug, code: g.code })), linkPack);
   assert.deepEqual(redirects, expected);
   assert.equal(expected.length >= groupsRaw.length, true);
@@ -207,4 +209,15 @@ test('listing cards link to the profile, and the profile page has the sections',
   assert.match(profile, /Short link:/);
   assert.match(profile, /DOMAIN\.toLowerCase\(\)/);
   assert.match(profile, /shortPrefix/);
+});
+
+test('/clubs is a permanent redirect to /groups/, kept below the generated short-code block', () => {
+  const file = readFileSync(new URL('../public/_redirects', import.meta.url), 'utf8');
+  const [generatedPart, handPart] = file.split('# Hand-written redirects below.');
+  assert.ok(handPart, 'hand-written section marker is present');
+  const hand = handPart.split('\n').slice(1).filter((line) => line && !line.startsWith('#'));
+  assert.deepEqual(hand, ['/clubs /groups/ 301', '/clubs/ /groups/ 301']);
+  assert.doesNotMatch(generatedPart, /^\/clubs/m);
+  const all = file.split('\n').filter((line) => line && !line.startsWith('#'));
+  assert.equal(new Set(all.map((line) => line.split(' ')[0])).size, all.length, 'no duplicate redirect sources');
 });

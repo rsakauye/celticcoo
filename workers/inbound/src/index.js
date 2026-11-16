@@ -428,7 +428,7 @@ export async function handleScheduled(env, deps = {}) {
   }
   // Free listings: close needs-info after 14 days, the 90-day purge (dry run
   // unless RETENTION_PURGE is on), the receipt (ACK_REPLIES, off), and the
-  // queue digest (LISTING_DIGEST, off). A failure here does not touch retention.
+  // queue digest (LISTING_DIGEST, on in wrangler.jsonc). A failure here does not touch retention.
   try {
     retention.listings = await runListingJobs(env, now, log, deps);
   } catch {
