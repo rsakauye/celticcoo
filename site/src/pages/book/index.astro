@@ -355,7 +355,7 @@ const messagesJson = JSON.stringify(MESSAGES).replace(/</g, '\\u003c');
           // From a card on /performers. The act name only fills the message box.
           var act = (params.get('act') || '').replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, 120);
           var message = document.getElementById('message');
-          if (act && message && !message.value) message.value = 'I would like to ask about booking ' + act + ', from the Performers page.\n\n';
+          if (act && message && !message.value) message.value = 'I\'d like to ask about booking ' + act + '. I found you on the Performers page.\n\n';
           refreshEvents();
           applyFilter();
         }
