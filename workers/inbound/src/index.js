@@ -30,6 +30,7 @@ import { planDraft } from './clarify.js';
 import {
   EXHIBITOR_CATEGORY,
   autoSendMode,
+  exhibitorDraftSkipReason,
   exhibitorView,
   extractExhibitor,
   saveExhibitor,
@@ -188,6 +189,12 @@ async function processHello(message, env, deps, forward) {
     replyTo: parsed.replyTo,
     sender,
   });
+  // Vendor calls often arrive as newsletters with List-Unsubscribe. That
+  // header alone must not drop the exhibitor reply draft. Other skip codes
+  // still apply, and other categories still skip on this header.
+  if (classification.category === EXHIBITOR_CATEGORY) {
+    draftSkipReason = exhibitorDraftSkipReason(draftSkipReason);
+  }
   const key = await dedupeKey(message, parsed.subject);
   // Earlier notes in the same conversation, so a reply that answers a question
   // we asked is read together with the note it answers. Only looked up when a

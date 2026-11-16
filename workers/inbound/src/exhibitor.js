@@ -104,7 +104,7 @@ const SETUP_RE = /\b(?:move[- ]?in|load[- ]?in|set[- ]?up)\b/i;
 const TEARDOWN_RE = /\b(?:move[- ]?out|load[- ]?out|tear[- ]?down)\b/i;
 const BOOTH_OPTIONS_RE = /\b(?:\d{1,2}\s*(?:'|ft|feet|foot)?\s*[x×]\s*\d{1,2}\s*(?:'|ft|feet|foot)?|booth sizes?|stall sizes?|table only|tent space|double booth|single booth|corner booth)\b/i;
 const MONEY_RE = /(?:(?:US|CA|C|A|NZ)?\$|£|€|\b(?:CAD|USD|GBP|EUR|AUD|NZD)\s?)\s?\d{1,5}(?:[.,]\d{2})?(?:\s?(?:CAD|USD|GBP|EUR|AUD|NZD)\b)?|\b\d{1,5}(?:[.,]\d{2})?\s?(?:CAD|USD|GBP|EUR|AUD|NZD|dollars|pounds|euros)\b/i;
-const COST_LINE_RE = /\b(?:fee|fees|cost|costs|price|rate|rates|per booth|per stall|per table|booth|stall|table|space)\b/i;
+const COST_LINE_RE = /\b(?:fee|fees|cost|costs|price|rate|rates|per booth|per stall|per table|booths?|stalls?|tables?|spaces?)\b/i;
 const FEES_RE = /\b(?:deposit|deposits|refund|refunds|refundable|non-refundable|late fee|cancellation|commission|percent of sales|% of sales)\b/i;
 const POWER_RE = /\b(?:power|electric|electricity|outlet|generator|tables?|chairs?)\b/i;
 const INSURANCE_RE = /\b(?:insurance|insured|permit|permits|licen[cs]e|licen[cs]es|certificate|health inspection|food safe)\b/i;
@@ -124,13 +124,40 @@ function applyUrl(text) {
   return best ? best.url : '';
 }
 
+// Unit that immediately follows an amount: /day, per day, /weekend, per event,
+// and the same idea for a night, week, hour, table, booth, stall, or space.
+const COST_UNIT_RE = /^(?:(?:\s*\/\s*|\s+(?:per|a|an)\s+)(?:days?|nights?|weekends?|events?|weeks?|hours?|tables?|booths?|stalls?|spaces?)\b|\s+(?:daily|nightly|weekly)\b)/i;
+
+function moneyWithUnit(text) {
+  const line = String(text || '');
+  const money = line.match(MONEY_RE);
+  if (!money) return '';
+  const after = line.slice(money.index + money[0].length);
+  const unit = after.match(COST_UNIT_RE);
+  const raw = unit ? `${money[0]}${unit[0]}` : money[0];
+  return oneLine(raw, 80).replace(/\s*\/\s*/g, '/').trim();
+}
+
 function boothCost(text) {
   for (const line of lines(text)) {
     if (!COST_LINE_RE.test(line)) continue;
-    const money = line.match(MONEY_RE);
-    if (money) return oneLine(money[0], 60);
+    const value = moneyWithUnit(line);
+    if (value) return value;
   }
   return '';
+}
+
+// Prefer the value that still has the unit when one copy is only the amount.
+function preferCost(...values) {
+  const cleaned = values.map((value) => clean(value)).filter(Boolean);
+  if (!cleaned.length) return '';
+  let best = cleaned[0];
+  for (const value of cleaned.slice(1)) {
+    const a = best.toLowerCase();
+    const b = value.toLowerCase();
+    if (b.startsWith(a) && value.length > best.length) best = value;
+  }
+  return best;
 }
 
 function eventDates(text) {
@@ -262,7 +289,7 @@ export function extractExhibitor({ subject = '', text = '', event = {}, ai = {},
     setup_times: clean(pick(model.setup_times, lineWith(body, SETUP_RE))),
     teardown_times: clean(pick(model.teardown_times, lineWith(body, TEARDOWN_RE))),
     booth_options: clean(pick(model.booth_options, linesWith(body, BOOTH_OPTIONS_RE, 2))),
-    booth_cost: clean(pick(boothCost(body), model.booth_cost)),
+    booth_cost: preferCost(boothCost(body), model.booth_cost),
     fees_deposits: clean(pick(model.fees_deposits, linesWith(body, FEES_RE, 2))),
     power_tables: clean(pick(model.power_tables, linesWith(body, POWER_RE, 2))),
     insurance_permits: clean(pick(model.insurance_permits, linesWith(body, INSURANCE_RE, 2))),
@@ -302,6 +329,13 @@ export function threadAlreadyAnswered(thread) {
     if (row.clarify_status === 'sent' || row.clarify_status === 'approved') return true;
     return row.category === EXHIBITOR_CATEGORY && row.clarify_status === 'pending_approval';
   });
+}
+
+// List-Unsubscribe is common on real vendor-call newsletters, so it is not
+// enough on its own to skip an exhibitor reply draft. Other automated-sender
+// codes still skip. Other mail categories still skip on List-Unsubscribe.
+export function exhibitorDraftSkipReason(reason) {
+  return String(reason || '').split(',').filter((code) => code && code !== 'list_unsubscribe').join(',');
 }
 
 export function planExhibitorDraft({ env, automated, thread, mode }) {
