@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@resvg/resvg-js": "^2.6.2",
-    "astro": "^7.4.7",
+    "astro": "^7.4.11",
     "opentype.js": "^2.0.0"
   },
   "devDependencies": {
