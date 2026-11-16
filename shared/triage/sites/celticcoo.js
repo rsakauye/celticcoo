@@ -86,10 +86,35 @@ export const venueWords = [
   'auditorium', 'rink', 'community centre', 'community center',
 ];
 
+// An explicit "please list / add / submit" ask. Weight 0, so it does not
+// change the listing score. The scorer uses it to tell a real listing
+// request from a festival announcement that only says it is hosting.
+const LISTING_ASK_FORMS = [
+  'please list', 'please add', 'please include', 'add this event', 'add our event', 'add an event',
+  'list our', 'event listing', 'submit our event', 'submit an event', 'submit the event',
+];
+
+// A hire of a person or act. Weight 0. "Book a booth" also matches "book a",
+// so this flag only protects a booking when a performer word is present too.
+const HIRE_ASK_FORMS = [
+  'booking inquiry', 'booking enquiry', 'book a', 'book an', 'like to book', 'want to book', 'looking to book',
+  'would like to hire', 'like to hire', 'want to hire', 'looking to hire', 'hire a', 'hire an',
+  'pipe band for', 'piper for a', 'piper for an', 'pipers for a', 'pipers for an',
+  'drummer for a', 'drummer for an', 'drummers for a', 'drummers for an',
+  'dancer for a', 'dancer for an', 'dancers for a', 'dancers for an',
+  'fiddler for a', 'fiddler for an', 'fiddlers for a', 'band for a', 'band for an', 'bands for a',
+  'looking for a piper', 'looking for pipers', 'looking for a drummer', 'looking for drummers',
+  'looking for a dancer', 'looking for dancers', 'looking for a fiddler', 'looking for a band',
+  'looking for a pipe band', 'looking for a ceilidh band', 'need a piper', 'need pipers',
+  'need a drummer', 'need a pipe band', 'need a fiddler', 'need dancers',
+  'want a piper', 'want a pipe band', 'want a drummer', 'want dancers',
+];
+
 // role is a side flag. weight 0 phrases only set the flag.
 // category scores are summed. Subject matches are multiplied by scoring.subjectWeight.
 export const phrases = [
-  { id: 'please-list', category: 'event_listing_request', weight: 5, role: 'listing', forms: ['please list', 'please add', 'please include', 'add this event', 'add our event', 'add an event', 'list our', 'event listing', 'submit our event', 'submit an event', 'submit the event'] },
+  { id: 'please-list', category: 'event_listing_request', weight: 5, role: 'listing', forms: LISTING_ASK_FORMS },
+  { id: 'listing-ask', category: '', weight: 0, role: 'listing_ask', forms: LISTING_ASK_FORMS },
   { id: 'hosting', category: 'event_listing_request', weight: 4, role: 'listing', forms: ['is hosting', 'are hosting', 'we are hosting', 'were hosting'] },
   { id: 'free-admission', category: 'event_listing_request', weight: 1.5, role: 'event', forms: ['free admission', 'free entry', 'admission is free', 'no admission charge', 'free to attend'] },
   { id: 'highland-games', category: 'event_listing_request', weight: 2, role: 'event', forms: ['highland games', 'highland gathering', 'scottish games', 'highalnd games', 'highand games', 'highlandgames', 'highland game'] },
@@ -119,6 +144,7 @@ export const phrases = [
   { id: 'fiddler', category: 'booking_inquiry', weight: 3, role: 'performer', forms: ['fiddler', 'fiddlers', 'fiddle player', 'fiddle players'] },
   { id: 'ceilidh-band', category: 'booking_inquiry', weight: 3, role: 'performer', forms: ['ceilidh band', 'ceilidh bands', 'celtic band', 'celtic bands'] },
   { id: 'occasion', category: 'booking_inquiry', weight: 1.5, role: 'occasion', forms: ['wedding', 'weddings', 'funeral', 'funerals', 'memorial', 'memorials', 'corporate event', 'corporate events', 'corporate function'] },
+  { id: 'hire-ask', category: '', weight: 0, role: 'hire', forms: HIRE_ASK_FORMS },
 
   { id: 'correction', category: 'correction_or_update', weight: 5, role: 'correction', forms: ['correction', 'incorrect', 'wrong date', 'date is wrong', 'date has changed', 'please update', 'please remove', 'please take down', 'take this down', 'has been cancelled', 'has been canceled', 'is cancelled', 'is canceled', 'was cancelled', 'was canceled', 'postponed', 'rescheduled', 'no longer happening', 'remove the listing', 'remove this listing', 'delete the listing', 'take down the listing'] },
 
@@ -137,11 +163,20 @@ export const phrases = [
     'would love to have you as a vendor', 'would love to have you exhibit',
     'apply to be a vendor', 'apply to vend', 'apply to exhibit', 'apply for a booth', 'apply for a stall', 'apply for vendor space',
     'vendors wanted', 'exhibitors wanted', 'artisans wanted', 'now accepting vendors', 'now accepting exhibitors', 'accepting vendor applications', 'accepting vendors',
-    'seeking vendors', 'looking for vendors', 'looking for exhibitors', 'vendor opportunity', 'vendor opportunities', 'exhibitor opportunity',
+    'seeking vendors', 'looking for vendors', 'looking for exhibitors', 'vendor opportunity', 'vendor opportunities', 'exhibitor opportunity', 'exhibitor opportunities',
+    'vendor invite', 'vendor invites', 'vendor invitation', 'vendor invitations',
+    'exhibitor invite', 'exhibitor invites', 'exhibitor invitation', 'exhibitor invitations',
+    'exhibitor packages',
+    'join us as a vendor', 'join us as an exhibitor', 'join us as an artisan',
+    'book a booth', 'book a stall', 'book a stand', 'book your booth', 'book your stall', 'book your stand',
+    'reserve a booth', 'reserve a stall', 'reserve a stand',
+    'booth application', 'stall application', 'stand application', 'apply for a stand',
   ] },
   { id: 'exhibit-word', category: 'exhibitor_invitation', weight: 1.5, role: 'exhibit', forms: [
     'booth', 'booths', 'stall', 'stalls', 'vendor', 'vendors', 'exhibitor', 'exhibitors', 'exhibit', 'artisan', 'artisans',
     'vendor space', 'vendor table', 'vendor tables', 'tent space', 'market stall', 'craft table', 'vendor village', 'vendor market', 'artisan market',
+    'marketplace', 'marketplaces', 'craft fair', 'craft fairs', 'craft market', 'craft markets',
+    'stand space', 'exhibition stand', 'trade stand',
   ] },
   { id: 'exhibit-logistics', category: 'exhibitor_invitation', weight: 1.5, role: 'exhibit_logistics', forms: [
     'booth fee', 'booth fees', 'stall fee', 'stall fees', 'vendor fee', 'vendor fees', 'table fee', 'table fees', 'space cost', 'booth cost', 'booth rental',
@@ -186,6 +221,13 @@ export const gates = {
   exhibitor_invitation: {
     requireEach: [['exhibit_invite'], ['exhibit', 'exhibit_logistics']],
     blockedBy: ['sell_via_coo'],
+    // A cleared vendor call beats incidental Games, festival, and wedding
+    // words, and it beats "book a booth". An explicit list-ask keeps the
+    // listing score. A hire of a performer keeps the booking score.
+    preferOver: [
+      { category: 'event_listing_request', unlessRoles: ['listing_ask'] },
+      { category: 'booking_inquiry', unlessAllRoles: ['performer', 'hire'] },
+    ],
   },
 };
 

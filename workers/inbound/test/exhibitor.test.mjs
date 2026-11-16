@@ -7,7 +7,8 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { chooseClassification, classifyByRules } from '../src/classify.js';
+import { planDraft } from '../src/clarify.js';
+import { SYSTEM_PROMPT, chooseClassification, classifyByRules } from '../src/classify.js';
 import {
   HEMINGWAY_BODY,
   autoSendMode,
@@ -87,6 +88,47 @@ const LONE_VENDOR = {
   subject: 'Question',
   text: 'Who is the vendor for your Coo stickers?',
 };
+
+// Shapes seen in the mailbox. Synthetic wording only: no real sender, address, or phone.
+const KEMPENFEST_INVITE = {
+  subject: 'Kempenfest 2027 Vendor Invite',
+  text: 'Join us as a vendor at Kempenfest 2027, a juried craft fair and artisan marketplace in Barrie, Ontario. This vendor invitation covers a booth in the marketplace. A booth fee applies for each space.',
+};
+
+const WEDDING_COLLECTIVE = {
+  subject: 'The Wedding Collective exhibitor invitation',
+  text: 'Exhibitor opportunities are open at The Wedding Collective. Book your stand in our wedding marketplace. We welcome exhibitors and makers.',
+};
+
+const SCOTFEST_VENDOR_CALL = {
+  subject: 'ScotFestBC 2027',
+  text: [
+    'Vendor call for ScotFestBC 2027.',
+    'ScotFestBC is hosting a Scottish Festival and Highland Games weekend in British Columbia.',
+    'Pipe bands and highland dancing fill the day, plus a ceilidh.',
+    'Call for vendors. Market stalls and booths are available.',
+    'Booth fee is $175. Vendor applications close on 1 March 2027.',
+  ].join('\n'),
+};
+
+const AI_EXHIBITOR = {
+  category: 'exhibitor_invitation',
+  confidence: 0.9,
+  summary: 'An organizer invited The Celtic Coo to vend.',
+  event: {},
+  classifier: 'ai',
+};
+
+function draftFor(subject, text, category = 'booking_inquiry') {
+  return planDraft({
+    category,
+    event: { title: '', host: '', date: '', city: '', province: '', venue: '', url: '' },
+    subject,
+    text,
+    now: NOW,
+    env: {},
+  });
+}
 
 // ---- sqlite as D1 ----------------------------------------------------------
 
@@ -225,6 +267,142 @@ test('the model cannot call a note a vendor call without exhibit signals, or for
   const kept = chooseClassification(classifyByRules({ subject: 'Hi', text: 'We have booths for exhibitors at our fair.' }), ai);
   assert.equal(kept.category, 'exhibitor_invitation');
   assert.equal(kept.classifier, 'ai');
+});
+
+test('a Kempenfest-style vendor invite is exhibitor_invitation, including when the model says other at zero', () => {
+  const rules = classifyByRules(KEMPENFEST_INVITE);
+  assert.equal(rules.category, 'exhibitor_invitation');
+  assert.ok(rules.confidence >= 0.6);
+  const chosen = chooseClassification(rules, {
+    category: 'other',
+    confidence: 0,
+    summary: 'Unclear.',
+    event: {},
+    classifier: 'ai',
+  });
+  assert.equal(chosen.category, 'exhibitor_invitation');
+  assert.equal(chosen.classifier, 'rules');
+  assert.ok(chosen.confidence > 0);
+});
+
+test('a Wedding Collective exhibitor invitation is not a booking', () => {
+  const rules = classifyByRules(WEDDING_COLLECTIVE);
+  assert.equal(rules.category, 'exhibitor_invitation', rules.summary);
+  assert.equal(rules.signals.performer, false);
+  const chosen = chooseClassification(rules, AI_EXHIBITOR);
+  assert.equal(chosen.category, 'exhibitor_invitation');
+});
+
+test('a ScotFestBC vendor call stays exhibitor_invitation among games and festival words', () => {
+  const rules = classifyByRules(SCOTFEST_VENDOR_CALL);
+  assert.equal(rules.category, 'exhibitor_invitation');
+  assert.equal(rules.signals.exhibitInvite, true);
+  const chosen = chooseClassification(rules, AI_EXHIBITOR);
+  assert.equal(chosen.category, 'exhibitor_invitation');
+});
+
+test('rules listing or booking does not replace an AI exhibitor_invitation', () => {
+  const event = { title: '', host: '', date: '', city: '', province: '', venue: '', url: '' };
+  const listing = chooseClassification({
+    category: 'event_listing_request',
+    confidence: 0.9,
+    summary: 'Games weekend.',
+    event,
+    classifier: 'rules',
+    signals: {
+      exhibitInvite: true,
+      exhibit: true,
+      listing: true,
+      listingAsk: false,
+      performer: false,
+      booking: false,
+      sellViaCoo: false,
+    },
+  }, AI_EXHIBITOR);
+  assert.equal(listing.category, 'exhibitor_invitation');
+  assert.equal(listing.classifier, 'ai');
+
+  const booking = chooseClassification({
+    category: 'booking_inquiry',
+    confidence: 0.9,
+    summary: 'Book a booth.',
+    event,
+    classifier: 'rules',
+    signals: {
+      exhibitInvite: true,
+      exhibit: true,
+      listing: false,
+      listingAsk: false,
+      performer: false,
+      booking: true,
+      sellViaCoo: false,
+    },
+  }, AI_EXHIBITOR);
+  assert.equal(booking.category, 'exhibitor_invitation');
+  assert.equal(booking.classifier, 'ai');
+});
+
+test('a please-list request and a performer hire are not relabelled as exhibitor invitations', () => {
+  assert.equal(classifyByRules(LIST_OUR_GAMES).category, 'event_listing_request');
+  assert.equal(chooseClassification(classifyByRules(LIST_OUR_GAMES), AI_EXHIBITOR).category, 'event_listing_request');
+  assert.equal(classifyByRules(HIRE_PIPER).category, 'booking_inquiry');
+  const hire = chooseClassification(classifyByRules(HIRE_PIPER), AI_EXHIBITOR);
+  assert.equal(hire.category, 'booking_inquiry');
+  assert.equal(hire.classifier, 'rules');
+});
+
+test('the classifier prompt routes vendor and exhibitor language to exhibitor_invitation', () => {
+  assert.match(SYSTEM_PROMPT, /vendor invite/i);
+  assert.match(SYSTEM_PROMPT, /vendors wanted/i);
+  assert.match(SYSTEM_PROMPT, /call for vendors/i);
+  assert.match(SYSTEM_PROMPT, /exhibitor invitation/i);
+  assert.match(SYSTEM_PROMPT, /marketplace/i);
+  assert.match(SYSTEM_PROMPT, /craft fair/i);
+  assert.match(SYSTEM_PROMPT, /vendor application/i);
+  assert.match(SYSTEM_PROMPT, /booth fee/i);
+  assert.match(SYSTEM_PROMPT, /book a booth/i);
+  assert.match(SYSTEM_PROMPT, /please list our Games/i);
+  assert.match(SYSTEM_PROMPT, /hire a piper/i);
+});
+
+test('only a clearly marked TEST skips the reply draft', () => {
+  const markedSubject = draftFor(
+    'TEST: piper for a wedding',
+    'We would like to hire a piper for a wedding in Ottawa, Ontario on 2 June 2027.',
+  );
+  assert.equal(markedSubject && markedSubject.skip, 'test');
+  assert.equal(markedSubject.status, undefined);
+
+  const markedBody = draftFor(
+    'Piper for a wedding',
+    'This is a test.\nWe would like to hire a piper for a wedding in Ottawa, Ontario on 2 June 2027.',
+  );
+  assert.equal(markedBody && markedBody.skip, 'test');
+
+  const ordinary = draftFor(
+    'Piper for a wedding',
+    'We would like to hire a piper for a wedding in Ottawa, Ontario. We will test the sound system beforehand.',
+  );
+  assert.ok(ordinary);
+  assert.equal(ordinary.skip, undefined);
+  assert.equal(ordinary.status, 'pending_approval');
+});
+
+test('spam the rules already detect does not get a reply draft', () => {
+  const spam = draftFor(
+    'Guest post offer',
+    'We can rank your site with SEO services. Buy now.',
+    'booking_inquiry',
+  );
+  assert.equal(spam && spam.skip, 'spam');
+  assert.equal(spam.status, undefined);
+
+  const hire = draftFor(
+    'Piper for a wedding',
+    'We would like to hire a piper for a wedding in Ottawa, Ontario on 2 June 2027.',
+  );
+  assert.equal(hire.status, 'pending_approval');
+  assert.equal(hire.skip, undefined);
 });
 
 // ---- extraction and currency ---------------------------------------------------
@@ -619,6 +797,44 @@ test('status API: interested creates a Trello card only when configured, with no
   assert.match(body.name, /Vendor call: Foothills/);
   assert.doesNotMatch(body.desc, /Morag|@|\$150/);
   assert.doesNotMatch(cardFor(view, id).desc, /555/);
+});
+
+test('end to end: a TEST vendor invite is stored and no reply draft is queued', sqlite, async () => {
+  const db = migrated();
+  const { sent, result } = await receive(db, {
+    subject: 'TEST: Kempenfest 2027 Vendor Invite',
+    text: 'TEST\n\nJoin us as a vendor at Kempenfest 2027, a craft fair marketplace. A booth fee applies.',
+  }, { messageId: '<test-vendor@example.org>', from: 'office@example.com' });
+  assert.equal(sent.length, 0);
+  assert.equal(result.outcome.draftSkip, 'test');
+  const row = db.prepare('SELECT clarify_status, clarify_draft, draft_skip_reason FROM inbound_emails').get();
+  assert.equal(row.clarify_status, '');
+  assert.equal(row.clarify_draft, '');
+  assert.equal(row.draft_skip_reason, 'test');
+});
+
+test('end to end: rules-detected spam is not drafted when the model says booking', sqlite, async () => {
+  const db = migrated();
+  const sent = [];
+  const env = envFor(db, sent);
+  const fixture = {
+    subject: 'Guest post offer',
+    text: 'We can rank your site with SEO services. Buy now.',
+  };
+  const result = await handleInboundEmail(
+    inbound(fixture, { messageId: '<spam-offer@example.org>', from: 'offers@example.com' }),
+    env,
+    {
+      ...deps,
+      run: async () => ({ response: JSON.stringify({ category: 'booking_inquiry', confidence: 0.9, summary: 'A booking.' }) }),
+    },
+  );
+  assert.equal(sent.length, 0);
+  assert.equal(result.outcome.category, 'spam');
+  const row = db.prepare('SELECT category, clarify_status, clarify_draft FROM inbound_emails').get();
+  assert.equal(row.category, 'spam');
+  assert.equal(row.clarify_status, '');
+  assert.equal(row.clarify_draft, '');
 });
 
 test('the exhibitor doc names the owner, the flag, and no private details', () => {

@@ -22,20 +22,23 @@ Lexicon first, then Workers AI, the same pattern as listings and bookings.
 
 The phrases are in `shared/triage/sites/celticcoo.js`:
 
-- `exhibit-invite` (weight 5): call for vendors or exhibitors, vendor or exhibitor application, vendor package, vendor registration, invitation to exhibit, apply for a booth, vendors wanted, now accepting vendors.
-- `exhibit-word` (weight 1.5): booth, stall, vendor, exhibitor, artisan, vendor space, tent space, market stall.
+- `exhibit-invite` (weight 5): call for vendors or exhibitors, vendor or exhibitor application, vendor package, vendor registration, invitation to exhibit, vendor invite, vendor invitation, exhibitor invitation, apply for a booth, vendors wanted, now accepting vendors, join us as a vendor, book a booth, book a stall, or book a stand.
+- `exhibit-word` (weight 1.5): booth, stall, vendor, exhibitor, artisan, vendor space, tent space, market stall, marketplace, craft fair.
 - `exhibit-logistics` (weight 1.5): booth or stall fee, space cost, move-in, set-up time, tear-down, power or electricity, tables and chairs, vendor permit, liability insurance.
 - `sell-via-coo` (weight 0): a shop that wants to sell through Coo, stock its products with Coo, join a directory, or get a booth "at your event".
 
 The site pack also has a gate. `exhibitor_invitation` keeps its score only when the note has one invitation or application phrase and one exhibit word or logistics phrase, and no `sell-via-coo` phrase. A lone "vendor", or a booth fee with no invitation, is not enough. Subject matches still count double. The floor is still `minScore` 3.5 and confidence still caps at 0.93.
 
+Once that gate has cleared the floor, the vendor-call score wins over an `event_listing_request` that is only Highland Games, a festival, or "we are hosting", and over a `booking_inquiry` that is only the word wedding or "book a booth". Two guards stay in place. A note that asks to list, add, or submit the event keeps its listing score. A hire of a piper or other performer keeps its booking score.
+
 The model prompt and JSON schema list the category and an `exhibitor` object with public facts only. The body is still fenced as untrusted data. The model is never asked for a name, an email, or a phone number.
 
 The rules-vs-model chooser:
 
-- A rules `exhibitor_invitation` wins when the model says `other`, `event_listing_request`, or `booking_inquiry`. The rules only pick this label after the gate and `minScore`, so it is a clear hit.
-- A model `exhibitor_invitation` is dropped for the rules result when the text has no exhibit signal at all, or has a `sell-via-coo` phrase.
-- Spam still wins. "Please list our Games" with vendors mentioned stays a listing. "Piper for our event" stays a booking. SEO pitches and list footers stay spam.
+- A rules `exhibitor_invitation` wins when the model says `other`, `event_listing_request`, or `booking_inquiry`. The rules only pick this label after the gate and `minScore`, so it is a clear hit. That includes a model `other` at confidence 0.
+- A model `exhibitor_invitation` is kept when the note has exhibitor or vendor language. A rules booking or listing does not replace it.
+- A model `exhibitor_invitation` is dropped for the rules result when the text has no exhibit signal at all, has a `sell-via-coo` phrase, asks to list the event, or hires a performer.
+- Spam still wins, including when the model says booking, listing, or exhibitor. "Please list our Games" with vendors mentioned stays a listing. "Hire a piper" stays a booking. SEO pitches and list footers stay spam.
 
 ## The private record
 
@@ -103,6 +106,7 @@ The approved reply is sent with `sendApprovedReply` through the Cloudflare Email
 - The send lock and `already_sent` still block a double send of the same draft.
 - `mail_opt_outs` is honoured. If the list cannot be read, nothing is sent.
 - `CLARIFY_DRAFTS=off` stops these drafts too.
+- A subject or body clearly marked TEST, and mail the rules already call spam, does not get this draft either. The row is still stored. Nothing is sent.
 - Every exhibitor send, approved or automatic, goes through the send guard (`workers/inbound/src/guard.js`):
   - `intake_control` paused or latched: nothing is sent (`guard_paused`).
   - 40 replies in the last 24 hours in `outbound_sends`: nothing is sent (`outbound_cap`). Every approved reply, of any kind, is now recorded there.
