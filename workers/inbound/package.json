@@ -8,6 +8,6 @@
     "test": "node --test test/*.test.mjs ../../shared/triage/test/*.test.mjs"
   },
   "dependencies": {
-    "postal-mime": "^4.2.0"
+    "postal-mime": "^4.2.1"
   }
 }
