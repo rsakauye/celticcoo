@@ -9,10 +9,13 @@ That var is not set in `wrangler.jsonc` and the deploy workflow does not pass it
 | `submissions` (booking requests) | 12 months | `updated_at` |
 | `inbound_emails` | 12 months | `created_at` |
 | `submission_failures` | 90 days | `created_at` |
+| `listings` with status `rejected` or `closed` | 90 days | `updated_at` |
 
 `submission_failures` stores a reason code, Turnstile error codes when a token was rejected, whether a token was present, a truncated user agent, and the country and network number when Cloudflare provides them. It has no name, email, phone, message, token, or IP address. The 90-day count is what removes those rows once deletion is turned on.
 
-The count log is JSON with `message`, `mode` (`dry_run` or `delete`), and the three counts. It does not include row contents.
+The count log is JSON with `message`, `mode` (`dry_run` or `delete`), and the three counts. It does not include row contents. A second log line, `"message":"listings"`, has the listing counts: needs-info rows closed after 14 days with no answer, the 90-day purge mode and count, and the receipt and digest states. See `docs/listings.md`.
+
+A listed performer or group keeps its row while it is listed. A removal request sets it to `closed`, which starts the 90 days.
 
 ## Deletion request
 

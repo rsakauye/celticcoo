@@ -1,0 +1,305 @@
+---
+// One free-listing form. kind is "performer" or "group".
+// Copy and option lists come from data/listings.json so Hemingway and Akindo
+// can change them without touching this file.
+// Private fields are grouped under "About you (private)".
+import { COPY, LIMITS, listingConfig } from '../lib/listing.js';
+import { u } from '../lib/site.js';
+
+const { kind = 'performer', turnstileSitekey = '', contactEmail = '' } = Astro.props;
+const group = kind === 'group';
+const P = listingConfig.performer;
+const G = listingConfig.group;
+const F = COPY.form;
+const pf = COPY.performerForm;
+const px = COPY.performerExtra;
+const gf = COPY.groupForm;
+const x = group ? 'g' : 'p';
+const sectionId = group ? 'groups' : 'performers';
+const provinces = listingConfig.provinces;
+const defaultProvince = listingConfig.defaultProvince;
+const turnstileOff = F.turnstileOff.replace('{email}', contactEmail);
+const extraLinks = Array.from({ length: Math.max(0, LIMITS.maxLinks - 1) }, (_, i) => i + 2);
+---
+<section class="listing card" id={sectionId} aria-labelledby={`${x}-heading`}>
+  <h2 id={`${x}-heading`}>{group ? gf.heading : pf.heading}</h2>
+  <p>{group ? gf.leadIn : pf.leadIn}</p>
+  <p class="note" role="note">{group ? gf.rule : pf.adultsNote}</p>
+
+  <div class="errors" data-errors role="alert" tabindex="-1" hidden><b>{F.errorsHeading}</b><ul></ul></div>
+
+  <form data-listing={kind} action={u('api/listing')} method="post" accept-charset="UTF-8">
+    <input type="hidden" name="kind" value={kind} />
+
+    {!group && (
+      <>
+        <label class="field" for="p-name">{pf.nameLabel} <span aria-hidden="true">*</span></label>
+        <input id="p-name" name="name" type="text" required maxlength={LIMITS.nameMax} aria-describedby="p-name-help" />
+        <p class="hint" id="p-name-help">{pf.nameHelp}</p>
+        <p class="err" data-err-for="name" hidden></p>
+
+        <fieldset class="sub" data-group="acts" tabindex="-1" aria-describedby="p-acts-help">
+          <legend class="subleg">{pf.actsLabel} <span aria-hidden="true">*</span></legend>
+          <p class="hint" id="p-acts-help">{pf.actsHelp}</p>
+          <div class="opts">
+            {P.acts.map(([id, label]) => <label class="choice"><input type="checkbox" name="acts" value={id} /> <span>{label}</span></label>)}
+          </div>
+          <p class="err" data-err-for="acts" hidden></p>
+        </fieldset>
+
+        <fieldset class="sub" data-group="size" tabindex="-1">
+          <legend class="subleg">{px.sizeLabel} <span aria-hidden="true">*</span></legend>
+          <div class="opts">
+            {P.sizes.map(([id, label]) => <label class="choice"><input type="radio" name="size" value={id} required /> <span>{label}</span></label>)}
+          </div>
+          <p class="err" data-err-for="size" hidden></p>
+        </fieldset>
+
+        <fieldset class="sub">
+          <legend class="subleg">{pf.baseLabel} <span aria-hidden="true">*</span></legend>
+          <p class="hint">{pf.baseHelp}</p>
+          <div class="row two">
+            <div>
+              <label class="field" for="p-city">{pf.cityLabel}</label>
+              <input id="p-city" name="city" type="text" required maxlength={LIMITS.cityMax} autocomplete="address-level2" />
+              <p class="err" data-err-for="city" hidden></p>
+            </div>
+            <div>
+              <label class="field" for="p-province">{pf.provinceLabel}</label>
+              <select id="p-province" name="province" required>
+                {provinces.map(([id, label]) => <option value={id} selected={id === defaultProvince}>{label}</option>)}
+              </select>
+              <p class="err" data-err-for="province" hidden></p>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="sub" data-group="travel" tabindex="-1">
+          <legend class="subleg">{pf.travelLabel} <span aria-hidden="true">*</span></legend>
+          <div class="opts">
+            {P.travel.map(([id, label]) => <label class="choice"><input type="radio" name="travel" value={id} required /> <span>{label}</span></label>)}
+          </div>
+          <p class="err" data-err-for="travel" hidden></p>
+        </fieldset>
+
+        <fieldset class="sub" data-group="services" tabindex="-1">
+          <legend class="subleg">{px.servicesLabel}</legend>
+          <p class="hint">{px.servicesHelp}</p>
+          <div class="opts">
+            {P.services.map(([id, label]) => <label class="choice"><input type="checkbox" name="services" value={id} /> <span>{label}</span></label>)}
+          </div>
+          <p class="err" data-err-for="services" hidden></p>
+        </fieldset>
+
+        <label class="field" for="p-blurb">{pf.blurbLabel} <span aria-hidden="true">*</span></label>
+        <textarea id="p-blurb" name="blurb" required rows="4" maxlength="1200" data-word-cap={LIMITS.blurbWords} aria-describedby="p-blurb-help p-blurb-count"></textarea>
+        <p class="hint" id="p-blurb-help">{pf.blurbHelp}</p>
+        <p class="hint count" id="p-blurb-count" aria-live="polite"></p>
+        <p class="err" data-err-for="blurb" hidden></p>
+
+        <label class="field" for="p-email">{pf.emailLabel} <span aria-hidden="true">*</span></label>
+        <input id="p-email" name="email" type="email" required maxlength="200" autocomplete="email" aria-describedby="p-email-help" />
+        <p class="hint" id="p-email-help">{pf.emailHelp}</p>
+        <p class="err" data-err-for="email" hidden></p>
+        <label class="choice" for="p-show-email"><input id="p-show-email" type="checkbox" name="show_email" value="yes" /> <span>{pf.showEmailLabel}</span></label>
+
+        <label class="field" for="p-link-1">{pf.linksLabel}</label>
+        <input id="p-link-1" name="links" type="url" maxlength={LIMITS.urlMax} inputmode="url" placeholder="https://" aria-describedby="p-links-help" />
+        <p class="hint" id="p-links-help">{pf.linksHelp}</p>
+        <details class="more">
+          <summary>{px.extraLinksLabel}</summary>
+          {extraLinks.map((n) => (
+            <>
+              <label class="field" for={`p-link-${n}`}>{px.extraLinksLabel}</label>
+              <input id={`p-link-${n}`} name="links" type="url" maxlength={LIMITS.urlMax} inputmode="url" placeholder="https://" />
+            </>
+          ))}
+        </details>
+        <p class="err" data-err-for="links" hidden></p>
+
+        <label class="field" for="p-association">{px.associationLabel}</label>
+        <input id="p-association" name="association" type="text" maxlength="80" aria-describedby="p-association-help" />
+        <p class="hint" id="p-association-help">{px.associationHelp}</p>
+        <p class="err" data-err-for="association" hidden></p>
+
+        <label class="field" for="p-media">{pf.mediaLabel}</label>
+        <input id="p-media" name="media" type="url" maxlength={LIMITS.urlMax} inputmode="url" placeholder="https://" aria-describedby="p-media-help p-media-rights" />
+        <p class="hint" id="p-media-help">{pf.mediaHelp} {px.mediaLinkNote}</p>
+        <p class="note" id="p-media-rights">{pf.imageRights}</p>
+        <p class="err" data-err-for="media" hidden></p>
+
+        <fieldset class="sub private">
+          <legend class="subleg">{px.aboutYouHeading}</legend>
+          <p class="hint">{px.aboutYouHelp}</p>
+          <label class="field" for="p-submitter-name">{px.submitterNameLabel} <span aria-hidden="true">*</span></label>
+          <input id="p-submitter-name" name="submitter_name" type="text" required maxlength={LIMITS.nameMax} autocomplete="name" />
+          <p class="err" data-err-for="submitter_name" hidden></p>
+          <label class="field" for="p-role">{px.roleLabel} <span aria-hidden="true">*</span></label>
+          <select id="p-role" name="role" required>
+            <option value="">Choose one</option>
+            {P.roles.map(([id, label]) => <option value={id}>{label}</option>)}
+          </select>
+          <p class="err" data-err-for="role" hidden></p>
+        </fieldset>
+
+        <label class="choice" for="p-adult"><input id="p-adult" type="checkbox" name="adult_confirm" value="yes" required /> <span>{pf.adultConfirm} <span aria-hidden="true">*</span></span></label>
+        <p class="err" data-err-for="adult_confirm" hidden></p>
+        <label class="choice" for="p-terms"><input id="p-terms" type="checkbox" name="terms_confirm" value="yes" required /> <span>{pf.termsConfirm} <span aria-hidden="true">*</span></span></label>
+        <p class="err" data-err-for="terms_confirm" hidden></p>
+        <label class="choice" for="p-newsletter"><input id="p-newsletter" type="checkbox" name="newsletter" value="yes" /> <span>{px.newsletterLabel}</span></label>
+        <p class="hint">{px.privacyNote} <a href={u('privacy/')}>Privacy policy</a>.</p>
+      </>
+    )}
+
+    {group && (
+      <>
+        <label class="field" for="g-name">{gf.nameLabel} <span aria-hidden="true">*</span></label>
+        <input id="g-name" name="name" type="text" required maxlength={LIMITS.nameMax} />
+        <p class="err" data-err-for="name" hidden></p>
+
+        <label class="field" for="g-kind">{gf.kindLabel} <span aria-hidden="true">*</span></label>
+        <select id="g-kind" name="group_kind" required>
+          <option value="">Choose one</option>
+          {G.kinds.map(([id, label]) => <option value={id}>{label}</option>)}
+        </select>
+        <p class="err" data-err-for="kind" hidden></p>
+
+        <div class="row two">
+          <div>
+            <label class="field" for="g-city">{gf.cityLabel} <span aria-hidden="true">*</span></label>
+            <input id="g-city" name="city" type="text" required maxlength={LIMITS.cityMax} autocomplete="address-level2" />
+            <p class="err" data-err-for="city" hidden></p>
+          </div>
+          <div>
+            <label class="field" for="g-province">{gf.provinceLabel} <span aria-hidden="true">*</span></label>
+            <select id="g-province" name="province" required>
+              {provinces.map(([id, label]) => <option value={id} selected={id === defaultProvince}>{label}</option>)}
+            </select>
+            <p class="err" data-err-for="province" hidden></p>
+          </div>
+        </div>
+
+        <label class="field" for="g-website">{gf.websiteLabel} <span aria-hidden="true">*</span></label>
+        <input id="g-website" name="website" type="url" required maxlength={LIMITS.urlMax} inputmode="url" placeholder="https://" aria-describedby="g-website-help" />
+        <p class="hint" id="g-website-help">{gf.websiteHelp}</p>
+        <p class="err" data-err-for="website" hidden></p>
+
+        <fieldset class="sub" data-group="lessons" tabindex="-1">
+          <legend class="subleg">{gf.lessonsLabel} <span aria-hidden="true">*</span></legend>
+          <div class="opts inline">
+            <label class="choice"><input type="radio" name="lessons" value="y" required /> <span>{gf.lessonsYes}</span></label>
+            <label class="choice"><input type="radio" name="lessons" value="n" required /> <span>{gf.lessonsNo}</span></label>
+          </div>
+          <p class="err" data-err-for="lessons" hidden></p>
+        </fieldset>
+
+        <div class="lesson-extra" data-lesson-extra>
+          <label class="field" for="g-lesson-kinds">{gf.lessonKindsLabel}</label>
+          <input id="g-lesson-kinds" name="lesson_kinds" type="text" maxlength={LIMITS.textMax} aria-describedby="g-lesson-kinds-help" />
+          <p class="hint" id="g-lesson-kinds-help">{gf.lessonKindsHelp}</p>
+          <p class="err" data-err-for="lesson_kinds" hidden></p>
+          <fieldset class="sub" data-group="lesson_ages" tabindex="-1">
+            <legend class="subleg">{gf.lessonAgesLabel}</legend>
+            <div class="opts inline">
+              {G.lessonAges.map(([id, label]) => <label class="choice"><input type="checkbox" name="lesson_ages" value={id} /> <span>{label}</span></label>)}
+            </div>
+            <p class="err" data-err-for="lesson_ages" hidden></p>
+          </fieldset>
+        </div>
+
+        <label class="field" for="g-schedule">{gf.scheduleLabel}</label>
+        <input id="g-schedule" name="schedule" type="text" maxlength={LIMITS.textMax} aria-describedby="g-schedule-help" />
+        <p class="hint" id="g-schedule-help">{gf.scheduleHelp}</p>
+        <p class="err" data-err-for="schedule" hidden></p>
+
+        <label class="field" for="g-contact">{gf.contactLabel}</label>
+        <input id="g-contact" name="contact" type="email" maxlength="200" aria-describedby="g-contact-help" />
+        <p class="hint" id="g-contact-help">{gf.contactHelp}</p>
+        <p class="err" data-err-for="contact" hidden></p>
+
+        <fieldset class="sub private">
+          <legend class="subleg">{gf.aboutYouHeading}</legend>
+          <p class="hint">{gf.aboutYouHelp}</p>
+          <div class="row two">
+            <div>
+              <label class="field" for="g-submitter-name">{gf.submitterNameLabel} <span aria-hidden="true">*</span></label>
+              <input id="g-submitter-name" name="submitter_name" type="text" required maxlength={LIMITS.nameMax} autocomplete="name" />
+              <p class="err" data-err-for="submitter_name" hidden></p>
+            </div>
+            <div>
+              <label class="field" for="g-email">{gf.submitterEmailLabel} <span aria-hidden="true">*</span></label>
+              <input id="g-email" name="email" type="email" required maxlength="200" autocomplete="email" />
+              <p class="err" data-err-for="email" hidden></p>
+            </div>
+          </div>
+          <label class="field" for="g-role">{gf.roleLabel} <span aria-hidden="true">*</span></label>
+          <select id="g-role" name="role" required>
+            <option value="">Choose one</option>
+            {G.roles.map(([id, label]) => <option value={id}>{label}</option>)}
+          </select>
+          <p class="err" data-err-for="role" hidden></p>
+        </fieldset>
+
+        <label class="choice" for="g-adult"><input id="g-adult" type="checkbox" name="adult_confirm" value="yes" required /> <span>{gf.adultConfirm} <span aria-hidden="true">*</span></span></label>
+        <p class="err" data-err-for="adult_confirm" hidden></p>
+        <label class="choice" for="g-terms"><input id="g-terms" type="checkbox" name="terms_confirm" value="yes" required /> <span>{gf.termsConfirm} <span aria-hidden="true">*</span></span></label>
+        <p class="err" data-err-for="terms_confirm" hidden></p>
+        <label class="choice" for="g-newsletter"><input id="g-newsletter" type="checkbox" name="newsletter" value="yes" /> <span>{gf.newsletterLabel}</span></label>
+        <p class="hint">{gf.privacyNote} <a href={u('privacy/')}>Privacy policy</a>.</p>
+      </>
+    )}
+
+    <div class="hp">
+      <label for={`${x}-hp`}>Leave this field blank</label>
+      <input id={`${x}-hp`} name="listing_hp" type="text" tabindex="-1" autocomplete="off" value="" />
+    </div>
+    <div class="turnstile-field">
+      <p class="field">{F.turnstileLabel}</p>
+      {turnstileSitekey
+        ? <div class="turnstile" data-listing-turnstile></div>
+        : <p class="note">{turnstileOff}</p>}
+      <p class="err" data-err-for="turnstile" hidden></p>
+    </div>
+    <button class="btn" type="submit">{group ? gf.button : pf.button}</button>
+    <p class="err" data-fallback hidden></p>
+  </form>
+
+  <div class="thanks" data-thanks hidden>
+    <p tabindex="-1">{group ? gf.success : pf.success}</p>
+  </div>
+</section>
+
+<style>
+  .listing { margin: 1.5rem 0 0; max-width: 42rem; scroll-margin-top: 5rem; }
+  .listing h2 { margin-top: 0; }
+  .listing fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+  .listing .subleg { font-weight: 700; margin: .9rem 0 .2rem; padding: 0; }
+  .listing .field { display: block; font-weight: 650; margin: .85rem 0 .25rem; }
+  .listing .hint { color: var(--muted); font-size: .92rem; margin: .3rem 0 0; }
+  .listing input[type="text"], .listing input[type="email"], .listing input[type="url"], .listing select, .listing textarea {
+    width: 100%; font: inherit; padding: .55rem .65rem; border: 1px solid #cdbda3; border-radius: 8px; background: #fff; color: var(--fg);
+  }
+  .listing textarea { min-height: 7rem; resize: vertical; }
+  .listing .row { display: flex; flex-direction: column; gap: .2rem; }
+  .listing .opts { display: grid; grid-template-columns: 1fr; }
+  .listing .choice { display: flex; gap: .65rem; align-items: flex-start; padding: .45rem 0; min-height: 44px; cursor: pointer; }
+  .listing .choice input { width: 1.2rem; height: 1.2rem; margin-top: .2rem; padding: 0; accent-color: var(--green); flex: 0 0 auto; }
+  .listing .note { background: #fff4e8; border: 1px solid #f1cfae; border-radius: 10px; padding: .7rem .8rem; margin: .5rem 0; }
+  .listing .private { border-top: 1px solid var(--line); margin-top: 1.2rem; padding-top: .3rem; }
+  .listing .more summary { cursor: pointer; font-weight: 650; color: var(--green); min-height: 44px; display: flex; align-items: center; }
+  .listing .errors { background: #fff4e8; border: 1px solid #e0843f; border-radius: 10px; padding: .7rem .8rem; margin: .5rem 0; }
+  .listing .errors ul { margin: .3rem 0 0; padding-left: 1.2rem; }
+  .listing .err { color: #8a3b0d; font-weight: 700; margin: .25rem 0 0; }
+  .listing [aria-invalid="true"] { border-color: #8a3b0d; }
+  .listing .count.over { color: #8a3b0d; font-weight: 700; }
+  .listing .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+  .listing .turnstile { margin: .4rem 0 .2rem; min-height: 65px; }
+  .listing .btn { width: 100%; text-align: center; margin-top: .9rem; border: 0; font: inherit; font-weight: 600; cursor: pointer; }
+  .listing .thanks { background: #fff4e8; border: 1px solid #f1cfae; border-radius: 10px; padding: .7rem .9rem; margin-top: .6rem; }
+  @media (min-width: 700px) {
+    .listing .row.two { display: grid; grid-template-columns: 1fr 1fr; gap: .2rem 1rem; }
+    .listing .opts { grid-template-columns: 1fr 1fr; column-gap: 1rem; }
+    .listing .opts.inline { grid-template-columns: repeat(4, auto); justify-content: start; }
+    .listing .btn { width: auto; }
+  }
+</style>

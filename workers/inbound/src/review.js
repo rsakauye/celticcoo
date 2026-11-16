@@ -719,3 +719,5 @@ export async function handleReviewRequest(request, env, deps = {}) {
   }
   return resultPage(result);
 }
+
+export { page as reviewPage, escapeHtml as reviewEscape };

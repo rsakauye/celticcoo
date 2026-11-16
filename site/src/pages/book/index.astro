@@ -4,6 +4,7 @@ import BookEventOption from '../../components/BookEventOption.astro';
 import { events, tba, TODAY } from '../../lib/data.js';
 import { bookableFromData, bookingConfig, fillTemplate, REQUESTER_TYPES, REQUEST_TYPES, PERFORMERS, BUDGETS, PROVINCE_NAMES, MESSAGES } from '../../lib/booking.js';
 import { u } from '../../lib/site.js';
+import { COPY as LISTING_COPY } from '../../lib/listing.js';
 
 const cfg = bookingConfig;
 const destinationEmail = cfg.destinationEmail;
@@ -35,6 +36,7 @@ const messagesJson = JSON.stringify(MESSAGES).replace(/</g, '\\u003c');
   <div class="book">
     <h1>{cfg.heading}</h1>
     <p class="lede">{lede[0]}<a href={`mailto:${destinationEmail}`}>{destinationEmail}</a>{lede[1]}</p>
+    <p class="performers-link">{LISTING_COPY.bookLine.text} <a href={u('performers/')}>{LISTING_COPY.bookLine.link}</a></p>
 
     <aside class="card disclosure" role="note">
       {cfg.mascotImage && <img src={u(cfg.mascotImage)} alt="" width="72" height="72" />}
@@ -350,6 +352,10 @@ const messagesJson = JSON.stringify(MESSAGES).replace(/</g, '\\u003c');
             var el = document.getElementById(key);
             if (value && el && !el.value) el.value = value.slice(0, el.maxLength > 0 ? el.maxLength : 200);
           });
+          // From a card on /performers. The act name only fills the message box.
+          var act = (params.get('act') || '').replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, 120);
+          var message = document.getElementById('message');
+          if (act && message && !message.value) message.value = 'I would like to ask about booking ' + act + ', from the Performers page.\n\n';
           refreshEvents();
           applyFilter();
         }

@@ -38,6 +38,7 @@ import { buildIssue, fileGitHubIssue, issuesRepo, shouldFile, workerToken } from
 import { isOptOutMessage, optOutStatus, recordOptOut } from './optout.js';
 import { dedupeKey, parseInbound } from './parse.js';
 import { handleApprovalApi } from './approval.js';
+import { handleListingsApi, handleListingsPage, runListingJobs } from './listings.js';
 import { aiNamePass, exportReason, redactOutsideD1Many } from './redact.js';
 import { runRetention } from './retention.js';
 import { applyReview, handleReviewRequest, sendReviewNote } from './review.js';
@@ -407,6 +408,8 @@ export async function handleInboundEmail(message, env, deps = {}) {
 
 export function handleFetch(request, env, deps) {
   const url = new URL(request.url);
+  if (url.pathname === '/api/listings') return handleListingsApi(request, env, deps);
+  if (url.pathname === '/listings' || url.pathname.startsWith('/listings/')) return handleListingsPage(request, env, deps);
   if (url.pathname === '/api/queue' || url.pathname.startsWith('/api/drafts/') || url.pathname.startsWith('/api/exhibitors/')) {
     return handleApprovalApi(request, env, deps);
   }
@@ -416,12 +419,22 @@ export function handleFetch(request, env, deps) {
 export async function handleScheduled(env, deps = {}) {
   const log = typeof deps.log === 'function' ? deps.log : console.log;
   const now = deps.now ? deps.now() : new Date();
+  let retention;
   try {
-    return await runRetention(env && env.INTAKE_DB, env, now, log);
+    retention = await runRetention(env && env.INTAKE_DB, env, now, log);
   } catch {
     log(JSON.stringify({ message: 'retention failed', code: 'retention_failed' }));
-    return { mode: 'dry_run', error: 'retention_failed', counts: {} };
+    retention = { mode: 'dry_run', error: 'retention_failed', counts: {} };
   }
+  // Free listings: close needs-info after 14 days, the 90-day purge (dry run
+  // unless RETENTION_PURGE is on), the receipt (ACK_REPLIES, off), and the
+  // queue digest (LISTING_DIGEST, off). A failure here does not touch retention.
+  try {
+    retention.listings = await runListingJobs(env, now, log, deps);
+  } catch {
+    log(JSON.stringify({ message: 'listings failed', code: 'listings_failed' }));
+  }
+  return retention;
 }
 
 export default {

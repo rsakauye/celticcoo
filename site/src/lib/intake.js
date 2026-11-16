@@ -126,7 +126,7 @@ function safeDetail(detail) {
   return /^[a-z0-9_,.-]{0,200}$/.test(text) ? text : '';
 }
 
-export async function verifyTurnstile({ token, request, env, fetchImpl = fetch }) {
+export async function verifyTurnstile({ token, request, env, fetchImpl = fetch, action = TURNSTILE_ACTION }) {
   const secret = env && typeof env.TURNSTILE_SECRET === 'string' ? env.TURNSTILE_SECRET.trim() : '';
   const expected = turnstileHostnames(env);
   if (!secret || expected.size === 0) return { ok: false, reason: 'turnstile_not_configured', detail: '' };
@@ -155,14 +155,15 @@ export async function verifyTurnstile({ token, request, env, fetchImpl = fetch }
       : '';
     return { ok: false, reason: 'turnstile_rejected', detail: codes };
   }
-  if (result.action !== TURNSTILE_ACTION) return { ok: false, reason: 'turnstile_action', detail: '' };
+  if (result.action !== action) return { ok: false, reason: 'turnstile_action', detail: '' };
   const hostname = String(result.hostname || '').toLowerCase();
   if (!expected.has(hostname)) return { ok: false, reason: 'turnstile_hostname', detail: '' };
   return { ok: true };
 }
 
-export function verifyFromEnv(env) {
-  return (token, request) => verifyTurnstile({ token, request, env });
+// action defaults to the booking form. The listing form passes 'listing'.
+export function verifyFromEnv(env, action = TURNSTILE_ACTION) {
+  return (token, request) => verifyTurnstile({ token, request, env, action });
 }
 
 export async function logIntakeFailure(db, entry = {}) {
