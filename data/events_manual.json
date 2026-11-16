@@ -38,5 +38,25 @@
     "name": "Village of Pugwash"
    }
   ]
+ },
+ {
+  "name": "2026 Calgary Piobaireachd Club",
+  "start_date": "2026-11-21",
+  "end_date": "2026-11-21",
+  "city": "Calgary",
+  "province_or_region": "AB",
+  "country": "Canada",
+  "type": "Performance (concert)",
+  "source_url": "https://facebook.com/events/s/2026-calgary-piobaireachd-club/1709751024100978/",
+  "source_kind": "official",
+  "notes": "Mewata Armouries (Mewata Jr Ranks Mess), 801 11 St SW; 7-10 pm; 5$ at the door; piobaireachd (pipe music) performance and recital night, casual dress",
+  "cost": "paid",
+  "cost_quote": "5$ at the door",
+  "added_date": "2026-11-16",
+  "organizer": [
+   {
+    "name": "Calgary Piobaireachd Club"
+   }
+  ]
  }
 ]
