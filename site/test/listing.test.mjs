@@ -175,7 +175,14 @@ test('copy has no em dashes and no paid tier, and the minor rule is in the form 
   assert.doesNotMatch(raw, /featured|premium|paid listing/i);
   assert.match(COPY.performerForm.adultsNote, /18 and older/);
   assert.match(COPY.performerForm.adultConfirm, /18 or older/);
-  assert.match(COPY.groupForm.rule, /organizations only/i);
+  assert.match(COPY.groupForm.rule, /groups, not people/i);
+  for (const block of ['performersPage', 'submitIntro', 'performerForm', 'performerExtra', 'groupForm', 'form', 'errors', 'replies', 'inquiryReply']) {
+    assert.equal(COPY[block].source, 'hemingway', block);
+  }
+  assert.doesNotMatch(raw, /"source": "placeholder"/);
+  assert.match(COPY.performerForm.mediaLabel, /Photo or video link/);
+  assert.match(COPY.performerForm.linksHelp, /Up to 3 links/);
+  assert.match(COPY.inquiryReply.body, /up to 3 website or social links/);
 });
 
 // ---------- validation ----------
@@ -310,6 +317,32 @@ test('a valid listing lands in the private queue as pending and nothing else', a
   assert.equal(row.name_key, 'foothills piper');
   assert.doesNotMatch(row.public_json, /piper@example\.com|Sample Submitter|self/);
   assert.equal(db.raw.prepare('SELECT COUNT(*) AS n FROM submissions').get().n, 0);
+});
+
+test('a Coo\'s Letter opt-in stores the consent time and source, and no opt-in stores neither', async () => {
+  const db = d1(migrated());
+  const store = listingStoreFromEnv({ INTAKE_DB: db });
+  const yes = await handleListingRequest(post(performerForm({ newsletter: 'yes' }), { referer: 'https://celticcoo.ca/submit/' }), { verify: passTurnstile, store, now: () => NOW });
+  assert.equal(yes.status, 200);
+  const no = await handleListingRequest(post(performerForm({ name: 'No Letter Piper' })), { verify: passTurnstile, store, now: () => NOW });
+  assert.equal(no.status, 200);
+  const odd = await handleListingRequest(post({
+    kind: 'group', name: 'Sample Club', group_kind: 'Gaelic', city: 'Halifax', province: 'NS', website: 'https://club.example.ca/',
+    lessons: 'n', email: 'club@example.com', submitter_name: 'Sample Secretary', role: 'executive', adult_confirm: 'yes', terms_confirm: 'yes', newsletter: 'yes',
+  }, { referer: 'https://elsewhere.example/submit/?x=<b>' }), { verify: passTurnstile, store, now: () => NOW });
+  assert.equal(odd.status, 200);
+  const rows = Object.fromEntries(db.raw.prepare('SELECT name, newsletter_opt_in, newsletter_consent_at, newsletter_source, public_json FROM listings').all().map((r) => [r.name, r]));
+  assert.equal(rows['Foothills Piper'].newsletter_opt_in, 1);
+  assert.equal(rows['Foothills Piper'].newsletter_consent_at, NOW.toISOString());
+  assert.equal(rows['Foothills Piper'].newsletter_source, 'performer-listing-form /submit/');
+  assert.equal(rows['No Letter Piper'].newsletter_opt_in, 0);
+  assert.equal(rows['No Letter Piper'].newsletter_consent_at, '');
+  assert.equal(rows['No Letter Piper'].newsletter_source, '');
+  assert.equal(rows['Sample Club'].newsletter_source, 'group-listing-form /submit/');
+  for (const row of Object.values(rows)) assert.doesNotMatch(row.public_json, /newsletter|consent/);
+  db.raw.prepare("UPDATE listings SET status = 'listed'").run();
+  const text = await (await handlePerformersRequest(new Request('https://celticcoo.ca/api/performers'), { INTAKE_DB: db })).text();
+  assert.doesNotMatch(text, /newsletter|consent|listing-form/);
 });
 
 test('a club listing goes to the same queue with its org contact public and the submitter private', async () => {

@@ -10,6 +10,8 @@ import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 import { handleFetch, handleScheduled } from '../src/index.js';
 import {
+  CLOSE_REASONS,
+  NO_LINK_HINT,
   REJECT_REASONS,
   closeStaleNeedsInfo,
   duplicateHints,
@@ -89,7 +91,7 @@ test('statuses step in order and nothing sends when a person approves', async ()
   const db = d1(migrated());
   seed(db);
   const listed = await setListingStatus(db, ID, { status: 'listed' }, NOW);
-  assert.deepEqual(listed, { ok: true, status: 'listed' });
+  assert.deepEqual(listed, { ok: true, status: 'listed', reason: '' });
   const row = db.raw.prepare('SELECT * FROM listings WHERE id = ?').get(ID);
   assert.equal(row.status, 'listed');
   assert.equal(row.listed_at, NOW.toISOString());
@@ -99,8 +101,9 @@ test('statuses step in order and nothing sends when a person approves', async ()
   assert.match(row.reply_draft, /Foothills Piper/);
   assert.equal(db.raw.prepare('SELECT COUNT(*) AS n FROM outbound_sends').get().n, 0);
   assert.equal((await setListingStatus(db, ID, { status: 'needs_info', note: 'x' }, NOW)).error, 'bad_transition');
-  assert.deepEqual(await setListingStatus(db, ID, { status: 'closed' }, NOW), { ok: true, status: 'closed' });
-  assert.equal(db.raw.prepare('SELECT status_reason, reply_status FROM listings WHERE id = ?').get(ID).status_reason, 'removed');
+  assert.equal((await setListingStatus(db, ID, { status: 'closed' }, NOW)).error, 'reason_required');
+  assert.deepEqual(await setListingStatus(db, ID, { status: 'closed', reason: 'removed_on_request' }, NOW), { ok: true, status: 'closed', reason: 'removed_on_request' });
+  assert.equal(db.raw.prepare('SELECT status_reason, reply_status FROM listings WHERE id = ?').get(ID).status_reason, 'removed_on_request');
 });
 
 test('needs info asks one question, once, and reject needs a listed reason', async () => {
@@ -108,14 +111,15 @@ test('needs info asks one question, once, and reject needs a listed reason', asy
   seed(db);
   assert.equal((await setListingStatus(db, ID, { status: 'needs_info' }, NOW)).error, 'question_required');
   assert.equal((await setListingStatus(db, ID, { status: 'needs_info', note: 'Call 403-555-0100' }, NOW)).error, 'question_contact');
-  assert.deepEqual(await setListingStatus(db, ID, { status: 'needs_info', note: 'Which city are you based in?' }, NOW), { ok: true, status: 'needs_info' });
+  assert.deepEqual(await setListingStatus(db, ID, { status: 'needs_info', note: 'Which city are you based in?' }, NOW), { ok: true, status: 'needs_info', reason: '' });
   const row = db.raw.prepare('SELECT * FROM listings WHERE id = ?').get(ID);
   assert.match(row.reply_draft, /Which city are you based in\?/);
   assert.match(row.reply_draft, /14 days/);
   assert.equal((await setListingStatus(db, ID, { status: 'needs_info', note: 'Again?' }, NOW)).error, 'already_asked');
   assert.equal((await setListingStatus(db, ID, { status: 'rejected' }, NOW)).error, 'reason_required');
   assert.equal((await setListingStatus(db, ID, { status: 'rejected', reason: 'bored' }, NOW)).error, 'reason_required');
-  assert.deepEqual(await setListingStatus(db, ID, { status: 'rejected', reason: 'minor_safety' }, NOW), { ok: true, status: 'rejected' });
+  assert.equal((await setListingStatus(db, ID, { status: 'rejected', reason: 'removed_on_request' }, NOW)).error, 'reason_required');
+  assert.deepEqual(await setListingStatus(db, ID, { status: 'rejected', reason: 'minor_safety' }, NOW), { ok: true, status: 'rejected', reason: 'minor_safety' });
   const after = db.raw.prepare('SELECT * FROM listings WHERE id = ?').get(ID);
   assert.equal(after.status_reason, 'minor_safety');
   assert.equal(after.reply_status, 'discarded');
@@ -300,4 +304,76 @@ test('the daily cron runs the listing jobs without deleting in dry run', async (
   assert.equal(db.raw.prepare('SELECT COUNT(*) AS n FROM listings').get().n, 1);
   assert.ok(logs.some((line) => /"message":"listings"/.test(line)));
   assert.ok(logs.every((line) => !/submitter@example\.com/.test(line)));
+});
+
+test('an entry with no links gets a no-link flag and a hint, and nothing else changes', async () => {
+  const db = d1(migrated());
+  seed(db, { id: ID, name: 'Linked Piper' });
+  seed(db, { id: ID2, name: 'Unlinked Piper' });
+  const pub = JSON.parse(db.raw.prepare('SELECT public_json FROM listings WHERE id = ?').get(ID2).public_json);
+  db.raw.prepare('UPDATE listings SET public_json = ? WHERE id = ?').run(JSON.stringify({ ...pub, links: [], media: 'https://piper.example.ca/photo' }), ID2);
+  const items = Object.fromEntries((await listingQueue(db)).map((i) => [i.name, i]));
+  assert.ok(items['Unlinked Piper'].risk_flags.includes('no_link'));
+  assert.ok(!items['Linked Piper'].risk_flags.includes('no_link'));
+  assert.equal(items['Unlinked Piper'].status, 'pending');
+  assert.match(NO_LINK_HINT, /Needs info rather than Listed/);
+  const e = env(db);
+  const page = await handleFetch(new Request(await queueLink(e, NOW)), e, { now: () => NOW });
+  const html = await page.text();
+  assert.match(html, /No link to check\. If you can&#39;t verify this act, use Needs info rather than Listed\./);
+  const api = await (await handleFetch(new Request('https://review.example.com/api/listings', { headers: { authorization: `Bearer ${TOKEN}` } }), e, { now: () => NOW })).json();
+  assert.ok(api.items.find((i) => i.name === 'Unlinked Piper').risk_flags.includes('no_link'));
+  assert.equal(db.raw.prepare("SELECT COUNT(*) AS n FROM listings WHERE status != 'pending'").get().n, 0);
+});
+
+test('a removal or reject keeps its reason and private note out of public data and purges them at 90 days', async () => {
+  const db = d1(migrated());
+  seed(db, { id: ID, status: 'listed', name: 'Removed Piper' });
+  seed(db, { id: ID2, status: 'pending', name: 'Rejected Piper' });
+  assert.deepEqual(CLOSE_REASONS.slice(-2), ['removed_on_request', 'no_reply']);
+  await setListingStatus(db, ID, { status: 'closed', reason: 'removed_on_request', note: 'Asked by phone at the Games, private note' }, NOW);
+  await setListingStatus(db, ID2, { status: 'rejected', reason: 'outside_canada', note: 'Based in Ohio' }, NOW);
+  const rows = db.raw.prepare('SELECT * FROM listings ORDER BY name').all();
+  assert.deepEqual(rows.map((r) => [r.status, r.status_reason, r.moderator_note]), [
+    ['rejected', 'outside_canada', 'Based in Ohio'],
+    ['closed', 'removed_on_request', 'Asked by phone at the Games, private note'],
+  ]);
+  for (const row of rows) assert.doesNotMatch(row.public_json, /private note|Ohio|outside_canada|removed_on_request/);
+  const api = await (await handleFetch(new Request('https://review.example.com/api/listings', { headers: { authorization: `Bearer ${TOKEN}` } }), env(db), { now: () => NOW })).text();
+  assert.doesNotMatch(api, /private note|Ohio/);
+  const audit = db.raw.prepare('SELECT detail FROM approval_audit').all().map((r) => r.detail).join(' ');
+  assert.doesNotMatch(audit, /private note|Ohio/);
+  const later = new Date(NOW.getTime() + 91 * 86_400_000);
+  assert.deepEqual(await purgeListings(db, { RETENTION_PURGE: 'on' }, later), { mode: 'delete', count: 2 });
+  assert.equal(db.raw.prepare('SELECT COUNT(*) AS n FROM listings').get().n, 0);
+});
+
+test('the listed section takes an entry down with a reason, records the reason code in the audit, and not the note', async () => {
+  const db = d1(migrated());
+  seed(db, { id: ID, status: 'listed', extra: { newsletter_opt_in: 1, newsletter_consent_at: NOW.toISOString(), newsletter_source: 'performer-listing-form /submit/' } });
+  const e = env(db);
+  const link = new URL(await queueLink(e, NOW));
+  const page = await handleFetch(new Request(link), e, { now: () => NOW });
+  const html = await page.text();
+  assert.match(html, /Listed now \(1\)/);
+  assert.match(html, /Take down/);
+  const cookie = /coo_listings_csrf=([^;]+)/.exec(page.headers.get('set-cookie'))[1];
+  const body = new URLSearchParams({ exp: link.searchParams.get('exp'), sig: link.searchParams.get('sig'), csrf: cookie, op: 'status', status: 'closed', reason: 'duplicate', note: 'Same act as another row' }).toString();
+  const res = await handleFetch(new Request(`https://review.example.com/listings/${ID}`, { method: 'POST', body, headers: { cookie: `coo_listings_csrf=${cookie}` } }), e, { now: () => NOW });
+  assert.equal(res.status, 200);
+  assert.match(await res.text(), /Closed or taken down/);
+  const row = db.raw.prepare('SELECT status, status_reason, moderator_note FROM listings WHERE id = ?').get(ID);
+  assert.deepEqual({ ...row }, { status: 'closed', status_reason: 'duplicate', moderator_note: 'Same act as another row' });
+  const audit = db.raw.prepare("SELECT detail FROM approval_audit WHERE action = 'listing_status'").get();
+  assert.equal(audit.detail, 'reason:duplicate');
+});
+
+test('a pending entry with a Coo\'s Letter opt-in shows the consent time and source on the signed page only', async () => {
+  const db = d1(migrated());
+  seed(db, { id: ID, extra: { newsletter_opt_in: 1, newsletter_consent_at: NOW.toISOString(), newsletter_source: 'performer-listing-form /submit/' } });
+  const e = env(db);
+  const html = await (await handleFetch(new Request(await queueLink(e, NOW)), e, { now: () => NOW })).text();
+  assert.ok(html.includes(`Yes, ${NOW.toISOString()}, from performer-listing-form /submit/ (add by hand in Kit)`));
+  const api = await (await handleFetch(new Request('https://review.example.com/api/listings', { headers: { authorization: `Bearer ${TOKEN}` } }), e, { now: () => NOW })).text();
+  assert.doesNotMatch(api, /listing-form|consent_at/);
 });

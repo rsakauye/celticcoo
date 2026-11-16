@@ -33,8 +33,12 @@ import { csrfPairMatches, issueCsrf, reviewOrigin, reviewSecret, signAction, ver
 export const LISTING_CONFIG = listingConfig;
 export const STATUSES = listingConfig.moderation.statuses.map(([id]) => id);
 export const REJECT_REASONS = listingConfig.moderation.rejectReasons.map(([id]) => id);
+// A close (removal of a listed entry, or ending a needs-info row) takes a
+// reject reason or one of the close reasons.
+export const CLOSE_REASONS = [...REJECT_REASONS, ...listingConfig.moderation.closeReasons.map(([id]) => id)];
+export const NO_LINK_HINT = listingConfig.moderation.noLinkHint;
 const STATUS_LABEL = Object.fromEntries(listingConfig.moderation.statuses);
-const REASON_LABEL = Object.fromEntries(listingConfig.moderation.rejectReasons);
+const REASON_LABEL = Object.fromEntries([...listingConfig.moderation.rejectReasons, ...listingConfig.moderation.closeReasons]);
 const LIMITS = listingConfig.limits;
 const REPLIES = listingConfig.copy.replies;
 const QUEUE_LIMIT = 30;
@@ -177,6 +181,17 @@ export function groupsRow(row, pub, today) {
   };
 }
 
+// Advisory review flags. no_link is shown when there is nothing to check the
+// act against. It is a hint for the moderator and changes nothing by itself.
+export function reviewFlags(row, pub) {
+  const flags = parseJson(row.risk_flags, []).filter((code) => /^[a-z0-9_]{1,40}$/.test(String(code)));
+  const links = row.kind === 'group'
+    ? [pub.website].filter(Boolean)
+    : (Array.isArray(pub.links) ? pub.links : []).filter(Boolean);
+  if (!links.length && !flags.includes('no_link')) flags.push('no_link');
+  return flags;
+}
+
 function queueRow(row) {
   const pub = parseJson(row.public_json, {});
   return {
@@ -194,7 +209,7 @@ function queueRow(row) {
     show_email: Number(row.show_email) === 1,
     submitter_role: row.submitter_role || '',
     newsletter_opt_in: Number(row.newsletter_opt_in) === 1,
-    risk_flags: parseJson(row.risk_flags, []).filter((code) => /^[a-z0-9_]{1,40}$/.test(String(code))),
+    risk_flags: reviewFlags(row, pub),
     links: linksOf(row.kind, pub).map(linkCheck),
     reply: { kind: row.reply_kind || '', status: row.reply_status || '', draft: row.reply_draft || '' },
     needs_info_at: row.needs_info_at || '',
@@ -221,6 +236,8 @@ export async function listingQueue(db, { withPrivate = false, limit = QUEUE_LIMI
       item.submitter_email = row.submitter_email;
       item.public_email = Number(row.show_email) === 1 ? row.public_email : '';
       item.moderator_note = row.moderator_note || '';
+      item.newsletter_consent_at = row.newsletter_consent_at || '';
+      item.newsletter_source = row.newsletter_source || '';
     }
     items.push(item);
   }
@@ -276,15 +293,17 @@ export async function setListingStatus(db, id, { status, reason = '', note = '' 
       WHERE id = ? AND status = ?`;
     args = [why, iso, iso, cleanNote, row.id, row.status];
   } else if (next === 'closed') {
+    const why = String(reason || '');
+    if (!CLOSE_REASONS.includes(why)) return { ok: false, error: 'reason_required' };
     sql = `UPDATE listings SET status = 'closed', status_reason = ?, closed_at = ?, updated_at = ?,
       reply_status = CASE WHEN reply_status IN ('pending_approval', 'failed') THEN 'discarded' ELSE reply_status END,
       moderator_note = ?
       WHERE id = ? AND status = ?`;
-    args = [row.status === 'listed' ? 'removed' : 'no_reply', iso, iso, cleanNote, row.id, row.status];
+    args = [why, iso, iso, cleanNote, row.id, row.status];
   }
   const result = await db.prepare(sql).bind(...args).run();
   if (changesOf(result) !== 1) return { ok: false, error: 'busy' };
-  return { ok: true, status: next };
+  return { ok: true, status: next, reason: next === 'rejected' || next === 'closed' ? String(reason) : '' };
 }
 
 // Send the one reply for the current step, after a person pressed send.
@@ -522,6 +541,7 @@ const FLAG_LABEL = {
   links_present: 'Links in the text',
   payment_request: 'Payment words',
   bot_instruction_attempt: 'Instruction-like text',
+  no_link: 'No link',
 };
 
 function pubRows(item) {
@@ -556,10 +576,12 @@ function itemHtml(item, hidden, today) {
     ['Where', `${item.city}, ${item.province}`],
     ...pubRows(item),
     ['Sent in by (private)', `${item.submitter_name || ''} · ${item.submitter_email || ''} · ${item.submitter_role}`],
-    ['Coo\'s Letter opt-in', item.newsletter_opt_in ? 'Yes (add by hand in Kit)' : 'No'],
+    ['Coo\'s Letter opt-in', item.newsletter_opt_in ? `Yes, ${item.newsletter_consent_at || 'time not recorded'}, from ${item.newsletter_source || 'unknown'} (add by hand in Kit)` : 'No'],
+    ...(item.moderator_note ? [['Private note', item.moderator_note]] : []),
   ];
   const flags = item.risk_flags.length
     ? `<p class="banner">Check: ${item.risk_flags.map((f) => esc(FLAG_LABEL[f] || f)).join(', ')}</p>` : '';
+  const noLink = item.risk_flags.includes('no_link') ? `<p class="banner">${esc(NO_LINK_HINT)}</p>` : '';
   const dupes = item.duplicates.length
     ? `<p class="banner">Possible duplicate: ${item.duplicates.map((d) => esc(`${d.name}, ${d.city} (${d.source === 'groups' ? 'on /groups' : STATUS_LABEL[d.status] || d.status}, ${d.match === 'name_city' ? 'same name and city' : 'same name'})`)).join('; ')}</p>` : '';
   const links = item.links.length
@@ -570,9 +592,9 @@ function itemHtml(item, hidden, today) {
 ${hidden}
 <input type="hidden" name="op" value="status">
 <p>${allowed.map((s, i) => `<label style="display:inline-block;margin-right:1rem;font-weight:600"><input type="radio" name="status" value="${s}"${i === 0 ? ' required' : ''}> ${esc(ACTION_LABEL[s])}</label>`).join('')}</p>
-<label for="reason-${esc(item.id)}">Reason (for reject)</label>
-<select id="reason-${esc(item.id)}" name="reason"><option value="">None</option>${listingConfig.moderation.rejectReasons.map(([id, label]) => `<option value="${id}">${esc(label)}</option>`).join('')}</select>
-<label for="note-${esc(item.id)}" style="margin-top:.6rem">Question (for needs info) or private note</label>
+<label for="reason-${esc(item.id)}">Reason (needed to reject or close)</label>
+<select id="reason-${esc(item.id)}" name="reason"><option value="">None</option>${[...listingConfig.moderation.rejectReasons, ...listingConfig.moderation.closeReasons].map(([id, label]) => `<option value="${id}">${esc(label)}</option>`).join('')}</select>
+<label for="note-${esc(item.id)}" style="margin-top:.6rem">Question (for needs info) or private note (never shown on the site)</label>
 <textarea id="note-${esc(item.id)}" name="note" style="min-height:5rem" maxlength="${NOTE_LIMIT}"></textarea>
 <div class="actions"><button class="primary" type="submit">Save</button></div>
 </form>` : '';
@@ -588,7 +610,7 @@ ${hidden}
     ? `<p class="muted">Add to data/groups_canada.json:</p><pre class="quote">${esc(JSON.stringify(groupsRow(item, item.public, today), null, 2))}</pre>` : '';
   return `<section class="card" style="margin-bottom:1rem">
 <h2>${esc(item.name)}</h2>
-${flags}${dupes}
+${flags}${noLink}${dupes}
 <table class="details">${rows.map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`).join('')}</table>
 <p style="margin:.6rem 0 0;font-weight:600">Links (format check only, not visited)</p>
 ${links}
@@ -598,11 +620,35 @@ ${paste}
 </section>`;
 }
 
+// Listed entries, newest first, so a person can take one down with a reason.
+const LISTED_SQL = `SELECT id, kind, name, city, province, listed_at FROM listings
+WHERE status = 'listed' AND NOT (reply_status IN ('pending_approval', 'failed'))
+ORDER BY listed_at DESC, name ASC LIMIT ?`;
+const LISTED_LIMIT = 100;
+
+function listedHtml(rows, hidden) {
+  if (!rows.length) return '';
+  const reasons = [...listingConfig.moderation.closeReasons, ...listingConfig.moderation.rejectReasons]
+    .map(([id, label]) => `<option value="${id}">${esc(label)}</option>`).join('');
+  return `<h2 style="margin-top:2rem">Listed now (${rows.length})</h2>
+<p class="muted">To take a listing down, pick a reason and add a private note if useful. Neither is shown on the site. Taken-down rows are deleted after ${LIMITS.closedRetentionDays} days.</p>
+${rows.map((row) => `<details class="card" style="margin-bottom:.6rem"><summary>${esc(row.name)} · ${esc(row.kind)} · ${esc(row.city)}, ${esc(row.province)}</summary>
+<form method="post" action="/listings/${esc(row.id)}">
+${hidden}
+<input type="hidden" name="op" value="status"><input type="hidden" name="status" value="closed">
+<label for="down-reason-${esc(row.id)}">Reason</label>
+<select id="down-reason-${esc(row.id)}" name="reason" required><option value="">Pick one</option>${reasons}</select>
+<label for="down-note-${esc(row.id)}" style="margin-top:.6rem">Private note (optional)</label>
+<textarea id="down-note-${esc(row.id)}" name="note" style="min-height:4rem" maxlength="${NOTE_LIMIT}"></textarea>
+<div class="actions"><button class="ghost" type="submit">Take down</button></div>
+</form></details>`).join('\n')}`;
+}
+
 const OUTCOME_TEXT = {
   listed: 'Listed. The reply with their link is below, waiting for you to send it.',
   needs_info: 'Marked needs info. The follow-up is below, waiting for you to send it.',
   rejected: 'Rejected. Nothing was sent.',
-  closed: 'Closed. Nothing was sent.',
+  closed: 'Closed or taken down. Nothing was sent.',
   sent: 'Reply sent.',
   already_sent: 'That reply was already sent.',
   discarded: 'Reply discarded. Nothing was sent.',
@@ -659,15 +705,19 @@ export async function handleListingsPage(request, env, deps = {}) {
       }, now);
     }
     const outcome = result.ok ? result.status : result.error;
-    await audit(db, { now, actor: 'person', action, id: idFromPath, outcome: String(outcome).slice(0, 40) });
+    // The reason code goes in the audit row. The private note does not.
+    await audit(db, { now, actor: 'person', action, id: idFromPath, outcome: String(outcome).slice(0, 40), detail: result.reason ? `reason:${result.reason}` : '' });
     banner = result.ok ? OUTCOME_TEXT[result.status] || 'Saved.' : `Not saved: ${result.error}.`;
   }
   const csrf = await issueCsrf(secret, CSRF_ID);
   const hidden = `<input type="hidden" name="exp" value="${esc(exp)}"><input type="hidden" name="sig" value="${esc(sig)}"><input type="hidden" name="csrf" value="${esc(csrf)}">`;
   const items = await listingQueue(db, { withPrivate: true });
+  const listedResult = await db.prepare(LISTED_SQL).bind(LISTED_LIMIT).all();
+  const listedRows = (listedResult && listedResult.results) || [];
   const today = now.toISOString().slice(0, 10);
   const body = `${banner ? `<p class="banner" role="status">${esc(banner)}</p>` : ''}
 <p class="muted">${items.length} waiting. Approve lists it on the site right away. Every reply waits for you to press send. Rejected and closed listings are deleted after ${LIMITS.closedRetentionDays} days. <a href="/listings?${linkQuery}">Reload</a></p>
-${items.length ? items.map((item) => itemHtml(item, hidden, today)).join('\n') : '<p class="card">Nothing waiting.</p>'}`;
+${items.length ? items.map((item) => itemHtml(item, hidden, today)).join('\n') : '<p class="card">Nothing waiting.</p>'}
+${listedHtml(listedRows, hidden)}`;
   return reviewPage(200, 'Listings queue', body, { 'set-cookie': csrfCookie(csrf) });
 }

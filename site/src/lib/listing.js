@@ -372,8 +372,22 @@ export function listingFlags(value) {
 export const LISTING_INSERT_SQL = `INSERT INTO listings (
   id, created_at, updated_at, kind, status, name, name_key, city, city_key, province,
   public_json, public_email, show_email, submitter_name, submitter_email, submitter_role,
-  newsletter_opt_in, adult_confirm, terms_confirm, risk_flags, ack_status, source
-) VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'listing')`;
+  newsletter_opt_in, newsletter_consent_at, newsletter_source, adult_confirm, terms_confirm,
+  risk_flags, ack_status, source
+) VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'listing')`;
+
+// Where a Coo's Letter consent came from, for the CASL record: the form and
+// the page path. The path comes from a same-origin Referer and is reduced to
+// a plain path. Anything else falls back to /submit/.
+export function consentSource(kind, request) {
+  let path = '/submit/';
+  try {
+    const here = new URL(request.url);
+    const from = new URL(request.headers.get('referer') || '');
+    if (from.host === here.host && /^\/[a-z0-9/_-]{0,80}$/.test(from.pathname)) path = from.pathname;
+  } catch { /* keep the default */ }
+  return `${kind === 'group' ? 'group' : 'performer'}-listing-form ${path}`;
+}
 
 export async function saveListing(db, row) {
   if (!db || typeof db.prepare !== 'function') {
@@ -397,6 +411,8 @@ export async function saveListing(db, row) {
     v.email,
     v.role,
     v.newsletter ? 1 : 0,
+    v.newsletter ? row.createdAt : '',
+    v.newsletter ? String(row.newsletterSource || `${v.kind}-listing-form /submit/`).slice(0, 120) : '',
     v.adultConfirm ? 1 : 0,
     v.termsConfirm ? 1 : 0,
     JSON.stringify(row.flags || []),
@@ -589,7 +605,13 @@ export async function handleListingRequest(request, deps = {}) {
   }
   const id = crypto.randomUUID();
   try {
-    await store.save({ id, createdAt: now.toISOString(), value: result.value, flags: listingFlags(result.value) });
+    await store.save({
+      id,
+      createdAt: now.toISOString(),
+      value: result.value,
+      flags: listingFlags(result.value),
+      newsletterSource: consentSource(kind, request),
+    });
   } catch (err) {
     const detail = err && err.code === 'not_configured' ? 'not_configured' : 'insert_failed';
     await note(store, request, { reason: 'store_failed', detail }, token);

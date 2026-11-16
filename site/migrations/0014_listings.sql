@@ -9,10 +9,23 @@
 -- public_json plus public_email when show_email = 1.
 --
 -- Private columns: submitter_name, submitter_email, submitter_role,
--- newsletter_opt_in, adult_confirm, terms_confirm, moderator_note, reply_draft.
+-- newsletter_opt_in, newsletter_consent_at, newsletter_source, adult_confirm,
+-- terms_confirm, status_reason, moderator_note, reply_draft.
 -- They are never returned by /api/performers and never copied into git.
 -- Rejected and closed rows are deleted 90 days after their last change by the
 -- inbound Worker's daily retention job (only when RETENTION_PURGE is "on").
+--
+-- Decisions: rejecting or closing a listing needs a reason code from
+-- data/listings.json (moderation.rejectReasons, or for a close also
+-- moderation.closeReasons) in status_reason, plus an optional private note in
+-- moderator_note. Both are private, never in public_json, and go with the row
+-- in the 90-day purge.
+--
+-- Coo's Letter: newsletter_opt_in is the unticked-by-default box. When it is
+-- ticked, newsletter_consent_at is the time the form was sent and
+-- newsletter_source is the form and page path, for example
+-- "performer-listing-form /submit/". There is no Kit call. If the person is
+-- never added to Kit by hand, the consent record goes with the row.
 --
 -- name_key and city_key are folded copies for the moderator's duplicate hint.
 -- reply_status tracks the one email a person may approve per step: the listed
@@ -41,6 +54,8 @@ CREATE TABLE IF NOT EXISTS listings (
   submitter_email TEXT NOT NULL,
   submitter_role TEXT NOT NULL DEFAULT '',
   newsletter_opt_in INTEGER NOT NULL DEFAULT 0 CHECK (newsletter_opt_in IN (0, 1)),
+  newsletter_consent_at TEXT NOT NULL DEFAULT '',
+  newsletter_source TEXT NOT NULL DEFAULT '',
   adult_confirm INTEGER NOT NULL DEFAULT 0 CHECK (adult_confirm IN (0, 1)),
   terms_confirm INTEGER NOT NULL DEFAULT 0 CHECK (terms_confirm IN (0, 1)),
   risk_flags TEXT NOT NULL DEFAULT '[]',

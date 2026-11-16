@@ -1,5 +1,5 @@
 {
-  "note": "Free self-listing for performers and for clubs or lessons groups. Field lists, limits, and copy live here so they are easy to change. Copy marked hemingway is Hemingway's final draft (Nov 15, 2026). Copy marked placeholder is short stand-in text waiting for Hemingway. Nothing here is personal data. Submissions are stored in the private intake database and nothing is shown until a person approves it.",
+  "note": "Free self-listing for performers and for clubs or lessons groups. Field lists, limits, and copy live here so they are easy to change. Copy blocks marked hemingway are Hemingway's final copy (Nov 15, 2026). Option labels and moderation labels are plain working labels. Nothing here is personal data. Submissions are stored in the private intake database and nothing is shown until a person approves it.",
   "limits": {
     "blurbWords": 50,
     "maxLinks": 3,
@@ -117,7 +117,12 @@
       ["duplicate", "Duplicate"],
       ["minor_safety", "Minor safety"],
       ["spam", "Spam"]
-    ]
+    ],
+    "closeReasons": [
+      ["removed_on_request", "Asked to be removed"],
+      ["no_reply", "No reply to our question"]
+    ],
+    "noLinkHint": "No link to check. If you can't verify this act, use Needs info rather than Listed."
   },
   "copy": {
     "navLabel": "Performers",
@@ -130,8 +135,8 @@
       "empty": "No performers listed yet. Be the first. It's free and only takes a few minutes.",
       "smallPrint": "Listings are sent in by the performers themselves. Please contact them directly to book. The Celtic Coo isn't an agency and doesn't charge a fee or commission.",
       "loading": "Loading performers…",
-      "noScript": "Scripts are off in this browser, so the list cannot load. You can still ask us to find a performer on the booking page.",
-      "loadFailed": "The list did not load just now. Please try again in a minute.",
+      "noScript": "Scripts are turned off in this browser, so the list can't load. You can still ask us to find a performer on the booking page.",
+      "loadFailed": "The list didn't load. Please try again in a minute.",
       "filterType": "What they do",
       "filterProvince": "Province or territory",
       "filterAll": "All",
@@ -149,10 +154,10 @@
       "link": "See performers"
     },
     "submitIntro": {
-      "source": "placeholder",
-      "performersCard": "Pipers, drummers, dancers, singers, bands and more can list themselves for free.",
+      "source": "hemingway",
+      "performersCard": "Pipers, drummers, dancers, singers, bands and other performers can list themselves for free.",
       "performersButton": "List yourself as a performer",
-      "groupsCard": "Run a band, dance school, society, session or class? List your group for free.",
+      "groupsCard": "Run a pipe band, dance school, society, session or class? List your group for free.",
       "groupsButton": "List your club or lessons"
     },
     "performerForm": {
@@ -165,7 +170,7 @@
       "actsLabel": "What you do",
       "actsHelp": "Pick all that fit.",
       "baseLabel": "Where you're based",
-      "baseHelp": "City and province or territory, like Okotoks, Alberta.",
+      "baseHelp": "Your home base, like Okotoks, Alberta.",
       "cityLabel": "City or town",
       "provinceLabel": "Province or territory",
       "travelLabel": "How far you'll travel",
@@ -174,37 +179,37 @@
       "emailLabel": "Booking contact email",
       "emailHelp": "We keep this private by default. We'll only use it to reach you about your listing, unless you tick the box below.",
       "showEmailLabel": "Show this email on my listing so people can contact me to book.",
-      "linksLabel": "Website or social link (optional)",
-      "linksHelp": "One link is plenty.",
-      "mediaLabel": "Photo (optional)",
-      "mediaHelp": "One landscape photo, JPG or PNG. Schools and bands with junior members, please send your crest or logo instead.",
+      "linksLabel": "Website or social links (optional)",
+      "linksHelp": "Up to 3 links, like your website, Facebook page or YouTube channel.",
+      "mediaLabel": "Photo or video link (optional)",
+      "mediaHelp": "A link to one landscape photo or a video of you performing. Schools and bands with junior members, please link to your crest or logo instead.",
       "imageRights": "Please only send a photo you took or have permission to use. If anyone else is clearly in it, make sure they're okay with it being online. No photos where anyone under 18 can be identified.",
-      "adultConfirm": "I'm 18 or older, and I'm allowed to share this information and photo.",
+      "adultConfirm": "I'm 18 or older, and I'm allowed to share this information and the photo or video I've linked.",
       "termsConfirm": "I understand this listing is free and that The Celtic Coo may edit it for length or remove it.",
       "button": "Send my listing",
       "success": "Thanks, we've got it. We'll look over your listing and aim to have it up on the Performers page within a few days. If we have a question, we'll email you. If you want something changed later, just reply to our email."
     },
     "performerExtra": {
-      "source": "placeholder",
+      "source": "hemingway",
       "mediaLinkNote": "Paste a link to a photo or video you own, like a page on your website or a public post. We can't take file uploads yet.",
       "sizeLabel": "Solo or group",
       "servicesLabel": "What you're booked for (optional)",
       "servicesHelp": "Pick any that fit.",
       "associationLabel": "Association or grade (optional)",
-      "associationHelp": "For example, a pipe band grade or a dance association.",
+      "associationHelp": "For example, your pipe band's grade or your dance association.",
       "extraLinksLabel": "Another link (optional)",
       "aboutYouHeading": "About you (private)",
-      "aboutYouHelp": "We never show this on the site.",
+      "aboutYouHelp": "This part is never shown on the site.",
       "submitterNameLabel": "Your name",
       "roleLabel": "How you're connected to this act",
-      "newsletterLabel": "Yes, send me The Coo's Letter, the free email about Celtic events in Canada, every two weeks. I can unsubscribe at any time.",
-      "privacyNote": "We keep your listing details in a private database until we review them. Only the public parts show on the site after we approve it. Your name, and your email unless you ask, stay private."
+      "newsletterLabel": "Yes, send me The Coo's Letter, the free email about Celtic events in Canada, every two weeks. I can unsubscribe any time.",
+      "privacyNote": "We keep what you send in a private database until a person reviews it. Only the public listing details go on the site. Your name stays private, and so does your email unless you tick the box to show it."
     },
     "groupForm": {
-      "source": "placeholder",
+      "source": "hemingway",
       "heading": "List your club or lessons",
-      "leadIn": "Bands, dance schools, societies, sessions and classes can list for free. We'll check it and add it to Clubs & lessons.",
-      "rule": "We list organizations only. Please leave out the names of members and students.",
+      "leadIn": "Pipe bands, dance schools, societies, sessions and classes can list for free. We'll check your listing and add it to Clubs & lessons.",
+      "rule": "We list groups, not people. Please leave out the names of members and students.",
       "nameLabel": "Group name",
       "kindLabel": "Type of group",
       "cityLabel": "City or town",
@@ -220,27 +225,27 @@
       "scheduleLabel": "When you meet (optional)",
       "scheduleHelp": "For example, Tuesday evenings, September to June.",
       "contactLabel": "Public contact email (optional)",
-      "contactHelp": "Use the group's own address, like info@ your club. Not a personal email.",
+      "contactHelp": "Use the group's own address, like info@yourclub.ca, not a personal email.",
       "aboutYouHeading": "About you (private)",
-      "aboutYouHelp": "We never show this on the site.",
+      "aboutYouHelp": "This part is never shown on the site.",
       "submitterNameLabel": "Your name",
       "submitterEmailLabel": "Your email",
       "roleLabel": "Your role in the group",
       "adultConfirm": "I'm 18 or older, and I'm allowed to share this information for the group.",
       "termsConfirm": "I understand this listing is free and that The Celtic Coo may edit it or remove it.",
-      "newsletterLabel": "Yes, send me The Coo's Letter, the free email about Celtic events in Canada, every two weeks. I can unsubscribe at any time.",
+      "newsletterLabel": "Yes, send me The Coo's Letter, the free email about Celtic events in Canada, every two weeks. I can unsubscribe any time.",
       "button": "Send our listing",
       "success": "Thanks, we've got it. We'll look over your listing and aim to have it up within a few days. If we have a question, we'll email you.",
-      "privacyNote": "We keep this in a private database until we review it. Your name and email stay private. The group's public contact email, if you add one, shows on the listing."
+      "privacyNote": "We keep what you send in a private database until a person reviews it. Your name and email stay private. If you add a public contact email for the group, it shows on the listing."
     },
     "form": {
-      "source": "placeholder",
-      "turnstileLabel": "Confirm you are a person",
-      "turnstileOff": "The person check is not set up on this copy of the site, so the form may not send. You can email {email} instead.",
+      "source": "hemingway",
+      "turnstileLabel": "Confirm you're a person",
+      "turnstileOff": "The person check isn't working on this page right now, so the form may not send. You can email {email} instead.",
       "sending": "Sending…",
-      "fallback": "We couldn't send that just now. Please try again, or email {email}.",
-      "errorsHeading": "A few things still need a look.",
-      "paused": "Listings are paused for a short while. Please try again later, or email {email}.",
+      "fallback": "That didn't send. Please try again, or email {email}.",
+      "errorsHeading": "A few things need a second look.",
+      "paused": "Listings are paused for now. Please try again later, or email {email}.",
       "tooMany": "We've had a lot of listings today. Please try again tomorrow, or email {email}."
     },
     "errors": {
@@ -250,7 +255,7 @@
       "city": "Add your city or town.",
       "province": "Pick a province or territory.",
       "travel": "Pick how far you'll travel.",
-      "services": "Pick from the list.",
+      "services": "Pick from the list, or leave it blank.",
       "blurb": "Add a short description.",
       "blurb_words": "Keep the description to 50 words or less.",
       "email": "Add an email address we can reach you at.",
@@ -260,30 +265,31 @@
       "submitter_name": "Add your name.",
       "role": "Pick how you're connected.",
       "adult_confirm": "Please confirm you're 18 or older and allowed to share this.",
-      "terms_confirm": "Please tick the box about free listings.",
+      "terms_confirm": "Please tick the box to say you understand the listing terms.",
       "kind": "Pick a type of group.",
       "website": "Use your group's full web address, starting with https://.",
       "lessons": "Say whether you offer lessons.",
       "lesson_ages": "Pick from the list.",
       "text": "Keep this short.",
-      "contact": "Use a full email address for the group.",
+      "contact": "Add the group's full email address, like info@yourclub.ca.",
       "contact_private": "Please don't add phone numbers or personal contact details here.",
-      "turnstile": "Please confirm you are a person, then send again."
+      "turnstile": "Please confirm you're a person, then send again.",
+      "source": "hemingway"
     },
     "replies": {
-      "source": "placeholder",
+      "source": "hemingway",
       "ackSubject": "We got your listing",
-      "ack": "Thanks, we've got your listing for {name}. A person will look it over, usually within a few days. This is an automatic receipt.",
+      "ack": "Hi there,\n\nThanks, we've got your listing for {name}. A person will look it over, usually within a few days, and we'll email you when it's up.\n\nThis is an automatic receipt, but you can reply to it if you need us.\n\nCheers,\nThe Celtic Coo",
       "listedSubject": "Your listing is up on The Celtic Coo",
-      "listed": "Hi there,\n\nYour listing for {name} is now up: {link}\n\nIf you want something changed or removed later, just reply to this email.\n\nCheers,\nThe Celtic Coo",
+      "listed": "Hi there,\n\nGood news. Your listing for {name} is now up on The Celtic Coo: {link}\n\nIf you want something changed or taken down later, just reply to this email.\n\nCheers,\nThe Celtic Coo",
       "needsInfoSubject": "A quick question about your listing",
-      "needsInfo": "Hi there,\n\nThanks for sending in {name}. Before we add it, we have one question:\n\n{question}\n\nJust reply to this email. If we don't hear back in 14 days, we'll close this one, and you're welcome to send it in again later.\n\nCheers,\nThe Celtic Coo"
+      "needsInfo": "Hi there,\n\nThanks for sending in {name}. Before we add it, we have one question:\n\n{question}\n\nJust reply to this email. If we don't hear back within 14 days, we'll close this one, and you're welcome to send it in again any time.\n\nCheers,\nThe Celtic Coo"
     },
     "inquiryReply": {
       "source": "hemingway",
       "note": "Free-listing reply for when a performer emails us. A person sends it after review. Nothing sends on its own.",
       "subject": "Thanks for reaching out",
-      "body": "Hi there,\n\nThanks for getting in touch. We'd be happy to list you on The Celtic Coo's Performers page. It's free, with no fees or paid tiers.\n\nThe quickest way is our form at celticcoo.ca/submit. If you'd rather reply here, just send:\n\n- your performer or group name\n- what you do (pipes, fiddle, dance and so on)\n- where you're based and how far you'll travel\n- a short blurb, 50 words or less\n- a booking email (we keep it private unless you'd like it shown on your listing)\n- one website or social link, if you have one\n- one landscape photo you own the rights to, if you have one (please, no photos where kids can be identified)\n\nListings come from adults, 18 and older. Schools and bands with junior members can list under the school or band name, with a crest or logo as the photo. We may trim your blurb a little for length, and we'll aim to have it up within a few days.\n\nCheers,\nThe Celtic Coo"
+      "body": "Hi there,\n\nThanks for getting in touch. We'd be happy to list you on The Celtic Coo's Performers page. It's free, with no fees or paid tiers.\n\nThe quickest way is our form at celticcoo.ca/submit. If you'd rather reply here, just send:\n\n- your performer or group name\n- what you do (pipes, fiddle, dance and so on)\n- where you're based and how far you'll travel\n- a short blurb, 50 words or less\n- a booking email (we keep it private unless you'd like it shown on your listing)\n- up to 3 website or social links, if you have them\n- a link to one landscape photo or video you own the rights to, if you have one (please, no photos where kids can be identified)\n\nListings come from adults, 18 and older. Schools and bands with junior members can list under the school or band name, with a crest or logo as the photo. We may trim your blurb a little for length, and we'll aim to have it up within a few days.\n\nCheers,\nThe Celtic Coo"
     }
   }
 }
