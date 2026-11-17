@@ -1,5 +1,951 @@
 {
   "schema": 1,
-  "checked_on": null,
-  "entries": []
+  "checked_on": "2026-11-16",
+  "entries": [
+    {
+      "id": "78th-fraser-highlanders-fort-calgary-garrison",
+      "label": "78th Fraser Highlanders - Fort Calgary Garrison",
+      "url": "https://78fraserscalgary.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "78th-fraser-highlanders-fort-calgary-garrison-youth-squad",
+      "label": "78th Fraser Highlanders Fort Calgary Garrison Youth Squad",
+      "url": "https://78fraserscalgary.ca/youth-squad",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "78th-fraser-highlanders-garnison-st-andrews-de-quebec",
+      "label": "78th Fraser Highlanders, Garnison St-Andrews de Québec",
+      "url": "https://www.78thfraser.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "airdrie-scots-pipes-and-drums",
+      "label": "Airdrie Scots Pipes and Drums",
+      "url": "https://airdriescots.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "alberta-highland-dancing-association",
+      "label": "Alberta Highland Dancing Association",
+      "url": "https://ahda.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "alberta-scotch-society",
+      "label": "Alberta Scotch Society",
+      "url": "https://www.albertascotchsociety.com/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "alberta-scottish-athletic-association-asaa",
+      "label": "Alberta Scottish Athletic Association (ASAA)",
+      "url": "https://www.heavyevents.ab.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "alberta-society-of-pipers-and-drummers-aspd",
+      "label": "Alberta Society of Pipers & Drummers (ASPD)",
+      "url": "https://www.aspd.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "antigonish-highland-society",
+      "label": "Antigonish Highland Society",
+      "url": "https://antigonishhighlandgames.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "atlantic-canada-pipe-band-association",
+      "label": "Atlantic Canada Pipe Band Association",
+      "url": "https://acpba.org/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "baile-nan-gaidheal-highland-village-museum",
+      "label": "Baile nan Gàidheal / Highland Village Museum",
+      "url": "https://highlandvillage.novascotia.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "bc-pipers-association",
+      "label": "BC Pipers' Association",
+      "url": "https://bcpipers.org/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "calgary-burns-club",
+      "label": "Calgary Burns Club",
+      "url": "https://www.calgaryburnsclub.com/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "calgary-highland-dancing-association",
+      "label": "Calgary Highland Dancing Association",
+      "url": "https://www.chda.ab.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "calgary-police-service-pipe-band",
+      "label": "Calgary Police Service Pipe Band",
+      "url": "https://www.cpspipeband.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "calgary-school-of-highland-dance",
+      "label": "Calgary School of Highland Dance",
+      "url": "https://www.highlanddance.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "calgary-welsh-society",
+      "label": "Calgary Welsh Society",
+      "url": "https://calgarywelshsociety.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "canadian-scottish-athletic-federation",
+      "label": "Canadian Scottish Athletic Federation",
+      "url": "https://www.csaf.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "celtic-session-at-o-byrne-s-downtown",
+      "label": "Celtic session at O'Byrne's Downtown",
+      "url": "https://downtown.obyrnes.com/live-music-downtown-edmonton",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "clan-baird-society-canada",
+      "label": "Clan Baird Society - Canada",
+      "url": "https://www.clanbaird.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "clan-campbell-society-north-america",
+      "label": "Clan Campbell Society (North America)",
+      "url": "https://www.ccsna.org/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "clan-chisholm-society-canada-branch",
+      "label": "Clan Chisholm Society Canada Branch",
+      "url": "https://www.clanchisholmsociety.org/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "clan-colquhoun-of-canada",
+      "label": "Clan Colquhoun of Canada",
+      "url": "https://www.clancolquhoun.com/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "clan-donald-canada",
+      "label": "Clan Donald Canada",
+      "url": "http://clandonaldcanada.net/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "clan-fraser-society-of-north-america",
+      "label": "Clan Fraser Society of North America",
+      "url": "https://cfsna.com/",
+      "last_checked": "2026-11-16",
+      "last_status": "redirect",
+      "final_url": "https://www.clanfrasersna.org/",
+      "detail": "permanent redirect"
+    },
+    {
+      "id": "clan-grant-society-canada",
+      "label": "Clan Grant Society Canada",
+      "url": "https://www.clangrantcanada.com/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "clan-gregor-society-canada-chapter",
+      "label": "Clan Gregor Society Canada Chapter",
+      "url": "https://www.mapleleafmacgregor.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "clan-hunter-association-canada",
+      "label": "Clan Hunter Association, Canada",
+      "url": "https://www.clanhuntercanada.com/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "clan-logan-society-of-canada",
+      "label": "Clan Logan Society of Canada",
+      "url": "https://www.clanlogan.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "clan-macbeth",
+      "label": "Clan MacBeth",
+      "url": "https://www.clanmacbeth.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "clan-mackenzie-society-of-canada",
+      "label": "Clan MacKenzie Society of Canada",
+      "url": "https://www.clanmackenziecanada.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "clan-maclennan-canada",
+      "label": "Clan MacLennan Canada",
+      "url": "https://www.clanmaclennan-worldwide.com/canada",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "clan-macleod-societies-of-canada",
+      "label": "Clan MacLeod Societies of Canada",
+      "url": "https://www.clanmacleod-canada.com/",
+      "last_checked": "2026-11-16",
+      "last_status": "redirect",
+      "final_url": "https://clanmacleod-canada.com/",
+      "detail": "permanent redirect"
+    },
+    {
+      "id": "clan-macneil-in-canada",
+      "label": "Clan MacNeil in Canada",
+      "url": "https://www.clanmacneilincanada.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "clan-macpherson-association-canadian-branch",
+      "label": "Clan MacPherson Association Canadian Branch",
+      "url": "https://www.clan-macpherson.org/canada",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "clan-macrae-society-of-canada",
+      "label": "Clan MacRae Society of Canada",
+      "url": "https://www.clanmacraecanada.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "redirect",
+      "final_url": "https://clanmacraecanada.ca/",
+      "detail": "permanent redirect"
+    },
+    {
+      "id": "clan-munro-association-of-canada",
+      "label": "Clan Munro Association of Canada",
+      "url": "https://www.clanmunro.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "redirect",
+      "final_url": "http://clanmunroassociation.ca/",
+      "detail": "permanent redirect"
+    },
+    {
+      "id": "clan-sinclair-association-canada",
+      "label": "Clan Sinclair Association (Canada)",
+      "url": "https://www.clansinclair.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "colaisde-na-gaidhlig-the-gaelic-college",
+      "label": "Colaisde na Gàidhlig / The Gaelic College",
+      "url": "https://gaeliccollege.edu/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "college-of-piping-and-celtic-performing-arts-of-canada",
+      "label": "College of Piping and Celtic Performing Arts of Canada",
+      "url": "https://collegeofpiping.com/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "comann-luchd-ionnsachaidh-thoronto-toronto-gaelic-learners-association",
+      "label": "Comann Luchd-ionnsachaidh Thoronto (Toronto Gaelic Learners Association)",
+      "url": "https://torontogaelic.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "comhairle-na-gaidhlig-ns-gaelic-council",
+      "label": "Comhairle na Gàidhlig (NS Gaelic Council)",
+      "url": "https://www.gaelic.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "comunn-gaidhlig-thoronto-gaelic-society-of-toronto",
+      "label": "Comunn Gàidhlig Thoronto (Gaelic Society of Toronto)",
+      "url": "https://www.gaelicsocietytoronto.com/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "edmonton-highland-dancing-association",
+      "label": "Edmonton Highland Dancing Association",
+      "url": "https://ehda.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "edmonton-irish-club-jam-session",
+      "label": "Edmonton Irish Club jam session",
+      "url": "https://edmontonirishclub.ca/jam-session",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "edmonton-irish-sports-and-social-society",
+      "label": "Edmonton Irish Sports and Social Society",
+      "url": "https://edmontonirishclub.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "edmonton-police-service-pipes-and-drums",
+      "label": "Edmonton Police Service Pipes & Drums",
+      "url": "https://www.epspipeband.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "edmonton-scottish-society",
+      "label": "Edmonton Scottish Society",
+      "url": "https://www.edmontonscottishsociety.org/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "edmonton-youth-pipe-band",
+      "label": "Edmonton Youth Pipe Band",
+      "url": "https://www.eypb.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "elliot-clan-society-of-canada",
+      "label": "Elliot Clan Society of Canada",
+      "url": "https://www.elliotclan.com/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "flagstaff-scottish-club",
+      "label": "Flagstaff Scottish Club",
+      "url": "https://www.flagstaffscottishclub.com/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "foothills-caledonia-youth-pipe-band",
+      "label": "Foothills Caledonia Youth Pipe Band",
+      "url": "https://www.fcypb.org/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "gaelic-language-program-vancouver-scottish-cultural-societies",
+      "label": "Gaelic language program - Vancouver Scottish Cultural Societies",
+      "url": "https://vancouverscottish.ca/learn-participate/gaelic-language/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "gaelic-language-society-of-halifax",
+      "label": "Gaelic Language Society of Halifax",
+      "url": "https://halifaxgaelic.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "glengarry-pipe-band",
+      "label": "Glengarry Pipe Band",
+      "url": "https://www.glengarrypipeband.com/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "greater-moncton-scottish-association",
+      "label": "Greater Moncton Scottish Association",
+      "url": "https://greatermonctonscots.org/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "guelph-pipe-band",
+      "label": "Guelph Pipe Band",
+      "url": "https://guelphpipeband.com/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "halifax-citadel-society-78th-highlanders-living-history",
+      "label": "Halifax Citadel Society (78th Highlanders living history)",
+      "url": "https://www.halifaxcitadel.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "irish-cultural-society-of-calgary",
+      "label": "Irish Cultural Society of Calgary",
+      "url": "https://www.calgaryics.org/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "irish-cultural-society-trad-session-at-hickey-s",
+      "label": "Irish Cultural Society trad session at Hickey's",
+      "url": "https://www.calgaryics.org/traditional-irish-music-sessions/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "irish-trad-session-at-the-nonsuch",
+      "label": "Irish trad session at The Nonsuch",
+      "url": "https://jaythefiddler.com/index.php/category/irish-session-edmonton/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "macfie-clan-society-in-canada",
+      "label": "MacFie Clan Society in Canada",
+      "url": "https://macfieclancanada.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "medicine-hat-burns-club",
+      "label": "Medicine Hat Burns Club",
+      "url": "https://www.mhburnsclub.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "new-brunswick-scottish-cultural-association",
+      "label": "New Brunswick Scottish Cultural Association",
+      "url": "https://www.nbscots.com/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "north-stratton-pipe-band",
+      "label": "North Stratton Pipe Band",
+      "url": "https://www.northstratton.com/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "pipers-and-pipe-band-society-of-ontario-ppbso",
+      "label": "Pipers' and Pipe Band Society of Ontario (PPBSO)",
+      "url": "https://www.pipebandsontario.org/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "prairie-pipe-band-association-of-manitoba",
+      "label": "Prairie Pipe Band Association of Manitoba",
+      "url": "https://www.ppbam.org/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "red-deer-and-district-pipe-band",
+      "label": "Red Deer & District Pipe Band",
+      "url": "https://www.reddeerdistrictpipeband.com/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "rocky-mountain-pipe-band",
+      "label": "Rocky Mountain Pipe Band",
+      "url": "https://rmpb.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "rscds-calgary-branch",
+      "label": "RSCDS Calgary Branch",
+      "url": "https://rscdscalgary.org/calgarybranch/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "rscds-edmonton-edmonton-caledonian-branch",
+      "label": "RSCDS Edmonton (Edmonton Caledonian Branch)",
+      "url": "https://danceeccds.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "rscds-montreal",
+      "label": "RSCDS Montréal",
+      "url": "https://www.rscdsmontreal.org/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "rscds-nova-scotia-branch",
+      "label": "RSCDS Nova Scotia Branch",
+      "url": "http://www.rscdsnovascotia.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "rscds-ottawa",
+      "label": "RSCDS Ottawa",
+      "url": "https://www.rscdsottawa.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "rscds-toronto",
+      "label": "RSCDS Toronto",
+      "url": "https://dancescottish.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "rscds-vancouver-branch",
+      "label": "RSCDS Vancouver Branch",
+      "url": "https://rscdsvancouver.org/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "rscds-winnipeg-branch",
+      "label": "RSCDS Winnipeg Branch",
+      "url": "http://www.rscdswinnipeg.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "saskatchewan-pipe-band-association",
+      "label": "Saskatchewan Pipe Band Association",
+      "url": "https://www.saskpipebands.org/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "scotdance-british-columbia",
+      "label": "ScotDance British Columbia",
+      "url": "https://www.scotdancebc.com/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "scotdance-canada",
+      "label": "ScotDance Canada",
+      "url": "https://scotdance.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "scotdance-new-brunswick",
+      "label": "ScotDance New Brunswick",
+      "url": "https://www.scotdancenb.com/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "scotdance-nova-scotia",
+      "label": "ScotDance Nova Scotia",
+      "url": "https://www.scotdancenovascotia.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "scotdance-ontario",
+      "label": "ScotDance Ontario",
+      "url": "https://www.scotdanceontario.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "scotdance-saskatchewan",
+      "label": "ScotDance Saskatchewan",
+      "url": "https://scotdancesaskatchewan.com/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "scots-of-canada-clans-and-scottish-societies-of-canada",
+      "label": "Scots of Canada (Clans and Scottish Societies of Canada)",
+      "url": "https://www.scotscanada.ca/en/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "scottish-studies-foundation",
+      "label": "Scottish Studies Foundation",
+      "url": "https://www.scottishstudies.com/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "ship-hector-society",
+      "label": "Ship Hector Society",
+      "url": "https://www.shiphectorcampaign.com/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "simon-fraser-university-pipe-band",
+      "label": "Simon Fraser University Pipe Band",
+      "url": "https://www.sfupipeband.com/",
+      "last_checked": "2026-11-16",
+      "last_status": "redirect",
+      "final_url": "https://sfupipeband.com/",
+      "detail": "permanent redirect"
+    },
+    {
+      "id": "slainte-social-club",
+      "label": "Sláinte Social Club",
+      "url": "https://www.slaintesocialclub.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "st-andrew-caledonian-society-of-calgary",
+      "label": "St. Andrew-Caledonian Society of Calgary",
+      "url": "https://standrewcaledonian.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "st-andrew-s-and-caledonian-society-of-the-city-of-vancouver",
+      "label": "St. Andrew's and Caledonian Society of the City of Vancouver",
+      "url": "https://www.standrewsvancouver.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "st-andrew-s-society-of-montreal",
+      "label": "St. Andrew's Society of Montreal",
+      "url": "https://www.standrews.qc.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "st-andrew-s-society-of-toronto",
+      "label": "St. Andrew's Society of Toronto",
+      "url": "https://standrewstoronto.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "st-andrew-s-society-of-winnipeg",
+      "label": "St. Andrew's Society of Winnipeg",
+      "url": "https://www.standrewssocietywinnipeg.com/home",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "the-78th-fraser-highlanders-regimental-hq",
+      "label": "The 78th Fraser Highlanders (Regimental HQ)",
+      "url": "https://78thfrasers.org/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "the-commons-scotch-whisky-society",
+      "label": "The Commons Scotch Whisky Society",
+      "url": "https://www.commonswhisky.club/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "the-scotch-malt-whisky-society-of-canada",
+      "label": "The Scotch Malt Whisky Society of Canada",
+      "url": "https://www.smws.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "the-scottish-society-of-ottawa",
+      "label": "The Scottish Society of Ottawa",
+      "url": "https://ottscot.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "toronto-whisky-society",
+      "label": "Toronto Whisky Society",
+      "url": "https://torontowhiskysociety.ca/home/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "trad-session-at-hynes-irish-pub",
+      "label": "Trad session at Hynes Irish Pub",
+      "url": "https://www.hynesirishpub.com/events-1",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "trad-sessions-at-noonan-s-pub",
+      "label": "Trad sessions at Noonan's Pub",
+      "url": "https://noonanspub.ca/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "vancouver-island-scottish-throwing-association-vista",
+      "label": "Vancouver Island Scottish Throwing Association (VISTA)",
+      "url": "https://www.csaf.ca/page/contact-us",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "vancouver-scottish-cultural-centre-vancouver-scottish-cultural-societies",
+      "label": "Vancouver Scottish Cultural Centre / Vancouver Scottish Cultural Societies",
+      "url": "https://scottishculturalcentre.com/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "west-coast-whisky-society",
+      "label": "West Coast Whisky Society",
+      "url": "https://www.wcws.ca/home.php",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    },
+    {
+      "id": "york-garrison-78th-fraser-highlanders",
+      "label": "York Garrison, 78th Fraser Highlanders",
+      "url": "https://yorkgarrison.com/about-york-garrison/",
+      "last_checked": "2026-11-16",
+      "last_status": "ok",
+      "final_url": null,
+      "detail": null
+    }
+  ]
 }
