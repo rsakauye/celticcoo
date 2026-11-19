@@ -25,6 +25,7 @@ import {
   wordCount,
 } from '../src/lib/listing.js';
 import { verifyTurnstile } from '../src/lib/intake.js';
+import { SLOTS, performerCardHtml, renderPerformersPage, countText } from '../src/lib/performerCards.js';
 import { NAV_GROUPS } from '../src/lib/nav.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -460,13 +461,74 @@ test('the directory shows only listed performers and never a private field', asy
   assert.equal(nope.status, 405);
 });
 
-test('the directory page builds cards with textContent, has an empty state, and links back to the form', () => {
+test('the directory page ships filters and the empty state in the first HTML, with no loading line or client fetch', () => {
   const page = readFileSync(join(site, 'src/pages/performers/index.astro'), 'utf8');
   assert.doesNotMatch(page, /\.innerHTML\s*=|insertAdjacentHTML|set:html=\{p\./);
-  assert.match(page, /nofollow ugc noopener/);
+  assert.doesNotMatch(page, /fetch\(|C\.loading/);
   assert.match(page, /C\.empty/);
   assert.match(page, /submit\/#performers/);
-  assert.match(page, /api\/performers/);
+  assert.doesNotMatch(page, /id="pf-filters"[^>]*hidden/);
+  for (const slot of [SLOTS.list, SLOTS.count]) assert.ok(page.includes(slot), slot);
+  assert.ok(page.includes(SLOTS.emptyOpen));
+  assert.ok(page.includes(SLOTS.statusOpen));
+  assert.equal(page.split(SLOTS.off).length - 1, 2);
+  const fn = readFileSync(join(site, 'functions/performers/index.js'), 'utf8');
+  assert.match(fn, /listedPerformers/);
+  assert.match(fn, /renderPerformersPage/);
+});
+
+test('server-rendered performer cards escape everything and keep links safe', () => {
+  const card = performerCardHtml({
+    name: '<img src=x onerror=alert(1)>', acts: ['solo-piper', 'nope'], size: 'solo', city: 'Okotoks"', province: 'AB',
+    blurb: '<script>alert(1)</script>', links: ['javascript:alert(1)', 'https://example.com/a?b=<c>'], media: 'data:text/html,hi',
+    email: 'x@example.com', travel: 'local', services: ['weddings'], association: '',
+  });
+  assert.doesNotMatch(card, /<img|<script|javascript:|data:text/);
+  assert.match(card, /&lt;img src=x onerror=alert\(1\)&gt;/);
+  assert.match(card, /data-acts="solo-piper"/);
+  assert.match(card, /rel="nofollow ugc noopener"/);
+  assert.match(card, /href="https:\/\/example\.com\/a\?b=%3Cc%3E"/);
+  assert.match(card, /mailto:x@example\.com/);
+  assert.match(card, /\/book\/\?act=%3Cimg/);
+  assert.doesNotMatch(performerCardHtml({ name: 'A', email: 'bad"@x.com' }), /mailto/);
+});
+
+test('renderPerformersPage fills the slots, keeps the empty state, and shows a retry note on a failed read', () => {
+  const html = ['<select id="pf-act"', SLOTS.off, '>', SLOTS.count, '<div id="pf-list">', SLOTS.list, '</div>', SLOTS.emptyOpen, '</div>', SLOTS.statusOpen, '</p>'].join('');
+  assert.equal(renderPerformersPage(html, []), html);
+  const full = renderPerformersPage(html, [{ name: 'One', acts: ['drummer'], province: 'AB' }, { name: 'Two', province: 'NS' }]);
+  assert.equal((full.match(/<article/g) || []).length, 2);
+  assert.match(full, /2 performers/);
+  assert.match(full, /id="pf-empty" hidden>/);
+  assert.doesNotMatch(full, /disabled|pf:list|pf:count/);
+  const failed = renderPerformersPage(html, null);
+  assert.match(failed, /id="pf-empty" hidden>/);
+  assert.match(failed, /id="pf-status" role="status">/);
+  assert.match(failed, /disabled/);
+  assert.equal(countText(1), '1 performer');
+});
+
+test('the /performers Function serves the static page when there is no database and fills it when there is', async () => {
+  const { handlePerformersPage } = await import('../functions/performers/index.js');
+  const staticHtml = `<html>${SLOTS.count}${SLOTS.list}${SLOTS.emptyOpen}</div></html>`;
+  const next = () => Promise.resolve(new Response(staticHtml, { headers: { 'content-type': 'text/html; charset=utf-8' } }));
+  const bare = await handlePerformersPage({ request: new Request('https://celticcoo.ca/performers/'), env: {}, next });
+  assert.equal(await bare.text(), staticHtml);
+  const db = d1(migrated());
+  const store = listingStoreFromEnv({ INTAKE_DB: db });
+  const value = validateListing(performer({ name: 'Shown Piper', email: 'p@example.com' })).value;
+  await store.save({ id: '00000000-0000-4000-8000-000000000031', createdAt: NOW.toISOString(), value, flags: [] });
+  db.raw.prepare("UPDATE listings SET status = 'listed'").run();
+  const res = await handlePerformersPage({ request: new Request('https://celticcoo.ca/performers/'), env: { INTAKE_DB: db }, next });
+  const text = await res.text();
+  assert.match(text, /Shown Piper/);
+  assert.match(text, /1 performer/);
+  assert.doesNotMatch(text, /p@example\.com|Sample Submitter/);
+  assert.match(res.headers.get('cache-control'), /max-age=300/);
+  const broken = { prepare() { throw new Error('down'); } };
+  const failed = await handlePerformersPage({ request: new Request('https://celticcoo.ca/performers/'), env: { INTAKE_DB: broken }, next });
+  assert.equal(failed.headers.get('cache-control'), 'no-store');
+  assert.match(await failed.text(), /id="pf-empty" hidden>/);
 });
 
 test('nav, /book, /submit, and /groups point at the new pages and sections', () => {

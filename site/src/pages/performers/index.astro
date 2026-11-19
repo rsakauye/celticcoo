@@ -1,9 +1,11 @@
 ---
 // Directory of performers who listed themselves for free.
-// The page is static. The list loads from /api/performers, which returns only
-// rows a person approved (status listed) and only their public fields.
-// Cards are built with textContent, never innerHTML, because the text came
-// from the public. Links get rel="nofollow ugc noopener".
+// The page builds as static HTML with the filters, an empty list, and the
+// "be the first" card already in place, so nothing jumps on first paint.
+// functions/performers/index.js fills the list on the server from the listed
+// rows in D1 (the same rows /api/performers returns), using the slots marked
+// below (see src/lib/performerCards.js). There is no loading line and no
+// client fetch. The inline script only filters cards that are already there.
 import Base from '../../layouts/Base.astro';
 import { COPY, listingConfig } from '../../lib/listing.js';
 import { u } from '../../lib/site.js';
@@ -11,128 +13,41 @@ import { u } from '../../lib/site.js';
 const C = COPY.performersPage;
 const acts = listingConfig.performer.acts;
 const provinces = listingConfig.provinces;
-const labels = JSON.stringify({
-  acts: Object.fromEntries(acts),
-  sizes: Object.fromEntries(listingConfig.performer.sizes),
-  travel: Object.fromEntries(listingConfig.performer.travel),
-  services: Object.fromEntries(listingConfig.performer.services),
-  provinces: Object.fromEntries(provinces),
-  askLabel: C.askLabel,
-  emailLabel: C.emailLabel,
-  mediaLabel: C.mediaLabel,
-  travelLabel: C.travelLabel,
-  servicesLabel: C.servicesLabel,
-  associationLabel: C.associationLabel,
-  loadFailed: C.loadFailed,
-  noMatch: C.noMatch,
-  bookPath: u('book/'),
-  api: u('api/performers'),
-}).replace(/</g, '\\u003c');
 ---
 <Base title={C.title} description={C.description}>
   <h1>{C.title}</h1>
   {C.intro.map((p) => <p>{p}</p>)}
   <p><a class="btn" href={u('submit/#performers')}>{C.button}</a></p>
 
-  <form class="filters card" id="pf-filters" onsubmit="return false" hidden>
+  <form class="filters card" id="pf-filters" onsubmit="return false">
     <label>{C.filterType}<br />
-      <select id="pf-act"><option value="">{C.filterAll}</option>{acts.map(([id, label]) => <option value={id}>{label}</option>)}</select>
+      <select id="pf-act" disabled data-pf-off><option value="">{C.filterAll}</option>{acts.map(([id, label]) => <option value={id}>{label}</option>)}</select>
     </label>
     <label>{C.filterProvince}<br />
-      <select id="pf-prov"><option value="">{C.filterAll}</option>{provinces.map(([id, label]) => <option value={id}>{label}</option>)}</select>
+      <select id="pf-prov" disabled data-pf-off><option value="">{C.filterAll}</option>{provinces.map(([id, label]) => <option value={id}>{label}</option>)}</select>
     </label>
-    <div class="muted" id="pf-count" style="align-self:end" aria-live="polite" aria-atomic="true"></div>
+    <div class="muted pf-count" id="pf-count" aria-live="polite" aria-atomic="true"><Fragment set:html="<!--pf:count-->" /></div>
   </form>
 
-  <p class="muted" id="pf-status" aria-live="polite">{C.loading}</p>
-  <noscript><p class="card">{C.noScript} <a href={u('book/')}>{COPY.bookLine.link}</a></p></noscript>
-  <div class="grid" id="pf-list"></div>
+  <div class="grid" id="pf-list"><Fragment set:html="<!--pf:list-->" /></div>
 
-  <div class="card" id="pf-empty" hidden>
+  <div class="card" id="pf-empty">
     <p style="margin-top:0">{C.empty}</p>
     <a class="btn" href={u('submit/#performers')}>{C.button}</a>
   </div>
+  <p class="card" id="pf-status" role="status" hidden>{C.loadFailed}</p>
   <p class="card" id="pf-nomatch" hidden>{C.noMatch}</p>
 
   <p class="muted small-print">{C.smallPrint}</p>
 
-  <script type="application/json" id="pf-labels" set:html={labels}></script>
   <script is:inline>
     (function () {
-      var L = JSON.parse(document.getElementById('pf-labels').textContent);
       var list = document.getElementById('pf-list');
-      var status = document.getElementById('pf-status');
-      var empty = document.getElementById('pf-empty');
-      var nomatch = document.getElementById('pf-nomatch');
-      var filters = document.getElementById('pf-filters');
       var act = document.getElementById('pf-act');
       var prov = document.getElementById('pf-prov');
       var count = document.getElementById('pf-count');
-      function el(tag, cls, text) {
-        var node = document.createElement(tag);
-        if (cls) node.className = cls;
-        if (text != null) node.textContent = text;
-        return node;
-      }
-      function safeHref(value) {
-        try {
-          var url = new URL(String(value || ''));
-          return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : '';
-        } catch (e) { return ''; }
-      }
-      function hostOf(href) {
-        try { return new URL(href).hostname.replace(/^www\./, ''); } catch (e) { return href; }
-      }
-      function link(href, text) {
-        var a = el('a', '', text);
-        a.href = href;
-        a.rel = 'nofollow ugc noopener';
-        a.target = '_blank';
-        return a;
-      }
-      function card(p) {
-        var c = el('article', 'card pf');
-        c.setAttribute('data-acts', (p.acts || []).join(' '));
-        c.setAttribute('data-prov', p.province || '');
-        var pills = el('div', 'pills');
-        (p.acts || []).forEach(function (id) { if (L.acts[id]) pills.appendChild(el('span', 'pill green', L.acts[id])); });
-        if (L.sizes[p.size]) pills.appendChild(el('span', 'pill', L.sizes[p.size]));
-        c.appendChild(pills);
-        c.appendChild(el('h2', 'pf-name', p.name || ''));
-        c.appendChild(el('div', 'muted', '📍 ' + [p.city, L.provinces[p.province] || p.province].filter(Boolean).join(', ')));
-        if (p.blurb) c.appendChild(el('p', 'pf-blurb', p.blurb));
-        var facts = el('dl', 'pf-facts');
-        function fact(label, value) { if (!value) return; facts.appendChild(el('dt', '', label)); facts.appendChild(el('dd', '', value)); }
-        fact(L.travelLabel, L.travel[p.travel] || '');
-        fact(L.servicesLabel, (p.services || []).map(function (id) { return L.services[id]; }).filter(Boolean).join(', '));
-        fact(L.associationLabel, p.association || '');
-        if (facts.children.length) c.appendChild(facts);
-        var links = el('p', 'pf-links');
-        (p.links || []).forEach(function (raw) {
-          var href = safeHref(raw);
-          if (!href) return;
-          if (links.children.length) links.appendChild(document.createTextNode(' · '));
-          links.appendChild(link(href, hostOf(href) + ' ↗'));
-        });
-        var media = safeHref(p.media);
-        if (media) {
-          if (links.children.length) links.appendChild(document.createTextNode(' · '));
-          links.appendChild(link(media, L.mediaLabel + ' ↗'));
-        }
-        if (links.children.length) c.appendChild(links);
-        var actions = el('p', 'pf-actions');
-        var ask = el('a', 'btn small', L.askLabel);
-        ask.href = L.bookPath + '?act=' + encodeURIComponent(p.name || '');
-        actions.appendChild(ask);
-        if (p.email && /^[^\s@<>]+@[^\s@<>]+\.[A-Za-z]{2,}$/.test(p.email)) {
-          actions.appendChild(document.createTextNode(' '));
-          var mail = el('a', 'btn ghost small', L.emailLabel);
-          mail.href = 'mailto:' + p.email;
-          actions.appendChild(mail);
-        }
-        c.appendChild(actions);
-        return c;
-      }
+      var nomatch = document.getElementById('pf-nomatch');
+      if (!list || !act || !prov || !list.children.length) return;
       function apply() {
         var a = act.value, pr = prov.value, shown = 0;
         Array.prototype.forEach.call(list.children, function (c) {
@@ -141,26 +56,22 @@ const labels = JSON.stringify({
           if (ok) shown += 1;
         });
         count.textContent = shown + (shown === 1 ? ' performer' : ' performers');
-        nomatch.hidden = shown !== 0 || list.children.length === 0;
+        nomatch.hidden = shown !== 0;
       }
-      fetch(L.api, { headers: { Accept: 'application/json' } })
-        .then(function (res) { return res.ok ? res.json() : Promise.reject(new Error('http')); })
-        .then(function (data) {
-          var rows = (data && Array.isArray(data.listings)) ? data.listings : [];
-          status.hidden = true;
-          if (!rows.length) { empty.hidden = false; return; }
-          rows.forEach(function (p) { list.appendChild(card(p)); });
-          filters.hidden = false;
-          act.addEventListener('change', apply);
-          prov.addEventListener('change', apply);
-          apply();
-        })
-        .catch(function () { status.textContent = L.loadFailed; });
+      act.addEventListener('change', apply);
+      prov.addEventListener('change', apply);
+      if (act.value || prov.value) apply();
     })();
   </script>
 </Base>
 <style is:global>
-  /* Global on purpose: the cards are built by the script, so Astro's scoped classes would not reach them. */
+  /* Global on purpose: the cards are rendered by functions/performers, outside Astro's scoped classes. */
+  #pf-filters { display: flex; flex-wrap: wrap; gap: .8rem 1.2rem; margin: 1rem 0; }
+  #pf-filters label { font-size: .85rem; color: var(--muted); }
+  #pf-filters select { min-width: 180px; margin-top: .15rem; }
+  #pf-filters select:disabled { opacity: .6; cursor: not-allowed; }
+  .pf-count { align-self: end; min-height: 1.5em; }
+  #pf-list:empty { display: none; }
   .pf .pills { display: flex; flex-wrap: wrap; gap: .3rem; }
   .pf-name { margin: .4rem 0 .2rem; font-size: 1.25rem; overflow-wrap: anywhere; }
   .pf-blurb { margin: .5rem 0; overflow-wrap: anywhere; white-space: pre-line; }
@@ -170,6 +81,6 @@ const labels = JSON.stringify({
   .pf-links { margin: .4rem 0; overflow-wrap: anywhere; }
   .pf-actions { margin: .6rem 0 0; display: flex; flex-wrap: wrap; gap: .5rem; }
   .small-print { margin-top: 2rem; font-size: .92rem; }
-  #pf-empty { margin-top: 1rem; }
+  #pf-empty, #pf-status, #pf-nomatch { margin-top: 1rem; }
   .pf h2.pf-name { color: var(--green); }
 </style>
