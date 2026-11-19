@@ -22,7 +22,9 @@ export const SLOTS = {
   list: '<!--pf:list-->',
   count: '<!--pf:count-->',
   emptyOpen: '<div class="card" id="pf-empty">',
+  emptyHidden: '<div class="card" id="pf-empty" hidden>',
   statusOpen: '<p class="card" id="pf-status" role="status" hidden>',
+  statusShown: '<p class="card" id="pf-status" role="status">',
   off: ' disabled data-pf-off',
 };
 
@@ -86,14 +88,14 @@ export function performerCardHtml(p, { bookPath = '/book/' } = {}) {
 export function renderPerformersPage(html, rows, opts = {}) {
   if (rows === null) {
     return html
-      .replace(SLOTS.emptyOpen, SLOTS.emptyOpen.replace('>', ' hidden>'))
-      .replace(SLOTS.statusOpen, SLOTS.statusOpen.replace(' hidden>', '>'));
+      .replace(SLOTS.emptyOpen, SLOTS.emptyHidden)
+      .replace(SLOTS.statusOpen, SLOTS.statusShown);
   }
   if (!rows.length) return html;
   const cards = rows.map((p) => performerCardHtml(p, opts)).join('');
   return html
     .replace(SLOTS.list, cards)
     .replace(SLOTS.count, escapeHtml(countText(rows.length)))
-    .replace(SLOTS.emptyOpen, SLOTS.emptyOpen.replace('>', ' hidden>'))
+    .replace(SLOTS.emptyOpen, SLOTS.emptyHidden)
     .split(SLOTS.off).join('');
 }
