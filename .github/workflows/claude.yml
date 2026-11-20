@@ -72,3 +72,36 @@ jobs:
       - name: Run Claude Code
         uses: anthropics/claude-code-action@c84e279f859e2591391e95bd309286eb111c345f # v1.0.284
         with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # The job `if:` above is the real allowlist. This only lets the
+          # Grok bots app past the action's own bot check.
+          allowed_bots: grokbot-rsakauye
+          branch_prefix: claude/
+
+  usage-end:
+    name: usage at handback
+    needs: [usage-start, claude]
+    if: always() && needs.claude.result != 'skipped' && github.event.issue.number
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: tools/handoff-usage
+
+      - name: Post usage
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          CLAUDE_RUNS_5H_BUDGET: ${{ vars.CLAUDE_RUNS_5H_BUDGET }}
+          CLAUDE_RUNS_7D_BUDGET: ${{ vars.CLAUDE_RUNS_7D_BUDGET }}
+          CLAUDE_PLAN: ${{ vars.CLAUDE_PLAN }}
+          CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL }}
+          RESULT: ${{ needs.claude.result }}
+        run: node tools/handoff-usage/report.mjs --stage "Claude run finished ($RESULT), handing back to Forge"
