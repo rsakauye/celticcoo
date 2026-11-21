@@ -1,7 +1,9 @@
 name: claude
+
 # Claude Code builds a handoff issue on a branch and opens a pull request.
 # Only Russell and the Grok bots app can start it. Claude never merges.
 # Each job repeats the same allowlist and trigger check on purpose.
+
 on:
   issue_comment:
     types: [created]
@@ -9,10 +11,13 @@ on:
     types: [created]
   issues:
     types: [opened]
+
 permissions: {}
+
 concurrency:
   group: claude-${{ github.event.issue.number || github.event.pull_request.number }}
   cancel-in-progress: false
+
 jobs:
   usage-start:
     name: usage at start
@@ -32,6 +37,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           sparse-checkout: tools/handoff-usage
+
       - name: Post usage
         continue-on-error: true
         env:
@@ -42,8 +48,65 @@ jobs:
           CLAUDE_PLAN: ${{ vars.CLAUDE_PLAN }}
           CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL }}
         run: node tools/handoff-usage/report.mjs --stage "Claude run started"
+
   claude:
     name: claude
     if: >-
       contains(fromJSON('["rsakauye","grokbot-rsakauye[bot]"]'), github.actor) &&
       ((github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+       (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+       (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude'))))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@c84e279f859e2591391e95bd309286eb111c345f # v1.0.284
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # The job `if:` above is the real allowlist. This only lets the
+          # Grok bots app past the action's own bot check.
+          allowed_bots: grokbot-rsakauye
+          branch_prefix: claude/
+          # Open a pull request instead of leaving a compare link.
+          # Use claude_args, not the prompt input (prompt would switch to automation mode).
+          claude_args: |
+            --allowedTools "mcp__github__create_pull_request"
+            --append-system-prompt "When you finish work started from an issue and no open pull request exists for your branch, open the pull request yourself as the last step with the mcp__github__create_pull_request tool. Title it with the prefix [Claude]. Write the body from .github/PULL_REQUEST_TEMPLATE.md. Include a plain sentence that it was made by Claude and name the model. Include Closes #N for the issue. Keep the Co-authored-by line the Action already adds on commits. Never merge, never approve, and never enable auto-merge. If you are already working on an open pull request, push to that branch and do not open a second pull request."
+
+  usage-end:
+    name: usage at handback
+    needs: [usage-start, claude]
+    if: always() && needs.claude.result != 'skipped' && github.event.issue.number
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: tools/handoff-usage
+
+      - name: Post usage
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          CLAUDE_RUNS_5H_BUDGET: ${{ vars.CLAUDE_RUNS_5H_BUDGET }}
+          CLAUDE_RUNS_7D_BUDGET: ${{ vars.CLAUDE_RUNS_7D_BUDGET }}
+          CLAUDE_PLAN: ${{ vars.CLAUDE_PLAN }}
+          CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL }}
+          RESULT: ${{ needs.claude.result }}
+        run: node tools/handoff-usage/report.mjs --stage "Claude run finished ($RESULT), handing back to Forge"
