@@ -202,7 +202,7 @@
       "aboutYouHelp": "This part is never shown on the site.",
       "submitterNameLabel": "Your name",
       "roleLabel": "How you're connected to this act",
-      "newsletterLabel": "Yes, send me The Coo's Letter, the free email about Celtic events in Canada, every two weeks. I can unsubscribe any time.",
+      "newsletterLabel": "Yes, send me The Coo's Letter, the free email about Celtic events in Canada, about once a month, with the odd special issue. I can unsubscribe any time.",
       "privacyNote": "We keep what you send in a private database until a person reviews it. Only the public listing details go on the site. Your name stays private, and so does your email unless you tick the box to show it."
     },
     "groupForm": {
@@ -233,7 +233,7 @@
       "roleLabel": "Your role in the group",
       "adultConfirm": "I'm 18 or older, and I'm allowed to share this information for the group.",
       "termsConfirm": "I understand this listing is free and that The Celtic Coo may edit it or remove it.",
-      "newsletterLabel": "Yes, send me The Coo's Letter, the free email about Celtic events in Canada, every two weeks. I can unsubscribe any time.",
+      "newsletterLabel": "Yes, send me The Coo's Letter, the free email about Celtic events in Canada, about once a month, with the odd special issue. I can unsubscribe any time.",
       "button": "Send our listing",
       "success": "Thanks, we've got it. We'll look over your listing and aim to have it up within a few days. If we have a question, we'll email you.",
       "privacyNote": "We keep what you send in a private database until a person reviews it. Your name and email stay private. If you add a public contact email for the group, it shows on the listing."
