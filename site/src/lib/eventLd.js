@@ -7,22 +7,25 @@
 // - image: a per-event image URL when the record has one. Otherwise the site's own
 //   share images in /images/, which are original artwork and are files in the build.
 //   Organizer photos are not copied or hotlinked.
-// - organizer: the hosting society or association, with url set to that host's domain
-//   when we know it. A sanctioning association (for example the BCPA schedule) is not
-//   the organizer of someone else's games.
+// - organizer: the hosting society, band, or club, as an Organization or Person.
+//   name and url come from the event's organizer, or from host, band, or club when
+//   that is what the record has. A name with no url is still named. Email, phone,
+//   and street address are never copied. When the record names nobody, the organizer
+//   is The Celtic Coo.
 // - performer: a named person or group billed for this event. A field of competing
-//   bands, or "ceilidh performers" with no names, is left out.
-// - offers: only when offers.url is a page that sells tickets for this event.
-//   Google requires that URL to be a landing page where the public can buy admission,
-//   so a general homepage or an association date list is not an offer. price and
-//   priceCurrency are emitted together, and only for a price published for this event
-//   (never a previous year's price, never a guess). availability is only InStock,
-//   SoldOut, or PreOrder when we know which. If tickets are not on sale yet, leave
-//   availability off and set validFrom to the published on-sale date.
-//   A free event (cost === 'free') is the exception: admission is the offer. The URL is
-//   offers.url, or source_url when there is no ticket page. price is 0, priceCurrency
-//   comes from the country (never a guess), and availability is InStock. validFrom is
-//   set only when offers.validFrom or tickets_on_sale is already a date.
+//   bands, or "ceilidh performers" with no names, is left out. Performers are not
+//   treated as the organizer.
+// - offers: only when a price is already on the record. price is a number string and
+//   priceCurrency is emitted with it. A published priceCurrency is kept. Otherwise
+//   the currency follows the country, and a Canadian price with no currency is CAD.
+//   The url is the ticket page, then the event's own page. availability is only
+//   InStock, SoldOut, or PreOrder when we know which. If tickets are not on sale yet,
+//   leave availability off and set validFrom to the published on-sale date.
+//   A ticket page with no published price is not an offer. Do not guess a price.
+//   A free event (cost === 'free') is the exception: admission is the offer. price is
+//   "0", priceCurrency comes from the country (or a published currency when the
+//   country has none), and availability is InStock. validFrom is set only when
+//   offers.validFrom or tickets_on_sale is already a date.
 
 const ORIGIN = 'https://celticcoo.ca';
 const COUNTRY_CODE = { Canada: 'CA', USA: 'US', UK: 'GB', France: 'FR' };
@@ -50,13 +53,36 @@ export function eventImages(event) {
   return own.length ? own : EVENT_IMAGE_FALLBACK;
 }
 
+const SITE_ORGANIZER = { '@type': 'Organization', name: 'The Celtic Coo', url: ORIGIN };
+
+// Name and url only. A string is an organization name. @type Person stays a person.
+// Email, phone, and street address on the record are left off.
+function party(value) {
+  if (typeof value === 'string') {
+    const name = value.trim();
+    return name ? { '@type': 'Organization', name } : null;
+  }
+  if (!value || typeof value !== 'object') return null;
+  const name = typeof value.name === 'string' ? value.name.trim() : '';
+  if (!name) return null;
+  const kind = String(value['@type'] || value.type || '').trim().toLowerCase();
+  const out = { '@type': kind === 'person' ? 'Person' : 'Organization', name };
+  if (typeof value.url === 'string' && value.url.trim()) out.url = value.url.trim();
+  return out;
+}
+
+function parties(value) {
+  return asList(value).map(party).filter(Boolean);
+}
+
 export function eventOrganizers(event) {
-  return asList(event?.organizer).flatMap((org) => {
-    if (!org || typeof org.name !== 'string' || !org.name.trim()) return [];
-    const out = { '@type': 'Organization', name: org.name.trim() };
-    if (typeof org.url === 'string' && org.url.trim()) out.url = org.url.trim();
-    return [out];
-  });
+  const named = parties(event?.organizer);
+  if (named.length) return named;
+  for (const key of ['host_band', 'host', 'band', 'club']) {
+    const found = parties(event?.[key]);
+    if (found.length) return found;
+  }
+  return [SITE_ORGANIZER];
 }
 
 export function eventPerformers(event) {
@@ -101,27 +127,62 @@ function eventLocation(event) {
   };
 }
 
-function currencyFor(event) {
-  const fromCountry = CURRENCY_BY_COUNTRY[event?.country];
-  if (fromCountry) return fromCountry;
-  const raw = typeof event?.offers?.priceCurrency === 'string' ? event.offers.priceCurrency.trim() : '';
+function isoCurrency(value) {
+  const raw = typeof value === 'string' ? value.trim() : '';
   return /^[A-Z]{3}$/.test(raw) ? raw : '';
 }
 
-// Free admission is an offer even when nobody sells a ticket. Price stays 0; the
-// currency follows the country. A date already on the record can be validFrom.
-function freeOffer(event) {
-  const raw = event?.offers;
-  const ticketUrl = typeof raw?.url === 'string' ? raw.url.trim() : '';
+// Free admission follows the country. A published currency is used only when the
+// country has none. CAD is the last resort, never a guessed ticket price.
+function freeCurrency(event) {
+  return CURRENCY_BY_COUNTRY[event?.country] || isoCurrency(event?.offers?.priceCurrency) || 'CAD';
+}
+
+// A priced offer keeps the currency published with that price, then the country.
+function pricedCurrency(event, raw) {
+  return isoCurrency(raw?.priceCurrency) || CURRENCY_BY_COUNTRY[event?.country] || 'CAD';
+}
+
+function priceText(price) {
+  const cents = Math.round((price + Number.EPSILON) * 100);
+  const whole = Math.trunc(cents / 100);
+  const frac = Math.abs(cents % 100);
+  return frac === 0 ? String(whole) : `${whole}.${String(frac).padStart(2, '0')}`;
+}
+
+function publishedPrice(raw) {
+  if (!raw || raw.price === undefined || raw.price === null || raw.price === '') return null;
+  const price = typeof raw.price === 'number' ? raw.price : Number(String(raw.price).trim());
+  if (!Number.isFinite(price) || price < 0) return null;
+  return price;
+}
+
+// Ticket page first, then the event's own page, then this site's event page.
+function offerUrl(event) {
+  const ticket = typeof event?.offers?.url === 'string' ? event.offers.url.trim() : '';
+  if (ticket) return ticket;
   const source = typeof event?.source_url === 'string' ? event.source_url.trim() : '';
-  const url = ticketUrl || source;
-  const currency = currencyFor(event);
-  if (!url || !currency) return null;
+  if (source) return source;
+  const id = typeof event?.id === 'string' ? event.id.trim() : '';
+  return id ? `${ORIGIN}/events/${id}/` : '';
+}
+
+function knownAvailability(raw) {
+  const availability = typeof raw?.availability === 'string' ? raw.availability.replace(/^https:\/\/schema\.org\//, '') : '';
+  return AVAILABILITY[availability] || '';
+}
+
+// Free admission is an offer even when nobody sells a ticket. Price stays "0".
+// A date already on the record can be validFrom.
+function freeOffer(event) {
+  const url = offerUrl(event);
+  if (!url) return null;
+  const raw = event?.offers;
   const offer = {
     '@type': 'Offer',
     url,
-    price: 0,
-    priceCurrency: currency,
+    price: '0',
+    priceCurrency: freeCurrency(event),
     availability: AVAILABILITY.InStock,
   };
   const validFrom = dated(raw?.validFrom) || dated(event?.tickets_on_sale);
@@ -130,25 +191,21 @@ function freeOffer(event) {
 }
 
 export function eventOffer(event) {
-  if (event?.cost === 'free') {
-    const free = freeOffer(event);
-    if (free) return free;
-  }
+  if (event?.cost === 'free') return freeOffer(event);
   const raw = event?.offers;
-  if (!raw || typeof raw.url !== 'string' || !raw.url.trim()) return null;
-  const offer = { '@type': 'Offer', url: raw.url.trim() };
-  const hasPrice = raw.price !== undefined && raw.price !== null && raw.price !== '';
-  if (hasPrice) {
-    const price = typeof raw.price === 'number' ? raw.price : Number(String(raw.price).trim());
-    const currency = typeof raw.priceCurrency === 'string' ? raw.priceCurrency.trim() : '';
-    if (Number.isFinite(price) && price >= 0 && /^[A-Z]{3}$/.test(currency)) {
-      offer.price = price;
-      offer.priceCurrency = currency;
-    }
-  }
-  const availability = typeof raw.availability === 'string' ? raw.availability.replace(/^https:\/\/schema\.org\//, '') : '';
-  if (AVAILABILITY[availability]) offer.availability = AVAILABILITY[availability];
-  if (dated(raw.validFrom)) offer.validFrom = raw.validFrom;
+  const price = publishedPrice(raw);
+  if (price === null) return null;
+  const url = offerUrl(event);
+  if (!url) return null;
+  const offer = {
+    '@type': 'Offer',
+    url,
+    price: priceText(price),
+    priceCurrency: pricedCurrency(event, raw),
+  };
+  const availability = knownAvailability(raw);
+  if (availability) offer.availability = availability;
+  if (raw && dated(raw.validFrom)) offer.validFrom = raw.validFrom;
   return offer;
 }
 

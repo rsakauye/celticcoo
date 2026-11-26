@@ -119,7 +119,10 @@ test('verified cultural listings use the cost and category the organizer support
   const tenorsLd = eventJsonLd(tenors);
   assert.equal('isAccessibleForFree' in tenorsLd, false);
   assert.equal(tenorsLd.offers.availability, 'https://schema.org/InStock');
-  assert.equal(tenorsLd.offers.price, 59.85);
+  assert.equal(tenorsLd.offers.price, '59.85');
+  assert.equal(tenorsLd.offers.priceCurrency, 'CAD');
+  assert.equal(tenorsLd.organizer.name, 'Gateway Events');
+  assert.equal(tenorsLd.organizer.url, 'https://gatewayyyc.com/');
 
   const toronto = dated["Toronto St. Patrick's Parade"];
   assert.equal(toronto.start_date, '2027-03-14');
@@ -132,7 +135,7 @@ test('verified cultural listings use the cost and category the organizer support
   assert.deepEqual(torontoLd.offers, {
     '@type': 'Offer',
     url: 'https://www.stpatrickstoronto.com/',
-    price: 0,
+    price: '0',
     priceCurrency: 'CAD',
     availability: 'https://schema.org/InStock',
   });
