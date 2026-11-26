@@ -179,7 +179,7 @@ test('section page descriptions are unique finished sentences', () => {
 test('footer and home page link the letter, events, performers and links', () => {
   const layout = readFileSync(join(site, 'src/layouts/Base.astro'), 'utf8');
   assert.match(layout, /<b><a href=\{u\('newsletter\/'\)\}>The Coo's Letter<\/a><\/b>/);
-  assert.match(layout, /<a href=\{u\('events\/'\)\}>Events<\/a> · <a href=\{u\('performers\/'\)\}>Performers<\/a> · <a href=\{u\('links\/'\)\}>Links<\/a>/);
+  assert.match(layout, /class="footer-links">[\s\S]*href=\{u\('events\/'\)\}>Events<\/a>[\s\S]*href=\{u\('performers\/'\)\}>Performers<\/a>[\s\S]*href=\{u\('links\/'\)\}>Links<\/a>/);
   const home = readFileSync(join(site, 'src/pages/index.astro'), 'utf8');
   assert.match(home, /href=\{u\('newsletter\/'\)\}/);
   assert.match(home, /href=\{u\('performers\/'\)\}/);
