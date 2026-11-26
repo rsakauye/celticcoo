@@ -2,7 +2,8 @@
 import Base from '../../../layouts/Base.astro';
 import ClubEventRow from '../../../components/ClubEventRow.astro';
 import { groups, events, TODAY, GROUP_EMOJI } from '../../../lib/data.js';
-import { CLUB_SHARE_DESCRIPTION, clubCardFields, clubLinks, clubMetaDescription, clubPlace, clubShareTitle, linkPack, splitClubEvents } from '../../../lib/groupProfiles.js';
+import { clubCardFields, clubLinks, clubMetaDescription, clubPlace, clubShareTitle, linkPack, splitClubEvents } from '../../../lib/groupProfiles.js';
+import { groupPageTitle } from '../../../lib/metaDescription.js';
 import { DOMAIN, u } from '../../../lib/site.js';
 import { loadBrand, shareAlt } from '../../../../../shared/og/index.js';
 export function getStaticPaths() {
@@ -40,7 +41,7 @@ const icons = {
   share: '<path d="M12 16V6"/><path d="M8 9l4-4 4 4"/><path d="M6 12v6a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-6"/>',
 };
 ---
-<Base title={place ? `${g.name} in ${place}` : g.name} crumb={g.name} breadcrumbs={[['Clubs & lessons', 'groups/']]} description={description} ogTitle={clubShareTitle(g)} ogDescription={CLUB_SHARE_DESCRIPTION} ogImage={`/groups/${g.id}/og.png`} ogImageAlt={cardAlt} jsonld={jsonld}>
+<Base title={groupPageTitle(g, place)} crumb={g.name} breadcrumbs={[['Clubs & lessons', 'groups/']]} description={description} ogTitle={clubShareTitle(g)} ogDescription={description} ogImage={`/groups/${g.id}/og.png`} ogImageAlt={cardAlt} jsonld={jsonld}>
   <p class="back"><a id="group-back" href={u('groups/')}>← Clubs &amp; lessons</a></p>
   <header class="club-head">
     <h1>{g.name}</h1>

@@ -10,18 +10,16 @@ import { events, groups, CATEGORY_EMOJI, COUNTRY_FLAG, FEATURES, sourceLinkLabel
 import { eventJsonLd } from '../../lib/eventLd.js';
 import { eventPlaceLine, eventNearby } from '../../lib/eventPage.js';
 import { canadianConnection, searchFromFilters, visibleTags } from '../../lib/eventFilters.js';
+import { eventMetaDescription, eventPageTitle } from '../../lib/metaDescription.js';
 import { u } from '../../lib/site.js';
 export function getStaticPaths() {
   return events.map((e) => ({ params: { id: e.id }, props: { e } }));
 }
 const { e } = Astro.props;
-const place = [e.city, e.regionLabel, e.country !== 'Canada' && e.country !== e.regionLabel ? e.country : ''].filter(Boolean).join(', ');
 const placeLine = eventPlaceLine(e);
 const nearby = eventNearby(e, groups.map((g) => g.province));
-const pageTitle = `${e.name}: ${e.when}, ${e.city}`;
-const description = e.source_kind === 'organizer'
-  ? `${e.name} (${e.type}) in ${place}, ${e.when}. Date from the host.`
-  : `${e.name} (${e.type}) in ${place}, ${e.when}. Date confirmed on the ${e.source_kind === 'official' ? "organizer's" : "association's"} website, with the official link and similar events nearby.`;
+const pageTitle = eventPageTitle(e);
+const description = eventMetaDescription(e);
 const eventLd = eventJsonLd(e);
 const hosts = (Array.isArray(e.organizer) ? e.organizer : e.organizer ? [e.organizer] : []).filter((o) => o && o.name);
 const acts = (Array.isArray(e.performers) ? e.performers : e.performers ? [e.performers] : []).map((p) => (typeof p === 'string' ? { name: p } : p)).filter((p) => p && p.name);

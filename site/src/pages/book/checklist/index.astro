@@ -6,7 +6,7 @@ import { u } from '../../../lib/site.js';
 const cfg = bookingConfig;
 const list = cfg.checklist;
 ---
-<Base title={list.title} description={list.description}>
+<Base title={list.title} crumb="Checklist" breadcrumbs={[['Book performers', 'book/']]} description={list.description}>
   <article class="sheet">
     <h1>{list.title}</h1>
     <p class="lede">{list.intro}</p>

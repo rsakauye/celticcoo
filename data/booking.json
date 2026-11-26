@@ -12,7 +12,7 @@
   "linkLabel": "Need a piper or performer?",
   "subjectPrefix": "Performer request",
   "pageTitle": "Book Celtic performers",
-  "pageDescription": "Ask The Celtic Coo to introduce you to a piper, drummer, ceilidh band, Highland dancer or heavy athlete. We connect people with independent performers. We are not an agency.",
+  "pageDescription": "Ask for an introduction to a piper, drummer, ceilidh band, Highland dancer or heavy athlete. The Celtic Coo makes the introduction.",
   "heading": "Book Celtic performers",
   "lede": "Need a piper for a wedding, a drummer for a dance competition, or a ceilidh band for the games? Tell Ceilidh what you need. She will pass the note to {email}, and we will write back.",
   "disclosureHeading": "A wee note from Ceilidh",
@@ -129,7 +129,7 @@
   },
   "checklist": {
     "title": "Booking details checklist",
-    "description": "A short checklist both sides can print and fill in: date, set times, fee, deposit, cancellation, travel, sound or equipment, and dress. It is not a contract.",
+    "description": "A printable worksheet for the date, times, fee, deposit, travel and dress you and a performer want to note. The site does not store it.",
     "intro": "Once you and the performer are happy to talk, print this page and fill it in together. Each of you keeps a copy. The website does not save it, and it does not book anything.",
     "disclaimer": "This is a checklist, not a contract or legal advice. The Celtic Coo isn't a party to any agreement. Please use your own agreement.",
     "printLabel": "Print this checklist",

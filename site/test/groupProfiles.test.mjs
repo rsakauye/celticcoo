@@ -89,7 +89,8 @@ test('a shared profile card names the club and uses that club\'s share image', (
   assert.match(layout, /name="twitter:card" content="summary_large_image"/);
   const profile = readFileSync(new URL('../src/pages/groups/[id]/index.astro', import.meta.url), 'utf8');
   assert.match(profile, /ogTitle=\{clubShareTitle\(g\)\}/);
-  assert.match(profile, /ogDescription=\{CLUB_SHARE_DESCRIPTION\}/);
+  assert.match(profile, /ogDescription=\{description\}/);
+  assert.doesNotMatch(profile, /ogDescription=\{CLUB_SHARE_DESCRIPTION\}/);
   assert.match(profile, /ogImage=\{`\/groups\/\$\{g\.id\}\/og\.png`\}/);
   assert.match(profile, /shareAlt\(clubCardFields\(g\), shareBrand\)/);
   assert.match(profile, /ogImageAlt=\{cardAlt\}/);
@@ -177,7 +178,11 @@ test('profile links and the event row only use values that are actually there', 
   assert.deepEqual(links.map((link) => link.label), ['Website', 'Facebook', 'YouTube', 'Bandcamp']);
   assert.equal(clubLinks({ website: 'javascript:alert(1)', facebook: '' }).length, 0);
   assert.equal(clubMetaDescription({ name: 'Sláinte Social Club', kind: 'Pipe band / piping', city: 'Calgary', regionLabel: 'Alberta', note: 'A Grade 3 pipe band.' }).includes('Calgary, Alberta'), true);
-  assert.ok(clubMetaDescription({ name: 'A', kind: 'Gaelic', regionLabel: 'Nova Scotia', note: 'word '.repeat(80) }).length <= 160);
+  const trimmedClub = clubMetaDescription({ name: 'A', kind: 'Gaelic', regionLabel: 'Nova Scotia', note: 'word '.repeat(80) });
+  assert.ok(trimmedClub.length <= 155);
+  assert.match(trimmedClub, /[.!?]$/);
+  assert.doesNotMatch(trimmedClub, /…/);
+  assert.equal(trimmedClub.includes('Nova Scotia'), true);
   assert.deepEqual(eventDateParts('2027-01-22'), { month: 'Jan', day: '22' });
   assert.equal(eventPlace({ venue: 'Hotel Arts', city: 'Calgary', regionLabel: 'Alberta' }), 'Hotel Arts · Calgary, Alberta');
   assert.equal(eventPlace({ city: 'Toronto', regionLabel: 'Ontario' }), 'Toronto, Ontario');

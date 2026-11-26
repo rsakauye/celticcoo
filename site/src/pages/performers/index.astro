@@ -14,7 +14,7 @@ const C = COPY.performersPage;
 const acts = listingConfig.performer.acts;
 const provinces = listingConfig.provinces;
 ---
-<Base title={C.title} description={C.description}>
+<Base title={C.title} crumb="Performers" description={C.description}>
   <h1>{C.title}</h1>
   {C.intro.map((p) => <p>{p}</p>)}
   <p><a class="btn" href={u('submit/#performers')}>{C.button}</a></p>
