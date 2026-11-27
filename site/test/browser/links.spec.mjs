@@ -67,12 +67,12 @@ test('links page loads with its buttons and no outside requests', async ({ page 
   const external = watchExternal(page);
   const res = await page.goto('/links/');
   expect(res.status()).toBe(200);
-  await expect(page).toHaveTitle('Links | The Celtic Coo');
+  await expect(page).toHaveTitle('Links · The Celtic Coo');
   await expect(page.locator('meta[name="description"]')).toHaveAttribute(
     'content',
-    "Find Celtic events across Canada, list your own for free, and grab Ceilidh's stickers on GIPHY.",
+    "A short list of Celtic Coo pages: the events calendar, clubs, Burns Night, the newsletter, the drone tuner and Ceilidh's stickers.",
   );
-  await expect(page.locator('h1')).toHaveText('The Celtic Coo');
+  await expect(page.locator('h1')).toHaveText('Links');
   await expect(page.locator('.intro')).toHaveText("Hiya! Find a ceilidh, bring your crew. Here's everywhere the Coo hangs out.");
 
   await expectButtons(page, 'instagram');

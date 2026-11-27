@@ -55,8 +55,10 @@ test('utm tags same-origin links and leaves mailto and other hosts alone', () =>
 
 test('the links page lists the eight buttons in order', () => {
   assert.match(page, /<title>\{title\}<\/title>/);
-  assert.match(page, /Links \| The Celtic Coo/);
-  assert.match(page, /Find Celtic events across Canada, list your own for free, and grab Ceilidh's stickers on GIPHY\./);
+  assert.match(page, /Links · The Celtic Coo/);
+  assert.match(page, /<h1>Links<\/h1>/);
+  assert.match(page, /A short list of Celtic Coo pages: the events calendar, clubs, Burns Night, the newsletter, the drone tuner and Ceilidh's stickers\./);
+  assert.match(page, /BreadcrumbList/);
   assert.match(page, /Hiya! Find a ceilidh, bring your crew\. Here's everywhere the Coo hangs out\./);
   assert.doesNotMatch(page, /Base\.astro/);
   assert.doesNotMatch(page, /instagram\.com|mock-flag|fonts\.google|kit\.com/i);
@@ -103,7 +105,7 @@ test('links is on the sitemap with the other public utility pages', () => {
   assert.match(sitemap, /['"]links\/['"]/);
   assert.match(sitemap, /['"]privacy\/['"]/);
   assert.match(sitemap, /['"]terms\/['"]/);
-  assert.doesNotMatch(sitemap, /['"]tune\/['"]/);
+  assert.match(sitemap, /['"]tune\/['"]/);
   assert.doesNotMatch(sitemap, /['"]style\/['"]/);
 });
 

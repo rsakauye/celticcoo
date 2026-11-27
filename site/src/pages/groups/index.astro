@@ -6,7 +6,7 @@ import { u } from '../../lib/site.js';
 const provs = [...new Set(groups.map((g) => g.province))].map((p) => ({ p, label: groups.find((g) => g.province === p).regionLabel }));
 const kinds = [...new Set(groups.map((g) => g.kind))].sort();
 ---
-<Base title="Celtic clubs, pipe bands & lessons in Canada" description="Find a pipe band, Highland dance school, clan society, Gaelic class, Scottish country dance group or Burns club near you, and who offers lessons.">
+<Base title="Clubs & lessons" crumb="Clubs & lessons" description="Find a pipe band, Highland dance school, clan society or Gaelic class in Canada, and see which groups offer lessons near you.">
   <h1>Clubs &amp; lessons</h1>
   <p>Pipe bands, Highland and Scottish country dance, clan societies, Gaelic classes, Burns clubs, heavy events, trad sessions, whisky societies and more: <b>{clubIntro.groupCount}</b> groups across Canada, <b>{clubIntro.lessonCount}</b> of them offering lessons. We check every website weekly (last check: {clubIntro.lastChecked}). Ask the group directly about schedules and fees.</p>
 

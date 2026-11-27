@@ -5,7 +5,7 @@ import { shops, regionName } from '../../lib/data.js';
 import { u } from '../../lib/site.js';
 const provinces = [...new Set(shops.map((s) => s.province))];
 ---
-<Base title="Celtic shops & makers in Canada" description="Kilt shops, Highland dress, bagpipe makers, Highland dance supplies and Celtic gifts across Canada.">
+<Base title="Celtic shops & makers in Canada" crumb="Shops" description="Kiltmakers, Highland dress shops, bagpipe makers and Celtic gift stores across Canada, from city shops to one-person workshops.">
   <h1>Celtic shops &amp; makers in Canada</h1>
   <p>Kilts, Highland dress, bagpipes, dance shoes, tartan and Celtic gifts, from big stores to one-person workshops. Many of them also have tents at the Highland Games.</p>
   <p class="muted">Jump to: {provinces.map((p, i) => <>{i > 0 && ' · '}<a href={`#prov-${p}`}>{regionName(p)}</a></>)} · <label><input type="checkbox" id="makers-only" /> Makers only</label> · <label><input type="checkbox" id="hire-only" /> Kilt hire</label> · <label><input type="checkbox" id="food-only" /> Scottish &amp; Irish food</label></p>

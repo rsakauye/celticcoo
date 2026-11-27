@@ -14,6 +14,7 @@
 
 import { assignShortCodes, assignSlugs, publishedSlug as acceptSlug, suggestSlug } from '../../../shared/slugs/index.js';
 import linkPack from '../../../shared/slugs/sites/celticcoo.js';
+import { groupMetaDescription } from './metaDescription.js';
 
 export { linkPack };
 
@@ -156,15 +157,7 @@ export function clubCardFields(club) {
 }
 
 export function clubMetaDescription(club) {
-  const place = clubPlace(club);
-  const kind = club?.kind || club?.type || 'group';
-  const name = String(club?.name || 'This group');
-  const lead = place ? `${name} is a ${kind} in ${place}.` : `${name} is a ${kind}.`;
-  const note = club?.note ? ` ${String(club.note).trim()}` : '';
-  const text = `${lead}${note}`.replace(/\s+/g, ' ').trim();
-  if (text.length <= 160) return text;
-  const cut = text.slice(0, 157).replace(/\s+\S*$/, '');
-  return `${cut || text.slice(0, 157)}…`;
+  return groupMetaDescription(club);
 }
 
 export function eventDateParts(iso) {

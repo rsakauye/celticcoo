@@ -1,6 +1,6 @@
 // Sitemap of the site's pages plus one page per confirmed event (no extra dependency).
 // <lastmod> is the date the page's content really changed (see lib/lastmod.js), or omitted when unknown,
-// so search engines and the IndexNow ping (scripts/indexnow.mjs) only see genuine updates.
+// so search engines and the IndexNow pings (scripts/indexnow.mjs and tools/indexnow-ping.mjs) only see genuine updates.
 import { events, groups } from '../lib/data.js';
 import { gitDate, eventLastmod } from '../lib/lastmod.js';
 const P = (f) => `site/src/pages/${f}`;
@@ -17,6 +17,7 @@ const PAGES = {
   'what-to-wear/': [P('what-to-wear/index.astro')],
   'tartans/': [P('tartans/index.astro')],
   'drum/': [P('drum/index.astro')],
+  'tune/': [P('tune/index.astro')],
   'roots/': [P('roots/index.astro')],
   'book/': [P('book/index.astro'), D('booking.json'), D('events_2027.json'), D('events_2027_pending.json'), D('events_manual.json')],
   'book/checklist/': [P('book/checklist/index.astro'), D('booking.json')],
